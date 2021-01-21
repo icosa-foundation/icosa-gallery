@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .poly import poly
+from app.routers import poly
 
 app = FastAPI(title="Icosa API", redoc_url=None)
 app.include_router(poly.router)
@@ -13,6 +13,6 @@ app.add_middleware(CORSMiddleware,
     allow_headers=["*"]
 )
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
     return "Icosa API"

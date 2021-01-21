@@ -11,7 +11,6 @@ router = APIRouter(
     tags=["Poly"]
     )
 
-
 @router.get("/assets")
 async def get_poly_assets_list():
     r = requests.get(f'https://poly.googleapis.com/v1/assets?key={data["poly_api_key"]}')
