@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import poly
-from app.utilities.database_connector import database
+from app.routers import poly, users, login
+from app.database.database_connector import database
 
 app = FastAPI(title="Icosa API", redoc_url=None)
+app.include_router(login.router)
+app.include_router(users.router)
 app.include_router(poly.router)
 
 

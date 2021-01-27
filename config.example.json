@@ -2,5 +2,6 @@
     "dbuser": "user",
     "dbpassword": "password",
     "dblocation": "address",
+    "secret_key": "key",
     "poly_api_key" : "string"
 }
