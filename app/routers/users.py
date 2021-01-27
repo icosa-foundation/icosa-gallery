@@ -40,3 +40,12 @@ async def create_user(user: NewUser):
     query = query.where(users.c.id == user_data)
     newuser = await database.fetch_one(query)
     return newuser
+
+@router.get("/{user}", response_model=User)
+async def get_user(user: str):
+    query = users.select()
+    query = query.where(users.c.token == user)
+    user = await database.fetch_one(query)
+    if (user == None):
+        raise HTTPException(status_code=404, detail="User not found.")
+    return user
