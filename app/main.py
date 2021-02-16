@@ -10,7 +10,6 @@ app.include_router(users.router)
 app.include_router(assets.router)
 app.include_router(poly.router)
 
-
 origins = ["*"]
 
 app.add_middleware(CORSMiddleware,

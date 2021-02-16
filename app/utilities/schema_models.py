@@ -30,5 +30,5 @@ class AssetData(BaseModel):
 class Asset(BaseModel):
     id: int
     token: str
+    owner: str
     data: AssetData
-    owner: int

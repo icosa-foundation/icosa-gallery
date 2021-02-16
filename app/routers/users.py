@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 import requests
@@ -5,8 +6,8 @@ import json
 import bcrypt
 import secrets
 
-from app.utilities.schema_models import User, FullUser, NewUser
-from app.database.database_schema import users
+from app.utilities.schema_models import User, FullUser, NewUser, Asset
+from app.database.database_schema import users, assets
 
 from app.utilities.authentication import get_current_user
 from app.database.database_connector import database
@@ -19,6 +20,10 @@ router = APIRouter(
 @router.get("/me", response_model=FullUser)
 async def get_users_me(current_user: FullUser = Depends(get_current_user)):
     return current_user
+
+@router.get("/me/assets", response_model=List[Asset])
+async def get_me_assets(current_user: User = Depends(get_current_user)):
+    return await get_user_assets(current_user["token"])
 
 @router.post("", response_model=FullUser)
 @router.post("/", response_model=FullUser, include_in_schema=False)
@@ -46,3 +51,10 @@ async def get_user(user: str):
     if (user == None):
         raise HTTPException(status_code=404, detail="User not found.")
     return user
+
+@router.get("/{user}/assets", response_model=List[Asset])
+async def get_user_assets(user: str):
+    query = assets.select()
+    query = query.where(assets.c.owner == user)
+    assetlist = jsonable_encoder(await database.fetch_all(query))
+    return assetlist
