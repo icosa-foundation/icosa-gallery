@@ -1,4 +1,5 @@
 import sqlalchemy
+import sqlalchemy.dialects.postgresql
 
 metadata = sqlalchemy.MetaData()
 
@@ -12,10 +13,10 @@ users = sqlalchemy.Table("users",
     sqlalchemy.Column("description", sqlalchemy.TEXT),
 )
 
-models = sqlalchemy.Table("models",
+assets = sqlalchemy.Table("assets",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
     sqlalchemy.Column("token", sqlalchemy.VARCHAR(32), nullable=False),
-    sqlalchemy.Column("data", sqlalchemy.Binary, nullable=False),
-    sqlalchemy.Column("owner", sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"), nullable=False)
+    sqlalchemy.Column("owner", sqlalchemy.VARCHAR(32), sqlalchemy.ForeignKey("users.id"), nullable=False),
+    sqlalchemy.Column("data", sqlalchemy.dialects.postgresql.JSONB, nullable=False),
 )
