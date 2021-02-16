@@ -3,5 +3,7 @@
     "dbpassword" : "password",
     "dblocation" : "address",
     "secret_key" : "key",
+    "gcloud_bucket_name" : "name",
+    "service_account_data" : "path/to/data.json",
     "poly_api_key" : "string"
 }
