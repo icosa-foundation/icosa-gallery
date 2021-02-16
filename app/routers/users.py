@@ -5,8 +5,6 @@ import json
 import bcrypt
 import secrets
 
-# with open("config.json") as config_file:
-#     data = json.load(config_file)
 from app.utilities.schema_models import User, FullUser, NewUser
 from app.database.database_schema import users
 
@@ -35,7 +33,6 @@ async def create_user(user: NewUser):
         raise HTTPException(status_code=409, detail="User exists.")
     query = users.insert(None).values(email=user.email, password=hashedpw, token=token, displayname=user.displayName)
     user_data = jsonable_encoder(await database.execute(query))
-    print(user_data)
     query = users.select()
     query = query.where(users.c.id == user_data)
     newuser = await database.fetch_one(query)

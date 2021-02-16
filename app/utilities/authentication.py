@@ -55,7 +55,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     query = users.select()
     query = query.where(users.c.email == username)
-    user = jsonable_encoder(await database.fetch_one(query))
+    user = await database.fetch_one(query)
     if user is None:
         raise credentials_exception
     return user

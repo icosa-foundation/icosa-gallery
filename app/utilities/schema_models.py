@@ -21,11 +21,14 @@ class User(BaseModel):
     displayname: str
     description: Optional[str] = None
 
-class ModelData(BaseModel):
+class AssetData(BaseModel):
     token: str
+    name: str
+    description: Optional[str] = None
+    url: str
 
-class Model(BaseModel):
+class Asset(BaseModel):
     id: int
     token: str
-    data: ModelData
+    data: AssetData
     owner: int
