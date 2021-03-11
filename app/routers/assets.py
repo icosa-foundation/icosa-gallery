@@ -7,6 +7,7 @@ from app.utilities.schema_models import Asset, AssetData, User, FullUser
 from app.database.database_schema import assets
 
 from app.utilities.authentication import get_current_user
+from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
 from app.storage.storage import upload_file_gcs
 
@@ -45,10 +46,11 @@ async def upload_tilt_asset(current_user: User = Depends(get_current_user), file
         #Generate asset object  
         url = f'https://storage.cloud.google.com/{data["gcloud_bucket_name"]}/{model_path}'
         assetinfo={"token" : assettoken, "name": name, "url": url}
+        snowflake = generate_snowflake()
         print(assetinfo)
-        query = assets.insert(None).values(token=assettoken, owner = current_user["token"], data=assetinfo)
+        query = assets.insert(None).values(id=snowflake, token=assettoken, owner = current_user["token"], data=assetinfo)
         asset_data = jsonable_encoder(await database.execute(query))
         query = assets.select()
-        query = query.where(assets.c.id == asset_data)
+        query = query.where(assets.c.id == snowflake)
         newasset = await database.fetch_one(query)
         return newasset

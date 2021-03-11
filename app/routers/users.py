@@ -10,6 +10,7 @@ from app.utilities.schema_models import User, FullUser, NewUser, Asset
 from app.database.database_schema import users, assets
 
 from app.utilities.authentication import get_current_user
+from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
 
 router = APIRouter(
@@ -36,10 +37,11 @@ async def create_user(user: NewUser):
     user_check = jsonable_encoder(await database.fetch_one(query))
     if (user_check != None):
         raise HTTPException(status_code=409, detail="User exists.")
-    query = users.insert(None).values(email=user.email, password=hashedpw, token=token, displayname=user.displayName)
+    snowflake = generate_snowflake()
+    query = users.insert(None).values(id=snowflake, email=user.email, password=hashedpw, token=token, displayname=user.displayName)
     user_data = jsonable_encoder(await database.execute(query))
     query = users.select()
-    query = query.where(users.c.id == user_data)
+    query = query.where(users.c.id == snowflake)
     newuser = await database.fetch_one(query)
     return newuser
 
