@@ -11,15 +11,16 @@ class NewUser(BaseModel):
     displayName: str
 
 class FullUser(BaseModel):
-    token: str
+    id: str
+    url: str
     email: EmailStr
     displayname: str
-    description: Optional[str] = None
+    description: Optional[str]
 
 class User(BaseModel):
-    token: str
+    url: str
     displayname: str
-    description: Optional[str] = None
+    description: Optional[str]
 
 class AssetFormat(BaseModel):
     id: str
