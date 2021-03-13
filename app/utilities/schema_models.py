@@ -21,17 +21,19 @@ class User(BaseModel):
     displayname: str
     description: Optional[str] = None
 
-class AssetData(BaseModel):
-    token: str
-    name: str
-    description: Optional[str] = None
+class AssetFormat(BaseModel):
+    id: str
     url: str
+    format: str
 
 class Asset(BaseModel):
-    id: int
-    token: str
+    id: str
+    url: Optional[str]
+    name: str
     owner: str
-    data: AssetData
+    description: Optional[str]
+    formats: List[AssetFormat]
+
 # Poly helpers
 class PolyResource(BaseModel):
     relativePath: str
