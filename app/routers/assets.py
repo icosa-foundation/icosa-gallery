@@ -6,6 +6,8 @@ import secrets
 from app.utilities.schema_models import Asset, AssetFormat, User, FullUser
 from app.database.database_schema import assets
 
+from app.routers.users import get_user_assets
+
 from app.utilities.authentication import get_current_user
 from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
@@ -29,15 +31,13 @@ async def get_id_asset(asset: int):
         raise HTTPException(status_code=404, detail="Asset not found.")
     return asset
 
-@router.get("/{asset}", response_model=Asset)
-async def get_asset(asset: str):
-    query = assets.select()
-    query = query.where(assets.c.url == asset)
-    asset = await database.fetch_one(query)
-    print(asset)
-    if (asset == None):
-        raise HTTPException(status_code=404, detail="Asset not found.")
-    return asset
+@router.get("/{userurl}/{asseturl}", response_model=Asset)
+async def get_asset(userurl: str, asseturl: str):
+    userassets = await(get_user_assets(userurl))
+    for asset in userassets:
+        if (asset["url"] == asseturl):
+            return asset
+    raise HTTPException(status_code=404, detail="Asset not found.")
 
 @router.post("", response_model=Asset)
 @router.post("/", response_model=Asset, include_in_schema=False)
