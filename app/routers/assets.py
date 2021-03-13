@@ -47,16 +47,17 @@ async def upload_tilt_asset(current_user: User = Depends(get_current_user), file
     extension = splitnames[len(splitnames)-1]
     if (extension.lower() != "tilt"):
         return HTTPException(400, "Not a valid tilt file.")
-        
+
     name = splitnames[0]
     snowflake = generate_snowflake()
     model_path = f'{current_user["id"]}/{snowflake}/model.tilt'
     success = upload_file_gcs(file.file, model_path)
     if (success):
         #Generate asset object  
+        assettoken = secrets.token_urlsafe(8)
         url = f'https://storage.cloud.google.com/{data["gcloud_bucket_name"]}/{model_path}'
         assetinfo={"id" : snowflake, "url" : url, "format" : "TILT"}
-        query = assets.insert(None).values(id=snowflake, name=name, owner = current_user["id"], formats=[assetinfo])
+        query = assets.insert(None).values(id=snowflake, url=assettoken, name=name, owner = current_user["id"], formats=[assetinfo])
         asset_data = jsonable_encoder(await database.execute(query))
         query = assets.select()
         query = query.where(assets.c.id == snowflake)

@@ -1,7 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
-from urllib.parse import quote
 import requests
 import json
 import bcrypt
@@ -38,7 +37,8 @@ async def create_user(user: NewUser):
     if (user_check != None):
         raise HTTPException(status_code=409, detail="User exists.")
     snowflake = generate_snowflake()
-    query = users.insert(None).values(id=snowflake, url=quote(user.displayName), email=user.email, password=hashedpw, displayname=user.displayName)
+    assettoken = secrets.token_urlsafe(8)
+    query = users.insert(None).values(id=snowflake, url=assettoken, email=user.email, password=hashedpw, displayname=user.displayName)
     user_data = jsonable_encoder(await database.execute(query))
     query = users.select()
     query = query.where(users.c.id == snowflake)
