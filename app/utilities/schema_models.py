@@ -75,7 +75,7 @@ class PolyAsset(BaseModel):
     thumbnail: PolyResource
     licence: Optional[str]
     visibility: str
-    isCurated: bool
+    isCurated: Optional[bool]
     presentationParams: PolyPresentationParams
     metadata: Optional[str]
     remixInfo: Optional[PolyRemixInfo]
