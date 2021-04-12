@@ -34,6 +34,16 @@ class Asset(BaseModel):
     owner: str
     description: Optional[str]
     formats: List[AssetFormat]
+class PasswordReset(BaseModel):
+    email: str
+
+class PasswordChangeToken(BaseModel):
+    token: str
+    newPassword: str
+
+class PasswordChangeAuthenticated(BaseModel):
+    oldPassword: str
+    newPassword: str
 
 # Poly helpers
 class PolyResource(BaseModel):

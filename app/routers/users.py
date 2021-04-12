@@ -6,10 +6,10 @@ import json
 import bcrypt
 import secrets
 
-from app.utilities.schema_models import User, FullUser, NewUser, Asset
+from app.utilities.schema_models import User, FullUser, NewUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated
 from app.database.database_schema import users, assets
 
-from app.utilities.authentication import get_current_user
+from app.utilities.authentication import get_current_user, password_reset_request, authenticate_user
 from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
 
@@ -26,16 +26,29 @@ async def get_users_me(current_user: FullUser = Depends(get_current_user)):
 async def get_me_assets(current_user: User = Depends(get_current_user)):
     return await get_id_user_assets(current_user["id"])
 
+@router.patch("/me/password")
+async def change_authenticated_user_password(passwordData: PasswordChangeAuthenticated, current_user: FullUser = Depends(get_current_user)):
+    user = await authenticate_user(current_user["email"], passwordData.oldPassword)
+    if not user:
+        raise HTTPException(status_code=401, detail="Incorrect Password.")
+    salt = bcrypt.gensalt(10)
+    newPasswordHashed = bcrypt.hashpw(passwordData.newPassword.encode(), salt)
+    query = users.update(None)
+    query = query.where(users.c.id == user["id"])
+    query = query.values(password=newPasswordHashed)
+    await database.execute(query)
+
+
 @router.post("", response_model=FullUser)
 @router.post("/", response_model=FullUser, include_in_schema=False)
 async def create_user(user: NewUser):
-    salt = bcrypt.gensalt(10)
-    hashedpw = bcrypt.hashpw(user.password.encode(), salt)
     query = users.select()
     query = query.where(users.c.email == user.email)
     user_check = jsonable_encoder(await database.fetch_one(query))
     if (user_check != None):
         raise HTTPException(status_code=409, detail="User exists.")
+    salt = bcrypt.gensalt(10)
+    hashedpw = bcrypt.hashpw(user.password.encode(), salt)
     snowflake = generate_snowflake()
     assettoken = secrets.token_urlsafe(8)
     query = users.insert(None).values(id=snowflake, url=assettoken, email=user.email, password=hashedpw, displayname=user.displayName)
@@ -44,6 +57,22 @@ async def create_user(user: NewUser):
     query = query.where(users.c.id == snowflake)
     newuser = await database.fetch_one(query)
     return newuser
+
+@router.put("/password/reset", status_code=202)
+async def user_password_reset_request(email: PasswordReset):
+    return await password_reset_request(email.email)
+    
+@router.patch("/password")
+async def change_password_via_token(resetData: PasswordChangeToken):
+    user = await get_current_user(token=resetData.token)
+    if (user != None):
+        salt = bcrypt.gensalt(10)
+        newPasswordHashed = bcrypt.hashpw(resetData.newPassword.encode(), salt)
+        query = users.update(None)
+        query = query.where(users.c.id == user["id"])
+        query = query.values(password=newPasswordHashed)
+        await database.execute(query)
+    return
 
 @router.get("/id/{user}", response_model=User)
 async def get_user(user: int):

@@ -9,6 +9,8 @@ import jwt
 import sqlalchemy
 import bcrypt
 from passlib.context import CryptContext
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email, Personalization, Substitution
 
 from app.database.database_connector import database
 from app.database.database_schema import users
@@ -21,6 +23,17 @@ with open("config.json") as config_file:
 
 SECRET_KEY = data["secret_key"]
 ALGORITHM = "HS256"
+
+RESET_TOKEN_EXPIRE_MINUTES = 60
+
+SENDGRID = data["sendgrid"]
+SENDGRID_API_KEY = SENDGRID["api_key"]
+SENDGRID_DOMAIN = SENDGRID["domain"]
+SENDGRID_SEND_USER = SENDGRID["send_user"]
+SENDGRID_RESET_TEMPLATE = SENDGRID["reset_password_template"]
+
+sendgrid = SendGridAPIClient(SENDGRID_API_KEY)
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
@@ -59,3 +72,23 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if user is None:
         raise credentials_exception
     return user
+
+async def password_reset_request(email: str):
+    query = users.select()
+    query = query.where(users.c.email == email)
+    user = await database.fetch_one(query)
+    if(user == None):
+        return
+    reset_token_timer = timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
+    reset_token = create_access_token(data={"sub": user["email"]}, expires_delta=reset_token_timer)
+    user_name = user["displayname"]
+    message = Mail(from_email=SENDGRID_SEND_USER, to_emails= user["email"])
+    message.dynamic_template_data = {"USER_NAME": user_name, "PASSWORD_RESET_TOKEN": reset_token}
+    message.template_id = SENDGRID_RESET_TEMPLATE
+    try:
+        response = sendgrid.send(message)
+        print("OK")
+    except Exception as e:
+        print(e)
+        return
+    return
