@@ -22,6 +22,11 @@ class User(BaseModel):
     displayname: str
     description: Optional[str]
 
+class PatchUser(BaseModel):
+    url: Optional[str]
+    displayname: Optional[str]
+    description: Optional[str]
+
 class AssetFormat(BaseModel):
     id: str
     url: str

@@ -6,7 +6,7 @@ import json
 import bcrypt
 import secrets
 
-from app.utilities.schema_models import User, FullUser, NewUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated
+from app.utilities.schema_models import User, FullUser, NewUser, PatchUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated
 from app.database.database_schema import users, assets
 
 from app.utilities.authentication import get_current_user, password_reset_request, authenticate_user
@@ -21,6 +21,24 @@ router = APIRouter(
 @router.get("/me", response_model=FullUser)
 async def get_users_me(current_user: FullUser = Depends(get_current_user)):
     return current_user
+
+@router.patch("/me", response_model=FullUser)
+async def update_user(patch_user: PatchUser, current_user: FullUser = Depends(get_current_user)):
+    if patch_user.url != current_user["url"]:
+        dupequery = users.select()
+        dupequery = dupequery.where(users.c.url == patch_user.url)
+        test = await database.fetch_one(dupequery)
+        if test != None:
+            raise HTTPException(status_code=403, detail="this URL is already in use.")
+    user_data = FullUser(**current_user)
+    update_data = patch_user.dict(exclude_unset=True)
+    updated_user = user_data.copy(update=update_data)
+    updated_user.id = int(updated_user.id)
+    query = users.update(None)
+    query = query.where(users.c.id == current_user["id"])
+    query = query.values(updated_user.dict())
+    db_update = await database.execute(query);
+    return updated_user
 
 @router.get("/me/assets", response_model=List[Asset])
 async def get_me_assets(current_user: User = Depends(get_current_user)):
