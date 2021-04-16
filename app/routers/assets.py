@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from fastapi.encoders import jsonable_encoder
-import json
 import secrets
 
 from app.utilities.schema_models import Asset, AssetFormat, User, FullUser
@@ -12,9 +11,6 @@ from app.utilities.authentication import get_current_user
 from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
 from app.storage.storage import upload_file_gcs
-
-with open("config.json") as config_file:
-    data = json.load(config_file)
 
 router = APIRouter(
     prefix="/assets",
@@ -39,24 +35,32 @@ async def get_asset(userurl: str, asseturl: str):
             return asset
     raise HTTPException(status_code=404, detail="Asset not found.")
 
+def validate_file(file: UploadFile, extension: str):
+    #TODO: Proper validation that it's a tilt/open brush file
+
+    if (extension == "tilt"):
+        return "TILT"
+    if (extension == "glb"):
+        return "GLB"
+    raise HTTPException(400, f'Not a valid upload type: {extension}')
+
 @router.post("", response_model=Asset)
 @router.post("/", response_model=Asset, include_in_schema=False)
-async def upload_tilt_asset(current_user: User = Depends(get_current_user), file: UploadFile = File(...)):
-    #TODO: Proper validation that it's a tilt/open brush file
+async def upload_new_asset(current_user: User = Depends(get_current_user), file: UploadFile = File(...)):
     splitnames = file.filename.split(".")
-    extension = splitnames[len(splitnames)-1]
-    if (extension.lower() != "tilt"):
-        return HTTPException(400, "Not a valid tilt file.")
+    extension = splitnames[len(splitnames)-1].lower()
+
+    uploadType = validate_file(file, extension)
 
     name = splitnames[0]
     snowflake = generate_snowflake()
-    model_path = f'{current_user["id"]}/{snowflake}/model.tilt'
-    success = upload_file_gcs(file.file, model_path)
-    if (success):
+    model_path = f'{current_user["id"]}/{snowflake}/model.{extension}'
+    success_file_path = upload_file_gcs(file.file, model_path)
+    if (success_file_path):
         #Generate asset object  
         assettoken = secrets.token_urlsafe(8)
-        url = f'https://storage.cloud.google.com/{data["gcloud_bucket_name"]}/{model_path}'
-        assetinfo={"id" : snowflake, "url" : url, "format" : "TILT"}
+        url = success_file_path
+        assetinfo={"id" : snowflake, "url" : url, "format" : uploadType}
         query = assets.insert(None).values(id=snowflake, url=assettoken, name=name, owner = current_user["id"], formats=[assetinfo])
         asset_data = jsonable_encoder(await database.execute(query))
         query = assets.select()
