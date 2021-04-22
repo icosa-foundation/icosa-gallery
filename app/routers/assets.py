@@ -71,7 +71,11 @@ async def upload_new_asset(current_user: User = Depends(get_current_user), file:
 
 @router.get("", response_model=List[Asset])
 @router.get("/", response_model=List[Asset], include_in_schema=False)
-async def get_assets(curated: bool = False):
+async def get_assets(results: int = 20, page: int = 0, curated: bool = False):
+    results = min(results, 100)
     query = assets.select()
     query = query.order_by(assets.c.id.desc())
+    query = query.limit(results)
+    query = query.offset(page)
+    print(query)
     return await database.fetch_all(query)
