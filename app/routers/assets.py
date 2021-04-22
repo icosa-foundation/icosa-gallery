@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from fastapi.encoders import jsonable_encoder
 import secrets
@@ -67,3 +68,10 @@ async def upload_new_asset(current_user: User = Depends(get_current_user), file:
         query = query.where(assets.c.id == snowflake)
         newasset = await database.fetch_one(query)
         return newasset
+
+@router.get("", response_model=List[Asset])
+@router.get("/", response_model=List[Asset], include_in_schema=False)
+async def get_assets(curated: bool = False):
+    query = assets.select()
+    query = query.order_by(assets.c.id.desc())
+    return await database.fetch_all(query)
