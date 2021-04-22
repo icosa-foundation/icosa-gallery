@@ -6,7 +6,7 @@ import json
 import bcrypt
 import secrets
 
-from app.utilities.schema_models import User, FullUser, NewUser, PatchUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated
+from app.utilities.schema_models import User, FullUser, NewUser, PatchUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated, EmailChangeAuthenticated
 from app.database.database_schema import users, assets
 
 from app.utilities.authentication import get_current_user, password_reset_request, authenticate_user
@@ -54,6 +54,21 @@ async def change_authenticated_user_password(passwordData: PasswordChangeAuthent
     query = users.update(None)
     query = query.where(users.c.id == user["id"])
     query = query.values(password=newPasswordHashed)
+    await database.execute(query)
+
+@router.patch("/me/email")
+async def change_authenticated_user_email(emailData: EmailChangeAuthenticated, current_user: FullUser = Depends(get_current_user)):
+    user = await authenticate_user(current_user["email"], emailData.currentPassword)
+    if not user:
+        raise HTTPException(status_code=401, detail="Incorrect Password.")
+    query = users.select().where(users.c.email == emailData.newEmail)
+    already_exists = await database.fetch_one(query)
+    print(already_exists)
+    if(already_exists != None):
+        raise HTTPException(status_code=409, detail="Email exists.")
+    query = users.update(None)
+    query = query.where(users.c.id == user["id"])
+    query = query.values(email=emailData.newEmail)
     await database.execute(query)
 
 

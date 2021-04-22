@@ -50,6 +50,10 @@ class PasswordChangeAuthenticated(BaseModel):
     oldPassword: str
     newPassword: str
 
+class EmailChangeAuthenticated(BaseModel):
+    newEmail: str
+    currentPassword: str
+
 # Poly helpers
 class PolyResource(BaseModel):
     relativePath: str
