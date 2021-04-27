@@ -80,6 +80,24 @@ async def upload_new_asset(current_user: User = Depends(get_current_user), file:
         query = query.where(assets.c.id == snowflake)
         newasset = await database.fetch_one(query)
         return newasset
+    
+@router.patch("/{asset}/publish")
+async def publish_asset(asset: int, unlisted: bool = False, current_user: User = Depends(get_current_user), thumbnail: UploadFile = File(None)):
+    check_asset = await get_id_asset(asset, current_user)
+    visibility = "UNLISTED" if unlisted else "PUBLIC"
+    query = assets.update()
+    query = query.where(assets.c.id == asset)
+    query = query.values(visibility = visibility)
+    await database.execute(query)
+
+@router.patch("/{asset}/unpublish")
+async def unpublish_asset(asset: int, current_user: User = Depends(get_current_user)):
+    check_asset = await get_id_asset(asset, current_user)
+    query = assets.update()
+    query = query.where(assets.c.id == asset)
+    query = query.values(visibility = "PRIVATE")
+    await database.execute(query)
+
 
 @router.get("", response_model=List[Asset])
 @router.get("/", response_model=List[Asset], include_in_schema=False)
