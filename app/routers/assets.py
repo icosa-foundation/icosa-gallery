@@ -42,7 +42,7 @@ def validate_file(file: UploadFile, extension: str):
     if (extension == "tilt"):
         return "TILT"
     if (extension == "glb"):
-        return "GLB"
+        return "GLTF2"
     raise HTTPException(400, f'Not a valid upload type: {extension}')
 
 @router.post("", response_model=Asset)
