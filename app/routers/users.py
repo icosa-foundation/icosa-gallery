@@ -7,9 +7,9 @@ import bcrypt
 import secrets
 
 from app.utilities.schema_models import User, FullUser, NewUser, PatchUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated, EmailChangeAuthenticated
-from app.database.database_schema import users, assets
+from app.database.database_schema import users, expandedassets
 
-from app.utilities.authentication import get_current_user, password_reset_request, authenticate_user
+from app.utilities.authentication import get_current_user, get_optional_user, password_reset_request, authenticate_user
 from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
 
@@ -42,7 +42,7 @@ async def update_user(patch_user: PatchUser, current_user: FullUser = Depends(ge
 
 @router.get("/me/assets", response_model=List[Asset])
 async def get_me_assets(current_user: User = Depends(get_current_user)):
-    return await get_id_user_assets(current_user["id"])
+    return await get_id_user_assets(current_user["id"], current_user)
 
 @router.patch("/me/password")
 async def change_authenticated_user_password(passwordData: PasswordChangeAuthenticated, current_user: FullUser = Depends(get_current_user)):
@@ -117,9 +117,11 @@ async def get_user(user: int):
     return user
 
 @router.get("/id/{user}/assets", response_model=List[Asset])
-async def get_id_user_assets(user: int):
-    query = assets.select()
-    query = query.where(assets.c.owner == user)
+async def get_id_user_assets(user: int, current_user: User = Depends(get_optional_user)):
+    query = expandedassets.select()
+    if (current_user is None) or (current_user["id"] != user):
+        query = query.where(expandedassets.c.visibility == "PUBLIC")
+    query = query.where(expandedassets.c.owner == user)
     assetlist = jsonable_encoder(await database.fetch_all(query))
     return assetlist
 
@@ -133,9 +135,6 @@ async def get_user(user: str):
     return user
 
 @router.get("/{user}/assets", response_model=List[Asset])
-async def get_user_assets(user: str):
+async def get_user_assets(user: str, current_user: User = Depends(get_optional_user)):
     userdata = await get_user(user)
-    query = assets.select()
-    query = query.where(assets.c.owner == userdata["id"])
-    assetlist = jsonable_encoder(await database.fetch_all(query))
-    return assetlist
+    return await get_id_user_assets(userdata["id"], current_user)

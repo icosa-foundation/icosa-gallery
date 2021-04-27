@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from fastapi.encoders import jsonable_encoder
 import secrets
 
-from app.utilities.schema_models import Asset, AssetFormat, User, FullUser
-from app.database.database_schema import assets
+from app.utilities.schema_models import Asset, _DBAsset, AssetFormat, User, FullUser
+from app.database.database_schema import assets, expandedassets
 
 from app.routers.users import get_user_assets
 
-from app.utilities.authentication import get_current_user
+from app.utilities.authentication import get_current_user, get_optional_user
 from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
 from app.storage.storage import upload_file_gcs
@@ -18,21 +18,33 @@ router = APIRouter(
     tags=["Assets"]
     )
 
+ASSET_NOT_FOUND = HTTPException(status_code=404, detail="Asset not found.")
+
+
 @router.get("/id/{asset}", response_model=Asset)
-async def get_id_asset(asset: int):
-    query = assets.select()
-    query = query.where(assets.c.id == asset)
+async def get_id_asset(asset: int, current_user: User = Depends(get_optional_user)):
+
+    query = expandedassets.select()
+    query = query.where(expandedassets.c.id == asset)
     asset = await database.fetch_one(query)
-    print(asset)
-    if (asset == None):
-        raise HTTPException(status_code=404, detail="Asset not found.")
+    if asset == None:
+        raise ASSET_NOT_FOUND
+    if asset["visibility"] == "PRIVATE":
+        if(current_user == None or current_user["id"] != asset["owner"]):
+            raise ASSET_NOT_FOUND
     return asset
 
-@router.get("/{userurl}/{asseturl}", response_model=Asset)
-async def get_asset(userurl: str, asseturl: str):
-    userassets = await(get_user_assets(userurl))
-    for asset in userassets:
+@router.get("/{userurl}/{asseturl}", response_model=_DBAsset)
+async def get_asset(userurl: str, asseturl: str, current_user: User = Depends(get_optional_user)):
+    userassets = await(get_user_assets(userurl, current_user))
+    query = expandedassets.select()
+    query = query.where(expandedassets.c.ownerurl == userurl)
+    assets = await database.fetch_all(query)
+    for asset in assets:
         if (asset["url"] == asseturl):
+            if asset["visibility"] == "PRIVATE":
+                if(current_user == None or current_user["id"] != asset["owner"]):
+                    raise ASSET_NOT_FOUND
             return asset
     raise HTTPException(status_code=404, detail="Asset not found.")
 
@@ -45,8 +57,8 @@ def validate_file(file: UploadFile, extension: str):
         return "GLTF2"
     raise HTTPException(400, f'Not a valid upload type: {extension}')
 
-@router.post("", response_model=Asset)
-@router.post("/", response_model=Asset, include_in_schema=False)
+@router.post("", response_model=_DBAsset)
+@router.post("/", response_model=_DBAsset, include_in_schema=False)
 async def upload_new_asset(current_user: User = Depends(get_current_user), file: UploadFile = File(...)):
     splitnames = file.filename.split(".")
     extension = splitnames[len(splitnames)-1].lower()
@@ -73,9 +85,9 @@ async def upload_new_asset(current_user: User = Depends(get_current_user), file:
 @router.get("/", response_model=List[Asset], include_in_schema=False)
 async def get_assets(results: int = 20, page: int = 0, curated: bool = False):
     results = min(results, 100)
-    query = assets.select()
-    query = query.order_by(assets.c.id.desc())
+    query = expandedassets.select()
+    query = query.where(expandedassets.c.visibility == "PUBLIC")
+    query = query.order_by(expandedassets.c.id.desc())
     query = query.limit(results)
     query = query.offset(page)
-    print(query)
     return await database.fetch_all(query)

@@ -32,13 +32,19 @@ class AssetFormat(BaseModel):
     url: str
     format: str
 
-class Asset(BaseModel):
+class _DBAsset(BaseModel):
     id: str
     url: Optional[str]
     name: str
     owner: str
     description: Optional[str]
     formats: List[AssetFormat]
+    visibility: str
+
+class Asset(_DBAsset):
+    ownername: str
+    ownerurl: str
+
 class PasswordReset(BaseModel):
     email: str
 

@@ -35,7 +35,7 @@ SENDGRID_RESET_TEMPLATE = SENDGRID["reset_password_template"]
 sendgrid = SendGridAPIClient(SENDGRID_API_KEY)
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login", auto_error=False)
 
 async def authenticate_user(username: str, password: str, response_model=User):
     query = users.select()
@@ -57,6 +57,12 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+async def get_optional_user(token: str = Depends(oauth2_scheme)):
+    if token is None:
+        return None
+    else:
+        return await get_current_user(token)
+
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(status_code=401, detail="Invalid Credentials", headers={"WWW-Authenticate": "Bearer"})
     try:
@@ -64,7 +70,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-    except PyJWTError:
+    except jwt.PyJWTError:
         raise credentials_exception
     query = users.select()
     query = query.where(users.c.email == username)
