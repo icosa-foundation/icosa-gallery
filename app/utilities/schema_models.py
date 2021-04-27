@@ -107,3 +107,5 @@ class PolyAsset(BaseModel):
 
 class PolyList(BaseModel):
     assets: List[PolyAsset]
+    nextPageToken: str
+    totalSize: int
