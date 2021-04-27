@@ -17,3 +17,15 @@ def upload_file_gcs(source_file, destination_blob_name):
     except:
         return False
     return f'https://storage.cloud.google.com/{data["gcloud_bucket_name"]}/{destination_blob_name}'
+
+def remove_file_gcs(file_blob):
+    """Removes a file from the bucket."""
+    storage_client = storage.Client.from_service_account_json(data["service_account_data"])
+    bucket = storage_client.bucket(data["gcloud_bucket_name"])
+    blob = bucket.blob(file_blob)
+    try:
+        blob.delete()
+    except Exception as e:
+        print(e)
+        return False
+    return True

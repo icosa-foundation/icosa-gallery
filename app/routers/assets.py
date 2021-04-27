@@ -11,7 +11,7 @@ from app.routers.users import get_user_assets
 from app.utilities.authentication import get_current_user, get_optional_user
 from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
-from app.storage.storage import upload_file_gcs
+from app.storage.storage import upload_file_gcs, remove_file_gcs
 
 router = APIRouter(
     prefix="/assets",
@@ -98,6 +98,20 @@ async def unpublish_asset(asset: int, current_user: User = Depends(get_current_u
     query = query.values(visibility = "PRIVATE")
     await database.execute(query)
 
+@router.delete("/{asset}")
+async def delete_asset(asset: int, current_user: User = Depends(get_current_user)):
+    check_asset = await get_id_asset(asset, current_user)
+    query = assets.delete()
+    query = query.where(assets.c.id == asset)
+    await database.execute(query)
+    for format_option in check_asset["formats"]:
+        filename = format_option["url"].split("/")[-1]
+        blob = f'{current_user["id"]}/{asset}/{filename}'
+        if not remove_file_gcs(blob):
+            print(f'Failed to remove blob {blob} at {format_option["url"]}')
+    return check_asset
+
+        
 
 @router.get("", response_model=List[Asset])
 @router.get("/", response_model=List[Asset], include_in_schema=False)
