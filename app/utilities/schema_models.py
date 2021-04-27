@@ -97,7 +97,7 @@ class PolyAsset(BaseModel):
     createTime: str
     updateTime: str
     formats: List[PolyFormat]
-    thumbnail: PolyResource
+    thumbnail: Optional[PolyResource]
     licence: Optional[str]
     visibility: str
     isCurated: Optional[bool]
