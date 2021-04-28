@@ -1,5 +1,6 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
+import re
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 import secrets
 
@@ -17,6 +18,9 @@ router = APIRouter(
     prefix="/assets",
     tags=["Assets"]
     )
+
+
+IMAGE_REGEX = re.compile('(jpe?g|tiff?|png|webp|bmp)')
 
 ASSET_NOT_FOUND = HTTPException(status_code=404, detail="Asset not found.")
 
@@ -49,37 +53,115 @@ async def get_asset(userurl: str, asseturl: str, current_user: User = Depends(ge
     raise HTTPException(status_code=404, detail="Asset not found.")
 
 def validate_file(file: UploadFile, extension: str):
-    #TODO: Proper validation that it's a tilt/open brush file
-
+    # Need to check if the resource is a main file or helper file.
+    # Return format is (file: UploadFile, extension: str, filetype: str, mainfile: bool)
+    # Ordered in most likely file types for 'performance'
     if (extension == "tilt"):
-        return "TILT"
+        return (file, extension, "TILT", True)
+
+    # GLTF/GLB/BIN
     if (extension == "glb"):
-        return "GLTF2"
-    raise HTTPException(400, f'Not a valid upload type: {extension}')
+        return (file, extension, "GLTF2", True)
 
-@router.post("", response_model=_DBAsset)
-@router.post("/", response_model=_DBAsset, include_in_schema=False)
-async def upload_new_asset(current_user: User = Depends(get_current_user), file: UploadFile = File(...)):
-    splitnames = file.filename.split(".")
-    extension = splitnames[len(splitnames)-1].lower()
+    if (extension == "gltf"):
+        #TODO: need extra checks here to determine if GLTF 1 or 2.
+        return (file, extension, "GLTF2", True)
+    if (extension == "bin"):
+        return (file, extension, "BIN", False)
 
-    uploadType = validate_file(file, extension)
+    # OBJ
+    if (extension == "obj"):
+        return (file, extension, "OBJ", True)
+    if (extension == "mtl"):
+        return (file, extension, "MTL", False)
 
-    name = splitnames[0]
-    snowflake = generate_snowflake()
-    model_path = f'{current_user["id"]}/{snowflake}/model.{extension}'
-    success_file_path = upload_file_gcs(file.file, model_path)
-    if (success_file_path):
-        #Generate asset object  
-        assettoken = secrets.token_urlsafe(8)
-        url = success_file_path
-        assetinfo={"id" : snowflake, "url" : url, "format" : uploadType}
-        query = assets.insert(None).values(id=snowflake, url=assettoken, name=name, owner = current_user["id"], formats=[assetinfo])
-        asset_data = jsonable_encoder(await database.execute(query))
-        query = assets.select()
-        query = query.where(assets.c.id == snowflake)
-        newasset = await database.fetch_one(query)
-        return newasset
+    # FBX
+    if (extension == "fbx"):
+        return (file, extension, "FBX", True)
+    if (extension == "fbm"):
+        return (file, extension, "FBM", False)
+    
+    # Images
+    if (IMAGE_REGEX.match(extension)):
+        return (file, extension, "IMAGE", False)
+    return None
+
+async def upload_background(current_user: User, files: List[UploadFile], job_snowflake: int):
+    if len(files) == 0:
+        raise HTTPException(422, "No files provided.")
+
+    # Loop on files provided and check types.
+    # We need to see one of: tilt, glb, gltf, obj, fbx
+    mainfile_details = []
+    subfile_details = []
+    name = ""
+    for file in files:
+        splitnames = file.filename.split(".")
+        extension = splitnames[-1].lower()
+        uploadDetails = validate_file(file, extension)
+        if uploadDetails:
+            if uploadDetails[3]:
+                mainfile_details.append(uploadDetails)
+                name = splitnames[0]
+            else:
+                subfile_details.append(uploadDetails)
+
+    if name == "":
+        raise HTTPException(415, "Not supplied with one of tilt, glb, gltf, obj, fbx.")
+
+    #begin upload process
+    assetsnowflake = job_snowflake
+    assettoken = secrets.token_urlsafe(8)
+    formats = []
+
+    for mainfile in mainfile_details:
+        # Main files determine folder
+        base_path = f'{current_user["id"]}/{assetsnowflake}/{mainfile[2]}/'
+        model_path = base_path + f'model.{mainfile[1]}'
+        model_uploaded_url = await upload_file_gcs(mainfile[0].file, model_path)
+
+        #Only bother processing extras if success
+        if (model_uploaded_url):
+            mainfile_snowflake = generate_snowflake()
+            extras = []
+
+            for subfile in subfile_details:
+                # Horrendous check for supposedly compatible subfiles. can definitely be improved with parsing, but is it necessary?
+                if  (mainfile[2] == "GLTF2" and (subfile[2] == "BIN" or subfile[2] == "IMAGE")) or \
+                    (mainfile[2] == "OBJ"   and (subfile[2] == "MTL" or subfile[2] == "IMAGE")) or \
+                    (mainfile[2] == "FBX"   and (subfile[2] == "FBM" or subfile[2] == "IMAGE")):
+                    subfile_path = base_path + f'{subfile[0].filename}'
+                    subfile_uploaded_url = await upload_file_gcs(subfile[0].file, subfile_path)
+                    if subfile_uploaded_url:
+                        subfile_snowflake = generate_snowflake()
+                        extras.append({"id" : subfile_snowflake, "url" : subfile_uploaded_url, "format" : subfile[2]})
+            if len(extras) > 0:
+                formats.append({"id" : mainfile_snowflake, "url" : model_uploaded_url, "format" : mainfile[2], "subfiles" : extras})
+            else:
+                formats.append({"id" : mainfile_snowflake, "url" : model_uploaded_url, "format" : mainfile[2]})
+    
+    # Add to database
+    if len(formats) == 0:
+            raise HTTPException(500, "Unable to upload any files.")
+    query = assets.insert(None).values(id=assetsnowflake, url=assettoken, name=name, owner = current_user["id"], formats=formats)
+    await database.execute(query)
+    query = assets.select()
+    query = query.where(assets.c.id == assetsnowflake)
+    newasset = jsonable_encoder(await database.fetch_one(query))
+    print("DONE")
+    print(newasset["id"])
+    print(newasset)
+    return newasset
+
+@router.post("", status_code=202)
+@router.post("/", status_code=202, include_in_schema=False)
+async def upload_new_assets(background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user), files: List[UploadFile] = File(...)):
+    if len(files) == 0:
+        raise HTTPException(422, "No files provided.")
+    job_snowflake = generate_snowflake()
+    background_tasks.add_task(upload_background, current_user, files, job_snowflake)
+    return { "upload_job" : job_snowflake }
+
     
 @router.patch("/{asset}/publish")
 async def publish_asset(asset: int, unlisted: bool = False, current_user: User = Depends(get_current_user), thumbnail: UploadFile = File(None)):
@@ -107,7 +189,7 @@ async def delete_asset(asset: int, current_user: User = Depends(get_current_user
     for format_option in check_asset["formats"]:
         filename = format_option["url"].split("/")[-1]
         blob = f'{current_user["id"]}/{asset}/{filename}'
-        if not remove_file_gcs(blob):
+        if not (await remove_file_gcs(blob)):
             print(f'Failed to remove blob {blob} at {format_option["url"]}')
     return check_asset
 

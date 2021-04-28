@@ -1,5 +1,6 @@
 import json
 import sqlalchemy
+from sqlalchemy.pool import QueuePool
 from databases import Database
 
 with open("config.json") as config_file:
@@ -11,5 +12,5 @@ database = Database(DATABASE_URL)
 
 metadata = sqlalchemy.MetaData()
 
-engine = sqlalchemy.create_engine(DATABASE_URL, connect_args={})
+engine = sqlalchemy.create_engine(DATABASE_URL, pool_size=20, poolclass=QueuePool)
 metadata.create_all(engine)

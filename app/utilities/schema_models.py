@@ -27,10 +27,16 @@ class PatchUser(BaseModel):
     displayname: Optional[str]
     description: Optional[str]
 
+class SubAssetFormat(BaseModel):
+    id: str
+    url: str
+    format: str
+
 class AssetFormat(BaseModel):
     id: str
     url: str
     format: str
+    subfiles: Optional[List[SubAssetFormat]]
 
 class _DBAsset(BaseModel):
     id: str
