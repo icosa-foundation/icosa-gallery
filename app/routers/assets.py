@@ -121,5 +121,5 @@ async def get_assets(results: int = 20, page: int = 0, curated: bool = False):
     query = query.where(expandedassets.c.visibility == "PUBLIC")
     query = query.order_by(expandedassets.c.id.desc())
     query = query.limit(results)
-    query = query.offset(page)
+    query = query.offset(page * results)
     return await database.fetch_all(query)
