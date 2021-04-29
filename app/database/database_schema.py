@@ -24,7 +24,8 @@ assets = sqlalchemy.Table("assets",
     sqlalchemy.Column("visibility", sqlalchemy.VARCHAR(255), nullable=False),
     sqlalchemy.Column("curated", sqlalchemy.BOOLEAN),
     sqlalchemy.Column("polyid", sqlalchemy.VARCHAR(255)),
-    sqlalchemy.Column("polydata", sqlalchemy.dialects.postgresql.JSONB)
+    sqlalchemy.Column("polydata", sqlalchemy.dialects.postgresql.JSONB),
+    sqlalchemy.Column("thumbnail", sqlalchemy.TEXT),
 )
 
 expandedassets = sqlalchemy.Table("expandedassets",
@@ -40,5 +41,6 @@ expandedassets = sqlalchemy.Table("expandedassets",
     sqlalchemy.Column("visibility", sqlalchemy.VARCHAR(255)),
     sqlalchemy.Column("curated", sqlalchemy.BOOLEAN),
     sqlalchemy.Column("polyid", sqlalchemy.VARCHAR(255)),
-    sqlalchemy.Column("polydata", sqlalchemy.dialects.postgresql.JSONB)
+    sqlalchemy.Column("polydata", sqlalchemy.dialects.postgresql.JSONB),
+    sqlalchemy.Column("thumbnail", sqlalchemy.TEXT),
 )
