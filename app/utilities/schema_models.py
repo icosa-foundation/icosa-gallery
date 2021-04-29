@@ -100,6 +100,7 @@ class PolyAsset(BaseModel):
     name: str
     displayName: str
     authorName: str
+    description: Optional[str]
     createTime: str
     updateTime: str
     formats: List[PolyFormat]
