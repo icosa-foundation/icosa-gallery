@@ -160,7 +160,7 @@ async def upload_new_assets(background_tasks: BackgroundTasks, current_user: Use
         raise HTTPException(422, "No files provided.")
     job_snowflake = generate_snowflake()
     background_tasks.add_task(upload_background, current_user, files, job_snowflake)
-    return { "upload_job" : job_snowflake }
+    return { "upload_job" : str(job_snowflake) }
 
     
 @router.patch("/{asset}/publish")
