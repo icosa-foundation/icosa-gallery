@@ -38,7 +38,7 @@ async def get_id_asset(asset: int, current_user: User = Depends(get_optional_use
             raise ASSET_NOT_FOUND
     return asset
 
-@router.get("/{userurl}/{asseturl}", response_model=_DBAsset)
+@router.get("/{userurl}/{asseturl}", response_model=Asset)
 async def get_asset(userurl: str, asseturl: str, current_user: User = Depends(get_optional_user)):
     userassets = await(get_user_assets(userurl, current_user))
     query = expandedassets.select()
