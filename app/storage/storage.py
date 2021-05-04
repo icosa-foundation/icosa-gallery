@@ -18,7 +18,7 @@ async def upload_file_gcs(source_file, destination_blob_name):
     except Exception as e:
         print(e)
         return False
-    return f'https://storage.cloud.google.com/{data["gcloud_bucket_name"]}/{destination_blob_name}'
+    return f'https://storage.googleapis.com/{data["gcloud_bucket_name"]}/{destination_blob_name}'
 
 async def upload_url_gcs(source_url, destination_blob_name):
     """Uploads a file from a url the bucket."""
@@ -34,7 +34,7 @@ async def upload_url_gcs(source_url, destination_blob_name):
     except Exception as e:
         print(e)
         return False
-    return f'https://storage.cloud.google.com/{data["gcloud_bucket_name"]}/{destination_blob_name}'
+    return f'https://storage.googleapis.com/{data["gcloud_bucket_name"]}/{destination_blob_name}'
 
 async def remove_file_gcs(file_blob):
     """Removes a file from the bucket."""
