@@ -1,8 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
-import requests
-import json
 import bcrypt
 import secrets
 

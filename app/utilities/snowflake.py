@@ -1,6 +1,5 @@
 import datetime
 import os
-import time
 
 # Generates a 'unique' timestamp based on Twitter's Snowflake algorithm.
 # https://github.com/twitter-archive/snowflake/tree/snowflake-2010

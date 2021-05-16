@@ -1,20 +1,16 @@
 from typing import List
 import json
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
 import jwt
-import sqlalchemy
-import bcrypt
 from passlib.context import CryptContext
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Email, Personalization, Substitution
+from sendgrid.helpers.mail import Mail
 
 from app.database.database_connector import database
 from app.database.database_schema import users
-from app.utilities.schema_models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -37,7 +33,7 @@ sendgrid = SendGridAPIClient(SENDGRID_API_KEY)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login", auto_error=False)
 
-async def authenticate_user(username: str, password: str, response_model=User):
+async def authenticate_user(username: str, password: str):
     query = users.select()
     query = query.where(users.c.email == username)
     user = jsonable_encoder(await database.fetch_one(query))

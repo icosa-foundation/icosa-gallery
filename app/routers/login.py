@@ -1,11 +1,7 @@
-from typing import List
-from datetime import datetime, timedelta
+from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
-import sqlalchemy
-import bcrypt
+from fastapi.security import OAuth2PasswordRequestForm
 
 from app.utilities.schema_models import LoginToken
 import app.utilities.authentication as authentication

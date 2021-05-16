@@ -7,7 +7,7 @@ import secrets
 from app.database.database_connector import database
 from app.database.database_schema import assets
 
-from app.utilities.schema_models import PolyAsset, PolyList, _DBAsset, FullUser
+from app.utilities.schema_models import PolyAsset, PolyList, FullUser
 from app.utilities.authentication import get_current_user
 from app.utilities.snowflake import generate_snowflake
 from app.storage.storage import upload_url_gcs
