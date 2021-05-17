@@ -6,6 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.encoders import jsonable_encoder
 import jwt
 from passlib.context import CryptContext
+from sqlalchemy import or_
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
@@ -35,7 +36,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login", auto_error=False)
 
 async def authenticate_user(username: str, password: str):
     query = users.select()
-    query = query.where(users.c.email == username)
+    query = query.where(or_(users.c.url == username, users.c.email == username))
     user = jsonable_encoder(await database.fetch_one(query))
     if (user == None):
         return False
