@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 import bcrypt
 import secrets
+from sqlalchemy import or_
 
 from app.utilities.schema_models import User, FullUser, NewUser, PatchUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated, EmailChangeAuthenticated
 from app.database.database_schema import users, expandedassets
@@ -74,14 +75,17 @@ async def change_authenticated_user_email(emailData: EmailChangeAuthenticated, c
 @router.post("/", response_model=FullUser, include_in_schema=False)
 async def create_user(user: NewUser):
     query = users.select()
-    query = query.where(users.c.email == user.email)
+    query = query.where(or_(users.c.url == user.url, users.c.email == user.email))
+    print(query)
     user_check = jsonable_encoder(await database.fetch_one(query))
     if (user_check != None):
         raise HTTPException(status_code=409, detail="User exists.")
+    if(user.url != None and user.url.strip() == ""):
+        user.url = None
     salt = bcrypt.gensalt(10)
     hashedpw = bcrypt.hashpw(user.password.encode(), salt)
     snowflake = generate_snowflake()
-    assettoken = secrets.token_urlsafe(8)
+    assettoken = secrets.token_urlsafe(8) if user.url is None else user.url
     query = users.insert(None).values(id=snowflake, url=assettoken, email=user.email, password=hashedpw, displayname=user.displayName)
     user_data = jsonable_encoder(await database.execute(query))
     query = users.select()

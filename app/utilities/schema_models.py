@@ -7,6 +7,7 @@ class LoginToken(BaseModel):
 
 class NewUser(BaseModel):
     email: EmailStr
+    url: Optional[str]
     password: str
     displayName: str
 
