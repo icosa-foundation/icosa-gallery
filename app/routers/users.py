@@ -23,6 +23,8 @@ async def get_users_me(current_user: FullUser = Depends(get_current_user)):
 
 @router.patch("/me", response_model=FullUser)
 async def update_user(patch_user: PatchUser, current_user: FullUser = Depends(get_current_user)):
+    if(patch_user.url != None and patch_user.url.strip() == ""):
+        patch_user.url = current_user["url"]
     if patch_user.url != current_user["url"]:
         dupequery = users.select()
         dupequery = dupequery.where(users.c.url == patch_user.url)
