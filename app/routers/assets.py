@@ -164,7 +164,7 @@ async def upload_new_assets(background_tasks: BackgroundTasks, current_user: Use
 
     
 @router.patch("/{asset}", response_model=Asset)
-async def publish_asset(asset: int, data: AssetPatchData, current_user: User = Depends(get_current_user)):
+async def update_asset(asset: int, data: AssetPatchData, current_user: User = Depends(get_current_user)):
     current_asset = _DBAsset(**(await get_id_asset(asset, current_user)))
     update_data = data.dict(exclude_unset=True)
     updated_asset = current_asset.copy(update=update_data)
