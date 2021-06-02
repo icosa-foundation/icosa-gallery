@@ -38,7 +38,7 @@ async def update_user(patch_user: PatchUser, current_user: FullUser = Depends(ge
     query = users.update(None)
     query = query.where(users.c.id == current_user["id"])
     query = query.values(updated_user.dict())
-    db_update = await database.execute(query);
+    db_update = await database.execute(query)
     return updated_user
 
 @router.get("/me/assets", response_model=List[Asset])

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Backgro
 from fastapi.encoders import jsonable_encoder
 import secrets
 
-from app.utilities.schema_models import Asset, _DBAsset, AssetFormat, User, FullUser
+from app.utilities.schema_models import Asset, _DBAsset, AssetFormat, User, FullUser, AssetPatchData
 from app.database.database_schema import assets, expandedassets
 
 from app.routers.users import get_user_assets
@@ -163,14 +163,18 @@ async def upload_new_assets(background_tasks: BackgroundTasks, current_user: Use
     return { "upload_job" : str(job_snowflake) }
 
     
-@router.patch("/{asset}/publish")
-async def publish_asset(asset: int, unlisted: bool = False, current_user: User = Depends(get_current_user), thumbnail: UploadFile = File(None)):
-    check_asset = await get_id_asset(asset, current_user)
-    visibility = "UNLISTED" if unlisted else "PUBLIC"
-    query = assets.update()
-    query = query.where(assets.c.id == asset)
-    query = query.values(visibility = visibility)
+@router.patch("/{asset}", response_model=Asset)
+async def publish_asset(asset: int, data: AssetPatchData, current_user: User = Depends(get_current_user)):
+    current_asset = _DBAsset(**(await get_id_asset(asset, current_user)))
+    update_data = data.dict(exclude_unset=True)
+    updated_asset = current_asset.copy(update=update_data)
+    updated_asset.id = int(updated_asset.id)
+    updated_asset.owner = int(updated_asset.owner)
+    query = assets.update(None)
+    query = query.where(assets.c.id == updated_asset.id)
+    query = query.values(updated_asset.dict())
     await database.execute(query)
+    return await get_id_asset(asset, current_user)
 
 @router.patch("/{asset}/unpublish")
 async def unpublish_asset(asset: int, current_user: User = Depends(get_current_user)):

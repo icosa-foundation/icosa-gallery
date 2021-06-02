@@ -28,30 +28,6 @@ class PatchUser(BaseModel):
     displayname: Optional[str]
     description: Optional[str]
 
-class SubAssetFormat(BaseModel):
-    id: str
-    url: str
-    format: str
-
-class AssetFormat(BaseModel):
-    id: str
-    url: str
-    format: str
-    subfiles: Optional[List[SubAssetFormat]]
-
-class _DBAsset(BaseModel):
-    id: str
-    url: Optional[str]
-    name: str
-    owner: str
-    description: Optional[str]
-    formats: List[AssetFormat]
-    visibility: str
-
-class Asset(_DBAsset):
-    ownername: str
-    ownerurl: str
-
 class PasswordReset(BaseModel):
     email: str
 
@@ -117,3 +93,38 @@ class PolyList(BaseModel):
     assets: List[PolyAsset]
     nextPageToken: str
     totalSize: int
+
+# Asset data
+class SubAssetFormat(BaseModel):
+    id: str
+    url: str
+    format: str
+
+class AssetFormat(BaseModel):
+    id: str
+    url: str
+    format: str
+    subfiles: Optional[List[SubAssetFormat]]
+
+class _DBAsset(BaseModel):
+    id: str
+    url: Optional[str]
+    formats: List[AssetFormat]
+    name: str
+    description: Optional[str]
+    owner: str
+    visibility: str
+    curated: Optional[bool]
+    polyid: Optional[str]
+    polydata: Optional[PolyAsset]
+    thumbnail: Optional[str]
+
+class Asset(_DBAsset):
+    ownername: str
+    ownerurl: str
+
+class AssetPatchData(BaseModel):
+    name: Optional[str]
+    url: Optional[str]
+    description: Optional[str]
+    visibility: Optional[str]
