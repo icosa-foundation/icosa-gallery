@@ -11,6 +11,7 @@ from app.utilities.schema_models import PolyAsset, PolyList, FullUser
 from app.utilities.authentication import get_current_user
 from app.utilities.snowflake import generate_snowflake
 from app.storage.storage import upload_url_gcs
+from app.routers.users import get_me_assets
 
 with open("config.json") as config_file:
     data = json.load(config_file)
@@ -78,17 +79,25 @@ async def import_poly(asset_id: str, asset: PolyAsset, snowflake: int, current_u
     print(f'DONE: {snowflake}/{asset["displayName"]}')
 
 @router.post("/import")
-async def import_poly_data(assets: List[str], background_tasks: BackgroundTasks, current_user: FullUser = Depends(get_current_user)):
+async def import_poly_data(asset_ids: List[str], background_tasks: BackgroundTasks, current_user: FullUser = Depends(get_current_user)):
     foundassets = []
     failedassets = []
-    for asset in assets:
-        snowflake = generate_snowflake()
+
+    for asset in asset_ids:
+        query = assets.select()
+        query = query.where(assets.c.polyid == asset)
+        data = await database.fetch_one(query)
+        if data:
+            print(f'asset {asset} already in database.')
+            failedassets.append({"asset": asset, "reason" : "Asset already exists."})
+            continue
         try:
+            snowflake = generate_snowflake()
             polydata = await get_poly_asset(asset)
             if polydata:
                 background_tasks.add_task(import_poly, asset, polydata, snowflake, current_user)
                 foundassets.append({"asset" : asset, "upload_job" : str(snowflake)})
         except HTTPException as exception:
             print(f'error fetching {asset}: {exception}')
-            failedassets.append({"asset": asset})
+            failedassets.append({"asset": asset, "reason": "Failed to fetch asset."})
     return { "foundassets": foundassets, "failedassets": failedassets }
