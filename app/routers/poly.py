@@ -62,7 +62,7 @@ async def import_poly(asset_id: str, asset: PolyAsset, snowflake: int, current_u
                     if resource_upload_url:
                         resource_snowflake = generate_snowflake()
                         resources.append({"id": resource_snowflake, "url": resource_upload_url, "format": resource["contentType"]})
-            formats.append({"id": root_format_snowflake, "url": "url", "format": format["formatType"], "subfiles": resources})
+            formats.append({"id": root_format_snowflake, "url": format_upload_url, "format": format["formatType"], "subfiles": resources})
 
     if len(formats) == 0:
         raise HTTPException(500, "Unable to upload any files.")
