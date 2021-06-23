@@ -38,6 +38,12 @@ async def get_id_asset(asset: int, current_user: User = Depends(get_optional_use
             raise ASSET_NOT_FOUND
     return asset
 
+async def get_my_id_asset(asset: int, current_user: User = Depends(get_current_user)):
+    asset = await get_id_asset(asset, current_user)
+    if (current_user["id"] != asset["owner"]):
+        raise HTTPException(status_code=403, detail="Unauthorized user.")
+    return asset
+
 @router.get("/{userurl}/{asseturl}", response_model=Asset)
 async def get_asset(userurl: str, asseturl: str, current_user: User = Depends(get_optional_user)):
     userassets = await(get_user_assets(userurl, current_user))
@@ -165,7 +171,7 @@ async def upload_new_assets(background_tasks: BackgroundTasks, current_user: Use
     
 @router.patch("/{asset}", response_model=Asset)
 async def update_asset(asset: int, data: AssetPatchData, current_user: User = Depends(get_current_user)):
-    current_asset = _DBAsset(**(await get_id_asset(asset, current_user)))
+    current_asset = _DBAsset(**(await get_my_id_asset(asset, current_user)))
     update_data = data.dict(exclude_unset=True)
     updated_asset = current_asset.copy(update=update_data)
     updated_asset.id = int(updated_asset.id)
@@ -174,11 +180,11 @@ async def update_asset(asset: int, data: AssetPatchData, current_user: User = De
     query = query.where(assets.c.id == updated_asset.id)
     query = query.values(updated_asset.dict())
     await database.execute(query)
-    return await get_id_asset(asset, current_user)
+    return await get_my_id_asset(asset, current_user)
 
 @router.patch("/{asset}/unpublish")
 async def unpublish_asset(asset: int, current_user: User = Depends(get_current_user)):
-    check_asset = await get_id_asset(asset, current_user)
+    check_asset = await get_my_id_asset(asset, current_user)
     query = assets.update()
     query = query.where(assets.c.id == asset)
     query = query.values(visibility = "PRIVATE")
@@ -186,7 +192,7 @@ async def unpublish_asset(asset: int, current_user: User = Depends(get_current_u
 
 @router.delete("/{asset}")
 async def delete_asset(asset: int, current_user: User = Depends(get_current_user)):
-    check_asset = await get_id_asset(asset, current_user)
+    check_asset = await get_my_id_asset(asset, current_user)
     query = assets.delete()
     query = query.where(assets.c.id == asset)
     await database.execute(query)
