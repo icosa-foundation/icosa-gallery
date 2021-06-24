@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import re
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
@@ -168,10 +168,24 @@ async def upload_new_assets(background_tasks: BackgroundTasks, current_user: Use
     background_tasks.add_task(upload_background, current_user, files, job_snowflake)
     return { "upload_job" : str(job_snowflake) }
 
+async def upload_thumbnail_background(current_user: User, thumbnail: UploadFile, asset_id: int):
+    base_path = f'{current_user["id"]}/{asset_id}/'
+    upload_path = base_path + 'thumbnail'
+    thumbnail_uploaded_url = await upload_file_gcs(thumbnail.file, upload_path)
+
+    if thumbnail_uploaded_url:
+        query = assets.update(None).where(assets.c.id == asset_id).values(thumbnail=thumbnail_uploaded_url)
+        data = await database.execute(query)
+        if data:
+            print("upload thumbnail complete")
+
     
 @router.patch("/{asset}", response_model=Asset)
 async def update_asset(asset: int, data: AssetPatchData, current_user: User = Depends(get_current_user)):
+#async def update_asset(background_tasks: BackgroundTasks, asset: int, data: AssetPatchData, thumbnail: Optional[UploadFile] = File(None), current_user: User = Depends(get_current_user)):
     current_asset = _DBAsset(**(await get_my_id_asset(asset, current_user)))
+#    if thumbnail:
+#        background_tasks.add_task(upload_thumbnail_background, current_user, thumbnail, asset)
     update_data = data.dict(exclude_unset=True)
     updated_asset = current_asset.copy(update=update_data)
     updated_asset.id = int(updated_asset.id)
