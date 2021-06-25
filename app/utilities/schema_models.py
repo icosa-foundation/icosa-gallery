@@ -66,9 +66,9 @@ class PolyQuaternion(BaseModel):
     w: Optional[float]
 
 class PolyPresentationParams(BaseModel):
-    orientingRotation: PolyQuaternion
-    colorSpace: str
-    backgroundColor: str
+    orientingRotation: Optional[PolyQuaternion]
+    colorSpace: Optional[str]
+    backgroundColor: Optional[str]
 
 class PolyRemixInfo(BaseModel):
     sourceAsset: List[str]
@@ -85,7 +85,7 @@ class PolyAsset(BaseModel):
     licence: Optional[str]
     visibility: str
     isCurated: Optional[bool]
-    presentationParams: PolyPresentationParams
+    presentationParams: Optional[PolyPresentationParams]
     metadata: Optional[str]
     remixInfo: Optional[PolyRemixInfo]
 
