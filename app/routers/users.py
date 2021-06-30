@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 import bcrypt
 import secrets
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from app.utilities.schema_models import User, FullUser, NewUser, PatchUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated, EmailChangeAuthenticated
 from app.database.database_schema import users, expandedassets
@@ -27,7 +27,7 @@ async def update_user(patch_user: PatchUser, current_user: FullUser = Depends(ge
         patch_user.url = current_user["url"]
     if patch_user.url != current_user["url"]:
         dupequery = users.select()
-        dupequery = dupequery.where(users.c.url == patch_user.url)
+        dupequery = dupequery.where(func.lower(users.c.url) == func.lower(patch_user.url))
         test = await database.fetch_one(dupequery)
         if test != None:
             raise HTTPException(status_code=403, detail="this URL is already in use.")
@@ -62,7 +62,8 @@ async def change_authenticated_user_email(emailData: EmailChangeAuthenticated, c
     user = await authenticate_user(current_user["email"], emailData.currentPassword)
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect Password.")
-    query = users.select().where(users.c.email == emailData.newEmail)
+    emailData.newEmail = emailData.newEmail.lower()
+    query = users.select().where(func.lower(users.c.email) == func.lower(emailData.newEmail))
     already_exists = await database.fetch_one(query)
     print(already_exists)
     if(already_exists != None):
@@ -77,8 +78,8 @@ async def change_authenticated_user_email(emailData: EmailChangeAuthenticated, c
 @router.post("/", response_model=FullUser, include_in_schema=False)
 async def create_user(user: NewUser):
     query = users.select()
-    query = query.where(or_(users.c.url == user.url, users.c.email == user.email))
-    print(query)
+    user.email = user.email.lower()
+    query = query.where(or_(func.lower(users.c.url) == func.lower(user.url), func.lower(users.c.email) == func.lower(user.email)))
     user_check = jsonable_encoder(await database.fetch_one(query))
     if (user_check != None):
         raise HTTPException(status_code=409, detail="User exists.")
