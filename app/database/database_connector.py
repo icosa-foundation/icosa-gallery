@@ -6,7 +6,9 @@ from databases import Database
 with open("config.json") as config_file:
     data = json.load(config_file)
 
-DATABASE_URL = "postgresql://"+data["dbuser"]+":" + data["dbpassword"] + "@" + data["dblocation"] + "/icosa"
+DATABASE_URL = "postgresql://" + \
+    data["dbuser"]+":" + data["dbpassword"] + "@" + \
+    data["dblocation"] + "/"+data["dbname"]
 
 database = Database(DATABASE_URL)
 

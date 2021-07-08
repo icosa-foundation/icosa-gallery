@@ -139,3 +139,9 @@ cython_debug/
 
 # User
 config.json
+.vscode/settings.json
+serviceaccount.json
+.env.dev
+.env.dev.db
+.env.prod
+.env.prod.db
