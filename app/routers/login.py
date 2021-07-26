@@ -10,7 +10,7 @@ router = APIRouter(
     prefix="/login",
     tags=["Login"])
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 43800
+ACCESS_TOKEN_EXPIRE_MINUTES = 131400
 
 @router.post("", response_model=LoginToken)
 @router.post("/", response_model=LoginToken, include_in_schema=False)
