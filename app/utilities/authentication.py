@@ -59,7 +59,10 @@ async def get_optional_user(token: str = Depends(oauth2_scheme)):
     if token is None:
         return None
     else:
-        return await get_current_user(token)
+        try:
+            return await get_current_user(token)
+        except:
+            return None
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(status_code=401, detail="Invalid Credentials", headers={"WWW-Authenticate": "Bearer"})
