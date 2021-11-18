@@ -12,7 +12,7 @@ from app.routers.users import get_user_assets
 from app.utilities.authentication import get_current_user, get_optional_user
 from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
-from app.storage.storage import upload_file_gcs, remove_file_gcs
+from app.storage.storage import upload_file_gcs, remove_folder_gcs
 
 router = APIRouter(
     prefix="/assets",
@@ -193,14 +193,15 @@ async def unpublish_asset(asset: int, current_user: User = Depends(get_current_u
 @router.delete("/{asset}")
 async def delete_asset(asset: int, current_user: User = Depends(get_current_user)):
     check_asset = await get_my_id_asset(asset, current_user)
+    # Database removal
     query = assets.delete()
     query = query.where(assets.c.id == asset)
     await database.execute(query)
-    for format_option in check_asset["formats"]:
-        filename = format_option["url"].split("/")[-1]
-        blob = f'{current_user["id"]}/{asset}/{filename}'
-        if not (await remove_file_gcs(blob)):
-            print(f'Failed to remove blob {blob} at {format_option["url"]}')
+    # Asset removal from storage
+    asset_folder = f'{current_user["id"]}/{asset}/'
+    if not (await remove_folder_gcs(asset_folder)):
+        print(f'Failed to remove asset {asset}')
+        raise HTTPException(status_code=500, detail=f'Failed to remove asset {asset}')
     return check_asset
 
         

@@ -47,3 +47,15 @@ async def remove_file_gcs(file_blob):
         print(e)
         return False
     return True
+
+async def remove_folder_gcs(folder_path):
+    """Remove entire folder from bucket."""
+    storage_client = storage.Client.from_service_account_json(data["service_account_data"])
+    blobs = storage_client.list_blobs(data["gcloud_bucket_name"], prefix=folder_path)
+    for blob in blobs:
+        try:
+            blob.delete()
+        except Exception as e:
+            print (e)
+            return False
+    return True
