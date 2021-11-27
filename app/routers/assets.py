@@ -212,6 +212,8 @@ async def get_assets(results: int = 20, page: int = 0, curated: bool = False):
     results = min(results, 100)
     query = expandedassets.select()
     query = query.where(expandedassets.c.visibility == "PUBLIC")
+    if (curated):
+        query = query.where(expandedassets.c.curated == True)
     query = query.order_by(expandedassets.c.id.desc())
     query = query.limit(results)
     query = query.offset(page * results)
