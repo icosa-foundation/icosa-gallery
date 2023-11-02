@@ -139,3 +139,5 @@ cython_debug/
 
 # User
 config.json
+.idea/*
+.DS_Store
