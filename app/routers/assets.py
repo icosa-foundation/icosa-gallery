@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import re
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
@@ -208,12 +208,30 @@ async def delete_asset(asset: int, current_user: User = Depends(get_current_user
 
 @router.get("", response_model=List[Asset])
 @router.get("/", response_model=List[Asset], include_in_schema=False)
-async def get_assets(results: int = 20, page: int = 0, curated: bool = False):
+async def get_assets(
+        results: int = 20,
+        page: int = 0,
+        curated: bool = False,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        ownername: Optional[str] = None
+):
     results = min(results, 100)
     query = expandedassets.select()
     query = query.where(expandedassets.c.visibility == "PUBLIC")
     if (curated):
         query = query.where(expandedassets.c.curated == True)
+
+    if name:
+        name_search = f"%{name}%"
+        query = query.where(expandedassets.c.name.ilike(name_search))
+    if description:
+        description_search = f"%{description}%"
+        query = query.where(expandedassets.c.description.ilike(description_search))
+    if ownername:
+        ownername_search = f"%{ownername}%"
+        query = query.where(expandedassets.c.ownername.ilike(ownername_search))
+
     query = query.order_by(expandedassets.c.id.desc())
     query = query.limit(results)
     query = query.offset(page * results)
