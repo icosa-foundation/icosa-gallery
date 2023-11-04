@@ -1,10 +1,10 @@
 from typing import List, Optional
 import re
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Depends, Form, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 import secrets
 
-from app.utilities.schema_models import Asset, _DBAsset, AssetFormat, User, FullUser, AssetPatchData
+from app.utilities.schema_models import Asset, _DBAsset, AssetFormat, User, FullUser
 from app.database.database_schema import assets, expandedassets
 
 from app.routers.users import get_user_assets
@@ -92,7 +92,7 @@ def validate_file(file: UploadFile, extension: str):
         return (file, extension, "IMAGE", False)
     return None
 
-async def upload_background(current_user: User, files: List[UploadFile], job_snowflake: int):
+async def upload_background(current_user: User, files: List[UploadFile], thumbnail: UploadFile, job_snowflake: int):
     if len(files) == 0:
         raise HTTPException(422, "No files provided.")
 
@@ -145,11 +145,20 @@ async def upload_background(current_user: User, files: List[UploadFile], job_sno
                 formats.append({"id" : mainfile_snowflake, "url" : model_uploaded_url, "format" : mainfile[2], "subfiles" : extras})
             else:
                 formats.append({"id" : mainfile_snowflake, "url" : model_uploaded_url, "format" : mainfile[2]})
-    
+
+    thumbnail_uploaded_url = None
+    if thumbnail:
+        extension = thumbnail.filename.split(".")[-1].lower()
+        thumbnail_upload_details = validate_file(file, extension)
+        if thumbnail_upload_details and thumbnail_upload_details[2] == "IMAGE":
+            thumbnail_path = base_path + 'thumbnail.png'
+            thumbnail_uploaded_url = await upload_file_gcs(thumbnail_upload_details.file, thumbnail_path)
+
     # Add to database
     if len(formats) == 0:
             raise HTTPException(500, "Unable to upload any files.")
-    query = assets.insert(None).values(id=assetsnowflake, url=assettoken, name=name, owner = current_user["id"], formats=formats)
+    query = assets.insert(None).values(id=assetsnowflake, url=assettoken, name=name, owner=current_user["id"],
+                                       formats=formats, thumbnail=thumbnail_uploaded_url)
     await database.execute(query)
     query = assets.select()
     query = query.where(assets.c.id == assetsnowflake)
@@ -158,6 +167,24 @@ async def upload_background(current_user: User, files: List[UploadFile], job_sno
     print(newasset["id"])
     print(newasset)
     return newasset
+
+async def upload_thumbnail_background(current_user: User, thumbnail: UploadFile, asset_id: int):
+
+    splitnames = thumbnail.filename.split(".")
+    extension = splitnames[-1].lower()
+    if not IMAGE_REGEX.match(extension):
+        raise HTTPException(415, "Thumbnail must be png or jpg")
+
+    base_path = f'{current_user["id"]}/{asset_id}/'
+    thumbnail_path = f'{base_path}thumbnail.{extension}'
+    thumbnail_uploaded_url = await upload_file_gcs(thumbnail.file, thumbnail_path)
+
+    if thumbnail_uploaded_url:
+        # Update database
+        query = assets.update(None)
+        query = query.where(assets.c.id == asset_id)
+        query = query.values(thumbnail=thumbnail_uploaded_url)
+        await database.execute(query)
 
 @router.post("", status_code=202)
 @router.post("/", status_code=202, include_in_schema=False)
@@ -168,11 +195,25 @@ async def upload_new_assets(background_tasks: BackgroundTasks, current_user: Use
     background_tasks.add_task(upload_background, current_user, files, job_snowflake)
     return { "upload_job" : str(job_snowflake) }
 
-    
+
 @router.patch("/{asset}", response_model=Asset)
-async def update_asset(asset: int, data: AssetPatchData, current_user: User = Depends(get_current_user)):
+async def update_asset(
+                   background_tasks: BackgroundTasks,
+                   asset: int,
+                   name: Optional[str] = None,
+                   url: Optional[str] = None,
+                   description: Optional[str] = None,
+                   visibility: Optional[str] = None,
+                   current_user: User = Depends(get_current_user),
+                   thumbnail: Optional[UploadFile] = File(None)):
+
     current_asset = _DBAsset(**(await get_my_id_asset(asset, current_user)))
-    update_data = data.dict(exclude_unset=True)
+    update_data = {k: v for k, v in {
+        "name": name,
+        "url": url,
+        "description": description,
+        "visibility": visibility
+    }.items() if v is not None}
     updated_asset = current_asset.copy(update=update_data)
     updated_asset.id = int(updated_asset.id)
     updated_asset.owner = int(updated_asset.owner)
@@ -180,6 +221,8 @@ async def update_asset(asset: int, data: AssetPatchData, current_user: User = De
     query = query.where(assets.c.id == updated_asset.id)
     query = query.values(updated_asset.dict())
     await database.execute(query)
+    if thumbnail:
+        background_tasks.add_task(upload_thumbnail_background, current_user, thumbnail, asset)
     return await get_my_id_asset(asset, current_user)
 
 @router.patch("/{asset}/unpublish")
