@@ -1,10 +1,10 @@
 from typing import List, Optional
 import re
-from fastapi import APIRouter, Depends, Form, HTTPException, File, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Depends, Form, HTTPException, File, Request, UploadFile, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 import secrets
 
-from app.utilities.schema_models import Asset, _DBAsset, AssetFormat, User, FullUser
+from app.utilities.schema_models import Asset, _DBAsset, AssetFormat, User, FullUser, AssetPatchData
 from app.database.database_schema import assets, expandedassets
 
 from app.routers.users import get_user_assets
@@ -199,21 +199,30 @@ async def upload_new_assets(background_tasks: BackgroundTasks, current_user: Use
 @router.patch("/{asset}", response_model=Asset)
 async def update_asset(
                    background_tasks: BackgroundTasks,
+                   request: Request,
                    asset: int,
-                   name: Optional[str] = None,
-                   url: Optional[str] = None,
-                   description: Optional[str] = None,
-                   visibility: Optional[str] = None,
+                   data: Optional[AssetPatchData] = None,
+                   name: Optional[str] = Form(None),
+                   url: Optional[str] = Form(None),
+                   description: Optional[str] = Form(None),
+                   visibility: Optional[str] = Form(None),
                    current_user: User = Depends(get_current_user),
                    thumbnail: Optional[UploadFile] = File(None)):
 
     current_asset = _DBAsset(**(await get_my_id_asset(asset, current_user)))
-    update_data = {k: v for k, v in {
-        "name": name,
-        "url": url,
-        "description": description,
-        "visibility": visibility
-    }.items() if v is not None}
+
+    if request.headers.get('content-type') == 'application/json':
+        update_data = data.dict(exclude_unset=True)
+    elif request.headers.get('content-type').startswith('multipart/form-data'):
+        update_data = {k: v for k, v in {
+            "name": name,
+            "url": url,
+            "description": description,
+            "visibility": visibility
+        }.items() if v is not None}
+    else:
+        raise HTTPException(status_code=415, detail="Unsupported content type.")
+
     updated_asset = current_asset.copy(update=update_data)
     updated_asset.id = int(updated_asset.id)
     updated_asset.owner = int(updated_asset.owner)

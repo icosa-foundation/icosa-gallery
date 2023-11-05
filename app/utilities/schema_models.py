@@ -122,3 +122,9 @@ class _DBAsset(BaseModel):
 class Asset(_DBAsset):
     ownername: str
     ownerurl: str
+
+class AssetPatchData(BaseModel):
+    name: Optional[str]
+    url: Optional[str]
+    description: Optional[str]
+    visibility: Optional[str]
