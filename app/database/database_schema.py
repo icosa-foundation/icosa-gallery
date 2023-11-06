@@ -44,3 +44,11 @@ expandedassets = sqlalchemy.Table("expandedassets",
     sqlalchemy.Column("polydata", sqlalchemy.dialects.postgresql.JSONB),
     sqlalchemy.Column("thumbnail", sqlalchemy.TEXT),
 )
+
+devicecodes = sqlalchemy.Table("devicecodes",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.BigInteger, primary_key=True, default=sqlalchemy.Sequence('devicecodes_id_seq')),
+    sqlalchemy.Column("user_id", sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id"), nullable=False, unique=True),
+    sqlalchemy.Column("devicecode", sqlalchemy.CHAR(6), nullable=False),
+    sqlalchemy.Column("expiry", sqlalchemy.TIMESTAMP, nullable=False),
+)

@@ -1,25 +1,61 @@
+import string
+from datetime import datetime, timedelta
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 import bcrypt
 import secrets
-from sqlalchemy import or_, func
 
-from app.utilities.schema_models import User, FullUser, NewUser, PatchUser, Asset, PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated, EmailChangeAuthenticated
-from app.database.database_schema import users, expandedassets
+from sqlalchemy import or_, func, delete, insert
 
-from app.utilities.authentication import get_current_user, get_optional_user, password_reset_request, authenticate_user
+from app.utilities.schema_models import User, FullUser, DeviceCode, NewUser, PatchUser, Asset, \
+    PasswordReset, PasswordChangeToken, PasswordChangeAuthenticated, EmailChangeAuthenticated
+from app.database.database_schema import users, expandedassets, devicecodes
+
+from app.utilities.authentication import get_current_user, get_optional_user, password_reset_request, \
+    authenticate_user
 from app.utilities.snowflake import generate_snowflake
 from app.database.database_connector import database
 
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
-    )
+)
+
+DEVICE_CODE_EXPIRE_MINUTES = 2
 
 @router.get("/me", response_model=FullUser)
 async def get_users_me(current_user: FullUser = Depends(get_current_user)):
     return current_user
+
+def generate_code(length=6):
+    characters = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(characters) for i in range(length)).lower()
+
+@router.get("/me/devicecode", response_model=DeviceCode)
+async def get_users_device_code(current_user: FullUser = Depends(get_current_user)):
+    if current_user is not None:
+        code = generate_code()
+        expiry_time = datetime.utcnow() + timedelta(minutes=1)
+
+        # Delete any other codes for this user
+        await database.execute(
+            delete(devicecodes).where(devicecodes.c.user_id == current_user["id"])
+        )
+        # Delete any expired codes
+        await database.execute(
+            delete(devicecodes).where(devicecodes.c.expiry < datetime.utcnow())
+        )
+        insert_statement = insert(devicecodes).values(
+            user_id=current_user["id"],
+            devicecode=code,
+            expiry=expiry_time
+        )
+        foo = await database.execute(insert_statement)
+        print(foo)
+
+        return {"deviceCode": code}
+    raise HTTPException(status_code=401, detail="Authenication failed.", headers={"WWW-Authenticate": "Bearer"})
 
 @router.patch("/me", response_model=FullUser)
 async def update_user(patch_user: PatchUser, current_user: FullUser = Depends(get_current_user)):

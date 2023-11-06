@@ -18,6 +18,9 @@ class FullUser(BaseModel):
     displayname: str
     description: Optional[str]
 
+class DeviceCode(BaseModel):
+    deviceCode: str
+
 class User(BaseModel):
     url: str
     displayname: str
