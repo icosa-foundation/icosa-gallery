@@ -28,11 +28,11 @@ DEVICE_CODE_EXPIRE_MINUTES = 2
 async def get_users_me(current_user: FullUser = Depends(get_current_user)):
     return current_user
 
-def generate_code(length=6):
+def generate_code(length=5):
     # Define a string of characters to exclude
     exclude = 'I1O0'
-    characters = ''.join(set(string.ascii_letters + string.digits) - set(exclude))
-    return ''.join(secrets.choice(characters) for i in range(length)).upper()
+    characters = ''.join(set(string.ascii_uppercase + string.digits) - set(exclude))
+    return ''.join(secrets.choice(characters) for i in range(length))
 
 @router.get("/me/devicecode", response_model=DeviceCode)
 async def get_users_device_code(current_user: FullUser = Depends(get_current_user)):
