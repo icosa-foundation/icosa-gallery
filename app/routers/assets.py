@@ -1,10 +1,12 @@
+import io
+import zipfile
 from typing import List, Optional
 import re
 from fastapi import APIRouter, Depends, Form, HTTPException, File, Request, UploadFile, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 import secrets
 
-from app.utilities.schema_models import Asset, _DBAsset, AssetFormat, User, FullUser, AssetPatchData
+from app.utilities.schema_models import Asset, _DBAsset, User, AssetPatchData
 from app.database.database_schema import assets, expandedassets
 
 from app.routers.users import get_user_assets
@@ -101,7 +103,32 @@ async def upload_background(current_user: User, files: List[UploadFile], thumbna
     mainfile_details = []
     subfile_details = []
     name = ""
+
+    processed_files = []
+
     for file in files:
+        # Handle thumbnail included in the zip
+        # How do we handle multiple thumbnails? Currently non-zip thumbnails take priority
+        if thumbnail is None and file.filename.lower() in ["thumbnail.png", "thumbnail.jpg"]:
+            thumbnail = file
+        elif file.filename.endswith('.zip'):
+            # Read the file as a ZIP file
+            with zipfile.ZipFile(io.BytesIO(await file.read())) as zip_file:
+                # Iterate over each file in the ZIP
+                for zip_info in zip_file.infolist():
+                    # Skip directories
+                    if zip_info.is_dir():
+                        continue
+                    # Read the file contents
+                    with zip_file.open(zip_info) as extracted_file:
+                        # Create a new UploadFile object
+                        content = extracted_file.read()
+                        processed_file = UploadFile(filename=zip_info.filename, file=io.BytesIO(content))
+                        processed_files.append(processed_file)
+        else:
+            processed_files.append(file)
+
+    for file in processed_files:
         splitnames = file.filename.split(".")
         extension = splitnames[-1].lower()
         uploadDetails = validate_file(file, extension)
@@ -192,7 +219,7 @@ async def upload_new_assets(background_tasks: BackgroundTasks, current_user: Use
     if len(files) == 0:
         raise HTTPException(422, "No files provided.")
     job_snowflake = generate_snowflake()
-    background_tasks.add_task(upload_background, current_user, files, job_snowflake)
+    background_tasks.add_task(upload_background, current_user, files, None, job_snowflake)
     return { "upload_job" : str(job_snowflake) }
 
 
