@@ -1,3 +1,5 @@
+import math
+
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from typing import List
 import requests
@@ -7,7 +9,7 @@ import secrets
 from app.database.database_connector import database
 from app.database.database_schema import assets
 
-from app.utilities.schema_models import PolyAsset, PolyList, FullUser
+from app.utilities.schema_models import PolyAsset, PolyPizzaAsset, PolyPizzaList, FullUser
 from app.utilities.authentication import get_current_user
 from app.utilities.snowflake import generate_snowflake
 from app.storage.storage import upload_url_gcs
@@ -21,22 +23,18 @@ router = APIRouter(
     tags=["Poly"]
     )
 
-@router.get("/assets", response_model=PolyList)
-async def get_poly_assets_list(results: int = 20, page: int = 0, curated: bool = False):
-    pageNext: str
-    r = requests.get(f'https://poly.googleapis.com/v1/assets?key={data["poly_api_key"]}&curated={curated}&pageSize={results}')
-    if (r.status_code == 200):
-        pageNext = r.json()["nextPageToken"]
-    for pagecount in range(page):
-        r = requests.get(f'https://poly.googleapis.com/v1/assets?key={data["poly_api_key"]}&curated={curated}&pageSize={results}&pageToken={pageNext}')
-        if (r.status_code == 200):
-            pageNext = r.json()["nextPageToken"]
-            continue
+POLY_API_ROOT = "https://api.poly.pizza/v1"
+
+@router.get("/assets", response_model=PolyPizzaList)
+async def get_poly_assets_list(results: int = 20, page: int = 0):
+    headers = {"x-auth-token": data["poly_api_key"]}
+    r = requests.get(f'{POLY_API_ROOT}/search?Limit={results}&Page={page}', headers=headers)
     return r.json()
 
-@router.get("/assets/{asset}", response_model=PolyAsset)
+@router.get("/assets/{asset}", response_model=PolyPizzaAsset)
 async def get_poly_asset(asset : str):
-    r = requests.get(f'https://poly.googleapis.com/v1/assets/{asset}?key={data["poly_api_key"]}')
+    headers = {"x-auth-token": data["poly_api_key"]}
+    r = requests.get(f'{POLY_API_ROOT}/model/{asset}')
     if (r.status_code == 200):
         return r.json()
     else:

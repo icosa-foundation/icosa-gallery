@@ -76,6 +76,31 @@ class PolyPresentationParams(BaseModel):
 class PolyRemixInfo(BaseModel):
     sourceAsset: List[str]
 
+class PolyPizzaCreator(BaseModel):
+    Username: str
+    DPURL: str
+
+class PolyPizzaOrbit(BaseModel):
+    phi: str
+    radius: str
+    theta: str
+
+class PolyPizzaAsset(BaseModel):
+    ID: str
+    Title: str
+    Creator: Optional[PolyPizzaCreator]
+    Description: Optional[str]
+    Tags: List[str]
+    # Uploaded: Optional[str]
+    Thumbnail: Optional[str]
+    Licence: Optional[str]
+    Attribution: str
+    Download: str
+    # TriCount: int
+    Category: str
+    Animated: bool
+    Orbit: Optional[PolyPizzaOrbit]
+
 class PolyAsset(BaseModel):
     name: str
     displayName: str
@@ -91,6 +116,9 @@ class PolyAsset(BaseModel):
     presentationParams: Optional[PolyPresentationParams]
     metadata: Optional[str]
     remixInfo: Optional[PolyRemixInfo]
+
+class PolyPizzaList(BaseModel):
+    results: List[PolyPizzaAsset]
 
 class PolyList(BaseModel):
     assets: List[PolyAsset]
