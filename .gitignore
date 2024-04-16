@@ -141,5 +141,5 @@ cython_debug/
 .idea/*
 .DS_Store
 config.json
-.gcp-service-account.json
+gcp-service-account.json
 
