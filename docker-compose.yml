@@ -1,0 +1,45 @@
+version: '3.8'
+
+volumes:
+  gallery-data:
+
+services:
+  web:
+    build: ./gallery-web
+    container_name: ig-web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    env_file: .env
+
+  api:
+    build:
+      context: .
+    container_name: ig-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config.json:/usr/src/app/config.json
+      - ./gcp-service-account.json:/usr/src/app/gcp-service-account.json
+    depends_on:
+      - db
+    env_file: .env
+
+  db:
+    image: postgres:16.2
+    container_name: ig-db
+    volumes:
+      - gallery-data:/var/lib/postgresql/data
+    env_file: .env
+
+  proxy:
+    image: nginx:latest
+    container_name: ig-proxy
+    depends_on:
+        - web
+    ports:
+        - "80:80"
+    volumes:
+        - ./nginx/sites-enabled:/etc/nginx/conf.d/
+
