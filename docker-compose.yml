@@ -22,6 +22,7 @@ services:
     volumes:
       - ./config.json:/usr/src/app/config.json
       - ./gcp-service-account.json:/usr/src/app/gcp-service-account.json
+      - ./:/usr/src/app/
     depends_on:
       - db
     env_file: .env
@@ -34,6 +35,7 @@ services:
     env_file: .env
 
   proxy:
+    platform: linux/amd64
     image: nginx:latest
     container_name: ig-proxy
     depends_on:
