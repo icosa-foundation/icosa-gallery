@@ -7,8 +7,8 @@ Repository for Icosa API
 Copy the following files:
 
 - `cp example.env .env`
-- `cp config.example.json config.json`
-- `cp gcp-service-account.example.json gcp-service-account.json`
+- `cp fastapi/config.example.json fastapi/config.json`
+- `cp fastapi/gcp-service-account.example.json fastapi/gcp-service-account.json`
 
 Or create and fill them in manually.
 
