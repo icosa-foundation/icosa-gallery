@@ -22,7 +22,7 @@ server {
     }
 
     listen 80;
-    server_name icosa.localhost;
+    server_name ${ICOSA_HOST};
 }
 
 server {
@@ -39,7 +39,7 @@ server {
     }
 
     listen 80;
-    server_name api.icosa.localhost;
+    server_name api.${ICOSA_HOST};
 }
 
 server {

@@ -43,5 +43,6 @@ services:
     ports:
         - "80:80"
     volumes:
-        - ./nginx/sites-enabled:/etc/nginx/conf.d/
+        - ./nginx/templates/:/etc/nginx/templates/
+    env_file: .env
 
