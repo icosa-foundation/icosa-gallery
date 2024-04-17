@@ -22,7 +22,7 @@ server {
     }
 
     listen 80;
-    server_name ${ICOSA_HOST};
+    server_name ${DEPLOYMENT_HOST};
 }
 
 server {
@@ -39,7 +39,7 @@ server {
     }
 
     listen 80;
-    server_name api.${ICOSA_HOST};
+    server_name api.${DEPLOYMENT_HOST};
 }
 
 server {

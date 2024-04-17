@@ -1,15 +1,15 @@
 {
-    "dbuser" : "user",
-    "dbpassword" : "password",
-    "dblocation" : "address",
-    "secret_key" : "key",
-    "gcloud_bucket_name" : "name",
-    "service_account_data" : "path/to/data.json",
-    "poly_api_key" : "string",
-    "sendgrid" : {
-        "domain" : "example.com",
-        "send_user" : "noreply@example.com",
-        "api_key" : "string",
-        "reset_password_template" : "templateid"
-    }
+  "dbuser": "user",
+  "dbpassword": "password",
+  "dblocation": "db",
+  "secret_key": "key",
+  "gcloud_bucket_name": "name",
+  "service_account_data": "path/to/data.json",
+  "poly_api_key": "string",
+  "sendgrid": {
+    "domain": "example.com",
+    "send_user": "noreply@example.com",
+    "api_key": "string",
+    "reset_password_template": "templateid"
+  }
 }

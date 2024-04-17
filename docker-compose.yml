@@ -1,6 +1,8 @@
 version: '3.8'
 
 volumes:
+  static:
+  logs:
   gallery-data:
 
 services:
@@ -10,19 +12,33 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      - api-fastapi
     env_file: .env
 
-  api:
+  api-fastapi:
     build:
       context: ./fastapi
-    container_name: ig-api
+    container_name: ig-api-fastapi
     ports:
       - "8000:8000"
     volumes:
       - ./fastapi/config.json:/usr/src/app/config.json
       - ./fastapi/gcp-service-account.json:/usr/src/app/gcp-service-account.json
       - ./fastapi/:/usr/src/app/
+    depends_on:
+      - db
+    env_file: .env
+
+  api-django:
+    build:
+      context: ./django
+    container_name: ig-api-django
+    ports:
+      - "8001:8001"
+    volumes:
+      - static:/opt/static/
+      - logs:/opt/logs/
+      - ./django:/opt/
     depends_on:
       - db
     env_file: .env

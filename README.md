@@ -24,3 +24,8 @@ Then:
 
 TODO: When running  `docker compose up -d` for the first time, the api service may start before postgres is fully available and fail to start. Subsequent runs should work as expected.
 
+## Services
+
+- web front end: localhost:3000
+- fastapi backend: localhost:8000
+- django backend: localhost:8001
