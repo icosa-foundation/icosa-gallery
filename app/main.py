@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import poly, users, login, assets
 from app.database.database_connector import database
+from app.routers import assets, login, poly, users
 
 app = FastAPI(title="Icosa API", redoc_url=None)
 app.include_router(login.router)
@@ -12,23 +12,29 @@ app.include_router(poly.router)
 
 origins = ["*"]
 
-app.add_middleware(CORSMiddleware,
+app.add_middleware(
+    CORSMiddleware,
     allow_origins=origins,
     allow_headers=["*"],
-    allow_methods=["*"]
+    allow_methods=["*"],
 )
 
-#region database connection
+
+# region database connection
 @app.on_event("startup")
 async def startup():
     await database.connect()
     print("Connected to database.")
 
+
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
     print("Disconnected from database.")
-#endregion
+
+
+# endregion
+
 
 @app.get("/", include_in_schema=False)
 async def root():
