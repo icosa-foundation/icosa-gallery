@@ -3,9 +3,14 @@ upstream web {
   server web:3000;
 }
 
-upstream api {
+upstream api-fastapi {
   ip_hash;
-  server api:8000;
+  server api-fastapi:8000;
+}
+
+upstream api-django {
+  ip_hash;
+  server api-django:8001;
 }
 
 server {
@@ -29,7 +34,7 @@ server {
     client_max_body_size 10M;
 
     location / {
-        proxy_pass http://api;
+        proxy_pass http://api-fastapi;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Host $host;
         proxy_redirect off;
@@ -40,6 +45,23 @@ server {
 
     listen 80;
     server_name api.${DEPLOYMENT_HOST};
+}
+
+server {
+    client_max_body_size 10M;
+
+    location / {
+        proxy_pass http://api-django;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+        proxy_read_timeout 600;
+        proxy_connect_timeout 600;
+        proxy_send_timeout 600;
+    }
+
+    listen 80;
+    server_name api-django.${DEPLOYMENT_HOST};
 }
 
 server {
