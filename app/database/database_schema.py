@@ -3,7 +3,8 @@ import sqlalchemy.dialects.postgresql
 
 metadata = sqlalchemy.MetaData()
 
-users = sqlalchemy.Table("users",
+users = sqlalchemy.Table(
+    "users",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.BigInteger, primary_key=True),
     sqlalchemy.Column("url", sqlalchemy.VARCHAR(255), nullable=False),
@@ -13,14 +14,22 @@ users = sqlalchemy.Table("users",
     sqlalchemy.Column("description", sqlalchemy.TEXT),
 )
 
-assets = sqlalchemy.Table("assets",
+assets = sqlalchemy.Table(
+    "assets",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.BigInteger, primary_key=True),
     sqlalchemy.Column("url", sqlalchemy.VARCHAR(255)),
     sqlalchemy.Column("name", sqlalchemy.VARCHAR(255), nullable=False),
-    sqlalchemy.Column("owner", sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id"), nullable=False),
+    sqlalchemy.Column(
+        "owner",
+        sqlalchemy.BigInteger,
+        sqlalchemy.ForeignKey("users.id"),
+        nullable=False,
+    ),
     sqlalchemy.Column("description", sqlalchemy.TEXT),
-    sqlalchemy.Column("formats", sqlalchemy.dialects.postgresql.JSONB, nullable=False),
+    sqlalchemy.Column(
+        "formats", sqlalchemy.dialects.postgresql.JSONB, nullable=False
+    ),
     sqlalchemy.Column("visibility", sqlalchemy.VARCHAR(255), nullable=False),
     sqlalchemy.Column("curated", sqlalchemy.BOOLEAN),
     sqlalchemy.Column("polyid", sqlalchemy.VARCHAR(255)),
@@ -28,7 +37,8 @@ assets = sqlalchemy.Table("assets",
     sqlalchemy.Column("thumbnail", sqlalchemy.TEXT),
 )
 
-expandedassets = sqlalchemy.Table("expandedassets",
+expandedassets = sqlalchemy.Table(
+    "expandedassets",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.BigInteger),
     sqlalchemy.Column("url", sqlalchemy.VARCHAR(255)),
@@ -45,10 +55,22 @@ expandedassets = sqlalchemy.Table("expandedassets",
     sqlalchemy.Column("thumbnail", sqlalchemy.TEXT),
 )
 
-devicecodes = sqlalchemy.Table("devicecodes",
+devicecodes = sqlalchemy.Table(
+    "devicecodes",
     metadata,
-    sqlalchemy.Column("id", sqlalchemy.BigInteger, primary_key=True, default=sqlalchemy.Sequence('devicecodes_id_seq')),
-    sqlalchemy.Column("user_id", sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id"), nullable=False, unique=True),
+    sqlalchemy.Column(
+        "id",
+        sqlalchemy.BigInteger,
+        primary_key=True,
+        default=sqlalchemy.Sequence("devicecodes_id_seq"),
+    ),
+    sqlalchemy.Column(
+        "user_id",
+        sqlalchemy.BigInteger,
+        sqlalchemy.ForeignKey("users.id"),
+        nullable=False,
+        unique=True,
+    ),
     sqlalchemy.Column("devicecode", sqlalchemy.CHAR(6), nullable=False),
     sqlalchemy.Column("expiry", sqlalchemy.TIMESTAMP, nullable=False),
 )
