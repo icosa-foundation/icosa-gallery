@@ -1,5 +1,3 @@
-from dbview.models import DbView
-
 from django.db import models
 
 
@@ -49,25 +47,6 @@ class Asset(models.Model):
 
     class Meta:
         db_table = "assets"
-
-
-# expandedassets = sqlalchemy.Table(
-#     "expandedassets",
-#     metadata,
-#     sqlalchemy.Column("id", sqlalchemy.BigInteger),
-#     sqlalchemy.Column("url", sqlalchemy.VARCHAR(255)),
-#     sqlalchemy.Column("name", sqlalchemy.VARCHAR(255)),
-#     sqlalchemy.Column("owner", sqlalchemy.BigInteger),
-#     sqlalchemy.Column("ownername", sqlalchemy.VARCHAR(255)),
-#     sqlalchemy.Column("ownerurl", sqlalchemy.VARCHAR(255)),
-#     sqlalchemy.Column("formats", sqlalchemy.dialects.postgresql.JSONB),
-#     sqlalchemy.Column("description", sqlalchemy.TEXT),
-#     sqlalchemy.Column("visibility", sqlalchemy.VARCHAR(255)),
-#     sqlalchemy.Column("curated", sqlalchemy.BOOLEAN),
-#     sqlalchemy.Column("polyid", sqlalchemy.VARCHAR(255)),
-#     sqlalchemy.Column("polydata", sqlalchemy.dialects.postgresql.JSONB),
-#     sqlalchemy.Column("thumbnail", sqlalchemy.TEXT),
-# )
 
 
 class DeviceCode(models.Model):
