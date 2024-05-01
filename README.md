@@ -43,3 +43,13 @@ Let's say, you've set `DEPLOYMENT_HOST` in `.env` to `icosa.localhost`, you can 
 You'll need to add the following line to your `/etc/hosts` file (or the equivalent on Windows):
 
 `127.0.0.1       icosa.localhost`
+
+## Seeding the database
+
+If you have a .dump file, you can import it:
+
+`docker cp <db.dump> ig-db:/opt/`
+
+`docker exec -it ig-db bash`
+
+`pg_restore --data-only -U icosa -d icosa /opt/<db.dump>`
