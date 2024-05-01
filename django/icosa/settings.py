@@ -26,6 +26,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEPLOYMENT_ENV = os.environ.get("DEPLOYMENT_ENV")
+DEPLOYMENT_HOST_DJANGO = os.environ.get("DEPLOYMENT_HOST_DJANGO")
 DEBUG = False
 if DEPLOYMENT_ENV in [
     "development",
@@ -35,8 +36,10 @@ if DEPLOYMENT_ENV in [
 
 ALLOWED_HOSTS = [
     "localhost",
-    f'{os.environ.get("DEPLOYMENT_HOST_DJANGO")}',
+    f"{DEPLOYMENT_HOST_DJANGO}",
 ]
+
+CSRF_TRUSTED_ORIGINS = [DEPLOYMENT_HOST_DJANGO, "https://*.127.0.0.1"]
 
 
 # Application definition
