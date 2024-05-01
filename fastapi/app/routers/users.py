@@ -1,3 +1,4 @@
+import json
 import secrets
 import string
 from datetime import datetime, timedelta
@@ -31,6 +32,11 @@ from sqlalchemy import delete, func, insert, or_
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+with open("config.json") as config_file:
+    data = json.load(config_file)
+
+ALLOWED_USERS = data.get("allowed_users", [])
 
 DEVICE_CODE_EXPIRE_MINUTES = 2
 
@@ -160,6 +166,10 @@ async def change_authenticated_user_email(
 async def create_user(user: NewUser):
     query = users.select()
     user.email = user.email.lower()
+    # TODO(james) This setting is for debug mode only. Should be removed in
+    # production.
+    if user.email not in ALLOWED_USERS:
+        raise HTTPException(status_code=409, detail="User exists.")
     query = query.where(
         or_(
             func.lower(users.c.url) == func.lower(user.url),
