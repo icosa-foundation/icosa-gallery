@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "main_dashboard",
 ]
 
 MIDDLEWARE = [
@@ -143,3 +144,7 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Admin Tools settings
+
+ADMIN_TOOLS_INDEX_DASHBOARD = "main_dashboard.dashboard.MainDashboard"
