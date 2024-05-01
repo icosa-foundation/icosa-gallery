@@ -40,7 +40,7 @@ ALLOWED_HOSTS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://{DEPLOYMENT_HOST_DJANGO}",
+    f"https://{DEPLOYMENT_HOST_DJANGO}",
     "https://*.127.0.0.1",
 ]
 
