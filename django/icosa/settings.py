@@ -35,7 +35,7 @@ if DEPLOYMENT_ENV in [
 
 ALLOWED_HOSTS = [
     "localhost",
-    f'api-django.{os.environ.get("DEPLOYMENT_HOST")}',
+    f'{os.environ.get("DEPLOYMENT_HOST_DJANGO")}',
 ]
 
 

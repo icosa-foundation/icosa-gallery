@@ -27,7 +27,7 @@ server {
     }
 
     listen 80;
-    server_name ${DEPLOYMENT_HOST};
+    server_name ${DEPLOYMENT_HOST_WEB};
 }
 
 server {
@@ -44,7 +44,7 @@ server {
     }
 
     listen 80;
-    server_name api.${DEPLOYMENT_HOST};
+    server_name ${DEPLOYMENT_HOST_FASTAPI};
 }
 
 server {
@@ -61,7 +61,7 @@ server {
     }
 
     listen 80;
-    server_name api-django.${DEPLOYMENT_HOST};
+    server_name ${DEPLOYMENT_HOST_DJANGO};
 }
 
 server {
