@@ -39,7 +39,10 @@ ALLOWED_HOSTS = [
     f"{DEPLOYMENT_HOST_DJANGO}",
 ]
 
-CSRF_TRUSTED_ORIGINS = [DEPLOYMENT_HOST_DJANGO, "https://*.127.0.0.1"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://{DEPLOYMENT_HOST_DJANGO}",
+    "https://*.127.0.0.1",
+]
 
 
 # Application definition
