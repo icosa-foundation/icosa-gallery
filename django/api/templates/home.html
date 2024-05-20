@@ -1,0 +1,937 @@
+{% load compress %}
+{% load static %}
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="icosa">
+    {% compress css %}
+        <link rel="stylesheet" type="text/x-scss" href="{% static "scss/main.scss" %}" />
+        <link rel="stylesheet" type="text/x-scss" href="{% static "scss/main.chunk.scss" %}" />
+    {% endcompress %}
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <title>icosa</title>
+</head>
+
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root">
+        <div class="App">
+            <div class="pro-sidebar sidenav collapsed">
+                <div class="pro-sidebar-inner">
+                    <div class="pro-sidebar-layout">
+                        <div class="pro-sidebar-header">
+                            <div class="toggler"><svg aria-hidden="true" focusable="false" data-prefix="fas"
+                                    data-icon="bars" class="svg-inline--fa fa-bars fa-w-14 toggleicon" role="img"
+                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                                    <path fill="currentColor"
+                                        d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z">
+                                    </path>
+                                </svg></div>
+                        </div>
+                        <div class="pro-sidebar-content">
+                            <nav class="pro-menu shaped square">
+                                <ul>
+                                    <li class="pro-menu-item active">
+                                        <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                class="pro-icon-wrapper"><span class="pro-icon"><svg aria-hidden="true"
+                                                        focusable="false" data-prefix="fas" data-icon="home"
+                                                        class="svg-inline--fa fa-home fa-w-18 " role="img"
+                                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                                                        <path fill="currentColor"
+                                                            d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z">
+                                                        </path>
+                                                    </svg></span></span><span class="pro-item-content">Home<a
+                                                    href="/"></a></span></div>
+                                    </li>
+                                </ul>
+                            </nav>
+                            <nav class="pro-menu shaped square">
+                                <ul>
+                                    <div>
+                                        <li class="pro-menu-item">
+                                            <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                    class="pro-icon-wrapper"><span class="pro-icon"><svg
+                                                            aria-hidden="true" focusable="false" data-prefix="fas"
+                                                            data-icon="user" class="svg-inline--fa fa-user fa-w-14 "
+                                                            role="img" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 448 512">
+                                                            <path fill="currentColor"
+                                                                d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z">
+                                                            </path>
+                                                        </svg></span></span><span class="pro-item-content">My Profile<a
+                                                        href="/user/jimothy"></a></span></div>
+                                        </li>
+                                        <li class="pro-menu-item">
+                                            <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                    class="pro-icon-wrapper"><span class="pro-icon"><svg
+                                                            aria-hidden="true" focusable="false" data-prefix="fas"
+                                                            data-icon="th" class="svg-inline--fa fa-th fa-w-16 "
+                                                            role="img" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <path fill="currentColor"
+                                                                d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z">
+                                                            </path>
+                                                        </svg></span></span><span class="pro-item-content">My Uploads<a
+                                                        href="/uploads"></a></span></div>
+                                        </li>
+                                        <li class="pro-menu-item">
+                                            <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                    class="pro-icon-wrapper"><span class="pro-icon"><svg
+                                                            aria-hidden="true" focusable="false" data-prefix="fas"
+                                                            data-icon="heart" class="svg-inline--fa fa-heart fa-w-16 "
+                                                            role="img" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <path fill="currentColor"
+                                                                d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z">
+                                                            </path>
+                                                        </svg></span></span><span class="pro-item-content">My Likes
+                                                    [Coming Soon]<a href="/"></a></span></div>
+                                        </li>
+                                        <li class="pro-menu-item">
+                                            <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                    class="pro-icon-wrapper"><span class="pro-icon"><svg
+                                                            aria-hidden="true" focusable="false" data-prefix="fas"
+                                                            data-icon="cog" class="svg-inline--fa fa-cog fa-w-16 "
+                                                            role="img" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <path fill="currentColor"
+                                                                d="M487.4 315.7l-42.6-24.6c4.3-23.2 4.3-47 0-70.2l42.6-24.6c4.9-2.8 7.1-8.6 5.5-14-11.1-35.6-30-67.8-54.7-94.6-3.8-4.1-10-5.1-14.8-2.3L380.8 110c-17.9-15.4-38.5-27.3-60.8-35.1V25.8c0-5.6-3.9-10.5-9.4-11.7-36.7-8.2-74.3-7.8-109.2 0-5.5 1.2-9.4 6.1-9.4 11.7V75c-22.2 7.9-42.8 19.8-60.8 35.1L88.7 85.5c-4.9-2.8-11-1.9-14.8 2.3-24.7 26.7-43.6 58.9-54.7 94.6-1.7 5.4.6 11.2 5.5 14L67.3 221c-4.3 23.2-4.3 47 0 70.2l-42.6 24.6c-4.9 2.8-7.1 8.6-5.5 14 11.1 35.6 30 67.8 54.7 94.6 3.8 4.1 10 5.1 14.8 2.3l42.6-24.6c17.9 15.4 38.5 27.3 60.8 35.1v49.2c0 5.6 3.9 10.5 9.4 11.7 36.7 8.2 74.3 7.8 109.2 0 5.5-1.2 9.4-6.1 9.4-11.7v-49.2c22.2-7.9 42.8-19.8 60.8-35.1l42.6 24.6c4.9 2.8 11 1.9 14.8-2.3 24.7-26.7 43.6-58.9 54.7-94.6 1.5-5.5-.7-11.3-5.6-14.1zM256 336c-44.1 0-80-35.9-80-80s35.9-80 80-80 80 35.9 80 80-35.9 80-80 80z">
+                                                            </path>
+                                                        </svg></span></span><span class="pro-item-content">My Settings<a
+                                                        href="/settings"></a></span></div>
+                                        </li>
+                                    </div>
+                                </ul>
+                            </nav>
+                            <nav class="pro-menu shaped square">
+                                <ul></ul>
+                            </nav>
+                        </div>
+                        <div class="pro-sidebar-footer"></div>
+                    </div>
+                </div>
+                <div class="overlay" role="button" tabindex="0" aria-label="overlay"></div>
+            </div>
+            <main>
+                <header>
+                    <div class="container">
+                        <div class="row">
+                            <div class="d-block d-md-none text-center col">
+                                <h3><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bars"
+                                        class="svg-inline--fa fa-bars fa-w-14 toggleicon" role="img"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                                        <path fill="currentColor"
+                                            d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z">
+                                        </path>
+                                    </svg></h3>
+                            </div>
+                            <div class="d-none d-md-block col"><span class="beta">BETA</span></div>
+                            <div class="text-center col"><a class="logo" href="/"><img alt="logo"
+                                        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJoAAABHCAYAAAD/X17mAAAABHNCSVQICAgIfAhkiAAABPxJREFUeF7t3T9s00AUBvB3tBM7K2KHrYkYGWAFMaEuING5ICHYIKmawIiQgLlIsCAWJFhhYKySbmWmsLIzUQ6dQ5rU2HfvOecXn/ux5uLzff71fH/sYAj/kIBCAkahDlSBBAjQgEAlAUBTiRmVABoMqCQAaCoxoxJAgwGVBABNJWZUAmgwoJIAoKnEjEraDW1veJss7US/zNZ+pm7/SvTjtviA/0MbDV+ToZusNhvaoLXeq8Ky46FlHUNUyB4QHV6izvYP1tfqguYql2KT5MpqXEEh3/UoO+Zo8ImMuVypSkEGiUHLrjAfW53QpNiaCG0RZFOZTGwJQhNgqxuaBFvToMVAJsCWKDQmNg1oXGxNghYTGRNbwtAY2LSgcbA1BVodyBjYEocWwKYJLYStCdDqRBbA1gJoHmw+aNZ+pW7/Amu2Nd46S7TyhcicC5bv9IqXjJYNTQOZB1v5OtposE/GnC8M1tIb6vZueUP3LW9IpuHcgIrOKRY011AutirQJOh912Xh5Sb7i4xdp7Wtj8VLVoI/uNy5NB+aazEHW93QuNiShRZANpXH/YNLEhoHmwa0I2yr30t78yShMZFJsCULLbvIg2+l4yQtaNl5eHY9UoRm/lwrvV2W/UVlPdvqmIjOFBZJGpp03BhzjDaf5jKhBWcjJQWqnHOoLsF4MY0x2rTBbYVG9JPod4e9hxsCUPQ5oAlSay80t4frn/EJYiqeMVa43YfqbG2PFmp4/vNUbp3z523pCXV7j6RNDZZHjxaMqHqBRkEbvCBjNlmNcU9EmMONqLdSQGNFX61Qk6BNZqvvieg6rzHucShap05/l1c+UArQosRYfJCmQXNnORo+JmPvEZnT4Za7cZvZLH24NHyAWQlAk6QlLNtEaK4Je9tXyZrnrL1TV97al9Tt3xG2/nhxQFsoPv+Xmwotu41m+4bviMxFVgKLjtsAjRVztUJNhjZtkeipDntAxt4Vr+JPxofl73CU7WaEUsfyxr+EUoA2QXCfyA7Y4zYyfer0noYcHPu8lpeFPGeQ9BaUKFk3FvK8bid5NCdfbx29w3jgbqFv+eM2xqNa8+cNaFI9gvIpQZuO2+zKDv/1N7tLdHiDtd4GaAI40qKpQTsatwkWd93rh5xxG6BJ9QjKpwpttgTibqW89TZrnnm3rgBNAEdaNGVosyUQ3rsKrrzvuTJAk+oRlE8d2uxWyvvZgoXfGRBkGyqa9Kwz5ceEQhcm9Dln66oqNKyj5dI/ydA44zZAy4GRvG43/9WTDs1lIViNZy/YtrZHI3ogXtkOhYyXU4jQo+UHIBUfW065R/PtaUp2KdCj5TAFp9MVsMWEtsgz+lW2oACtZLojvaiS/cCjskJs0nMK/siLsP7peQPaJAlB71rfj7xk03F6GJq1R/tcOkaLVnHuQFVeII51LkmN0STPR4Vmj5rYCqG5J1lPfYh1HVnHAbRJTMEF25jQsu5VqWcr+4UjrfqnCgFtSdC0sPl+SksTG6AtEZoGttBvtmlhA7QlQ6sbWwha3fXj1nl8CKs+RsuPoOvqWTjQNLChR2P2aKypFQohAVkC7f6/oGRZoHSNCQBajeHi0LMEAA0aVBIANJWYUQmgwYBKAoCmEjMqATQYUEkA0FRiRiWABgMqCQCaSsyoBNBgQCUBQFOJGZUAGgyoJABoKjGjEkCDAZUEAE0lZlQCaDCgksBfGdhgk1cG7CoAAAAASUVORK5CYII="></a>
+                            </div>
+                            <div class="text-right col">
+                                <div>Welcome, <a href="/user/jimothy">James</a></div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                <div>
+                    <div class="home-hero">
+                        <div class="carousel slide">
+                            <ol class="carousel-indicators">
+                                <li class="active"></li>
+                                <li></li>
+                                <li></li>
+                                <li></li>
+                            </ol>
+                            <div class="carousel-inner">
+                                <div class="active carousel-item"><img class="d"
+                                        src="https://storage.googleapis.com/assets.icosa.gallery/63335656377601928/63336905411972957/thumbnail"
+                                        alt="The Couple by bubblingwells">
+                                    <div class="carousel-caption"><a href="/view/aDj1v08K6XE/c-_KGpoirx8">
+                                            <h3 class="title">The Couple</h3>
+                                        </a>
+                                        <p>bubblingwells | 2021-06-24</p>
+                                    </div>
+                                </div>
+                                <div class="carousel-item"><img class="d"
+                                        src="https://storage.googleapis.com/assets.icosa.gallery/63208108939333337/63210051195686758/thumbnail"
+                                        alt="STAR WARS Episode VI by MAGICAS">
+                                    <div class="carousel-caption"><a href="/view/JfxPzK50Qy4/lEG0-FiTCeE">
+                                            <h3 class="title">STAR WARS Episode VI</h3>
+                                        </a>
+                                        <p>MAGICAS | 2021-06-24</p>
+                                    </div>
+                                </div>
+                                <div class="carousel-item"><img class="d"
+                                        src="https://storage.googleapis.com/assets.icosa.gallery/62557179709778192/62897006741315349/thumbnail"
+                                        alt="Seven Worlds One Planet by Rosie Summers">
+                                    <div class="carousel-caption"><a href="/view/vr_rosie/U-Rly0VcKwc">
+                                            <h3 class="title">Seven Worlds One Planet</h3>
+                                        </a>
+                                        <p>Rosie Summers | 2021-06-23</p>
+                                    </div>
+                                </div>
+                                <div class="carousel-item"><img class="d"
+                                        src="https://storage.googleapis.com/assets.icosa.gallery/62557179709778192/62896560660307665/thumbnail"
+                                        alt="Inktober 16 - Wild by Rosie Summers">
+                                    <div class="carousel-caption"><a href="/view/vr_rosie/aiAh_aPLIIo">
+                                            <h3 class="title">Inktober 16 - Wild</h3>
+                                        </a>
+                                        <p>Rosie Summers | 2021-06-23</p>
+                                    </div>
+                                </div>
+                            </div><a class="carousel-control-prev" role="button" href="#"><span aria-hidden="true"
+                                    class="carousel-control-prev-icon"></span><span
+                                    class="sr-only">Previous</span></a><a class="carousel-control-next" role="button"
+                                href="#"><span aria-hidden="true" class="carousel-control-next-icon"></span><span
+                                    class="sr-only">Next</span></a>
+                        </div>
+                    </div>
+                    <div class="sketch-list">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Tandoura/PGepMOW7-UM">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/360619476342811036/360298910637369690/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Mind Prison</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Tandoura</div>
+                                            <div class="date">2023-09-23</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/dogwithsocks/o1sb6k4HMNg">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/344747730687503129/344747352252230664/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>dogwithsocks enchanted room</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">dogwithsocks</div>
+                                            <div class="date">2023-08-10</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/vzwhite/-fv727ls11g">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;/static/media/nothumbnail.0ed1d8d2.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Desiderata V.</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">vzwhite</div>
+                                            <div class="date">2022-12-15</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/JOLIU/Gne0TeW8UQ8">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/252536064575537150/69904879971692411/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>wild</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">JOLIU</div>
+                                            <div class="date">2022-11-28</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/roledgar/tTxkd5tHd80">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/249280877614333937/249267810197307383/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>City of light</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">roledgar</div>
+                                            <div class="date">2022-11-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/MrHaha/47Snw8MnLqw">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/213234162717425662/110094356181942261/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Wander1</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">MrHaha</div>
+                                            <div class="date">2022-08-12</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Grogu/ldRKerQ5Kok">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;/static/media/nothumbnail.0ed1d8d2.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Elephant Forest</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Princess Buttercup</div>
+                                            <div class="date">2022-07-26</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Raven828/x2qFFAN0SQ8">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;/static/media/nothumbnail.0ed1d8d2.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Kassy_flower_tilt</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Raven828</div>
+                                            <div class="date">2022-07-05</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Raven828/kjjx3YDjxxw">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/199485890496561149/199485491966377973/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>KassyFlower</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Raven828</div>
+                                            <div class="date">2022-07-05</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/wtmpresents/Exf96twMuXc">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;/static/media/nothumbnail.0ed1d8d2.png&quot;);">
+                                                <div class="title">
+                                                    <h6>test</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Jasmine A. </div>
+                                            <div class="date">2022-04-22</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/wtmpresents/Z08WFG0HPCU">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/172785654810279931/97799008154210048/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>BIRDS demo</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Jasmine A. </div>
+                                            <div class="date">2022-04-22</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Yukyung/0Uz0Sw2_08k">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/167830857778724853/160976118915006453/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Untitled_8</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">0YOU</div>
+                                            <div class="date">2022-04-09</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Mariane/Kw-0GwSQ9mY">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;/static/media/nothumbnail.0ed1d8d2.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Test_1</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Mariane</div>
+                                            <div class="date">2022-03-28</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/JieunKim/aziFDx6O6Dk">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;/static/media/nothumbnail.0ed1d8d2.png&quot;);">
+                                                <div class="title">
+                                                    <h6>camp</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Oranjik</div>
+                                            <div class="date">2022-03-28</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Yukyung/nn-IJsAf1PI">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/162812223771639805/160976118915006453/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Untitled_4</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">0YOU</div>
+                                            <div class="date">2022-03-26</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Yukyung/Ypf9-ZojOfg">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/162810901840265208/160976118915006453/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>The Matrix</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">0YOU</div>
+                                            <div class="date">2022-03-26</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/doheekim/047j0jaufBM">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/161010152172945394/160983625301491708/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>kkam</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">pwgirl</div>
+                                            <div class="date">2022-03-21</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/kimjongsung/dEWEUjplqHk">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/161006950727811060/160981380057006072/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Untitled_3</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">kingjongsung</div>
+                                            <div class="date">2022-03-21</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Pallavi/Bihll6UGrCk">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160845965425639409/160840156222324722/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Energy Circle</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Pallavi</div>
+                                            <div class="date">2022-03-20</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/BlankBingus/W4PlfSo9FNo">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;/static/media/nothumbnail.0ed1d8d2.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Sumeru Creation Project</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">BLANK</div>
+                                            <div class="date">2022-03-20</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/OrEs2KWVbDo">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160558226813747187/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Medusa</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-20</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/fUIBVlq5420">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160557992205352953/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Figure 1</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-20</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/GCdq9kONnOo">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160557550897463280/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Figure 3</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-20</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/wWlufvSb-18">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160556730562904056/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Figure 2</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-20</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/ygEHZ746TQg">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160379821254246396/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Unicorn</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/wnG-akTWbg0">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160374888358477820/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Jellyfish</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/tmNlg5TW-Sk">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160374776437669876/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Jellyfishes</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/9mHCcfxWJ2M">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160374706212438013/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Corals asset</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/RJ-TnKFPUSk">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160374573580156918/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Kraken attack</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/C45ZOfbXQsc">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160374497696808953/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>DragonFly</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/LhI6Qz1M4pU">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160374461286055929/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Carpes</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/KJL6AzqWIgg">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160373271554949115/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Samurai</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/svRHPJU0N6g">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160373208774606842/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Pandora's Waterfall</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/27vqCSz5JYM">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160373097751379956/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Drangon Ceremony</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/lS1GsYX_5p0">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160373007989080055/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Tree Asset</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Lisa_Blondel/_djLYK1-BMI">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/160368596529184759/160363695216525303/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Sirène</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Lisa_Blondel</div>
+                                            <div class="date">2022-03-19</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/kG55jT0NRHg/CcJOWzImI8M">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/144264718255652852/65931770607979473/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>water Otter</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">CedaringXR</div>
+                                            <div class="date">2022-02-03</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/s_kawasy/zQ-9vPSnzgI">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/144017388164087801/62978203047714787/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>みかんイルミネーション</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">s_kawasy</div>
+                                            <div class="date">2022-02-02</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/inventadero/TmEvkHP8Nh4">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/142693248857538555/142692245684879346/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>MLP_GGLmAPS</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">inventadero</div>
+                                            <div class="date">2022-01-29</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Kingdrv/zkaup4kd_Tg">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/140736716167184380/137740556884246525/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>Woodlight Isolation</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Drvanilla</div>
+                                            <div class="date">2022-01-24</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/KrakensEmbrace/ndp58ai045A">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/139637630680694773/65379495594786475/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>03/52 — Isolated</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">KrakensEmbrace</div>
+                                            <div class="date">2022-01-21</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/Kingdrv/IF5fyH25w-U">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/137847892747485173/137740556884246525/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>The Return of Snow Street</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Drvanilla</div>
+                                            <div class="date">2022-01-16</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/kG55jT0NRHg/MJGABiFt9bg">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/137746194351783927/65931770607979473/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>AmmyBrush</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">CedaringXR</div>
+                                            <div class="date">2022-01-16</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/kudoalbus/nH763A-8B3U">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/135080549701124085/124156719835119601/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>aqua tiger 2022</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Kudo Albus</div>
+                                            <div class="date">2022-01-08</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/kudoalbus/zLDhDSQR39c">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/135080510777982963/124156719835119601/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>aqua tiger</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Kudo Albus</div>
+                                            <div class="date">2022-01-08</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/kudoalbus/99wzQOW825c">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/135080098335293429/124156719835119601/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>tiger2022</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Kudo Albus</div>
+                                            <div class="date">2022-01-08</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/kudoalbus/0RxefmMjOtw">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/135079955632488440/124156719835119601/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>box</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">Kudo Albus</div>
+                                            <div class="date">2022-01-08</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-12">
+                                    <div class="sketchbox"><a href="/view/KrakensEmbrace/huC-fw-zZ8I">
+                                            <div class="sketchimage"
+                                                style="background-image: url(&quot;https://storage.googleapis.com/assets.icosa.gallery/134567869991092219/65379495594786475/thumbnail.png&quot;);">
+                                                <div class="title">
+                                                    <h6>01/52 — Goals</h6>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="sketchinfo">
+                                            <div class="author">KrakensEmbrace</div>
+                                            <div class="date">2022-01-07</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">© 2020-2024 Icosa Gallery</div>
+                        </div>
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <script src="/static/js/bundle.js"></script>
+    <script src="/static/js/vendors~main.chunk.js"></script>
+    <script src="/static/js/main.chunk.js"></script>
+
+</body>
+
+</html>

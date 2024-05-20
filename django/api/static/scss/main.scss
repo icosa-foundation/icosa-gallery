@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Antonio:wght@100;400;600;700&family=Montserrat:wght@100;400;600;700&family=Shadows+Into+Light&display=swap');
+
+body {
+  background: #191919;
+  color: #FFFFFF;
+  margin: 0;
+  font-family: "Montserrat", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Antonio", sans-serif;
+  }
+}
+
+
+@media (min-width: 1600px) {
+
+  .container,
+  .container-lg,
+  .container-md,
+  .container-sm,
+  .container-xl {
+    max-width: 1560px;
+  }
+}
+
+a {
+  color: darken(#00cc83, 10%);
+
+  &:hover {
+    color: darken(#00cc83, 12%);
+  }
+}
+
+.btn {
+  padding: 1em 2em;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 1px 1px black;
+  border: none;
+
+  &.btn-primary {
+    background: darken(#00cc83, 10%);
+
+    &:hover {
+      background: darken(#00cc83, 12%);
+    }
+  }
+}
+
+.error {
+  color: #fa0101;
+  margin: 1em 0;
+  font-weight: bold;
+}
+
+.success {
+  color: #00f101;
+  margin: 1em 0;
+  font-weight: bold;
+}
+
+.App {
+  display: flex;
+
+  main {
+    width: 100%;
+    margin-left: 5em;
+
+    @media(max-width: 1024px) {
+      margin-left: 0;
+    }
+  }
+}
+
+.beta {
+  font-family: "Shadows Into Light";
+  font-weight: bold;
+  color: #ce2121;
+  font-size: 2em;
+  cursor: default;
+  user-select: none;
+}
+
+input,
+select,
+textarea {
+  display: block;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  border-radius: .25rem;
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+  margin: 0.4em;
+}
+
+form {
+  padding: 0.5em;
+
+  select {
+    cursor: pointer;
+  }
+
+  input,
+  select,
+  textarea {
+    background-color: #272727;
+    border-color: #272727;
+    color: #d7d7d7;
+    width: 100%;
+
+    &:active {
+
+      background-color: lighten(#272727, 10%);
+      border-color: #272727;
+      color: #d7d7d7;
+    }
+
+    &:focus {
+      background-color: #272727;
+      border-color: lighten(#272727, 5%);
+      color: #d7d7d7;
+    }
+  }
+
+  .img-preview {
+    margin: 0.4em;
+    width: 100%;
+  }
+}
