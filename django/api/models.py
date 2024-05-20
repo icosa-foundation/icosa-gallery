@@ -38,6 +38,7 @@ class Asset(models.Model):
         max_length=255,
         default=PRIVATE,
         choices=ASSET_VISIBILITY_CHOICES,
+        db_default=PRIVATE,
     )
     curated = models.BooleanField(blank=True, null=True)
     polyid = models.CharField(max_length=255, blank=True, null=True)
