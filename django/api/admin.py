@@ -12,7 +12,10 @@ from django.contrib import admin
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    pass
+    list_display = (
+        "name",
+        "visibility",
+    )
 
 
 @admin.register(DeviceCode)
