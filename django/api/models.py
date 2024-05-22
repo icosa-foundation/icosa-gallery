@@ -53,7 +53,7 @@ class Asset(models.Model):
 class DeviceCode(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    device_code = models.CharField(max_length=6)
+    devicecode = models.CharField(max_length=6)
     expiry = models.DateTimeField()
 
     class Meta:
