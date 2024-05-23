@@ -14,7 +14,7 @@ upstream api-django {
 }
 
 server {
-    client_max_body_size 100M;
+    client_max_body_size 500M;
 
     location / {
         proxy_pass http://web;
@@ -31,7 +31,7 @@ server {
 }
 
 server {
-    client_max_body_size 100M;
+    client_max_body_size 500M;
 
     location / {
         proxy_pass http://api-fastapi;
@@ -48,7 +48,7 @@ server {
 }
 
 server {
-    client_max_body_size 100M;
+    client_max_body_size 500M;
 
     location / {
         proxy_pass http://api-django;
