@@ -53,3 +53,28 @@ If you have a .dump file, you can import it:
 `docker exec -it ig-db bash`
 
 `pg_restore --data-only -U icosa -d icosa /opt/<db.dump>`
+
+## Running updated versions of the code
+
+There are 3 scenarios and respective actions to take:
+
+### You've updated your .env files
+
+`docker compose down`
+
+`docker compose build`
+
+`docker compose up`
+
+### Incoming code has updated requirements.txt/requirements.in
+
+`docker compose down`
+
+`docker compose build`
+
+`docker compose up`
+
+### Incoming code has updated anything else
+
+`docker compose restart`
+
