@@ -17,7 +17,7 @@ async def upload_file_gcs(source_file, destination_blob_name):
     bucket = storage_client.bucket(data["gcloud_bucket_name"])
     blob = bucket.blob(destination_blob_name)
     try:
-        blob.upload_from_file(source_file)
+        blob.upload_from_file(source_file, rewind=True)
         blob.make_public()
     except Exception as e:
         print(e)
