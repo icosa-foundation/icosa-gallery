@@ -250,7 +250,7 @@ async def upload_background(
         thumbnail_upload_details = validate_file(file, extension)
         if thumbnail_upload_details and thumbnail_upload_details[2] == "IMAGE":
             thumbnail_path = (
-                base_path + "thumbnail" + thumbnail_upload_details[1]
+                base_path + "thumbnail." + thumbnail_upload_details[1]
             )
             thumbnail_uploaded_url = await upload_file_gcs(
                 thumbnail_upload_details[0].file, thumbnail_path
