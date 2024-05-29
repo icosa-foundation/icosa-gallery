@@ -82,6 +82,10 @@ def validate_file(file: UploadFile, extension: str):
     # Need to check if the resource is a main file or helper file.
     # Return format is (file: UploadFile, extension: str, filetype: str, mainfile: bool)
     # Ordered in most likely file types for 'performance'
+
+    # TODO(safety): Do we fail to identify what the main file is if the zip
+    # archive contains both (e.g.) a .tilt and a .fbx?
+
     if extension == "tilt":
         return (file, extension, "TILT", True)
 
