@@ -18,11 +18,21 @@ Before running for the first time, build the project:
 
 `docker compose build`
 
+To run as if from a fresh install if you have already run the setup process before:
+
+`docker compose build --no-cache --force-rm`
+
 Then:
 
 `docker compose up -d`
 
-TODO: When running  `docker compose up -d` for the first time, the api service may start before postgres is fully available and fail to start. Subsequent runs should work as expected.
+TODO: When running  `docker compose up -d` for the first time, the api service may start before postgres is fully available and fail to start. Subsequent runs should work as expected, so if you find that the initial migrations didn't run, and your database is empty, try:
+
+`docker compose down`
+
+`docker compose up -d`
+
+(We're working to make this better for first-time users.)
 
 ## Services
 
@@ -43,16 +53,43 @@ Let's say, you've set `DEPLOYMENT_HOST` in `.env` to `icosa.localhost`, you can 
 You'll need to add the following line to your `/etc/hosts` file (or the equivalent on Windows):
 
 `127.0.0.1       icosa.localhost`
+`127.0.0.1       icosa-api.localhost`
+`127.0.0.1       icosa-api-django.localhost`
 
 ## Seeding the database
 
-If you have a .dump file, you can import it:
+## With a .dump file
 
 `docker cp <db.dump> ig-db:/opt/`
 
 `docker exec -it ig-db bash`
 
+Then from inside the container:
+
 `pg_restore --data-only -U icosa -d icosa /opt/<db.dump>`
+
+## With a .sql file
+
+`docker cp <db.sql> ig-db:/opt/`
+
+`docker exec -it ig-db bash`
+
+Then from inside the container:
+
+`psql -U icosa`
+
+Then from inside the postgres shell:
+
+Make sure you are connected to the correct database:
+
+`\c`
+
+You should see `You are now connected to database "icosa" as user "icosa".`
+
+Import the sql data:
+
+`\i /opt/db.sql`
+
 
 ## Running updated versions of the code
 
