@@ -48,8 +48,8 @@ CSRF_TRUSTED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
-    "admin_tools",
-    "admin_tools.dashboard",
+    # "admin_tools",
+    # "admin_tools.dashboard",
     "api",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "compressor",
-    "main_dashboard",
+    # "main_dashboard",
 ]
 
 MIDDLEWARE = [
