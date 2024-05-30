@@ -2,7 +2,7 @@
     <div class="sketchbox">
         <a href="{{asset.get_absolute_url}}">
             <div class="sketchimage"
-                style="background-image: url('{% if asset.thumbnail %}{{ asset.thumbnail }}{% else %}/static/images/nothumbnail.png{% endif %}');">
+                style="background-image: url('{% if asset.thumbnail %}{{ asset.thumbnail }}{% else %}/static/images/nothumbnail.png?v=1{% endif %}');">
                 <div class="title">
                     <h6>{{ asset.name }}</h6>
                 </div>
