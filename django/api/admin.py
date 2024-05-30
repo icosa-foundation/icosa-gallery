@@ -16,6 +16,11 @@ class AssetAdmin(admin.ModelAdmin):
         "name",
         "visibility",
     )
+    search_fields = (
+        "name",
+        "url",
+    )
+    list_filter = ("visibility",)
 
 
 @admin.register(DeviceCode)
@@ -33,6 +38,7 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = (
         "displayname",
         "url",
+        "id",
     )
 
 
