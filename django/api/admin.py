@@ -25,7 +25,15 @@ class DeviceCodeAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    pass
+    list_display = (
+        "displayname",
+        "url",
+    )
+
+    search_fields = (
+        "displayname",
+        "url",
+    )
 
 
 @admin.register(Oauth2Client)
