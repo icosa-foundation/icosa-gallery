@@ -15,12 +15,16 @@ class AssetAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "visibility",
+        "curated",
     )
     search_fields = (
         "name",
         "url",
     )
-    list_filter = ("visibility",)
+    list_filter = (
+        "visibility",
+        "curated",
+    )
 
 
 @admin.register(DeviceCode)
