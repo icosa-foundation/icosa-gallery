@@ -1,0 +1,158 @@
+{% load compress %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="icosa">
+    {% compress css %}
+        <link rel="stylesheet" type="text/x-scss" href="{% static "scss/screen.scss" %}" />
+    {% endcompress %}
+
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+    <title>icosa</title>
+</head>
+
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root">
+        <div class="App">
+            <div class="pro-sidebar sidenav collapsed">
+                <div class="pro-sidebar-inner">
+                    <div class="pro-sidebar-layout">
+                        <div class="pro-sidebar-header">
+                            <div class="toggler"><svg aria-hidden="true" focusable="false" data-prefix="fas"
+                                    data-icon="bars" class="svg-inline--fa fa-bars fa-w-14 toggleicon" role="img"
+                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                                    <path fill="currentColor"
+                                        d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z">
+                                    </path>
+                                </svg></div>
+                        </div>
+                        <div class="pro-sidebar-content">
+                            <nav class="pro-menu shaped square">
+                                <ul>
+                                    <li class="pro-menu-item active">
+                                        <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                class="pro-icon-wrapper"><span class="pro-icon"><svg aria-hidden="true"
+                                                        focusable="false" data-prefix="fas" data-icon="home"
+                                                        class="svg-inline--fa fa-home fa-w-18 " role="img"
+                                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                                                        <path fill="currentColor"
+                                                            d="M280.37 148.26L96 300.11V464a16 16 0 0 0 16 16l112.06-.29a16 16 0 0 0 15.92-16V368a16 16 0 0 1 16-16h64a16 16 0 0 1 16 16v95.64a16 16 0 0 0 16 16.05L464 480a16 16 0 0 0 16-16V300L295.67 148.26a12.19 12.19 0 0 0-15.3 0zM571.6 251.47L488 182.56V44.05a12 12 0 0 0-12-12h-56a12 12 0 0 0-12 12v72.61L318.47 43a48 48 0 0 0-61 0L4.34 251.47a12 12 0 0 0-1.6 16.9l25.5 31A12 12 0 0 0 45.15 301l235.22-193.74a12.19 12.19 0 0 1 15.3 0L530.9 301a12 12 0 0 0 16.9-1.6l25.5-31a12 12 0 0 0-1.7-16.93z">
+                                                        </path>
+                                                    </svg></span></span><span class="pro-item-content">Home<a
+                                                    href="/"></a></span></div>
+                                    </li>
+                                </ul>
+                            </nav>
+                            <nav class="pro-menu shaped square">
+                                <ul>
+                                    <div>
+                                        <li class="pro-menu-item">
+                                            <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                    class="pro-icon-wrapper"><span class="pro-icon"><svg
+                                                            aria-hidden="true" focusable="false" data-prefix="fas"
+                                                            data-icon="user" class="svg-inline--fa fa-user fa-w-14 "
+                                                            role="img" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 448 512">
+                                                            <path fill="currentColor"
+                                                                d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z">
+                                                            </path>
+                                                        </svg></span></span><span class="pro-item-content">My Profile<a
+                                                        href="/user/jimothy"></a></span></div>
+                                        </li>
+                                        <li class="pro-menu-item">
+                                            <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                    class="pro-icon-wrapper"><span class="pro-icon"><svg
+                                                            aria-hidden="true" focusable="false" data-prefix="fas"
+                                                            data-icon="th" class="svg-inline--fa fa-th fa-w-16 "
+                                                            role="img" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <path fill="currentColor"
+                                                                d="M149.333 56v80c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V56c0-13.255 10.745-24 24-24h101.333c13.255 0 24 10.745 24 24zm181.334 240v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm32-240v80c0 13.255 10.745 24 24 24H488c13.255 0 24-10.745 24-24V56c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24zm-32 80V56c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.256 0 24.001-10.745 24.001-24zm-205.334 56H24c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24zM0 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H24c-13.255 0-24 10.745-24 24zm386.667-56H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zm0 160H488c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H386.667c-13.255 0-24 10.745-24 24v80c0 13.255 10.745 24 24 24zM181.333 376v80c0 13.255 10.745 24 24 24h101.333c13.255 0 24-10.745 24-24v-80c0-13.255-10.745-24-24-24H205.333c-13.255 0-24 10.745-24 24z">
+                                                            </path>
+                                                        </svg></span></span><span class="pro-item-content">My Uploads<a
+                                                        href="/uploads"></a></span></div>
+                                        </li>
+                                        <li class="pro-menu-item">
+                                            <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                    class="pro-icon-wrapper"><span class="pro-icon"><svg
+                                                            aria-hidden="true" focusable="false" data-prefix="fas"
+                                                            data-icon="heart" class="svg-inline--fa fa-heart fa-w-16 "
+                                                            role="img" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <path fill="currentColor"
+                                                                d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z">
+                                                            </path>
+                                                        </svg></span></span><span class="pro-item-content">My Likes
+                                                    [Coming Soon]<a href="/"></a></span></div>
+                                        </li>
+                                        <li class="pro-menu-item">
+                                            <div class="pro-inner-item" tabindex="0" role="button"><span
+                                                    class="pro-icon-wrapper"><span class="pro-icon"><svg
+                                                            aria-hidden="true" focusable="false" data-prefix="fas"
+                                                            data-icon="cog" class="svg-inline--fa fa-cog fa-w-16 "
+                                                            role="img" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <path fill="currentColor"
+                                                                d="M487.4 315.7l-42.6-24.6c4.3-23.2 4.3-47 0-70.2l42.6-24.6c4.9-2.8 7.1-8.6 5.5-14-11.1-35.6-30-67.8-54.7-94.6-3.8-4.1-10-5.1-14.8-2.3L380.8 110c-17.9-15.4-38.5-27.3-60.8-35.1V25.8c0-5.6-3.9-10.5-9.4-11.7-36.7-8.2-74.3-7.8-109.2 0-5.5 1.2-9.4 6.1-9.4 11.7V75c-22.2 7.9-42.8 19.8-60.8 35.1L88.7 85.5c-4.9-2.8-11-1.9-14.8 2.3-24.7 26.7-43.6 58.9-54.7 94.6-1.7 5.4.6 11.2 5.5 14L67.3 221c-4.3 23.2-4.3 47 0 70.2l-42.6 24.6c-4.9 2.8-7.1 8.6-5.5 14 11.1 35.6 30 67.8 54.7 94.6 3.8 4.1 10 5.1 14.8 2.3l42.6-24.6c17.9 15.4 38.5 27.3 60.8 35.1v49.2c0 5.6 3.9 10.5 9.4 11.7 36.7 8.2 74.3 7.8 109.2 0 5.5-1.2 9.4-6.1 9.4-11.7v-49.2c22.2-7.9 42.8-19.8 60.8-35.1l42.6 24.6c4.9 2.8 11 1.9 14.8-2.3 24.7-26.7 43.6-58.9 54.7-94.6 1.5-5.5-.7-11.3-5.6-14.1zM256 336c-44.1 0-80-35.9-80-80s35.9-80 80-80 80 35.9 80 80-35.9 80-80 80z">
+                                                            </path>
+                                                        </svg></span></span><span class="pro-item-content">My Settings<a
+                                                        href="/settings"></a></span></div>
+                                        </li>
+                                    </div>
+                                </ul>
+                            </nav>
+                            <nav class="pro-menu shaped square">
+                                <ul></ul>
+                            </nav>
+                        </div>
+                        <div class="pro-sidebar-footer"></div>
+                    </div>
+                </div>
+                <div class="overlay" role="button" tabindex="0" aria-label="overlay"></div>
+            </div>
+            <main>
+                <header>
+                    <div class="container">
+                        <div class="row">
+                            <div class="d-block d-md-none text-center col">
+                                <h3><svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bars"
+                                        class="svg-inline--fa fa-bars fa-w-14 toggleicon" role="img"
+                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                                        <path fill="currentColor"
+                                            d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z">
+                                        </path>
+                                    </svg></h3>
+                            </div>
+                            <div class="d-none d-md-block col"><span class="beta">BETA</span></div>
+                            <div class="text-center col"><a class="logo" href="/"><img alt="logo"
+                                        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJoAAABHCAYAAAD/X17mAAAABHNCSVQICAgIfAhkiAAABPxJREFUeF7t3T9s00AUBvB3tBM7K2KHrYkYGWAFMaEuING5ICHYIKmawIiQgLlIsCAWJFhhYKySbmWmsLIzUQ6dQ5rU2HfvOecXn/ux5uLzff71fH/sYAj/kIBCAkahDlSBBAjQgEAlAUBTiRmVABoMqCQAaCoxoxJAgwGVBABNJWZUAmgwoJIAoKnEjEraDW1veJss7US/zNZ+pm7/SvTjtviA/0MbDV+ToZusNhvaoLXeq8Ky46FlHUNUyB4QHV6izvYP1tfqguYql2KT5MpqXEEh3/UoO+Zo8ImMuVypSkEGiUHLrjAfW53QpNiaCG0RZFOZTGwJQhNgqxuaBFvToMVAJsCWKDQmNg1oXGxNghYTGRNbwtAY2LSgcbA1BVodyBjYEocWwKYJLYStCdDqRBbA1gJoHmw+aNZ+pW7/Amu2Nd46S7TyhcicC5bv9IqXjJYNTQOZB1v5OtposE/GnC8M1tIb6vZueUP3LW9IpuHcgIrOKRY011AutirQJOh912Xh5Sb7i4xdp7Wtj8VLVoI/uNy5NB+aazEHW93QuNiShRZANpXH/YNLEhoHmwa0I2yr30t78yShMZFJsCULLbvIg2+l4yQtaNl5eHY9UoRm/lwrvV2W/UVlPdvqmIjOFBZJGpp03BhzjDaf5jKhBWcjJQWqnHOoLsF4MY0x2rTBbYVG9JPod4e9hxsCUPQ5oAlSay80t4frn/EJYiqeMVa43YfqbG2PFmp4/vNUbp3z523pCXV7j6RNDZZHjxaMqHqBRkEbvCBjNlmNcU9EmMONqLdSQGNFX61Qk6BNZqvvieg6rzHucShap05/l1c+UArQosRYfJCmQXNnORo+JmPvEZnT4Za7cZvZLH24NHyAWQlAk6QlLNtEaK4Je9tXyZrnrL1TV97al9Tt3xG2/nhxQFsoPv+Xmwotu41m+4bviMxFVgKLjtsAjRVztUJNhjZtkeipDntAxt4Vr+JPxofl73CU7WaEUsfyxr+EUoA2QXCfyA7Y4zYyfer0noYcHPu8lpeFPGeQ9BaUKFk3FvK8bid5NCdfbx29w3jgbqFv+eM2xqNa8+cNaFI9gvIpQZuO2+zKDv/1N7tLdHiDtd4GaAI40qKpQTsatwkWd93rh5xxG6BJ9QjKpwpttgTibqW89TZrnnm3rgBNAEdaNGVosyUQ3rsKrrzvuTJAk+oRlE8d2uxWyvvZgoXfGRBkGyqa9Kwz5ceEQhcm9Dln66oqNKyj5dI/ydA44zZAy4GRvG43/9WTDs1lIViNZy/YtrZHI3ogXtkOhYyXU4jQo+UHIBUfW065R/PtaUp2KdCj5TAFp9MVsMWEtsgz+lW2oACtZLojvaiS/cCjskJs0nMK/siLsP7peQPaJAlB71rfj7xk03F6GJq1R/tcOkaLVnHuQFVeII51LkmN0STPR4Vmj5rYCqG5J1lPfYh1HVnHAbRJTMEF25jQsu5VqWcr+4UjrfqnCgFtSdC0sPl+SksTG6AtEZoGttBvtmlhA7QlQ6sbWwha3fXj1nl8CKs+RsuPoOvqWTjQNLChR2P2aKypFQohAVkC7f6/oGRZoHSNCQBajeHi0LMEAA0aVBIANJWYUQmgwYBKAoCmEjMqATQYUEkA0FRiRiWABgMqCQCaSsyoBNBgQCUBQFOJGZUAGgyoJABoKjGjEkCDAZUEAE0lZlQCaDCgksBfGdhgk1cG7CoAAAAASUVORK5CYII="></a>
+                            </div>
+                            <div class="text-right col">
+                                <div>Welcome, <a href="/user/jimothy">James</a></div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                {% block content %}{% endblock content %}
+                <footer>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">© 2020-2024 Icosa Gallery</div>
+                        </div>
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+    <!-- <script src="/static/js/bundle.js"></script> -->
+    <!-- <script src="/static/js/vendors-main.chunk.js"></script> -->
+    <!-- <script src="/static/js/main.chunk.js"></script> -->
+
+</body>
+
+</html>

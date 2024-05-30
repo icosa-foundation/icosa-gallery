@@ -1,5 +1,20 @@
 from django.db import models
 
+from .helpers import get_snowflake_timestamp
+
+PUBLIC = "PUBLIC"
+PRIVATE = "PRIVATE"
+ASSET_VISIBILITY_CHOICES = [
+    (
+        PUBLIC,
+        "Public",
+    ),
+    (
+        PRIVATE,
+        "Private",
+    ),
+]
+
 
 class User(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -14,18 +29,6 @@ class User(models.Model):
 
 
 class Asset(models.Model):
-    PUBLIC = "PUBLIC"
-    PRIVATE = "PRIVATE"
-    ASSET_VISIBILITY_CHOICES = [
-        (
-            PUBLIC,
-            "Public",
-        ),
-        (
-            PRIVATE,
-            "Private",
-        ),
-    ]
     id = models.BigAutoField(primary_key=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
@@ -45,6 +48,18 @@ class Asset(models.Model):
     polydata = models.JSONField(blank=True, null=True)
     # TODO(james) make `thumbnail` an image field perhaps.
     thumbnail = models.TextField(blank=True, null=True)
+
+    @property
+    def timestamp(self):
+        return get_snowflake_timestamp(self.id)
+
+    @property
+    def owner_obj(self):
+        # TODO(james) replace this with a foreign key
+        return User.objects.filter(id=self.owner).first()
+
+    def get_absolute_url(self):
+        return f"/view/{self.owner_obj.url}/{self.url}"
 
     class Meta:
         db_table = "assets"

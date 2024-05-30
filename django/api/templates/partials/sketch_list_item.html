@@ -1,0 +1,16 @@
+<div class="col-md-3 col-12">
+    <div class="sketchbox">
+        <a href="{{asset.get_absolute_url}}">
+            <div class="sketchimage"
+                style="background-image: url('{{ asset.thumbnail }}');">
+                <div class="title">
+                    <h6>{{ asset.name }}</h6>
+                </div>
+            </div>
+        </a>
+        <div class="sketchinfo">
+            <div class="author">{{ asset.owner_obj.displayname }}</div>
+            <div class="date">{{ asset.timestamp|date:"Y-m-d" }}</div>
+        </div>
+    </div>
+</div>
