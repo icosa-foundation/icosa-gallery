@@ -1,0 +1,20 @@
+.login-container {
+    text-align: center;
+
+    form {
+        flex-flow: column;
+        padding: 1em;
+
+        .form-group {
+            label {
+                margin: 0 1em;
+                width: 5em;
+                text-align: right;
+            }
+
+            input {
+                width: 25em;
+            }
+        }
+    }
+}

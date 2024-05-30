@@ -1,0 +1,36 @@
+.my-sketches {
+    .my-sketchbox {
+        margin: 1em;
+        border-radius: 1em;
+
+        .sketchimage {
+            height: 13em;
+
+            @media(max-width: 1024px) {
+                height: 16em;
+            }
+
+            display: flex;
+            align-items: flex-end;
+            border-radius: 1em 1em 0 0;
+            color: #ffffff;
+            background-size: cover;
+            background-position: center;
+
+            &:hover {
+                opacity: 0.8;
+                text-decoration: none;
+                ;
+            }
+
+            .title {
+                background: rgba(0, 0, 0, 0.3);
+                width: 100%;
+
+                h6 {
+                    padding: 0.3em;
+                }
+            }
+        }
+    }
+}
