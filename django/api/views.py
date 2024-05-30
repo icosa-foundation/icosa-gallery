@@ -7,7 +7,10 @@ def home(request):
     template = "home.html"
 
     context = {
-        "assets": Asset.objects.filter(visibility=PUBLIC).order_by("-id")
+        "assets": Asset.objects.filter(visibility=PUBLIC).order_by("-id"),
+        "hero": Asset.objects.filter(visibility=PUBLIC, curated=True)
+        .order_by("?")
+        .first(),
     }
     return render(
         request,
