@@ -20,6 +20,22 @@
     }
   }
 
+  .hide-when-collapsed {
+    display: unset;
+  }
+
+  &.collapsed .hide-when-collapsed {
+    display: none;
+  }
+
+  .hide-when-open {
+    display: none;
+  }
+
+  &.collapsed .hide-when-open {
+    display: unset;
+  }
+
   .pro-sidebar-inner {
     background: #323232;
   }
