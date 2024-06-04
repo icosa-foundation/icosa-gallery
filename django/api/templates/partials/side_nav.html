@@ -1,3 +1,4 @@
+{% load static %}
 <div class="pro-sidebar sidenav collapsed">
     <div class="pro-sidebar-inner">
         <div class="pro-sidebar-layout">
@@ -148,7 +149,6 @@
                 </div>
                 <div class="text-center title hide-when-collapsed">
                     <h2>ICOSA GALLERY</h2>
-                    <span class="beta">BETA</span>
                     <div>
                         <a target="_blank" href="https://opencollective.com/icosa">
                             <h4>Support us!</h4>
@@ -319,9 +319,9 @@
                         </svg>
                     </a>
                 </div>
-                <div class="support text-center">
+                <div class="support text-center hide-when-collapsed">
                     <a href="https://openbrush.app" rel="noreferrer" target="_blank" alt="OpenBrush">
-                        <img src="/static/media/oblogo.1526c115.png" alt="OpenBrush Logo">
+                        <img src="{% static "images/oblogo.png" %}" alt="OpenBrush Logo">
                     </a>
                 </div>
             </div>
