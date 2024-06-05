@@ -1,7 +1,7 @@
 import requests
 from api.models import User as IcosaUser
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.shortcuts import redirect, render
 
@@ -58,3 +58,11 @@ def custom_login(request):
             )
     else:
         return render(request, "auth/login.html")
+
+
+def custom_logout(request):
+    if request.method == "POST":
+        logout(request)
+        return redirect("home")
+    else:
+        return render(request, "auth/logout.html")

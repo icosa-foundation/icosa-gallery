@@ -10,6 +10,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Auth views
     path("login/", auth_views.custom_login, name="login"),
+    path("logout/", auth_views.custom_logout, name="logout"),
     # Other views
     path("", main_views.home, name="home"),
     path("user/<str:slug>/", main_views.user, name="user"),

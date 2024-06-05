@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="loginuser container">
+        <div class="row">
+            <div class="text-center col">
+                <h2>LOG OUT</h2>
+                <p>Are you sure you want to log out?</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="text-center col">
+                <div class="login-container container">
+                    <div class="login-form row">
+                        <div class="col-md-8 col-12 offset-md-2">
+                            <form class="form-inline" action="." method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary">Log out</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
