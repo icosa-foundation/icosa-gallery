@@ -36,11 +36,13 @@ class DeviceCodeAdmin(admin.ModelAdmin):
 class UserAdmin(admin.ModelAdmin):
     list_display = (
         "displayname",
+        "email",
         "url",
     )
 
     search_fields = (
         "displayname",
+        "email",
         "url",
         "id",
     )
