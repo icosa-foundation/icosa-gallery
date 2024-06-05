@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="loginuser container">
+        <div class="row">
+            <div class="text-center col">
+                <h2>LOG IN</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="text-center col">
+                <div class="login-container container">
+                    <div class="login-form row">
+                        <div class="col-md-8 col-12 offset-md-2">
+                            {% if error %}
+                                <div role="alert" class="fade alert alert-danger show">Please input a valid Username and Password</div>
+                            {% endif %}
+                            <form class="form-inline" action="." method="post">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label class="form-label sr-only" for="username">Username:</label>
+                                    <input
+                                        placeholder="E-mail"
+                                        autocomplete="username"
+                                        type="text"
+                                        id="username"
+                                        name="username"
+                                        class="form-control"
+                                    >
+                                </div>
+                                <br>
+                                <div class="form-group">
+                                    <label class="form-label sr-only" for="password">Password:</label>
+                                    <input
+                                        placeholder="Password"
+                                        autocomplete="current-password"
+                                        type="password"
+                                        id="password"
+                                        name="password"
+                                        class="form-control"
+                                    >
+                                </div>
+                                <br>
+                                <button type="submit" class="btn btn-primary">Log in</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="text-center col">
+                <a href="/resetpassword">Forgot Password?</a>
+                <br>
+                <a href="/register">Register a new account</a>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

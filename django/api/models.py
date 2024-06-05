@@ -23,6 +23,7 @@ class User(models.Model):
     password = models.BinaryField()
     displayname = models.CharField(max_length=50)
     description = models.TextField(blank=True, null=True)
+    migrated = models.BooleanField(default=False)
 
     class Meta:
         db_table = "users"
