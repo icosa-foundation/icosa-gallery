@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, render
 
 
 def home(request):
-    template = "home.html"
+    template = "main/home.html"
 
     context = {
         "assets": Asset.objects.filter(visibility=PUBLIC).order_by("-id"),
@@ -20,7 +20,7 @@ def home(request):
 
 
 def user(request, slug):
-    template = "user.html"
+    template = "main/user.html"
 
     user = get_object_or_404(User, url=slug)
     context = {
