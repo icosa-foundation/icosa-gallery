@@ -18,10 +18,10 @@ ASSET_VISIBILITY_CHOICES = [
 
 class User(models.Model):
     id = models.BigAutoField(primary_key=True)
-    url = models.CharField(max_length=255)
+    url = models.CharField("User Name / URL", max_length=255)
     email = models.CharField(max_length=255)
     password = models.BinaryField()
-    displayname = models.CharField(max_length=50)
+    displayname = models.CharField("Display Name", max_length=50)
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
 

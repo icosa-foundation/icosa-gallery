@@ -72,6 +72,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "icosa.urls"
+LOGIN_URL = "/login/"
 
 TEMPLATES = [
     {
