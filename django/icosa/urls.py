@@ -24,4 +24,5 @@ urlpatterns = [
     path("admin_tools/", include("admin_tools.urls")),
     path("admin/", admin.site.urls),
     path("", api_views.home, name="home"),
+    path("user/<str:slug>/", api_views.user, name="user"),
 ]

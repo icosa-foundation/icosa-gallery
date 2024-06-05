@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div>
+                    <h2>{{ user.displayname }}</h2>
+                    <div class="sketch-list">
+                        <div class="container">
+                            <div class="row">
+                                {% for asset in assets %}
+                                    {% include "partials/sketch_list_item.html" %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
