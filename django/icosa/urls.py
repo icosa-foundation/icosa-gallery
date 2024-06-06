@@ -15,4 +15,5 @@ urlpatterns = [
     path("", main_views.home, name="home"),
     path("user/<str:slug>/", main_views.user, name="user"),
     path("settings/", main_views.settings, name="settings"),
+    path("terms/", main_views.terms, name="terms"),
 ]

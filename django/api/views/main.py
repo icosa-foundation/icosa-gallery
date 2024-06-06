@@ -65,3 +65,12 @@ def settings(request):
         form = UserSettingsForm(instance=owner, user=user)
     context = {"form": form}
     return render(request, template, context)
+
+
+def terms(request):
+    template = "main/terms.html"
+
+    return render(
+        request,
+        template,
+    )
