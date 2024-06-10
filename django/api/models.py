@@ -25,6 +25,9 @@ class User(models.Model):
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.displayname
+
     class Meta:
         db_table = "users"
 
@@ -62,6 +65,9 @@ class Asset(models.Model):
     def get_absolute_url(self):
         return f"/view/{self.owner_obj.url}/{self.url}"
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         db_table = "assets"
 
@@ -71,6 +77,9 @@ class DeviceCode(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     devicecode = models.CharField(max_length=6)
     expiry = models.DateTimeField()
+
+    def __str__(self):
+        return f"{self.devicecode}: {self.expiry}"
 
     class Meta:
         db_table = "devicecodes"
