@@ -20,6 +20,8 @@ Before running for the first time, build the project:
 
 To run as if from a fresh install if you have already run the setup process before:
 
+    TODO - explain what this deletes and what this retains
+
 `docker compose build --no-cache --force-rm`
 
 Then:
@@ -50,11 +52,14 @@ Let's say, you've set `DEPLOYMENT_HOST` in `.env` to `icosa.localhost`, you can 
 - fastapi backend: http://api.icosa.localhost
 - django backend: http://api-django.icosa.localhost
 
-You'll need to add the following line to your `/etc/hosts` file (or the equivalent on Windows):
+You'll need to add the following line to your `/etc/hosts` file (on MacOS and Linux)
+or C:\Windows\System32\drivers\etc\hosts (on Windows)
 
-`127.0.0.1       icosa.localhost`
-`127.0.0.1       icosa-api.localhost`
-`127.0.0.1       icosa-api-django.localhost`
+```
+127.0.0.1       icosa.localhost
+127.0.0.1       icosa-api.localhost
+127.0.0.1       icosa-api-django.localhost
+```
 
 ## Seeding the database
 
