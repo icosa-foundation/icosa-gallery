@@ -63,6 +63,8 @@ or C:\Windows\System32\drivers\etc\hosts (on Windows)
 
 ## Seeding the database
 
+    TODO - explain what "seeding" means and why you'd want to
+
 ## With a .dump file
 
 `docker cp <db.dump> ig-db:/opt/`
