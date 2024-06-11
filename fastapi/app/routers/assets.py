@@ -405,13 +405,14 @@ async def get_assets(
     name: Optional[str] = None,
     description: Optional[str] = None,
     ownername: Optional[str] = None,
+    format: Optional[str] = None,
 ):
     results = min(results, 100)
     query = expandedassets.select()
     query = query.where(expandedassets.c.visibility == "PUBLIC")
+
     if curated:
         query = query.where(expandedassets.c.curated == True)
-
     if name:
         name_search = f"%{name}%"
         query = query.where(expandedassets.c.name.ilike(name_search))
@@ -423,6 +424,8 @@ async def get_assets(
     if ownername:
         ownername_search = f"%{ownername}%"
         query = query.where(expandedassets.c.ownername.ilike(ownername_search))
+    if format:
+        query = query.where(expandedassets.c.formats.contains([{"format": format}]))
 
     query = query.order_by(expandedassets.c.id.desc())
     query = query.limit(results)
