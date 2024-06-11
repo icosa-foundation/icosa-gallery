@@ -118,6 +118,9 @@ async def update_user(
 async def get_me_assets(current_user: User = Depends(get_current_user)):
     return await get_id_user_assets(current_user["id"], current_user)
 
+@router.get("/me/likedassets", response_model=List[Asset])
+async def get_me_likedassets(current_user: User = Depends(get_current_user), results: int = 20, page: int = 0):
+    return await get_id_user_likedassets(current_user["id"], current_user, results, page)
 
 @router.patch("/me/password")
 async def change_authenticated_user_password(
@@ -238,6 +241,15 @@ async def get_id_user_assets(
     assetlist = jsonable_encoder(await database.fetch_all(query))
     return assetlist
 
+# TODO add bool field for "liked" - currently we simply filter on format="TILT"
+@router.get("/id/{user}/likedassets", response_model=List[Asset])
+async def get_id_user_likedassets(results: int = 20, page: int = 0):
+    query = expandedassets.select()
+    query = query.where(expandedassets.c.formats.contains([{"format": "TILT"}]))
+    query = query.limit(results)
+    query = query.offset(page * results)
+    assetlist = jsonable_encoder(await database.fetch_all(query))
+    return assetlist
 
 @router.get("/{user}", response_model=User)
 async def get_user(user: str):
