@@ -14,8 +14,15 @@ from django.contrib import admin
 class AssetAdmin(admin.ModelAdmin):
     list_display = (
         "name",
+        "url",
+        "_owner",
+        "description",
+        "_formats",
         "visibility",
         "curated",
+        "polyid",
+        "polydata",
+        "thumbnail",
     )
     search_fields = (
         "name",
@@ -25,11 +32,31 @@ class AssetAdmin(admin.ModelAdmin):
         "visibility",
         "curated",
     )
+    @admin.display(description="Formats")
+    def _formats(self, obj):
+        return f"{', '.join([x['format'] for x in obj.formats if 'format' in x])}"
+
+    @admin.display(description="Owner")
+    def _owner(self, obj):
+        return f"{User.objects.get(pk=obj.owner).displayname}"
+
+    search_fields = (
+        "name",
+        "url",
+        # "owner__displayname", # Only when foreign key is fixed
+    )
 
 
 @admin.register(DeviceCode)
 class DeviceCodeAdmin(admin.ModelAdmin):
-    pass
+
+    list_display = (
+        "user",
+        "devicecode",
+        "expiry",
+    )
+
+    date_hierarchy = "expiry"
 
 
 @admin.register(User)
