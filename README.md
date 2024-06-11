@@ -1,18 +1,28 @@
-# Icosa API
+# Icosa Gallery
 
-Repository for Icosa API
+## Installation
 
-## Docker quick start
+### Prerequisites
 
-Copy the following files:
+This assumes you've already installed Docker.
+If you're not sure the best way to do this, the simplest option is to install the Docker Desktop App.
 
-- `cp example.env .env`
-- `cp fastapi/config.example.json fastapi/config.json`
-- `cp fastapi/gcp-service-account.example.json fastapi/gcp-service-account.json`
+### Configuration Files
 
-Or create and fill them in manually.
+Copy the supplied example config files to their correct locations:
 
-When running in docker, the api service needs its host specified as `db` instead of `localhost` where `db` is the postgres service name. This is currently set in the `dblocation` key inside `config.json`.
+```
+cp example.env .env
+cp fastapi/config.example.json fastapi/config.json
+cp fastapi/gcp-service-account.example.json fastapi/gcp-service-account.json
+```
+
+TODO Explain what each of these files are for and what values you need to change
+
+When running in docker, the api service needs its host specified as `db` instead of `localhost` where `db` is the postgres service name.
+This is currently set in the `dblocation` key inside `config.json`.
+
+TODO this is confusing ^
 
 Before running for the first time, build the project:
 
@@ -20,7 +30,7 @@ Before running for the first time, build the project:
 
 To run as if from a fresh install if you have already run the setup process before:
 
-    TODO - explain what this deletes and what this retains
+TODO - explain what this deletes and what this retains
 
 `docker compose build --no-cache --force-rm`
 
@@ -28,11 +38,14 @@ Then:
 
 `docker compose up -d`
 
+TODO Explain -d and why you might or might not want it
+
 TODO: When running  `docker compose up -d` for the first time, the api service may start before postgres is fully available and fail to start. Subsequent runs should work as expected, so if you find that the initial migrations didn't run, and your database is empty, try:
 
-`docker compose down`
-
-`docker compose up -d`
+```
+docker compose down
+docker compose up -d
+```
 
 (We're working to make this better for first-time users.)
 
@@ -63,13 +76,16 @@ or C:\Windows\System32\drivers\etc\hosts (on Windows)
 
 ## Seeding the database
 
-    TODO - explain what "seeding" means and why you'd want to
+TODO - explain what "seeding" means and why you'd want to
+
+TODO - explain "from inside the container"
 
 ## With a .dump file
 
-`docker cp <db.dump> ig-db:/opt/`
-
-`docker exec -it ig-db bash`
+```
+docker cp <db.dump> ig-db:/opt/
+docker exec -it ig-db bash
+```
 
 Then from inside the container:
 
@@ -77,9 +93,10 @@ Then from inside the container:
 
 ## With a .sql file
 
-`docker cp <db.sql> ig-db:/opt/`
-
-`docker exec -it ig-db bash`
+```
+docker cp <db.sql> ig-db:/opt/
+docker exec -it ig-db bash
+```
 
 Then from inside the container:
 
@@ -100,25 +117,29 @@ Import the sql data:
 
 ## Running updated versions of the code
 
-There are 3 scenarios and respective actions to take:
+TODO - how are people meant to distinguish between 2 and 3?
+Give them a single, safe default action even if it's a bit slower
+Is (3) even needed? Seems to happen automatically for me.
 
-### You've updated your .env files
+There are 3 possible scenarios:
 
-`docker compose down`
 
-`docker compose build`
+### 1. You've updated your own .env files
 
-`docker compose up`
+```
+docker compose down
+docker compose build
+docker compose up
+```
 
-### Incoming code has updated requirements.txt/requirements.in
+### 2. Incoming code has updated requirements.txt/requirements.in
 
-`docker compose down`
+```
+docker compose down`
+docker compose build`
+docker compose up
+```
 
-`docker compose build`
-
-`docker compose up`
-
-### Incoming code has updated anything else
+### 3. Incoming code has updated anything else
 
 `docker compose restart`
-
