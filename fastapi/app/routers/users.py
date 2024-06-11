@@ -2,7 +2,7 @@ import json
 import secrets
 import string
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 
 import bcrypt
 from app.database.database_connector import database
@@ -119,11 +119,23 @@ async def get_me_assets(current_user: User = Depends(get_current_user)):
     return await get_id_user_assets(current_user["id"], current_user)
 
 
-# TODO add bool field for "liked" - currently we simply filter on format="TILT"
+# TODO add db support for "liked" - currently returns all assets
 @router.get("/me/likedassets", response_model=List[Asset])
-async def get_me_likedassets(current_user: User = Depends(get_current_user), results: int = 20, page: int = 0):
+async def get_me_likedassets(
+        current_user: User = Depends(get_current_user),
+        format: Optional[str] = None,
+        orderBy: Optional[str] = None,
+        results: int = 20, page: int = 0):
     query = expandedassets.select()
-    query = query.where(expandedassets.c.formats.contains([{"format": "TILT"}]))
+    # TODO
+    # query = query.where(something current_user likes)
+    if format:
+        query = query.where(expandedassets.c.formats.contains([{"format": format}]))
+
+    if orderBy and orderBy=="LIKED_TIME":
+        # TODO
+        # query = query.order_by(...)
+        pass
     query = query.limit(results)
     query = query.offset(page * results)
     assetlist = jsonable_encoder(await database.fetch_all(query))
