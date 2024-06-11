@@ -118,9 +118,16 @@ async def update_user(
 async def get_me_assets(current_user: User = Depends(get_current_user)):
     return await get_id_user_assets(current_user["id"], current_user)
 
+
+# TODO add bool field for "liked" - currently we simply filter on format="TILT"
 @router.get("/me/likedassets", response_model=List[Asset])
 async def get_me_likedassets(current_user: User = Depends(get_current_user), results: int = 20, page: int = 0):
-    return await get_id_user_likedassets(current_user["id"], current_user, results, page)
+    query = expandedassets.select()
+    query = query.where(expandedassets.c.formats.contains([{"format": "TILT"}]))
+    query = query.limit(results)
+    query = query.offset(page * results)
+    assetlist = jsonable_encoder(await database.fetch_all(query))
+    return assetlist
 
 @router.patch("/me/password")
 async def change_authenticated_user_password(
@@ -232,20 +239,13 @@ async def get_user(user: int):
 
 @router.get("/id/{user}/assets", response_model=List[Asset])
 async def get_id_user_assets(
-    user: int, current_user: User = Depends(get_optional_user)
+    user: int, current_user: User = Depends(get_optional_user),
+    results: int = 20, page: int = 0
 ):
     query = expandedassets.select()
     if (current_user is None) or (current_user["id"] != user):
         query = query.where(expandedassets.c.visibility == "PUBLIC")
     query = query.where(expandedassets.c.owner == user)
-    assetlist = jsonable_encoder(await database.fetch_all(query))
-    return assetlist
-
-# TODO add bool field for "liked" - currently we simply filter on format="TILT"
-@router.get("/id/{user}/likedassets", response_model=List[Asset])
-async def get_id_user_likedassets(results: int = 20, page: int = 0):
-    query = expandedassets.select()
-    query = query.where(expandedassets.c.formats.contains([{"format": "TILT"}]))
     query = query.limit(results)
     query = query.offset(page * results)
     assetlist = jsonable_encoder(await database.fetch_all(query))
@@ -263,7 +263,12 @@ async def get_user(user: str):
 
 @router.get("/{user}/assets", response_model=List[Asset])
 async def get_user_assets(
-    user: str, current_user: User = Depends(get_optional_user)
+    user: str,
+    current_user: User = Depends(get_optional_user),
+    results: int = 20,
+    page: int = 0
 ):
     userdata = await get_user(user)
-    return await get_id_user_assets(userdata["id"], current_user)
+    return await get_id_user_assets(
+        userdata["id"], current_user,
+        results, page, format)
