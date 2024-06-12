@@ -13,7 +13,12 @@ urlpatterns = [
     path("logout/", auth_views.custom_logout, name="logout"),
     # Other views
     path("", main_views.home, name="home"),
-    path("user/<str:slug>/", main_views.user, name="user"),
+    path("user/<str:user_url>/", main_views.user, name="user"),
+    path(
+        "view/<str:user_url>/<str:asset_url>/",
+        main_views.view_asset,
+        name="view_asset",
+    ),
     path("settings/", main_views.settings, name="settings"),
     path("terms/", main_views.terms, name="terms"),
 ]

@@ -62,6 +62,27 @@ class Asset(models.Model):
         # TODO(james) replace this with a foreign key
         return User.objects.filter(id=self.owner).first()
 
+    @property
+    def preferred_format(self):
+        formats = {}
+        for format in self.formats:
+            formats[format["format"]] = format
+        if "GLTF2" in formats.keys():
+            return formats["GLTF2"]
+        if "GLTF" in formats.keys():
+            return formats["GLTF"]
+        if "TILT" in formats:
+            return formats["TILT"]
+        return None
+
+    @property
+    def is_gltf(self):
+        return self.preferred_format["format"] == "GLTF"
+
+    @property
+    def is_gltf2(self):
+        return self.preferred_format["format"] == "GLTF2"
+
     def get_absolute_url(self):
         return f"/view/{self.owner_obj.url}/{self.url}"
 

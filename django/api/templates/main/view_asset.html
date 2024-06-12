@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}
+{% endblock extrahead %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div>
+                <h2>{{ user.displayname }}</h2>
+                <div class="sketch-list">
+                    <div class="container">
+                        <div class="row">
+                            <div id="icosa-viewer" style="width: 100%, height: 500px"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="module">
+    import {Viewer} from "/static/js/icosa-viewer.module.js";
+
+    var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
+
+    // await viewer.loadGltf("formats/gltf2/gradient.gltf", true);
+    // await viewer.loadGltf("formats/gltf2/snowman.gltf", true);
+    // await viewer.loadGltf("formats/gltf2/old-story.gltf", true);
+    {% if asset.is_gltf %}
+        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
+    {% elif asset.is_gltf2 %}
+        await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
+    {% endif %}
+
+</script>
+{% endblock content %}

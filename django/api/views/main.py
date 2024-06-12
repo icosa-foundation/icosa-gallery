@@ -22,15 +22,31 @@ def home(request):
     )
 
 
-def user(request, slug):
+def user(request, user_url):
     template = "main/user.html"
 
-    user = get_object_or_404(User, url=slug)
+    user = get_object_or_404(User, url=user_url)
     context = {
         "user": user,
         "assets": Asset.objects.filter(
             visibility=PUBLIC, owner=user.id
         ).order_by("-id"),
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+def view_asset(request, user_url, asset_url):
+    template = "main/view_asset.html"
+    user = get_object_or_404(User, url=user_url)
+    context = {
+        "user": user,
+        "asset": get_object_or_404(
+            Asset, visibility=PUBLIC, owner=user.id, url=asset_url
+        ),
     }
     return render(
         request,
