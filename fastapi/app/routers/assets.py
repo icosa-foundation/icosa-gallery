@@ -425,7 +425,9 @@ async def get_assets(
         ownername_search = f"%{ownername}%"
         query = query.where(expandedassets.c.ownername.ilike(ownername_search))
     if format:
-        query = query.where(expandedassets.c.formats.contains([{"format": format}]))
+        query = query.where(
+            expandedassets.c.formats.contains([{"format": format}])
+        )
 
     query = query.order_by(expandedassets.c.id.desc())
     query = query.limit(results)
