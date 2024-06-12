@@ -33,6 +33,10 @@ class User(models.Model):
 
 
 class Asset(models.Model):
+    COLOR_SPACES = [
+        ("LINEAR", "LINEAR"),
+        ("GAMMA", "GAMMA"),
+    ]
     id = models.BigAutoField(primary_key=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
@@ -58,7 +62,9 @@ class Asset(models.Model):
     tags = models.JSONField(null=True, blank=True)
     likes = models.ManyToManyField("User")
     orienting_rotation = models.JSONField(default="[0,0,0,0]")
-    color_space = models.CharField(max_length=50, null=True, blank=True)
+    color_space = models.CharField(
+        max_length=50, choices=COLOR_SPACES, default="GAMMA"
+    )
     background_color = models.CharField(max_length=7, null=True, blank=True)
 
     @property
