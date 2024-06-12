@@ -35,7 +35,18 @@ assets = sqlalchemy.Table(
     sqlalchemy.Column("polyid", sqlalchemy.VARCHAR(255)),
     sqlalchemy.Column("polydata", sqlalchemy.dialects.postgresql.JSONB),
     sqlalchemy.Column("thumbnail", sqlalchemy.TEXT),
+    sqlalchemy.Column("create_time", sqlalchemy.DateTime(timezone=True)),
+    sqlalchemy.Column("update_time", sqlalchemy.DateTime(timezone=True)),
+    sqlalchemy.Column("license", sqlalchemy.VARCHAR(50)),
+    sqlalchemy.Column("tags", sqlalchemy.dialects.postgresql.JSONB),
+    # sqlalchemy.Column("likes"), # TODO: perhaps this can wait until we move to ninja
+    sqlalchemy.Column(
+        "orienting_rotation", sqlalchemy.dialects.postgresql.JSONB
+    ),
+    sqlalchemy.Column("color_space", sqlalchemy.VARCHAR(50)),
+    sqlalchemy.Column("background_color", sqlalchemy.VARCHAR(7)),
 )
+
 
 expandedassets = sqlalchemy.Table(
     "expandedassets",

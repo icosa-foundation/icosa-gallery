@@ -52,6 +52,14 @@ class Asset(models.Model):
     polydata = models.JSONField(blank=True, null=True)
     # TODO(james) make `thumbnail` an image field perhaps.
     thumbnail = models.TextField(blank=True, null=True)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+    license = models.CharField(max_length=50, null=True, blank=True)
+    tags = models.JSONField(null=True, blank=True)
+    likes = models.ManyToManyField("User")
+    orienting_rotation = models.JSONField(default="[0,0,0,0]")
+    color_space = models.CharField(max_length=50, null=True, blank=True)
+    background_color = models.CharField(max_length=7, null=True, blank=True)
 
     @property
     def timestamp(self):

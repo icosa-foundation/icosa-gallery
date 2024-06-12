@@ -33,6 +33,8 @@ class AssetAdmin(admin.ModelAdmin):
         "curated",
     )
 
+    filter_horizontal = ("likes",)
+
     @admin.display(description="Formats")
     def _formats(self, obj):
         return (
