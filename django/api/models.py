@@ -60,7 +60,7 @@ class Asset(models.Model):
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
     tags = models.JSONField(null=True, blank=True)
-    likes = models.ManyToManyField("User")
+    likes = models.ManyToManyField("User", null=True, blank=True)
     orienting_rotation = models.JSONField(default="[0,0,0,0]")
     color_space = models.CharField(
         max_length=50, choices=COLOR_SPACES, default="GAMMA"
