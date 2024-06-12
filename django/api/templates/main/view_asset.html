@@ -24,14 +24,7 @@
 
     var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
 
-    // await viewer.loadGltf("formats/gltf2/gradient.gltf", true);
-    // await viewer.loadGltf("formats/gltf2/snowman.gltf", true);
-    // await viewer.loadGltf("formats/gltf2/old-story.gltf", true);
-    {% if asset.is_gltf %}
-        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
-    {% elif asset.is_gltf2 %}
-        await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
-    {% endif %}
+    await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
 
 </script>
 {% endblock content %}
