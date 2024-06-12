@@ -32,9 +32,12 @@ class AssetAdmin(admin.ModelAdmin):
         "visibility",
         "curated",
     )
+
     @admin.display(description="Formats")
     def _formats(self, obj):
-        return f"{', '.join([x['format'] for x in obj.formats if 'format' in x])}"
+        return (
+            f"{', '.join([x['format'] for x in obj.formats if 'format' in x])}"
+        )
 
     @admin.display(description="Owner")
     def _owner(self, obj):
@@ -49,7 +52,6 @@ class AssetAdmin(admin.ModelAdmin):
 
 @admin.register(DeviceCode)
 class DeviceCodeAdmin(admin.ModelAdmin):
-
     list_display = (
         "user",
         "devicecode",
