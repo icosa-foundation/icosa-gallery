@@ -7,14 +7,29 @@
     <div class="row">
         <div class="col">
             <div>
-                <h2>{{ user.displayname }}</h2>
                 <div class="sketch-list">
                     <div class="container">
                         <div class="row">
-                            <div id="icosa-viewer" style="width: 100%, height: 500px"></div>
+                            <div id="icosa-viewer"></div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="sketch-info container">
+    <div class="row">
+        <div class="col">
+            <div>
+                <h2>{{ asset.name }}</h2>
+                <h4>
+                    <a href="/user/{{ asset.owner_obj.url }}">{{ asset.owner_obj.displayname }}</a>
+                </h4>
+                <span>{{ asset.timestamp|date:"Y-m-d" }}</span>
+                <p>
+                </p>
+                <h6>{{ asset.license|default_if_none:"All rights reserved" }}</h6>
             </div>
         </div>
     </div>
