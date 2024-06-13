@@ -24,7 +24,7 @@
             <div>
                 <h2>{{ asset.name }}</h2>
                 <h4>
-                    <a href="/user/{{ asset.owner_obj.url }}">{{ asset.owner_obj.displayname }}</a>
+                    <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
                 </h4>
                 <span>{{ asset.timestamp|date:"Y-m-d" }}</span>
                 <p>

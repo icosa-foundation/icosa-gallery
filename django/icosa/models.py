@@ -31,6 +31,14 @@ class User(models.Model):
     migrated = models.BooleanField(default=False)
     likes = models.ManyToManyField("Asset", null=True, blank=True)
 
+    @classmethod
+    def get_by_email(cls, email):
+        try:
+            instance = cls.objects.get(email=email)
+        except cls.DoesNotExist:
+            instance = None
+        return instance
+
     def __str__(self):
         return self.displayname
 
@@ -46,8 +54,6 @@ class Asset(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
-    # TODO(james) `owner` should be a foreign key, but the production data
-    # violates constraints
     owner = models.ForeignKey(
         "User", null=True, blank=True, on_delete=models.SET_NULL
     )
@@ -79,11 +85,6 @@ class Asset(models.Model):
         return get_snowflake_timestamp(self.id)
 
     @property
-    def owner_obj(self):
-        # TODO(james) replace this with a foreign key
-        return User.objects.filter(id=self.owner).first()
-
-    @property
     def preferred_format(self):
         formats = {}
         for format in self.formats:
@@ -105,7 +106,7 @@ class Asset(models.Model):
         return self.preferred_format["format"] == "GLTF2"
 
     def get_absolute_url(self):
-        return f"/view/{self.owner_obj.url}/{self.url}"
+        return f"/view/{self.owner.url}/{self.url}"
 
     def __str__(self):
         return self.name

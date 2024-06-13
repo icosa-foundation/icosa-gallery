@@ -4,12 +4,12 @@
             <div class="active carousel-item">
                 <img class="d"
                     src="{{ hero.thumbnail }}"
-                    alt="{{ hero.description }} by {{ hero.owner_obj.displayname }}">
+                    alt="{{ hero.description }} by {{ hero.owner.displayname }}">
                 <div class="carousel-caption">
                     <a href="/view/aDj1v08K6XE/c-_KGpoirx8">
                         <h3 class="title">{{ hero.name }}</h3>
                     </a>
-                    <p>{{ hero.owner_obj.displayname }} | {{ hero.timestamp|date:"Y-m-d" }}</p>
+                    <p>{{ hero.owner.displayname }} | {{ hero.timestamp|date:"Y-m-d" }}</p>
                 </div>
             </div>
         </div>
