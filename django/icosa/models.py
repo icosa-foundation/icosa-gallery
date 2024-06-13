@@ -24,6 +24,7 @@ class User(models.Model):
     displayname = models.CharField("Display Name", max_length=50)
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
+    likes = models.ManyToManyField("Asset", null=True, blank=True)
 
     def __str__(self):
         return self.displayname
@@ -42,7 +43,9 @@ class Asset(models.Model):
     name = models.CharField(max_length=255, blank=True, null=True)
     # TODO(james) `owner` should be a foreign key, but the production data
     # violates constraints
-    owner = models.BigIntegerField()
+    owner = models.ForeignKey(
+        "User", null=True, blank=True, on_delete=models.SET_NULL
+    )
     description = models.TextField(blank=True, null=True)
     formats = models.JSONField()
     visibility = models.CharField(
@@ -60,7 +63,6 @@ class Asset(models.Model):
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
     tags = models.JSONField(null=True, blank=True)
-    likes = models.ManyToManyField("User", null=True, blank=True)
     orienting_rotation = models.JSONField(default="[0,0,0,0]")
     color_space = models.CharField(
         max_length=50, choices=COLOR_SPACES, default="GAMMA"

@@ -15,7 +15,7 @@ class AssetAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "url",
-        "_owner",
+        "owner",
         "description",
         "_formats",
         "visibility",
@@ -33,22 +33,16 @@ class AssetAdmin(admin.ModelAdmin):
         "curated",
     )
 
-    filter_horizontal = ("likes",)
-
     @admin.display(description="Formats")
     def _formats(self, obj):
         return (
             f"{', '.join([x['format'] for x in obj.formats if 'format' in x])}"
         )
 
-    @admin.display(description="Owner")
-    def _owner(self, obj):
-        return f"{User.objects.get(pk=obj.owner).displayname}"
-
     search_fields = (
         "name",
         "url",
-        # "owner__displayname", # Only when foreign key is fixed
+        "owner__displayname",
     )
 
 
@@ -77,6 +71,7 @@ class UserAdmin(admin.ModelAdmin):
         "url",
         "id",
     )
+    filter_horizontal = ("likes",)
 
 
 @admin.register(Oauth2Client)
