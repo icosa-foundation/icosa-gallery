@@ -1,6 +1,6 @@
-from api.forms import UserSettingsForm
-from api.models import PUBLIC, Asset, User
-from api.utils import get_owner
+from icosa.forms import UserSettingsForm
+from icosa.models import PUBLIC, Asset, User
+from icosa.utils import get_owner
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render

@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0005_alter_asset_color_space'),
+        ("icosa", "0005_alter_asset_color_space"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='asset',
-            name='likes',
-            field=models.ManyToManyField(blank=True, null=True, to='api.user'),
+            model_name="asset",
+            name="likes",
+            field=models.ManyToManyField(
+                blank=True, null=True, to="icosa.user"
+            ),
         ),
     ]

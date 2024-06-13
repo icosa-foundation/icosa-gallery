@@ -1,5 +1,5 @@
-from api.views import auth as auth_views
-from api.views import main as main_views
+from icosa.views import auth as auth_views
+from icosa.views import main as main_views
 
 from django.conf.urls import include
 from django.contrib import admin

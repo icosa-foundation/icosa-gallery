@@ -1,5 +1,5 @@
 import requests
-from api.models import User as IcosaUser
+from icosa.models import User as IcosaUser
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User

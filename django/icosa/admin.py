@@ -1,4 +1,4 @@
-from api.models import (
+from icosa.models import (
     Asset,
     DeviceCode,
     Oauth2Client,

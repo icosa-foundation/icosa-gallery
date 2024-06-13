@@ -50,7 +50,7 @@ CSRF_TRUSTED_ORIGINS = [
 INSTALLED_APPS = [
     # "admin_tools",
     # "admin_tools.dashboard",
-    "api",
+    "icosa",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -71,7 +71,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "icosa.urls"
+ROOT_URLCONF = "django_project.urls"
 LOGIN_URL = "/login/"
 
 TEMPLATES = [
@@ -84,7 +84,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "api.context_processors.owner_processor",
+                "icosa.context_processors.owner_processor",
             ],
             "loaders": [
                 "django.template.loaders.app_directories.Loader",
@@ -94,7 +94,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "icosa.wsgi.application"
+WSGI_APPLICATION = "django_project.wsgi.application"
 
 
 # Database

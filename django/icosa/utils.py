@@ -1,4 +1,4 @@
-from api.models import User as IcosaUser
+from icosa.models import User as IcosaUser
 
 
 def get_owner(user):

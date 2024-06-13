@@ -1,4 +1,4 @@
-from api.models import User
+from icosa.models import User
 
 from django import forms
 from django.forms.widgets import EmailInput, PasswordInput
