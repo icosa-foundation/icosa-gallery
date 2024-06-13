@@ -4,6 +4,7 @@ from .helpers import get_snowflake_timestamp
 
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
+UNLISTED = "UNLISTED"
 ASSET_VISIBILITY_CHOICES = [
     (
         PUBLIC,
@@ -12,6 +13,10 @@ ASSET_VISIBILITY_CHOICES = [
     (
         PRIVATE,
         "Private",
+    ),
+    (
+        UNLISTED,
+        "Unlisted",
     ),
 ]
 
