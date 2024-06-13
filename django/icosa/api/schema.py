@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from ninja import Field, Schema
+from pydantic import EmailStr
 
 
 class LoginToken(Schema):
@@ -10,6 +11,21 @@ class LoginToken(Schema):
 
 class DeviceCode(Schema):
     deviceCode: str
+
+
+class NewUser(Schema):
+    email: EmailStr
+    url: Optional[str]
+    password: str
+    displayName: str
+
+
+class FullUser(Schema):
+    id: str
+    url: str
+    email: EmailStr
+    displayname: str
+    description: Optional[str]
 
 
 class User(Schema):
@@ -136,20 +152,20 @@ class PolyList(Schema):
 
 # Asset data
 class SubAssetFormat(Schema):
-    id: str
+    id: int  # TODO(james) should output a str
     url: str
     format: str
 
 
 class AssetFormat(Schema):
-    id: str
+    id: int  # TODO(james) should output a str
     url: str
     format: str
-    subfiles: Optional[List[SubAssetFormat]]
+    # subfiles: Optional[List[SubAssetFormat]]  # TODO(james): this is broken
 
 
 class _DBAsset(Schema):
-    id: int
+    id: int  # TODO(james) should output a str
     url: Optional[str]
     formats: List[AssetFormat]
     name: str
@@ -163,7 +179,7 @@ class _DBAsset(Schema):
 
 
 class AssetSchema(_DBAsset):
-    ownername: str = Field(None, alias=("owner.name"))
+    ownername: str = Field(None, alias=("owner.displayname"))
     ownerurl: str = Field(None, alias=("owner.url"))
 
 

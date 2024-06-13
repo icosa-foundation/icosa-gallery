@@ -167,3 +167,7 @@ ADMIN_TOOLS_INDEX_DASHBOARD = "main_dashboard.dashboard.MainDashboard"
 # Compressor settings
 
 COMPRESS_PRECOMPILERS = (("text/x-scss", "django_libsass.SassCompiler"),)
+
+# Ninja settings
+
+NINJA_PAGINATION_PER_PAGE = 20

@@ -1,8 +1,11 @@
 import re
+from typing import List, Optional
 
-from icosa.models import Asset, User
+from icosa.models import PUBLIC, Asset, User
 from ninja import Router
+from ninja.pagination import paginate
 
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 
@@ -374,41 +377,34 @@ def get_id_asset(request, asset_id: int):
 #         )
 #     return check_asset
 
+# @router.get("/", response=List[AssetSchema], include_in_schema=False)
 
-@router.get("", response_model=List[Asset])
-@router.get("/", response_model=List[Asset], include_in_schema=False)
-async def get_assets(
-    results: int = 20,
-    page: int = 0,
+
+@router.get("", response=List[AssetSchema])
+@paginate
+def get_assets(
+    request,
     curated: bool = False,
     name: Optional[str] = None,
     description: Optional[str] = None,
     ownername: Optional[str] = None,
     format: Optional[str] = None,
 ):
-    results = min(results, 100)
-    query = expandedassets.select()
-    query = query.where(expandedassets.c.visibility == "PUBLIC")
+    # TODO(james): limit max pagination to 100 results
+    # TODO(james): `limit` query param should be `pageSize`; need to find out
+    # what `offset` should be
+    q = Q(visibility=PUBLIC)
 
     if curated:
-        query = query.where(expandedassets.c.curated == True)
+        q &= Q(curated=True)
     if name:
-        name_search = f"%{name}%"
-        query = query.where(expandedassets.c.name.ilike(name_search))
+        q &= Q(name__icontains=name)
     if description:
-        description_search = f"%{description}%"
-        query = query.where(
-            expandedassets.c.description.ilike(description_search)
-        )
+        q &= Q(description__icontains=description)
     if ownername:
-        ownername_search = f"%{ownername}%"
-        query = query.where(expandedassets.c.ownername.ilike(ownername_search))
+        q &= Q(owner__displayname__icontains=ownername)
     if format:
-        query = query.where(
-            expandedassets.c.formats.contains([{"format": format}])
-        )
+        q &= Q(formats__contains=[{"format": format}])
 
-    query = query.order_by(expandedassets.c.id.desc())
-    query = query.limit(results)
-    query = query.offset(page * results)
-    return await database.fetch_all(query)
+    assets = Asset.objects.filter(q)
+    return assets
