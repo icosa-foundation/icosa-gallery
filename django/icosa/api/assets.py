@@ -377,10 +377,9 @@ def get_id_asset(request, asset_id: int):
 #         )
 #     return check_asset
 
-# @router.get("/", response=List[AssetSchema], include_in_schema=False)
-
 
 @router.get("", response=List[AssetSchema])
+@router.get("/", response=List[AssetSchema], include_in_schema=False)
 @paginate
 def get_assets(
     request,
