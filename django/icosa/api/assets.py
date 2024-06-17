@@ -17,20 +17,33 @@ router = Router()
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
 
-def get_asset_by_id(asset: int, request: HttpRequest) -> Asset:
-    asset = get_object_or_404(Asset, pk=asset)
+def user_can_view_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> bool:
     if asset.visibility == "PRIVATE":
-        # user.is_anonymous short-circuits this if
-        # user.email is not a field for anonymous users
         if (
             request.user.is_anonymous
             or User.from_request(request) != asset.owner
         ):
-            raise Http404("Asset not found.")
+            return False
+    return True
+
+
+def get_asset_by_id(
+    asset: int,
+    request: HttpRequest,
+) -> Asset:
+    asset = get_object_or_404(Asset, pk=asset)
+    if not user_can_view_asset(request, asset):
+        raise Http404("Asset not found.")
     return asset
 
 
-def get_my_id_asset(request, asset_id: int):
+def get_my_id_asset(
+    request,
+    asset_id: int,
+):
     try:
         asset = get_asset_by_id(asset_id, request.user)
     except Exception:
@@ -43,7 +56,10 @@ def get_my_id_asset(request, asset_id: int):
 
 
 @router.get("/id/{asset}", response=AssetSchema)
-def get_id_asset(request, asset: int):
+def get_id_asset(
+    request,
+    asset: int,
+):
     return get_asset_by_id(asset, request)
 
 
