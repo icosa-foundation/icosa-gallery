@@ -3,10 +3,11 @@ from typing import List, NoReturn, Optional
 
 from icosa.models import PUBLIC, Asset, User
 from ninja import Router
+from ninja.errors import HttpError
 from ninja.pagination import paginate
 
 from django.db.models import Q
-from django.http import Http404, HttpRequest, HttpResponseForbidden
+from django.http import Http404, HttpRequest
 from django.shortcuts import get_object_or_404
 
 from .schema import AssetSchemaIn, AssetSchemaOut
@@ -40,16 +41,20 @@ def check_user_owns_asset(
     asset: Asset,
 ) -> NoReturn:
     if not user_owns_asset(request, asset):
-        raise HttpResponseForbidden("Unauthorized user.")
+        raise HttpError(403, "Unauthorized user.")
 
 
 def get_asset_by_id(
     request: HttpRequest,
     asset: int,
 ) -> Asset:
-    asset = get_object_or_404(Asset, pk=asset)
+    # get_object_or_404 raises the wrong error text
+    try:
+        asset = Asset.objects.get(pk=asset)
+    except Asset.DoesNotExist:
+        raise HttpError(404, "Asset not found.")
     if not user_can_view_asset(request, asset):
-        raise Http404("Asset not found.")
+        raise HttpError(404, "Asset not found.")
     return asset
 
 
@@ -73,26 +78,36 @@ def get_id_asset(
     return get_asset_by_id(request, asset)
 
 
-# @router.get("/{userurl}/{asseturl}", response_model=Asset)
-# async def get_asset(
-#     userurl: str,
-#     asseturl: str,
-#     current_user: User = Depends(get_optional_user),
-# ):
-#     userassets = await get_user_assets(userurl, current_user)
-#     query = expandedassets.select()
-#     query = query.where(expandedassets.c.ownerurl == userurl)
-#     assets = await database.fetch_all(query)
-#     for asset in assets:
-#         if asset["url"] == asseturl:
-#             if asset["visibility"] == "PRIVATE":
-#                 if (
-#                     current_user == None
-#                     or current_user["id"] != asset["owner"]
-#                 ):
-#                     raise Http404
-#             return asset
-#     raise HTTPException(status_code=404, detail="Asset not found.")
+@router.patch("/{str:asset}/unpublish", response=AssetSchemaIn)
+def unpublish_asset(
+    request,
+    asset: int,
+):
+    try:
+        asset = get_my_id_asset(request, asset)
+    except Exception:
+        raise
+    check_user_owns_asset(request, asset)
+    asset.visibility = "PRIVATE"
+    asset.save()
+    return asset
+
+
+@router.get("/{str:userurl}/{asseturl}", response=AssetSchemaOut)
+def get_asset(
+    request,
+    userurl: str,
+    asseturl: str,
+):
+    # get_object_or_404 raises the wrong error text
+    try:
+        asset = Asset.objects.get(url=asseturl, owner__url=userurl)
+    except Asset.DoesNotExist:
+        raise HttpError(404, "Asset not found.")
+
+    if not user_can_view_asset(request, asset):
+        raise HttpError(404, "Asset not found.")
+    return asset
 
 
 # def validate_file(file: UploadFile, extension: str):
@@ -383,28 +398,20 @@ def get_id_asset(
 #     return await get_my_id_asset(asset, current_user)
 
 
-# @router.patch("/{asset}/unpublish")
-# async def unpublish_asset(
-#     asset: int, current_user: User = Depends(get_current_user)
-# ):
-#     check_asset = await get_my_id_asset(asset, current_user)
-#     query = assets.update()
-#     query = query.where(assets.c.id == asset)
-#     query = query.values(visibility="PRIVATE")
-#     await database.execute(query)
-
-
 # @router.delete("/{asset}")
 # async def delete_asset(
-#     asset: int, current_user: User = Depends(get_current_user)
+#     request,
+#     asset: int,
 # ):
-#     check_asset = await get_my_id_asset(asset, current_user)
-#     # Database removal
-#     query = assets.delete()
-#     query = query.where(assets.c.id == asset)
-#     await database.execute(query)
+#     try:
+#         asset = get_my_id_asset(request, asset)
+#     except Exception:
+#         raise
+#     check_user_owns_asset(request, asset)
+#     asset.delete()
 #     # Asset removal from storage
-#     asset_folder = f'{current_user["id"]}/{asset}/'
+#     owner = User.from_request(request)
+#     asset_folder = f"{owner.id}/{asset}/"
 #     if not (await remove_folder_gcs(asset_folder)):
 #         print(f"Failed to remove asset {asset}")
 #         raise HTTPException(
