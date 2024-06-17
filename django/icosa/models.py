@@ -32,11 +32,13 @@ class User(models.Model):
     likes = models.ManyToManyField("Asset", null=True, blank=True)
 
     @classmethod
-    def get_by_email(cls, email):
-        try:
-            instance = cls.objects.get(email=email)
-        except cls.DoesNotExist:
-            instance = None
+    def from_request(cls, request):
+        instance = None
+        if getattr(request.user, "email", None):
+            try:
+                instance = cls.objects.get(email=request.user.email)
+            except cls.DoesNotExist:
+                pass
         return instance
 
     def __str__(self):

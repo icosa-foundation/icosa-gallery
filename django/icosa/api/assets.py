@@ -6,7 +6,7 @@ from ninja import Router
 from ninja.pagination import paginate
 
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, HttpRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 
 from .schema import AssetSchema
@@ -17,25 +17,34 @@ router = Router()
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
 
-@router.get("/id/{asset_id}", response=AssetSchema)
-def get_id_asset(request, asset_id: int):
-    asset = get_object_or_404(Asset, pk=asset_id)
+def get_asset_by_id(asset: int, request: HttpRequest) -> Asset:
+    asset = get_object_or_404(Asset, pk=asset)
     if asset.visibility == "PRIVATE":
+        # user.is_anonymous short-circuits this if
+        # user.email is not a field for anonymous users
         if (
             request.user.is_anonymous
-            or User.get_by_email(request.user.email) != asset.owner
+            or User.from_request(request) != asset.owner
         ):
-            raise Http404
+            raise Http404("Asset not found.")
     return asset
 
 
-# async def get_my_id_asset(
-#     asset: int, current_user: User = Depends(get_current_user)
-# ):
-#     asset = await get_id_asset(asset, current_user)
-#     if current_user["id"] != asset["owner"]:
-#         raise HTTPException(status_code=403, detail="Unauthorized user.")
-#     return asset
+def get_my_id_asset(request, asset_id: int):
+    try:
+        asset = get_asset_by_id(asset_id, request.user)
+    except Exception:
+        raise
+
+    owner = User.from_request(request)
+    if owner is None or owner != asset.owner:
+        raise HttpResponseForbidden("Unauthorized user.")
+    return asset
+
+
+@router.get("/id/{asset}", response=AssetSchema)
+def get_id_asset(request, asset: int):
+    return get_asset_by_id(asset, request)
 
 
 # @router.get("/{userurl}/{asseturl}", response_model=Asset)
