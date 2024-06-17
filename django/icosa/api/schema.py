@@ -165,7 +165,6 @@ class AssetFormat(Schema):
 
 
 class _DBAsset(Schema):
-    id: int  # TODO(james) should output a str
     url: Optional[str]
     formats: List[AssetFormat]
     name: str
@@ -176,11 +175,16 @@ class _DBAsset(Schema):
     polyid: Optional[str]
     polydata: Optional[PolyAsset]
     thumbnail: Optional[str]
-
-
-class AssetSchema(_DBAsset):
     ownername: str = Field(None, alias=("owner.displayname"))
     ownerurl: str = Field(None, alias=("owner.url"))
+
+
+class AssetSchemaIn(_DBAsset):
+    pass
+
+
+class AssetSchemaOut(_DBAsset):
+    id: int  # TODO(james) should output a str
 
 
 class AssetPatchData(Schema):

@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional
+from typing import List, NoReturn, Optional
 
 from icosa.models import PUBLIC, Asset, User
 from ninja import Router
@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.http import Http404, HttpRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 
-from .schema import AssetSchema
+from .schema import AssetSchemaIn, AssetSchemaOut
 
 router = Router()
 
@@ -22,17 +22,30 @@ def user_can_view_asset(
     asset: Asset,
 ) -> bool:
     if asset.visibility == "PRIVATE":
-        if (
-            request.user.is_anonymous
-            or User.from_request(request) != asset.owner
-        ):
-            return False
+        return user_owns_asset(request, asset)
     return True
 
 
-def get_asset_by_id(
-    asset: int,
+def user_owns_asset(
     request: HttpRequest,
+    asset: Asset,
+) -> bool:
+    if request.user.is_anonymous or User.from_request(request) != asset.owner:
+        return False
+    return True
+
+
+def check_user_owns_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> NoReturn:
+    if not user_owns_asset(request, asset):
+        raise HttpResponseForbidden("Unauthorized user.")
+
+
+def get_asset_by_id(
+    request: HttpRequest,
+    asset: int,
 ) -> Asset:
     asset = get_object_or_404(Asset, pk=asset)
     if not user_can_view_asset(request, asset):
@@ -42,25 +55,22 @@ def get_asset_by_id(
 
 def get_my_id_asset(
     request,
-    asset_id: int,
+    asset: int,
 ):
     try:
-        asset = get_asset_by_id(asset_id, request.user)
+        asset = get_asset_by_id(request, asset)
     except Exception:
         raise
-
-    owner = User.from_request(request)
-    if owner is None or owner != asset.owner:
-        raise HttpResponseForbidden("Unauthorized user.")
+    check_user_owns_asset(request, asset)
     return asset
 
 
-@router.get("/id/{asset}", response=AssetSchema)
+@router.get("/id/{asset}", response=AssetSchemaOut)
 def get_id_asset(
     request,
     asset: int,
 ):
-    return get_asset_by_id(asset, request)
+    return get_asset_by_id(request, asset)
 
 
 # @router.get("/{userurl}/{asseturl}", response_model=Asset)
@@ -403,8 +413,8 @@ def get_id_asset(
 #     return check_asset
 
 
-@router.get("", response=List[AssetSchema])
-@router.get("/", response=List[AssetSchema], include_in_schema=False)
+@router.get("", response=List[AssetSchemaOut])
+@router.get("/", response=List[AssetSchemaOut], include_in_schema=False)
 @paginate
 def get_assets(
     request,
