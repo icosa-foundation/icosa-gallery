@@ -126,6 +126,59 @@ def delete_asset(
     return asset
 
 
+# TODO(james): do we wait until storages is implemented for this?
+# @router.patch(
+#     "/{asset}",
+#     auth=AuthBearer(),
+#     response_model=Asset,
+# )
+# def update_asset(
+#     request
+#     background_tasks: BackgroundTasks,
+#     request: Request,
+#     asset: int,
+#     data: Optional[AssetPatchData] = None,
+#     name: Optional[str] = Form(None),
+#     url: Optional[str] = Form(None),
+#     description: Optional[str] = Form(None),
+#     visibility: Optional[str] = Form(None),
+#     current_user: User = Depends(get_current_user),
+#     thumbnail: Optional[UploadFile] = File(None),
+# ):
+#     current_asset = _DBAsset(**(await get_my_id_asset(asset, current_user)))
+
+#     if request.headers.get("content-type") == "application/json":
+#         update_data = data.dict(exclude_unset=True)
+#     elif request.headers.get("content-type").startswith("multipart/form-data"):
+#         update_data = {
+#             k: v
+#             for k, v in {
+#                 "name": name,
+#                 "url": url,
+#                 "description": description,
+#                 "visibility": visibility,
+#             }.items()
+#             if v is not None
+#         }
+#     else:
+#         raise HTTPException(
+#             status_code=415, detail="Unsupported content type."
+#         )
+
+#     updated_asset = current_asset.copy(update=update_data)
+#     updated_asset.id = int(updated_asset.id)
+#     updated_asset.owner = int(updated_asset.owner)
+#     query = assets.update(None)
+#     query = query.where(assets.c.id == updated_asset.id)
+#     query = query.values(updated_asset.dict())
+#     await database.execute(query)
+#     if thumbnail:
+#         background_tasks.add_task(
+#             upload_thumbnail_background, current_user, thumbnail, asset
+#         )
+#     return await get_my_id_asset(asset, current_user)
+
+
 @router.patch(
     "/{str:asset}/unpublish",
     auth=AuthBearer(),
@@ -400,53 +453,6 @@ def get_asset(
 #         upload_background, current_user, files, None, job_snowflake
 #     )
 #     return {"upload_job": str(job_snowflake)}
-
-
-# @router.patch("/{asset}", response_model=Asset)
-# async def update_asset(
-#     background_tasks: BackgroundTasks,
-#     request: Request,
-#     asset: int,
-#     data: Optional[AssetPatchData] = None,
-#     name: Optional[str] = Form(None),
-#     url: Optional[str] = Form(None),
-#     description: Optional[str] = Form(None),
-#     visibility: Optional[str] = Form(None),
-#     current_user: User = Depends(get_current_user),
-#     thumbnail: Optional[UploadFile] = File(None),
-# ):
-#     current_asset = _DBAsset(**(await get_my_id_asset(asset, current_user)))
-
-#     if request.headers.get("content-type") == "application/json":
-#         update_data = data.dict(exclude_unset=True)
-#     elif request.headers.get("content-type").startswith("multipart/form-data"):
-#         update_data = {
-#             k: v
-#             for k, v in {
-#                 "name": name,
-#                 "url": url,
-#                 "description": description,
-#                 "visibility": visibility,
-#             }.items()
-#             if v is not None
-#         }
-#     else:
-#         raise HTTPException(
-#             status_code=415, detail="Unsupported content type."
-#         )
-
-#     updated_asset = current_asset.copy(update=update_data)
-#     updated_asset.id = int(updated_asset.id)
-#     updated_asset.owner = int(updated_asset.owner)
-#     query = assets.update(None)
-#     query = query.where(assets.c.id == updated_asset.id)
-#     query = query.values(updated_asset.dict())
-#     await database.execute(query)
-#     if thumbnail:
-#         background_tasks.add_task(
-#             upload_thumbnail_background, current_user, thumbnail, asset
-#         )
-#     return await get_my_id_asset(asset, current_user)
 
 
 @router.get(
