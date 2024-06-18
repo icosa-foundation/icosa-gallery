@@ -7,9 +7,9 @@ from ninja.errors import HttpError
 from ninja.pagination import paginate
 
 from django.db.models import Q
-from django.http import Http404, HttpRequest
-from django.shortcuts import get_object_or_404
+from django.http import HttpRequest
 
+from .authentication import AuthBearer
 from .schema import AssetSchemaIn, AssetSchemaOut
 
 router = Router()
@@ -78,7 +78,9 @@ def get_id_asset(
     return get_asset_by_id(request, asset)
 
 
-@router.patch("/{str:asset}/unpublish", response=AssetSchemaIn)
+@router.patch(
+    "/{str:asset}/unpublish", auth=AuthBearer(), response=AssetSchemaIn
+)
 def unpublish_asset(
     request,
     asset: int,

@@ -139,6 +139,7 @@ cython_debug/
 
 # User
 .idea/*
+.helix/
 .DS_Store
 config.json
 gcp-service-account.json
