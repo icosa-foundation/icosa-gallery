@@ -108,7 +108,7 @@ def get_id_asset(
     auth=AuthBearer(),
     response=AssetSchemaOut,
 )
-async def delete_asset(
+def delete_asset(
     request,
     asset: int,
 ):
