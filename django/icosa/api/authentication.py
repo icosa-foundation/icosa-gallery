@@ -26,5 +26,4 @@ class AuthBearer(HttpBearer):
         if user is None:
             # headers={"WWW-Authenticate": "Bearer"},
             raise authentication_error
-        print(user)
         return user
