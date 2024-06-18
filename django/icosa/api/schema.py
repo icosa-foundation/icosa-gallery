@@ -67,28 +67,28 @@ class PolyResource(Schema):
 
 
 class PolyFormatComplexity(Schema):
-    triangleCount: Optional[str]
-    lodHint: Optional[int]
+    triangleCount: Optional[str] = None
+    lodHint: Optional[int] = None
 
 
 class PolyFormat(Schema):
     root: PolyResource
-    resources: Optional[List[PolyResource]]
-    formatComplexity: PolyFormatComplexity
+    resources: Optional[List[PolyResource]] = None
+    formatComplexity: Optional[PolyFormatComplexity] = None
     formatType: str
 
 
 class PolyQuaternion(Schema):
-    x: Optional[float]
-    y: Optional[float]
-    z: Optional[float]
-    w: Optional[float]
+    x: Optional[float] = None
+    y: Optional[float] = None
+    z: Optional[float] = None
+    w: Optional[float] = None
 
 
 class PolyPresentationParams(Schema):
-    orientingRotation: Optional[PolyQuaternion]
-    colorSpace: Optional[str]
-    backgroundColor: Optional[str]
+    orientingRotation: Optional[PolyQuaternion] = None
+    colorSpace: Optional[str] = None
+    backgroundColor: Optional[str] = None
 
 
 class PolyRemixInfo(Schema):
@@ -127,17 +127,17 @@ class PolyAsset(Schema):
     name: str
     displayName: str
     authorName: str
-    description: Optional[str]
+    description: Optional[str] = None
     createTime: str
     updateTime: str
     formats: List[PolyFormat]
-    thumbnail: Optional[PolyResource]
-    licence: Optional[str]
+    thumbnail: Optional[PolyResource] = None
+    licence: Optional[str] = None
     visibility: str
-    isCurated: Optional[bool]
+    isCurated: Optional[bool] = None
     presentationParams: Optional[PolyPresentationParams]
-    metadata: Optional[str]
-    remixInfo: Optional[PolyRemixInfo]
+    metadata: Optional[str] = None
+    remixInfo: Optional[PolyRemixInfo] = None
 
 
 class PolyPizzaList(Schema):
