@@ -1,0 +1,8 @@
+icosa.Asset.orienting_rotation: (fields.E010) JSONField default should be a callable instead of an instance so that it's not shared between all field instances.
+        HINT: Use a callable instead, e.g., use `dict` instead of `{}`.
+
+icosa.User.likes: (fields.W340) null has no effect on ManyToManyField.
+
+WARN[0000] The "w3r" variable is not set. Defaulting to a blank string.
+
+docker-compose.yml: `version` is obsolete
