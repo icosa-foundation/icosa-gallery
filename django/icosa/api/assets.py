@@ -73,6 +73,25 @@ def get_my_id_asset(
     return asset
 
 
+def remove_folder_gcs(folder_path):
+    """Remove entire folder from bucket."""
+    # TODO(james): do we wait until storages is implemented for this?
+    return False
+    # storage_client = storage.Client.from_service_account_json(
+    #     data["service_account_data"]
+    # )
+    # blobs = storage_client.list_blobs(
+    #     data["gcloud_bucket_name"], prefix=folder_path
+    # )
+    # for blob in blobs:
+    #     try:
+    #         blob.delete()
+    #     except Exception as e:
+    #         print(e)
+    #         return False
+    # return True
+
+
 @router.get(
     "/id/{asset}",
     response=AssetSchemaOut,
@@ -84,10 +103,33 @@ def get_id_asset(
     return get_asset_by_id(request, asset)
 
 
+@router.delete(
+    "/{asset}",
+    auth=AuthBearer(),
+    response=AssetSchemaOut,
+)
+async def delete_asset(
+    request,
+    asset: int,
+):
+    asset = get_my_id_asset(request, asset)
+    # TODO(james): do we wait until storages is implemented for this?
+    # asset.delete()
+    # Asset removal from storage
+    owner = User.from_ninja_request(request)
+    asset_folder = f"{owner.id}/{asset}/"
+    if not (await remove_folder_gcs(asset_folder)):
+        print(f"Failed to remove asset {asset}")
+        raise HttpError(
+            status_code=500, detail=f"Failed to remove asset {asset}"
+        )
+    return asset
+
+
 @router.patch(
     "/{str:asset}/unpublish",
     auth=AuthBearer(),
-    response=AssetSchemaIn,
+    response=AssetSchemaOut,
 )
 def unpublish_asset(
     request,
@@ -405,28 +447,6 @@ def get_asset(
 #             upload_thumbnail_background, current_user, thumbnail, asset
 #         )
 #     return await get_my_id_asset(asset, current_user)
-
-
-# @router.delete("/{asset}")
-# async def delete_asset(
-#     request,
-#     asset: int,
-# ):
-#     try:
-#         asset = get_my_id_asset(request, asset)
-#     except Exception:
-#         raise
-#     check_user_owns_asset(request, asset)
-#     asset.delete()
-#     # Asset removal from storage
-#     owner = User.from_ninja_request(request)
-#     asset_folder = f"{owner.id}/{asset}/"
-#     if not (await remove_folder_gcs(asset_folder)):
-#         print(f"Failed to remove asset {asset}")
-#         raise HTTPException(
-#             status_code=500, detail=f"Failed to remove asset {asset}"
-#         )
-#     return check_asset
 
 
 @router.get(
