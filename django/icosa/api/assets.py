@@ -118,7 +118,7 @@ def delete_asset(
     # Asset removal from storage
     owner = User.from_ninja_request(request)
     asset_folder = f"{owner.id}/{asset}/"
-    if not (await remove_folder_gcs(asset_folder)):
+    if not (remove_folder_gcs(asset_folder)):
         print(f"Failed to remove asset {asset}")
         raise HttpError(
             status_code=500, detail=f"Failed to remove asset {asset}"
