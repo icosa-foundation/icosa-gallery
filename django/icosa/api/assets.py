@@ -73,7 +73,10 @@ def get_my_id_asset(
     return asset
 
 
-@router.get("/id/{asset}", response=AssetSchemaOut)
+@router.get(
+    "/id/{asset}",
+    response=AssetSchemaOut,
+)
 def get_id_asset(
     request,
     asset: int,
@@ -82,7 +85,9 @@ def get_id_asset(
 
 
 @router.patch(
-    "/{str:asset}/unpublish", auth=AuthBearer(), response=AssetSchemaIn
+    "/{str:asset}/unpublish",
+    auth=AuthBearer(),
+    response=AssetSchemaIn,
 )
 def unpublish_asset(
     request,
@@ -94,7 +99,10 @@ def unpublish_asset(
     return asset
 
 
-@router.get("/{str:userurl}/{asseturl}", response=AssetSchemaOut)
+@router.get(
+    "/{str:userurl}/{asseturl}",
+    response=AssetSchemaOut,
+)
 def get_asset(
     request,
     userurl: str,
@@ -421,8 +429,15 @@ def get_asset(
 #     return check_asset
 
 
-@router.get("", response=List[AssetSchemaOut])
-@router.get("/", response=List[AssetSchemaOut], include_in_schema=False)
+@router.get(
+    "",
+    response=List[AssetSchemaOut],
+)
+@router.get(
+    "/",
+    response=List[AssetSchemaOut],
+    include_in_schema=False,
+)
 @paginate
 def get_assets(
     request,
