@@ -57,6 +57,11 @@ class DeviceCodeAdmin(admin.ModelAdmin):
     date_hierarchy = "expiry"
 
 
+class UserAssetLikeInline(admin.TabularInline):
+    extra = 0
+    model = User.likes.through
+
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
@@ -71,7 +76,7 @@ class UserAdmin(admin.ModelAdmin):
         "url",
         "id",
     )
-    filter_horizontal = ("likes",)
+    inlines = (UserAssetLikeInline,)
 
 
 @admin.register(Oauth2Client)

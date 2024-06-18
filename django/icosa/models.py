@@ -29,7 +29,9 @@ class User(models.Model):
     displayname = models.CharField("Display Name", max_length=50)
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
-    likes = models.ManyToManyField("Asset", null=True, blank=True)
+    likes = models.ManyToManyField(
+        "Asset", through="UserAssetLike", blank=True
+    )
 
     @classmethod
     def from_ninja_request(cls, request):
@@ -115,6 +117,12 @@ class Asset(models.Model):
 
     class Meta:
         db_table = "assets"
+
+
+class UserAssetLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    date_liked = models.DateTimeField(auto_now_add=True)
 
 
 class DeviceCode(models.Model):
