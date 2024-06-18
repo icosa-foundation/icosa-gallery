@@ -31,7 +31,10 @@ def user_owns_asset(
     request: HttpRequest,
     asset: Asset,
 ) -> bool:
-    if request.user.is_anonymous or User.from_request(request) != asset.owner:
+    if (
+        request.auth.is_anonymous
+        or User.from_ninja_request(request) != asset.owner
+    ):
         return False
     return True
 
@@ -85,11 +88,7 @@ def unpublish_asset(
     request,
     asset: int,
 ):
-    try:
-        asset = get_my_id_asset(request, asset)
-    except Exception:
-        raise
-    check_user_owns_asset(request, asset)
+    asset = get_my_id_asset(request, asset)
     asset.visibility = "PRIVATE"
     asset.save()
     return asset
@@ -412,7 +411,7 @@ def get_asset(
 #     check_user_owns_asset(request, asset)
 #     asset.delete()
 #     # Asset removal from storage
-#     owner = User.from_request(request)
+#     owner = User.from_ninja_request(request)
 #     asset_folder = f"{owner.id}/{asset}/"
 #     if not (await remove_folder_gcs(asset_folder)):
 #         print(f"Failed to remove asset {asset}")

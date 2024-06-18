@@ -1,9 +1,9 @@
 import jwt
-from icosa.models import User
 from ninja.errors import HttpError
 from ninja.security import HttpBearer
 
 from django.conf import settings
+from django.contrib.auth.models import User
 
 ALGORITHM = "HS256"
 
@@ -26,4 +26,5 @@ class AuthBearer(HttpBearer):
         if user is None:
             # headers={"WWW-Authenticate": "Bearer"},
             raise authentication_error
+
         return user

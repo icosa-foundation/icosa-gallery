@@ -32,11 +32,11 @@ class User(models.Model):
     likes = models.ManyToManyField("Asset", null=True, blank=True)
 
     @classmethod
-    def from_request(cls, request):
+    def from_ninja_request(cls, request):
         instance = None
-        if getattr(request.user, "email", None):
+        if getattr(request.auth, "email", None):
             try:
-                instance = cls.objects.get(email=request.user.email)
+                instance = cls.objects.get(email=request.auth.email)
             except cls.DoesNotExist:
                 pass
         return instance
