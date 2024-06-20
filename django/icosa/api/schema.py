@@ -20,7 +20,7 @@ class NewUser(Schema):
     displayName: str
 
 
-class FullUser(Schema):
+class FullUserSchema(Schema):
     id: int
     url: str
     email: EmailStr
@@ -28,16 +28,16 @@ class FullUser(Schema):
     description: str
 
 
-class User(Schema):
+class UserSchema(Schema):
     url: str
     displayname: str
     description: Optional[str]
 
 
-class PatchUser(Schema):
-    url: Optional[str]
-    displayname: Optional[str]
-    description: Optional[str]
+class PatchUserSchema(Schema):
+    url: Optional[str] = None
+    displayname: Optional[str] = None
+    description: Optional[str] = None
 
 
 class PasswordReset(Schema):

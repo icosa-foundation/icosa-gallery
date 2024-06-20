@@ -10,7 +10,12 @@ from ninja.errors import HttpError
 from django.db.models import Q
 
 from .authentication import AuthBearer
-from .schema import AssetSchemaOut, DeviceCodeSchema, FullUser
+from .schema import (
+    AssetSchemaOut,
+    DeviceCodeSchema,
+    FullUserSchema,
+    PatchUserSchema,
+)
 
 router = Router()
 
@@ -27,10 +32,36 @@ def generate_code(length=5):
 @router.get(
     "/me",
     auth=AuthBearer(),
-    response=FullUser,
+    response=FullUserSchema,
 )
 def get_users_me(request):
     return User.from_ninja_request(request)
+
+
+@router.patch(
+    "/me",
+    auth=AuthBearer(),
+    response=FullUserSchema,
+)
+def update_user(
+    request,
+    patch_user: PatchUserSchema,
+):
+    current_user = User.from_ninja_request(request)
+    url = getattr(patch_user, "url", "").strip() or current_user.url
+
+    if (
+        User.objects.filter(url__iexact=url).count() != 0
+        and url != current_user.url
+    ):
+        # Used to return 403. James believes this is the wrong status code.
+        # Better to use Unprocessable Entity.
+        raise HttpError(422, "This URL is already in use")
+    for key, value in patch_user.__dict__.items():
+        if getattr(patch_user, key, None) is not None:
+            setattr(current_user, key, value)
+    current_user.save()
+    return current_user
 
 
 @router.get(
