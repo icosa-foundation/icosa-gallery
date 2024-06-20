@@ -5,3 +5,5 @@ WARN[0000] The "w3r" variable is not set. Defaulting to a blank string.
 docker-compose.yml: `version` is obsolete
 
 `formats` field formatting - assets endpoint should use the new format and the poly endpoint the old
+
+User.url should be `unique`
