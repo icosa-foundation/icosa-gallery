@@ -15,17 +15,17 @@ class DeviceCode(Schema):
 
 class NewUser(Schema):
     email: EmailStr
-    url: Optional[str]
+    url: Optional[str] = None
     password: str
     displayName: str
 
 
 class FullUser(Schema):
-    id: str
+    id: int
     url: str
     email: EmailStr
     displayname: str
-    description: Optional[str]
+    description: str
 
 
 class User(Schema):

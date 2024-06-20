@@ -6,9 +6,14 @@ from ninja import Router
 from django.db.models import Q
 
 from .authentication import AuthBearer
-from .schema import AssetSchemaOut
+from .schema import AssetSchemaOut, FullUser
 
 router = Router()
+
+
+@router.get("/me", auth=AuthBearer(), response=FullUser)
+def get_users_me(request):
+    return User.from_ninja_request(request)
 
 
 @router.get(
