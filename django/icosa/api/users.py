@@ -1,19 +1,66 @@
+import secrets
+import string
+from datetime import datetime, timedelta
 from typing import List, Optional
 
-from icosa.models import Asset, User
+from icosa.models import Asset, DeviceCode, User
 from ninja import Router
+from ninja.errors import HttpError
 
 from django.db.models import Q
 
 from .authentication import AuthBearer
-from .schema import AssetSchemaOut, FullUser
+from .schema import AssetSchemaOut, DeviceCodeSchema, FullUser
 
 router = Router()
 
 
-@router.get("/me", auth=AuthBearer(), response=FullUser)
+def generate_code(length=5):
+    # Define a string of characters to exclude
+    exclude = "I1O0"
+    characters = "".join(
+        set(string.ascii_uppercase + string.digits) - set(exclude)
+    )
+    return "".join(secrets.choice(characters) for i in range(length))
+
+
+@router.get(
+    "/me",
+    auth=AuthBearer(),
+    response=FullUser,
+)
 def get_users_me(request):
     return User.from_ninja_request(request)
+
+
+@router.get(
+    "/me/devicecode",
+    auth=AuthBearer(),
+    response=DeviceCodeSchema,
+)
+def get_users_device_code(
+    request,
+):
+    current_user = User.from_ninja_request(request)
+    if current_user is not None:
+        code = generate_code()
+        expiry_time = datetime.utcnow() + timedelta(minutes=1)
+
+        # Delete all codes for this user
+        DeviceCode.objects.filter(user=current_user).delete()
+        # Delete all expired codes for any user
+        DeviceCode.objects.filter(expiry__lt=datetime.utcnow()).delete()
+
+        foo = DeviceCode.objects.create(
+            user=current_user,
+            devicecode=code,
+            expiry=expiry_time,
+        )
+        print(foo)
+
+        return {"deviceCode": code}
+    # headers={"WWW-Authenticate": "Bearer"},
+    raise HttpError(401, "Authenication failed.")
 
 
 @router.get(

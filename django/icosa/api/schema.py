@@ -9,7 +9,7 @@ class LoginToken(Schema):
     token_type: str
 
 
-class DeviceCode(Schema):
+class DeviceCodeSchema(Schema):
     deviceCode: str
 
 
