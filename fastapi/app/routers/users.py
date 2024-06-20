@@ -82,7 +82,7 @@ async def get_users_device_code(
         return {"deviceCode": code}
     raise HTTPException(
         status_code=401,
-        detail="Authenication failed.",
+        detail="Authentication failed.",
         headers={"WWW-Authenticate": "Bearer"},
     )
 

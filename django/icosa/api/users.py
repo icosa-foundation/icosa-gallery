@@ -91,7 +91,7 @@ def get_users_device_code(
 
         return {"deviceCode": code}
     # headers={"WWW-Authenticate": "Bearer"},
-    raise HttpError(401, "Authenication failed.")
+    raise HttpError(401, "Authentication failed.")
 
 
 @router.get(

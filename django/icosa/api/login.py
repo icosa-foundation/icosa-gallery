@@ -36,4 +36,4 @@ def device_login(request, device_code: str):
         DeviceCode.MultipleObjectsReturned,
     ):
         # headers={"WWW-Authenticate": "Bearer"},
-        raise HttpError(401, "Authenication failed.")
+        raise HttpError(401, "Authentication failed.")

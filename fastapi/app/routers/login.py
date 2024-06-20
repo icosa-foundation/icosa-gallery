@@ -66,6 +66,6 @@ async def device_login(device_code: str):
     else:
         raise HTTPException(
             status_code=401,
-            detail="Authenication denied.",
+            detail="Authentication failed.",
             headers={"WWW-Authenticate": "Bearer"},
         )
