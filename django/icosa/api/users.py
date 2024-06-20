@@ -95,6 +95,15 @@ def get_users_device_code(
 
 
 @router.get(
+    "/me/assets",
+    auth=AuthBearer(),
+    response=List[AssetSchemaOut],
+)
+def get_me_assets(request):
+    return Asset.objects.filter(user=User.from_ninja_request(request))
+
+
+@router.get(
     "/me/likedassets",
     auth=AuthBearer(),
     response=List[AssetSchemaOut],
