@@ -122,17 +122,21 @@ async def get_me_assets(current_user: User = Depends(get_current_user)):
 # TODO add db support for "liked" - currently returns all assets
 @router.get("/me/likedassets", response_model=List[Asset])
 async def get_me_likedassets(
-        current_user: User = Depends(get_current_user),
-        format: Optional[str] = None,
-        orderBy: Optional[str] = None,
-        results: int = 20, page: int = 0):
+    current_user: User = Depends(get_current_user),
+    format: Optional[str] = None,
+    orderBy: Optional[str] = None,
+    results: int = 20,
+    page: int = 0,
+):
     query = expandedassets.select()
     # TODO
     # query = query.where(something current_user likes)
     if format:
-        query = query.where(expandedassets.c.formats.contains([{"format": format}]))
+        query = query.where(
+            expandedassets.c.formats.contains([{"format": format}])
+        )
 
-    if orderBy and orderBy=="LIKED_TIME":
+    if orderBy and orderBy == "LIKED_TIME":
         # TODO
         # query = query.order_by(...)
         pass
@@ -140,6 +144,7 @@ async def get_me_likedassets(
     query = query.offset(page * results)
     assetlist = jsonable_encoder(await database.fetch_all(query))
     return assetlist
+
 
 @router.patch("/me/password")
 async def change_authenticated_user_password(
@@ -251,8 +256,10 @@ async def get_user(user: int):
 
 @router.get("/id/{user}/assets", response_model=List[Asset])
 async def get_id_user_assets(
-    user: int, current_user: User = Depends(get_optional_user),
-    results: int = 20, page: int = 0
+    user: int,
+    current_user: User = Depends(get_optional_user),
+    results: int = 20,
+    page: int = 0,
 ):
     query = expandedassets.select()
     if (current_user is None) or (current_user["id"] != user):
@@ -262,6 +269,7 @@ async def get_id_user_assets(
     query = query.offset(page * results)
     assetlist = jsonable_encoder(await database.fetch_all(query))
     return assetlist
+
 
 @router.get("/{user}", response_model=User)
 async def get_user(user: str):
@@ -278,9 +286,9 @@ async def get_user_assets(
     user: str,
     current_user: User = Depends(get_optional_user),
     results: int = 20,
-    page: int = 0
+    page: int = 0,
 ):
     userdata = await get_user(user)
     return await get_id_user_assets(
-        userdata["id"], current_user,
-        results, page, format)
+        userdata["id"], current_user, results, page, format
+    )
