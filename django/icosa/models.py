@@ -43,6 +43,9 @@ class User(models.Model):
                 pass
         return instance
 
+    def get_absolute_url(self):
+        return f"/user/{self.url}"
+
     def __str__(self):
         return self.displayname
 

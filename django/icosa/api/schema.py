@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from ninja import Field, Schema
 from pydantic import EmailStr
@@ -192,3 +192,20 @@ class AssetPatchData(Schema):
     url: Optional[str]
     description: Optional[str]
     visibility: Optional[str]
+
+class OembedOut(Schema):
+    type: Literal['rich']
+    version: Literal['1.0']
+    title: Optional[str] = None # A text title, describing the resource.
+    author_name: Optional[str] = None # The name of the author/owner of the resource.
+    author_url: Optional[str] = None # A URL for the author/owner of the resource.
+    provider_name: Optional[str] = None # The name of the resource provider.
+    provider_url: Optional[str] = None # The url of the resource provider.
+    cache_age: Optional[str] = None # The suggested cache lifetime for this resource, in seconds. Consumers may choose to use this value or not.
+    thumbnail_url: Optional[str] = None # A URL to a thumbnail image representing the resource. The thumbnail must respect any maxwidth and maxheight parameters. If this parameter is present, thumbnail_width and thumbnail_height must also be present.
+    thumbnail_width: Optional[str] = None # The width of the optional thumbnail. If this parameter is present, thumbnail_url and thumbnail_height must also be present.
+    thumbnail_height: Optional[str] = None # The height of the optional thumbnail. If this parameter is present, thumbnail_url and thumbnail_width must also be present.
+    # Specific to "rich" type
+    html: str
+    width: int
+    height: int
