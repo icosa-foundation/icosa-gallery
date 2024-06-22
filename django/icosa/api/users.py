@@ -91,7 +91,16 @@ def get_users_device_code(
 
         return {"deviceCode": code}
     # headers={"WWW-Authenticate": "Bearer"},
-    raise HttpError(401, "Authenication failed.")
+    raise HttpError(401, "Authentication failed.")
+
+
+@router.get(
+    "/me/assets",
+    auth=AuthBearer(),
+    response=List[AssetSchemaOut],
+)
+def get_me_assets(request):
+    return Asset.objects.filter(user=User.from_ninja_request(request))
 
 
 @router.get(

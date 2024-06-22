@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import jwt
 from ninja.errors import HttpError
 from ninja.security import HttpBearer
@@ -13,7 +15,9 @@ class AuthBearer(HttpBearer):
         authentication_error = HttpError(401, "Invalid Credentials")
         try:
             payload = jwt.decode(
-                token, settings.JWT_KEY, algorithms=[ALGORITHM]
+                token,
+                settings.JWT_KEY,
+                algorithms=[ALGORITHM],
             )
             username: str = payload.get("sub")
             if username is None:
@@ -28,3 +32,18 @@ class AuthBearer(HttpBearer):
             raise authentication_error
 
         return user
+
+
+def create_access_token(*, data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=timedelta)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.JWT_KEY,
+        algorithm=ALGORITHM,
+    )
+    return encoded_jwt
