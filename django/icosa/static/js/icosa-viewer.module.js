@@ -41746,13 +41746,16 @@ class $c8b2145499396622$var$SketchMetadata {
         this.EnvironmentGuid = userData["TB_EnvironmentGuid"] ?? "";
         this.Environment = userData["TB_Environment"] ?? "(None)";
         this.EnvironmentPreset = new $c8b2145499396622$var$EnvironmentPreset($c8b2145499396622$export$2ec4afd9b3c16a85.lookupEnvironment(this.EnvironmentGuid));
-        this.UseGradient = userData["TB_UseGradient"] ?? this.EnvironmentPreset.UseGradient;
+        this.UseGradient = JSON.parse(userData["TB_UseGradient"].toLowerCase()) ?? this.EnvironmentPreset.UseGradient;
         this.SkyColorA = this.parseTBColor(userData["TB_SkyColorA"], this.EnvironmentPreset.SkyColorA);
         this.SkyColorB = this.parseTBColor(userData["TB_SkyColorB"], this.EnvironmentPreset.SkyColorB);
         this.SkyGradientDirection = this.parseTBVector3(userData["TB_SkyGradientDirection"], new $99382cb60e6ddd5e$exports.Vector3(0, 1, 0));
         this.AmbientLightColor = this.parseTBColor(userData["TB_AmbientLightColor"], this.EnvironmentPreset.AmbientLightColor);
         this.FogColor = this.parseTBColor(userData["TB_FogColor"], this.EnvironmentPreset.FogColor);
         this.FogDensity = userData["TB_FogDensity"] ?? this.EnvironmentPreset.FogDensity;
+        this.SkyTexture = userData["TB_SkyTexture"] ?? this.EnvironmentPreset.SkyTexture;
+        this.ReflectionTexture = userData["TB_ReflectionTexture"] ?? this.EnvironmentPreset.ReflectionTexture;
+        this.ReflectionIntensity = userData["TB_ReflectionIntensity"] ?? this.EnvironmentPreset.ReflectionIntensity;
         function radToDeg3(rot) {
             return {
                 x: $99382cb60e6ddd5e$exports.MathUtils.radToDeg(rot.x),
@@ -41760,8 +41763,8 @@ class $c8b2145499396622$var$SketchMetadata {
                 z: $99382cb60e6ddd5e$exports.MathUtils.radToDeg(rot.z)
             };
         }
-        let light0rot = radToDeg3(sceneLights[0].rotation);
-        let light1rot = radToDeg3(sceneLights[1].rotation);
+        let light0rot = sceneLights.length == 1 ? radToDeg3(sceneLights[0].rotation) : null;
+        let light1rot = sceneLights.length == 2 ? radToDeg3(sceneLights[1].rotation) : null;
         this.SceneLight0Color = userData["TB_SceneLight0Color"] ?? this.EnvironmentPreset.SceneLight0Color;
         this.SceneLight0Rotation = userData["TB_SceneLight0Rotation"] ?? light0rot ?? this.EnvironmentPreset.SceneLight0Rotation;
         this.SceneLight1Color = userData["TB_SceneLight1Color"] ?? this.EnvironmentPreset.SceneLight1Color;
@@ -41792,7 +41795,7 @@ class $c8b2145499396622$var$EnvironmentPreset {
     constructor(preset){
         let defaultColor = new $99382cb60e6ddd5e$exports.Color("#000");
         let defaultRotation = new $99382cb60e6ddd5e$exports.Vector3(0, 1, 0);
-        this.Guid = preset?.guid ?? "";
+        this.Guid = preset?.guid ?? null;
         this.Name = preset?.name ?? "No preset";
         this.AmbientLightColor = preset?.renderSettings.ambientColor ?? defaultColor;
         this.UseGradient = false;
@@ -41805,6 +41808,9 @@ class $c8b2145499396622$var$EnvironmentPreset {
         this.SceneLight0Rotation = preset?.lights[0].rotation ?? defaultRotation;
         this.SceneLight1Color = preset?.lights[1].color ?? defaultColor;
         this.SceneLight1Rotation = preset?.lights[1].rotation ?? defaultRotation;
+        this.SkyTexture = preset?.renderSettings.skyboxCubemap ?? null;
+        this.ReflectionTexture = preset?.renderSettings.reflectionCubemap ?? null;
+        this.ReflectionIntensity = preset?.renderSettings.reflectionIntensity ?? 1;
     }
 }
 class $c8b2145499396622$export$2ec4afd9b3c16a85 {
@@ -41988,7 +41994,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/Passthrough",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_Room",
-                    skyboxCubemap: "",
+                    skyboxCubemap: null,
                     reflectionCubemap: "threelight_reflection",
                     reflectionIntensity: 0.3
                 },
@@ -42093,7 +42099,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/Standard",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_CarpetedHallway",
-                    skyboxCubemap: "",
+                    skyboxCubemap: null,
                     reflectionCubemap: "threelight_reflection",
                     reflectionIntensity: 0.3
                 },
@@ -42408,7 +42414,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/DressForm",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_LivingRoom",
-                    skyboxCubemap: "",
+                    skyboxCubemap: null,
                     reflectionCubemap: "threelight_reflection",
                     reflectionIntensity: 0.3
                 },
@@ -42513,7 +42519,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/Pedestal",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_LivingRoom",
-                    skyboxCubemap: "",
+                    skyboxCubemap: null,
                     reflectionCubemap: "threelight_reflection",
                     reflectionIntensity: 1.0
                 },
@@ -42723,7 +42729,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/AmbientDustDim",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_Room",
-                    skyboxCubemap: "",
+                    skyboxCubemap: null,
                     reflectionCubemap: "gradientblue",
                     reflectionIntensity: 0.0
                 },
@@ -42828,7 +42834,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/AmbientDustDim",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_Room",
-                    skyboxCubemap: "",
+                    skyboxCubemap: null,
                     reflectionCubemap: "gradientblue",
                     reflectionIntensity: 0.3
                 },
@@ -42933,8 +42939,8 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/AmbientDustDim",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_Room",
-                    skyboxCubemap: "",
-                    reflectionCubemap: "",
+                    skyboxCubemap: null,
+                    reflectionCubemap: null,
                     reflectionIntensity: 0.0
                 },
                 lights: [
@@ -43038,7 +43044,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/AmbientDust",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_Room",
-                    skyboxCubemap: "",
+                    skyboxCubemap: null,
                     reflectionCubemap: "threelight_reflection",
                     reflectionIntensity: 0.3
                 },
@@ -43143,7 +43149,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
                     },
                     environmentPrefab: "EnvironmentPrefabs/AmbientGrid",
                     environmentReverbZone: "EnvironmentAudio/ReverbZone_Room",
-                    skyboxCubemap: "",
+                    skyboxCubemap: null,
                     reflectionCubemap: "threelight_reflection",
                     reflectionIntensity: 0.4
                 },
@@ -43350,7 +43356,6 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
         canvas.width = 2;
         canvas.height = 512;
         const context = canvas.getContext("2d");
-        if (context == null) return null;
         const gradient = context.createLinearGradient(0, 0, 0, 512);
         gradient.addColorStop(0, colorA.getStyle());
         gradient.addColorStop(1, colorB.getStyle());
@@ -43359,16 +43364,25 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
         const texture = new $99382cb60e6ddd5e$exports.CanvasTexture(canvas);
         texture.wrapS = $99382cb60e6ddd5e$exports.RepeatWrapping;
         texture.wrapT = $99382cb60e6ddd5e$exports.ClampToEdgeWrapping;
+        return this.generateSkyGeometry(texture, direction);
+    }
+    generateTextureSky(textureName) {
+        const textureUrl = new URL(`skies/${textureName}.png`, this.texturePath);
+        let texture = new $99382cb60e6ddd5e$exports.TextureLoader().load(textureUrl.toString());
+        return this.generateSkyGeometry(texture, new $99382cb60e6ddd5e$exports.Vector3(0, 1, 0));
+    }
+    generateSkyGeometry(texture, direction) {
         const material = new $99382cb60e6ddd5e$exports.MeshBasicMaterial({
             map: texture,
             side: $99382cb60e6ddd5e$exports.BackSide
         });
         const geometry = new $99382cb60e6ddd5e$exports.SphereGeometry(500, 64, 64);
-        const skybox = new $99382cb60e6ddd5e$exports.Mesh(geometry, material);
+        const skysphere = new $99382cb60e6ddd5e$exports.Mesh(geometry, material);
+        skysphere.name = "sky";
         const defaultUp = new $99382cb60e6ddd5e$exports.Vector3(0, 1, 0);
         const quaternion = new $99382cb60e6ddd5e$exports.Quaternion().setFromUnitVectors(defaultUp, direction);
-        skybox.applyQuaternion(quaternion);
-        return skybox;
+        skysphere.applyQuaternion(quaternion);
+        return skysphere;
     }
     setupSketchMetaData(model) {
         let sketchMetaData = new $c8b2145499396622$var$SketchMetadata(model);
@@ -43406,10 +43420,11 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
     }
     initSceneBackground() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
-        if (this.sketchMetadata.UseGradient) {
-            var sky = this.generateGradientSky(this.sketchMetadata.SkyColorA, this.sketchMetadata.SkyColorB, this.sketchMetadata.SkyGradientDirection);
-            if (sky !== null) this.loadedModel?.add(sky);
-        } else this.scene.background = this.sceneColor;
+        let sky = null;
+        if (this.sketchMetadata.UseGradient) sky = this.generateGradientSky(this.sketchMetadata.SkyColorA, this.sketchMetadata.SkyColorB, this.sketchMetadata.SkyGradientDirection);
+        else if (this.sketchMetadata.SkyTexture) sky = this.generateTextureSky(this.sketchMetadata.SkyTexture);
+        if (sky !== null) this.loadedModel?.add(sky);
+        else this.scene.background = this.sceneColor;
     }
 }
 
