@@ -43,6 +43,16 @@ class User(models.Model):
                 pass
         return instance
 
+    @classmethod
+    def from_request(cls, request):
+        instance = None
+        if getattr(request.user, "email", None):
+            try:
+                instance = cls.objects.get(email=request.user.email)
+            except cls.DoesNotExist:
+                pass
+        return instance
+
     def get_absolute_url(self):
         return f"/user/{self.url}"
 
@@ -114,6 +124,9 @@ class Asset(models.Model):
 
     def get_absolute_url(self):
         return f"/view/{self.owner.url}/{self.url}"
+
+    def get_edit_url(self):
+        return f"/edit/{self.owner.url}/{self.url}"
 
     def __str__(self):
         return self.name

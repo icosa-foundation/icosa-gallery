@@ -1,7 +1,22 @@
-from icosa.models import User
+from icosa.models import Asset, User
 
 from django import forms
 from django.forms.widgets import EmailInput, PasswordInput
+
+
+class AssetSettingsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["name"].required = True
+
+    class Meta:
+        model = Asset
+
+        fields = [
+            "name",
+            "description",
+            "visibility",
+        ]
 
 
 class UserSettingsForm(forms.ModelForm):

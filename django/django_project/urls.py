@@ -1,7 +1,7 @@
 from icosa.api.assets import router as assets_router
 from icosa.api.login import router as login_router
-from icosa.api.poly import router as poly_router
 from icosa.api.oembed import router as oembed_router
+from icosa.api.poly import router as poly_router
 from icosa.api.users import router as users_router
 from icosa.views import auth as auth_views
 from icosa.views import main as main_views
@@ -26,11 +26,17 @@ urlpatterns = [
     path("logout/", auth_views.custom_logout, name="logout"),
     # Other views
     path("", main_views.home, name="home"),
+    path("uploads/", main_views.uploads, name="uploads"),
     path("user/<str:user_url>/", main_views.user, name="user"),
     path(
         "view/<str:user_url>/<str:asset_url>/",
         main_views.view_asset,
         name="view_asset",
+    ),
+    path(
+        "edit/<str:user_url>/<str:asset_url>/",
+        main_views.edit_asset,
+        name="edit_asset",
     ),
     path("settings/", main_views.settings, name="settings"),
     path("terms/", main_views.terms, name="terms"),
