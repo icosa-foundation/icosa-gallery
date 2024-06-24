@@ -7,3 +7,6 @@ docker-compose.yml: `version` is obsolete
 `formats` field formatting - assets endpoint should use the new format and the poly endpoint the old
 
 User.url should be `unique`
+
+this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
+
