@@ -10,3 +10,6 @@ User.url should be `unique`
 
 this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
 
+Links on the hero all go to the same place
+
+My profile should be a list of all public assets for that user
