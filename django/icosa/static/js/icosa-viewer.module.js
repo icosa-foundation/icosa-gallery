@@ -34387,8 +34387,9 @@ class $e5306f14176c2013$export$bcc22bf437a07d8f extends (0, $99382cb60e6ddd5e$ex
             alphaMask.flipY = false;
             materialParams.uniforms.u_AlphaMask.value = alphaMask;
         }
-        // inject three.js lighting uniforms
+        // inject three.js lighting and fog uniforms
         for(var lightType in (0, $99382cb60e6ddd5e$export$6643083551874bf5).lights)materialParams.uniforms[lightType] = (0, $99382cb60e6ddd5e$export$6643083551874bf5).lights[lightType];
+        for(var fogType in (0, $99382cb60e6ddd5e$export$6643083551874bf5).fog)materialParams.uniforms[fogType] = (0, $99382cb60e6ddd5e$export$6643083551874bf5).fog[fogType];
         let rawMaterial = new (0, $99382cb60e6ddd5e$export$21c421a2e1df9d22)(materialParams);
         this.loadedMaterials[brushName] = rawMaterial;
         onLoad(scope.parse(rawMaterial));
@@ -38795,6 +38796,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 //mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("BlocksBasic");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_BlocksBasic";
@@ -38807,6 +38809,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 //mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("BlocksGem");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_BlocksGem";
@@ -38819,6 +38822,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 //mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("BlocksGlass");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_BlocksGlass";
@@ -38832,6 +38836,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Bubbles");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Bubbles";
@@ -38844,6 +38849,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("CelVinyl");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_CelVinyl";
@@ -38856,6 +38862,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ChromaticWave");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_ChromaticWave";
@@ -38869,6 +38876,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("CoarseBristles");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_CoarseBristles";
@@ -38881,6 +38889,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Comet");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Comet";
@@ -38893,6 +38902,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DiamondHull");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_DiamondHull";
@@ -38905,6 +38915,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Disco");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Disco";
@@ -38917,6 +38928,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DotMarker");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_DotMarker";
@@ -38930,6 +38942,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Dots");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Dots";
@@ -38942,6 +38955,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DoubleTaperedFlat");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_DoubleTaperedFlat";
@@ -38954,6 +38968,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DoubleTaperedMarker");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_DoubleTaperedMarker";
@@ -38967,6 +38982,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DuctTape");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_DuctTape";
@@ -39001,6 +39017,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("EnvironmentDiffuse");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_EnvironmentDiffuse";
@@ -39013,6 +39030,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("EnvironmentDiffuseLightMap");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_EnvironmentDiffuseLightMap";
@@ -39025,6 +39043,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Fire");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Fire";
@@ -39039,6 +39058,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Flat");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Flat";
@@ -39051,6 +39071,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Highlighter");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Highlighter";
@@ -39064,6 +39085,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Hypercolor");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Hypercolor";
@@ -39077,6 +39099,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("HyperGrid");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_HyperGrid";
@@ -39089,6 +39112,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Icing");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Icing";
@@ -39102,6 +39126,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Ink");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Ink";
@@ -39115,6 +39140,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Leaves");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Leaves";
@@ -39127,6 +39153,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Light");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Light";
@@ -39139,6 +39166,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("LightWire");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_LightWire";
@@ -39151,6 +39179,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Lofted");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Lofted";
@@ -39163,6 +39192,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Marker");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Marker";
@@ -39174,6 +39204,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("MatteHull");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_MatteHull";
@@ -39186,6 +39217,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("NeonPulse");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_NeonPulse";
@@ -39199,6 +39231,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("OilPaint");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_OilPaint";
@@ -39212,6 +39245,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Paper");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Paper";
@@ -39224,6 +39258,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("PbrTemplate");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_PbrTemplate";
@@ -39236,6 +39271,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("PbrTransparentTemplate");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_PbrTransparentTemplate";
@@ -39248,6 +39284,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Petal");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Petal";
@@ -39260,6 +39297,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Plasma");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Plasma";
@@ -39272,6 +39310,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Rainbow");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Rainbow";
@@ -39284,6 +39323,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ShinyHull");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_ShinyHull";
@@ -39297,6 +39337,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Smoke");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Smoke";
@@ -39320,6 +39361,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("SoftHighlighter");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_SoftHighlighter";
@@ -39332,6 +39374,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Spikes");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Spikes";
@@ -39345,6 +39388,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Splatter");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Splatter";
@@ -39358,6 +39402,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Stars");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Stars";
@@ -39370,6 +39415,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Streamers");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Streamers";
@@ -39382,6 +39428,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Taffy");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Taffy";
@@ -39395,6 +39442,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("TaperedFlat");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_TaperedFlat";
@@ -39408,6 +39456,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("TaperedMarker");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_TaperedMarker";
@@ -39421,6 +39470,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ThickPaint");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_ThickPaint";
@@ -39432,6 +39482,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Toon");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Toon";
@@ -39453,6 +39504,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("VelvetInk");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_VelvetInk";
@@ -39465,6 +39517,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Waveform");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_Waveform";
@@ -39478,6 +39531,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("WetPaint");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_WetPaint";
@@ -39491,6 +39545,7 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("WigglyGraphite");
                 shader.lights = true;
+                shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
                 mesh.material.name = "material_WigglyGraphite";
@@ -39531,13 +39586,23 @@ class $e5306f14176c2013$export$2b011a5b12963d65 {
                     }
                 }
             }
-        // Ambient Light
-        // if(material?.uniforms?.ambientLightColor?.value) {
-        //     if(material.uniforms.u_ambient_light_color) {
-        //         const colorArray = material.uniforms.ambientLightColor.value;
-        //         material.uniforms.u_ambient_light_color.value = new Vector4(colorArray[0], colorArray[1], colorArray[2], 1);
-        //     }
-        // }
+            // Ambient Light
+            if (material?.uniforms?.ambientLightColor?.value) {
+                if (material.uniforms.u_ambient_light_color) {
+                    const colorArray = material.uniforms.ambientLightColor.value;
+                    material.uniforms.u_ambient_light_color.value = new (0, $99382cb60e6ddd5e$export$fa7daccca11cdbe3)(colorArray[0], colorArray[1], colorArray[2], 1);
+                }
+            }
+            // Fog
+            if (material?.uniforms?.fogColor?.value) {
+                if (material.uniforms.u_fogColor) {
+                    const colorArray = material.uniforms.fogColor.value;
+                    material.uniforms.u_fogColor.value = colorArray;
+                }
+            }
+            if (material?.uniforms?.fogDensity?.value) {
+                if (material.uniforms.u_fogDensity) material.uniforms.u_fogDensity.value = material.uniforms.fogDensity.value;
+            }
         };
     }
 }
@@ -40715,7 +40780,7 @@ class $927b589e0bc51f03$var$GLTFParser {
                 // According to COLLADA spec...
                 // aspectRatio = xfov / yfov
                 var xfov = yfov * aspectRatio;
-                var _camera = new (0, $99382cb60e6ddd5e$export$74e4ae24825f68d7)((0, $99382cb60e6ddd5e$export$380958644dbbc22b).radToDeg(xfov), aspectRatio, camera.perspective.znear || 1, camera.perspective.zfar || 2e6);
+                var _camera = new (0, $99382cb60e6ddd5e$export$74e4ae24825f68d7)(Math.radToDeg(xfov), aspectRatio, camera.perspective.znear || 1, camera.perspective.zfar || 2e6);
                 if (camera.name !== undefined) _camera.name = camera.name;
                 if (camera.extras) _camera.userData = camera.extras;
                 return _camera;
@@ -41667,15 +41732,40 @@ async function $40d107b45b2b83ac$export$d51cb1093e099859(brushPath, model) {
 // import { GlitchPass } from 'three/addons';
 // import { OutputPass } from 'three/addons';
 class $c8b2145499396622$var$SketchMetadata {
-    constructor(userData){
+    constructor(scene){
+        let userData = scene?.userData ?? {};
+        // Traverse the scene and return all nodes with a name starting with "node_SceneLight_"
+        let sceneLights = [];
+        scene?.traverse((node)=>{
+            if (node.name && node.name.startsWith("node_SceneLight_")) {
+                sceneLights.push(node);
+                if (sceneLights.length === 2) return false; // Bail out early
+            }
+            return true; // Continue traversal
+        });
         this.EnvironmentGuid = userData["TB_EnvironmentGuid"] ?? "";
-        this.Environment = userData["TB_Environment"] ?? "";
-        this.UseGradient = userData["TB_UseGradient"] ?? false;
-        this.SkyColorA = this.parseTBColor(userData["TB_SkyColorA"]);
-        this.SkyColorB = this.parseTBColor(userData["TB_SkyColorB"]);
+        this.Environment = userData["TB_Environment"] ?? "(None)";
+        this.EnvironmentPreset = new $c8b2145499396622$var$EnvironmentPreset($c8b2145499396622$export$2ec4afd9b3c16a85.lookupEnvironment(this.EnvironmentGuid));
+        this.UseGradient = userData["TB_UseGradient"] ?? this.EnvironmentPreset.UseGradient;
+        this.SkyColorA = this.parseTBColor(userData["TB_SkyColorA"], this.EnvironmentPreset.SkyColorA);
+        this.SkyColorB = this.parseTBColor(userData["TB_SkyColorB"], this.EnvironmentPreset.SkyColorB);
         this.SkyGradientDirection = this.parseTBVector3(userData["TB_SkyGradientDirection"], new $99382cb60e6ddd5e$exports.Vector3(0, 1, 0));
-        this.FogColor = this.parseTBColor(userData["TB_FogColor"]);
-        this.FogDensity = userData["TB_FogDensity"] ?? 0;
+        this.AmbientLightColor = this.parseTBColor(userData["TB_AmbientLightColor"], this.EnvironmentPreset.AmbientLightColor);
+        this.FogColor = this.parseTBColor(userData["TB_FogColor"], this.EnvironmentPreset.FogColor);
+        this.FogDensity = userData["TB_FogDensity"] ?? this.EnvironmentPreset.FogDensity;
+        function radToDeg3(rot) {
+            return {
+                x: $99382cb60e6ddd5e$exports.MathUtils.radToDeg(rot.x),
+                y: $99382cb60e6ddd5e$exports.MathUtils.radToDeg(rot.y),
+                z: $99382cb60e6ddd5e$exports.MathUtils.radToDeg(rot.z)
+            };
+        }
+        let light0rot = radToDeg3(sceneLights[0].rotation);
+        let light1rot = radToDeg3(sceneLights[1].rotation);
+        this.SceneLight0Color = userData["TB_SceneLight0Color"] ?? this.EnvironmentPreset.SceneLight0Color;
+        this.SceneLight0Rotation = userData["TB_SceneLight0Rotation"] ?? light0rot ?? this.EnvironmentPreset.SceneLight0Rotation;
+        this.SceneLight1Color = userData["TB_SceneLight1Color"] ?? this.EnvironmentPreset.SceneLight1Color;
+        this.SceneLight1Rotation = userData["TB_SceneLight1Rotation"] ?? light1rot ?? this.EnvironmentPreset.SceneLight1Rotation;
         this.PoseTranslation = this.parseTBVector3(userData["TB_PoseTranslation"]);
         this.PoseRotation = this.parseTBRotation(userData["TB_PoseRotation"]);
         this.PoseScale = userData["TB_PoseScale"] ?? 1;
@@ -41690,22 +41780,31 @@ class $c8b2145499396622$var$SketchMetadata {
         let [x, y, z] = vectorString.split(",").map(parseFloat);
         return new $99382cb60e6ddd5e$exports.Vector3(x, y, z);
     }
-    parseTBColor(colorString) {
-        if (!colorString) return new $99382cb60e6ddd5e$exports.Color("#000");
-        let [r, g, b] = colorString.split(",").map(parseFloat);
-        return new $99382cb60e6ddd5e$exports.Color(r, g, b);
+    parseTBColor(colorString, defaultValue) {
+        let r, g, b;
+        if (colorString) {
+            [r, g, b] = colorString.split(",").map(parseFloat);
+            return new $99382cb60e6ddd5e$exports.Color(r, g, b);
+        } else return defaultValue;
     }
 }
 class $c8b2145499396622$var$EnvironmentPreset {
     constructor(preset){
+        let defaultColor = new $99382cb60e6ddd5e$exports.Color("#000");
+        let defaultRotation = new $99382cb60e6ddd5e$exports.Vector3(0, 1, 0);
         this.Guid = preset?.guid ?? "";
         this.Name = preset?.name ?? "No preset";
+        this.AmbientLightColor = preset?.renderSettings.ambientColor ?? defaultColor;
         this.UseGradient = false;
-        this.SkyColorA = preset?.skyboxColorA ?? new $99382cb60e6ddd5e$exports.Color("#000");
-        this.SkyColorB = preset?.skyboxColorB ?? new $99382cb60e6ddd5e$exports.Color("#000");
+        this.SkyColorA = preset?.skyboxColorA ?? defaultColor;
+        this.SkyColorB = preset?.skyboxColorB ?? defaultColor;
         this.SkyGradientDirection = new $99382cb60e6ddd5e$exports.Vector3(0, 1, 0);
-        this.FogColor = preset?.renderSettings.fogColor ?? new $99382cb60e6ddd5e$exports.Color("#000");
+        this.FogColor = preset?.renderSettings.fogColor ?? defaultColor;
         this.FogDensity = preset?.renderSettings.fogDensity ?? 0;
+        this.SceneLight0Color = preset?.lights[0].color ?? defaultColor;
+        this.SceneLight0Rotation = preset?.lights[0].rotation ?? defaultRotation;
+        this.SceneLight1Color = preset?.lights[1].color ?? defaultColor;
+        this.SceneLight1Rotation = preset?.lights[1].rotation ?? defaultRotation;
     }
 }
 class $c8b2145499396622$export$2ec4afd9b3c16a85 {
@@ -41836,6 +41935,7 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
         if (!this.loadedModel) return;
         this.scene.clear();
         this.initSceneBackground();
+        this.initFog();
         this.initSceneLights();
         this.scene.add(this.loadedModel);
         // Setup camera to center model
@@ -41850,8 +41950,6 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
             this.cameraControls.dollyTo(midDistance, true);
             this.cameraControls.saveState();
         }
-        const ambientLight = new $99382cb60e6ddd5e$exports.AmbientLight();
-        this.scene.add(ambientLight);
     }
     static lookupEnvironment(guid) {
         return ({
@@ -43222,25 +43320,30 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
             }
         })[guid];
     }
-    async loadGltf1(url) {
+    async loadGltf1(url, loadEnvironment) {
         const sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
+        await (0, $40d107b45b2b83ac$export$d51cb1093e099859)(this.brushPath.toString(), sceneGltf.scene);
+        this.setupSketchMetaData(sceneGltf.scene);
+        if (loadEnvironment) await this.assignEnvironment(sceneGltf.scene);
         this.loadedModel = sceneGltf.scene;
-        await (0, $40d107b45b2b83ac$export$d51cb1093e099859)(this.brushPath.toString(), this.loadedModel);
         this.initializeScene();
     }
     async loadGltf(url, loadEnvironment) {
         const sceneGltf = await this.gltfLoader.loadAsync(url);
         this.setupSketchMetaData(sceneGltf.scene);
-        if (loadEnvironment) {
-            const guid = this.sketchMetadata?.EnvironmentGuid;
-            if (guid) {
-                const envUrl = new URL(`${guid}/${guid}.glb`, this.environmentPath);
-                const envGltf = await this.gltfLoader.loadAsync(envUrl.toString());
-                sceneGltf.scene.add(envGltf.scene);
-            }
-        }
+        if (loadEnvironment) await this.assignEnvironment(sceneGltf.scene);
         this.loadedModel = sceneGltf.scene;
         this.initializeScene();
+    }
+    async assignEnvironment(scene) {
+        const guid = this.sketchMetadata?.EnvironmentGuid;
+        if (guid) {
+            const envUrl = new URL(`${guid}/${guid}.glb`, this.environmentPath);
+            const envGltf = await this.gltfLoader.loadAsync(envUrl.toString());
+            envGltf.scene.setRotationFromEuler(new $99382cb60e6ddd5e$exports.Euler(0, Math.PI, 0));
+            envGltf.scene.scale.set(.1, .1, .1);
+            scene.attach(envGltf.scene);
+        }
     }
     generateGradientSky(colorA, colorB, direction) {
         const canvas = document.createElement("canvas");
@@ -43268,16 +43371,38 @@ class $c8b2145499396622$export$2ec4afd9b3c16a85 {
         return skybox;
     }
     setupSketchMetaData(model) {
-        let sketchMetaData = new $c8b2145499396622$var$SketchMetadata(model.userData);
-        let envPreset = new $c8b2145499396622$var$EnvironmentPreset($c8b2145499396622$export$2ec4afd9b3c16a85.lookupEnvironment(sketchMetaData.EnvironmentGuid));
+        let sketchMetaData = new $c8b2145499396622$var$SketchMetadata(model);
         this.sketchBoundingBox = new $99382cb60e6ddd5e$exports.Box3().setFromObject(model);
         this.sketchMetadata = sketchMetaData;
     }
     initSceneLights() {
+        // Logic for scene light creation:
+        // 1. Are there explicit GLTF scene lights? If so use them and skip the rest
+        // 2. Are there dummy transforms in the GLTF that represent scene lights? If so use them in preference.
+        // 3. Does the GLTF have custom metadata for light transform and color?
+        // 4. Does the GLTF have an environment preset guid? If so use the light transform and colors from that
+        // 5. If there's neither custom metadata, an environment guid or explicit GLTF lights - create some default lighting.
+        function convertTBEuler(rot) {
+            const deg2rad = Math.PI / 180;
+            return new $99382cb60e6ddd5e$exports.Euler($99382cb60e6ddd5e$exports.MathUtils.degToRad(rot.x), $99382cb60e6ddd5e$exports.MathUtils.degToRad(rot.y), $99382cb60e6ddd5e$exports.MathUtils.degToRad(rot.z));
+        }
+        if (this.sketchMetadata == undefined || this.sketchMetadata == null) // Default lighting
+        return;
+        let l0 = new $99382cb60e6ddd5e$exports.DirectionalLight(this.sketchMetadata.SceneLight0Color, 1.0);
+        let l1 = new $99382cb60e6ddd5e$exports.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
+        l0.setRotationFromEuler(convertTBEuler(this.sketchMetadata.SceneLight0Rotation));
+        l1.setRotationFromEuler(convertTBEuler(this.sketchMetadata.SceneLight1Rotation));
+        l0.castShadow = true;
+        l1.castShadow = false;
+        this.loadedModel?.add(l0);
+        this.loadedModel?.add(l1);
+        const ambientLight = new $99382cb60e6ddd5e$exports.AmbientLight();
+        ambientLight.color = this.sketchMetadata.AmbientLightColor;
+        this.scene.add(ambientLight);
+    }
+    initFog() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
-        var lights = new $99382cb60e6ddd5e$exports.Group();
-        //     lights.add(new THREE.DirectionalLight(this.sketchMetadata., 1.0));
-        this.loadedModel?.add(lights);
+        this.scene.fog = new $99382cb60e6ddd5e$exports.FogExp2(this.sketchMetadata.FogColor, this.sketchMetadata.FogDensity);
     }
     initSceneBackground() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
