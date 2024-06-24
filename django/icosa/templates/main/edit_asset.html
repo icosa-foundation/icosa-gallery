@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}
+{% endblock extrahead %}
+{% block content %}
+<div class="sketchedit">
+    <div class="viewer">
+        <div id="icosa-viewer"></div>
+    </div>
+    <div class="editor">
+        <div class="sketcheditor container">
+            <form action="." method="post" novalidate>
+                {% csrf_token %}
+                {{ form }}
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="module">
+    import {Viewer} from "/static/js/icosa-viewer.module.js";
+
+    var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
+
+    {% if asset.is_gltf %}
+        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
+    {% elif asset.is_gltf2 %}
+        await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
+    {% endif %}
+
+</script>
+{% endblock content %}

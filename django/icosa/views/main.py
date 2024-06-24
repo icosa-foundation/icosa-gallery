@@ -1,9 +1,11 @@
-from icosa.forms import UserSettingsForm
+from icosa.forms import AssetSettingsForm, UserSettingsForm
 from icosa.models import PUBLIC, Asset, User
 from icosa.utils import get_owner
 
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseNotAllowed, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 
 def home(request):
@@ -14,6 +16,21 @@ def home(request):
         "hero": Asset.objects.filter(visibility=PUBLIC, curated=True)
         .order_by("?")
         .first(),
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@login_required
+def uploads(request):
+    template = "main/asset_list.html"
+
+    user = User.from_request(request)
+    context = {
+        "assets": Asset.objects.filter(owner=user).order_by("-id"),
     }
     return render(
         request,
@@ -47,6 +64,31 @@ def view_asset(request, user_url, asset_url):
         "asset": get_object_or_404(
             Asset, visibility=PUBLIC, owner=user.id, url=asset_url
         ),
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+def edit_asset(request, user_url, asset_url):
+    template = "main/edit_asset.html"
+    user = get_object_or_404(User, url=user_url)
+    asset = get_object_or_404(Asset, owner=user.id, url=asset_url)
+    if request.method == "GET":
+        form = AssetSettingsForm(instance=asset)
+    elif request.method == "POST":
+        form = AssetSettingsForm(request.POST, instance=asset)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse("uploads"))
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "user": user,
+        "asset": asset,
+        "form": form,
     }
     return render(
         request,

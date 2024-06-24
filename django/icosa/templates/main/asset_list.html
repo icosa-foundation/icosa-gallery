@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+{% block extrahead %}
+{% endblock extrahead %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h2>Manage Uploads</h2>
+        </div>
+    </div>
+</div>
+<div class="sketch-list">
+    <div class="container">
+        <div class="row">
+            {% with edit_asset=True %}
+                {% for asset in assets %}
+                    {% include "partials/sketch_list_item.html" %}
+                {% endfor %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+<div class="sketch-info container">
+    <div class="row">
+        <div class="col">
+            <div>
+                <h2>{{ asset.name }}</h2>
+                <h4>
+                    <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
+                </h4>
+                <span>{{ asset.timestamp|date:"Y-m-d" }}</span>
+                <p>
+                </p>
+                <h6>{{ asset.license|default_if_none:"All rights reserved" }}</h6>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="module">
+    import {Viewer} from "/static/js/icosa-viewer.module.js";
+
+    var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
+
+    {% if asset.is_gltf %}
+        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
+    {% elif asset.is_gltf2 %}
+        await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
+    {% endif %}
+
+</script>
+{% endblock content %}

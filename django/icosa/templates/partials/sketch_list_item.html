@@ -1,6 +1,6 @@
 <div class="col-md-3 col-12">
     <div class="sketchbox">
-        <a href="{{asset.get_absolute_url}}">
+        <a href="{% if edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}">
             <div class="sketchimage"
                 style="background-image: url('{% if asset.thumbnail %}{{ asset.thumbnail }}{% else %}/static/images/nothumbnail.png?v=1{% endif %}');">
                 <div class="title">
