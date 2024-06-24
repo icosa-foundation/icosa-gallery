@@ -1,7 +1,7 @@
 from icosa.api.assets import router as assets_router
 from icosa.api.login import router as login_router
-from icosa.api.poly import router as poly_router
 from icosa.api.oembed import router as oembed_router
+from icosa.api.poly import router as poly_router
 from icosa.api.users import router as users_router
 from icosa.views import auth as auth_views
 from icosa.views import main as main_views
