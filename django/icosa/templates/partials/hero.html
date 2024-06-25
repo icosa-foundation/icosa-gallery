@@ -6,7 +6,7 @@
                     src="{{ hero.thumbnail }}"
                     alt="{{ hero.description }} by {{ hero.owner.displayname }}">
                 <div class="carousel-caption">
-                    <a href="/view/aDj1v08K6XE/c-_KGpoirx8">
+                    <a href="{{ hero.get_absolute_url }}">
                         <h3 class="title">{{ hero.name }}</h3>
                     </a>
                     <p>{{ hero.owner.displayname }} | {{ hero.timestamp|date:"Y-m-d" }}</p>
