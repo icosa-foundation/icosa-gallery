@@ -3,14 +3,15 @@ import string
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from icosa.models import Asset, DeviceCode, User
-from ninja import Router
+from icosa.models import Asset, DeviceCode, Tag, User
+from ninja import Query, Router
 from ninja.errors import HttpError
 
 from django.db.models import Q
 
 from .authentication import AuthBearer
 from .schema import (
+    AssetFilters,
     AssetSchemaOut,
     DeviceCodeSchema,
     FullUserSchema,
@@ -112,12 +113,13 @@ def get_me_likedassets(
     request,
     format: Optional[str] = None,
     orderBy: Optional[str] = None,
+    filters: AssetFilters = Query(...),
     results: int = 20,
     page: int = 0,
 ):
     owner = User.from_ninja_request(request)
     liked_assets = owner.userassetlike_set.all()
-    q = Q()
+    q = Q(visibility="PUBLIC")
     if format:
         q &= Q(formats__contains=[{"format": format}])
 
@@ -128,9 +130,13 @@ def get_me_likedassets(
     # `owner.likes.all` because we need the timestamp of when the asset was
     # liked.
     liked_ids = list(liked_assets.values_list("asset__pk", flat=True))
-    assets = Asset.objects.filter(pk__in=liked_ids)
+    q &= Q(pk__in=liked_ids)
 
-    assets.filter(q)
+    if filters.tag:
+        tags = Tag.objects.filter(name__in=filters.tag)
+        q &= Q(tags__in=tags)
+
+    assets = Asset.objects.filter(q)
     if orderBy and orderBy == "LIKED_TIME":
         # Sort the assets by order of liked ID. Slow, but database-agnostic.
         # Postgres and MySql have different ways to do this, and we'd need to
