@@ -5,5 +5,3 @@ docker-compose.yml: `version` is obsolete
 `formats` field formatting - assets endpoint should use the new format and the poly endpoint the old
 
 this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
-
-My profile should be a list of all public assets for that user
