@@ -1,6 +1,7 @@
 from typing import List, Literal, Optional
 
-from ninja import Field, Schema
+from icosa.models import Asset, Tag
+from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
 
 
@@ -164,19 +165,32 @@ class AssetFormat(Schema):
     # subfiles: Optional[List[SubAssetFormat]]  # TODO(james): this is broken
 
 
-class _DBAsset(Schema):
+class AssetFilters(Schema):
+    tag: List[str] = Field(None, alias="tag")
+
+
+class _DBAsset(ModelSchema):
     url: Optional[str]
     formats: List[AssetFormat]
     name: str
     description: Optional[str]
     owner: int = Field(None, alias=("owner.id"))
     visibility: str
+    tags: List[str] = []
     curated: Optional[bool]
     polyid: Optional[str]
     polydata: Optional[PolyAsset]
     thumbnail: Optional[str]
     ownername: str = Field(None, alias=("owner.displayname"))
     ownerurl: str = Field(None, alias=("owner.url"))
+
+    class Config:
+        model = Asset
+        model_fields = ["url"]
+
+    @staticmethod
+    def resolve_tags(obj):
+        return [t.name for t in obj.tags.all()]
 
 
 class AssetSchemaIn(_DBAsset):

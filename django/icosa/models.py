@@ -63,6 +63,13 @@ class User(models.Model):
         db_table = "users"
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Asset(models.Model):
     COLOR_SPACES = [
         ("LINEAR", "LINEAR"),
@@ -90,7 +97,7 @@ class Asset(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
-    tags = models.JSONField(null=True, blank=True)
+    tags = models.ManyToManyField("Tag", blank=True)
     orienting_rotation = models.JSONField(default="[0,0,0,0]")
     color_space = models.CharField(
         max_length=50, choices=COLOR_SPACES, default="GAMMA"

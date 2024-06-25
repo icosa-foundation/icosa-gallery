@@ -4,10 +4,16 @@ from icosa.models import (
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
+    Tag,
     User,
 )
 
 from django.contrib import admin
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(Asset)
@@ -44,6 +50,8 @@ class AssetAdmin(admin.ModelAdmin):
         "url",
         "owner__displayname",
     )
+
+    filter_horizontal = ("tags",)
 
 
 @admin.register(DeviceCode)

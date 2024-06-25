@@ -1,8 +1,8 @@
 import re
 from typing import List, NoReturn, Optional
 
-from icosa.models import PUBLIC, Asset, User
-from ninja import Router
+from icosa.models import PUBLIC, Asset, Tag, User
+from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
 
@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.http import HttpRequest
 
 from .authentication import AuthBearer
-from .schema import AssetSchemaIn, AssetSchemaOut
+from .schema import AssetFilters, AssetSchemaOut
 
 router = Router()
 
@@ -472,12 +472,16 @@ def get_assets(
     description: Optional[str] = None,
     ownername: Optional[str] = None,
     format: Optional[str] = None,
+    filters: AssetFilters = Query(...),
 ):
     # TODO(james): limit max pagination to 100 results
     # TODO(james): `limit` query param should be `pageSize`; need to find out
     # what `offset` should be
     q = Q(visibility=PUBLIC)
 
+    if filters.tag:
+        tags = Tag.objects.filter(name__in=filters.tag)
+        q &= Q(tags__in=tags)
     if curated:
         q &= Q(curated=True)
     if name:
@@ -488,6 +492,6 @@ def get_assets(
         q &= Q(owner__displayname__icontains=ownername)
     if format:
         q &= Q(formats__contains=[{"format": format}])
+    assets = Asset.objects.filter(q).distinct()
 
-    assets = Asset.objects.filter(q)
     return assets
