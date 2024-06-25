@@ -70,6 +70,10 @@ class Tag(models.Model):
         return self.name
 
 
+def default_orienting_rotation():
+    return "[0, 0, 0, 0]"
+
+
 class Asset(models.Model):
     COLOR_SPACES = [
         ("LINEAR", "LINEAR"),
@@ -98,7 +102,7 @@ class Asset(models.Model):
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
     tags = models.ManyToManyField("Tag", blank=True)
-    orienting_rotation = models.JSONField(default="[0,0,0,0]")
+    orienting_rotation = models.JSONField(default=default_orienting_rotation)
     color_space = models.CharField(
         max_length=50, choices=COLOR_SPACES, default="GAMMA"
     )

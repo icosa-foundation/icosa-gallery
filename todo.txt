@@ -1,7 +1,3 @@
-icosa.Asset.orienting_rotation: (fields.E010) JSONField default should be a callable instead of an instance so that it's not shared between all field instances. HINT: Use a callable instead, e.g., use `dict` instead of `{}`.
-
-docker-compose.yml: `version` is obsolete
-
 `formats` field formatting - assets endpoint should use the new format and the poly endpoint the old
 
 this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
