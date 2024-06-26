@@ -1,6 +1,6 @@
 from django.db import models
 
-from .helpers import get_snowflake_timestamp
+from .helpers.snowflake import get_snowflake_timestamp
 
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
