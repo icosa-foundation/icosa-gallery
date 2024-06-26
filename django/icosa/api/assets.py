@@ -1,9 +1,14 @@
+import io
 import re
+import secrets
+import zipfile
 from typing import List, NoReturn, Optional
 
+from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import PUBLIC, Asset, Tag, User
-from ninja import Query, Router
+from ninja import File, Query, Router
 from ninja.errors import HttpError
+from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
 from django.db.models import Q
@@ -143,7 +148,7 @@ def delete_asset(
 #     description: Optional[str] = Form(None),
 #     visibility: Optional[str] = Form(None),
 #     current_user: User = Depends(get_current_user),
-#     thumbnail: Optional[UploadFile] = File(None),
+#     thumbnail: Optional[UploadedFile] = File(None),
 # ):
 #     current_asset = _DBAsset(**(await get_my_id_asset(asset, current_user)))
 
@@ -214,53 +219,63 @@ def get_asset(
     return asset
 
 
-# def validate_file(file: UploadFile, extension: str):
-#     # Need to check if the resource is a main file or helper file.
-#     # Return format is (file: UploadFile, extension: str, filetype: str, mainfile: bool)
-#     # Ordered in most likely file types for 'performance'
+def validate_file(file: UploadedFile, extension: str):
+    # Need to check if the resource is a main file or helper file.
+    # Return format is (
+    #     file: UploadedFile,
+    #         extension: str,
+    #         filetype: str,
+    #         mainfile: bool
+    # )
+    # Ordered in most likely file types for 'performance'
 
-#     # TODO(safety): Do we fail to identify what the main file is if the zip
-#     # archive contains both (e.g.) a .tilt and a .fbx?
+    # TODO(safety): Do we fail to identify what the main file is if the zip
+    # archive contains both (e.g.) a .tilt and a .fbx?
 
-#     if extension == "tilt":
-#         return (file, extension, "TILT", True)
+    if extension == "tilt":
+        return (file, extension, "TILT", True)
 
-#     # GLTF/GLB/BIN
-#     if extension == "glb":
-#         return (file, extension, "GLTF2", True)
+    # GLTF/GLB/BIN
+    if extension == "glb":
+        return (file, extension, "GLTF2", True)
 
-#     if extension == "gltf":
-#         # TODO: need extra checks here to determine if GLTF 1 or 2.
-#         return (file, extension, "GLTF2", True)
-#     if extension == "bin":
-#         return (file, extension, "BIN", False)
+    if extension == "gltf":
+        # TODO: need extra checks here to determine if GLTF 1 or 2.
+        return (file, extension, "GLTF2", True)
+    if extension == "bin":
+        return (file, extension, "BIN", False)
 
-#     # OBJ
-#     if extension == "obj":
-#         return (file, extension, "OBJ", True)
-#     if extension == "mtl":
-#         return (file, extension, "MTL", False)
+    # OBJ
+    if extension == "obj":
+        return (file, extension, "OBJ", True)
+    if extension == "mtl":
+        return (file, extension, "MTL", False)
 
-#     # FBX
-#     if extension == "fbx":
-#         return (file, extension, "FBX", True)
-#     if extension == "fbm":
-#         return (file, extension, "FBM", False)
+    # FBX
+    if extension == "fbx":
+        return (file, extension, "FBX", True)
+    if extension == "fbm":
+        return (file, extension, "FBM", False)
 
-#     # Images
-#     if IMAGE_REGEX.match(extension):
-#         return (file, extension, "IMAGE", False)
-#     return None
+    # Images
+    if IMAGE_REGEX.match(extension):
+        return (file, extension, "IMAGE", False)
+    return None
+
+
+def upload_file_gcs(source_file, destination_blob_name):
+    # stub to make the server run
+    assert False
 
 
 # async def upload_background(
 #     current_user: User,
-#     files: List[UploadFile],
-#     thumbnail: UploadFile,
 #     job_snowflake: int,
+#     files: List[UploadedFile] = File(...),
+#     thumbnail: UploadedFile = File(...),
 # ):
 #     if len(files) == 0:
-#         raise HTTPException(422, "No files provided.")
+#         raise HttpError(422, "No files provided.")
 
 #     # Loop on files provided and check types.
 #     # We need to see one of: tilt, glb, gltf, obj, fbx
@@ -288,9 +303,9 @@ def get_asset(
 #                         continue
 #                     # Read the file contents
 #                     with zip_file.open(zip_info) as extracted_file:
-#                         # Create a new UploadFile object
+#                         # Create a new UploadedFile object
 #                         content = extracted_file.read()
-#                         processed_file = UploadFile(
+#                         processed_file = UploadedFile(
 #                             filename=zip_info.filename,
 #                             file=io.BytesIO(content),
 #                         )
@@ -315,7 +330,7 @@ def get_asset(
 #                 subfile_details.append(uploadDetails)
 
 #     if name == "":
-#         raise HTTPException(
+#         raise HttpError(
 #             415, "Not supplied with one of tilt, glb, gltf, obj, fbx."
 #         )
 
@@ -398,7 +413,7 @@ def get_asset(
 
 #     # Add to database
 #     if len(formats) == 0:
-#         raise HTTPException(500, "Unable to upload any files.")
+#         raise HttpError(500, "Unable to upload any files.")
 #     query = assets.insert(None).values(
 #         id=assetsnowflake,
 #         url=assettoken,
@@ -418,7 +433,7 @@ def get_asset(
 
 
 # async def upload_thumbnail_background(
-#     current_user: User, thumbnail: UploadFile, asset_id: int
+#     current_user: User, thumbnail: UploadedFile, asset_id: int
 # ):
 #     splitnames = thumbnail.filename.split(".")
 #     extension = splitnames[-1].lower()
@@ -444,7 +459,7 @@ def get_asset(
 # async def upload_new_assets(
 #     background_tasks: BackgroundTasks,
 #     current_user: User = Depends(get_current_user),
-#     files: List[UploadFile] = File(...),
+#     files: List[UploadedFile] = File(...),
 # ):
 #     if len(files) == 0:
 #         raise HTTPException(422, "No files provided.")
