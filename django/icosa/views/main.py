@@ -1,6 +1,6 @@
 from icosa.forms import AssetSettingsForm, UserSettingsForm
+from icosa.helpers.user import get_owner
 from icosa.models import PUBLIC, Asset, User
-from icosa.utils import get_owner
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotAllowed, HttpResponseRedirect

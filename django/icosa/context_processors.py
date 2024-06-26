@@ -1,4 +1,4 @@
-from icosa.utils import get_owner
+from icosa.helpers.user import get_owner
 
 
 def owner_processor(request):
