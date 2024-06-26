@@ -1,6 +1,7 @@
 from icosa.models import (
     Asset,
     DeviceCode,
+    IcosaFormat,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -14,6 +15,12 @@ from django.contrib import admin
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     pass
+
+
+class IcosaFormatInline(admin.TabularInline):
+    extra = 0
+    model = IcosaFormat
+    filter_horizontal = ("subfiles",)
 
 
 @admin.register(Asset)
@@ -52,6 +59,7 @@ class AssetAdmin(admin.ModelAdmin):
     )
 
     filter_horizontal = ("tags",)
+    inlines = (IcosaFormatInline,)
 
 
 @admin.register(DeviceCode)

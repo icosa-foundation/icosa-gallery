@@ -151,6 +151,16 @@ class UserAssetLike(models.Model):
     date_liked = models.DateTimeField(auto_now_add=True)
 
 
+class IcosaFormat(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    url = models.CharField(max_length=255)
+    format = models.CharField(max_length=255)
+    subfiles = models.ManyToManyField(
+        "self", related_name="parent_files", symmetrical=False, blank=True
+    )
+
+
 class DeviceCode(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
