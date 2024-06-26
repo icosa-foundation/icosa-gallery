@@ -45,6 +45,44 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.127.0.0.1",
 ]
 
+DJANGO_STORAGE_URL = os.environ.get("DJANGO_STORAGE_BUCKET_NAME")
+DJANGO_STORAGE_REGION_NAME = os.environ.get("DJANGO_STORAGE_REGION_NAME")
+DJANGO_STORAGE_URL = os.environ.get("DJANGO_STORAGE_URL")
+DJANGO_STORAGE_ACCESS_KEY = os.environ.get("DJANGO_STORAGE_ACCESS_KEY")
+DJANGO_STORAGE_SECRET_KEY = os.environ.get("DJANGO_STORAGE_SECRET_KEY")
+
+if (
+    DJANGO_STORAGE_URL
+    and DJANGO_STORAGE_REGION_NAME
+    and DJANGO_STORAGE_URL
+    and DJANGO_STORAGE_ACCESS_KEY
+    and DJANGO_STORAGE_SECRET_KEY
+):
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "bucket_name": DJANGO_STORAGE_URL,
+                "default_acl": "public-read",
+                "region_name": os.environ.get("DJANGO_STORAGE_REGION_NAME"),
+                "endpoint_url": os.environ.get("DJANGO_STORAGE_URL"),
+                "access_key": os.environ.get("DJANGO_STORAGE_ACCESS_KEY"),
+                "secret_key": os.environ.get("DJANGO_STORAGE_SECRET_KEY"),
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 # Application definition
 
