@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql="\n            DROP VIEW IF EXISTS public.expandedassets;\n            ",
-            reverse_sql="\n            CREATE VIEW public.expandedassets AS\n            SELECT assets.id,\n            assets.url,\n            assets.name,\n            assets.owner,\n            users.displayname AS ownername,\n            users.url AS ownerurl,\n            assets.formats,\n            assets.description,\n            assets.visibility,\n            assets.curated,\n            assets.polyid,\n            assets.polydata,\n            assets.thumbnail\n            FROM (public.assets\n            LEFT JOIN public.users ON ((assets.owner = users.id)));\n            ",
+            reverse_sql="\n            CREATE VIEW public.expandedassets AS\n            SELECT assets.id,\n            assets.url,\n            assets.name,\n            assets.owner_id,\n            users.displayname AS ownername,\n            users.url AS ownerurl,\n            assets.formats,\n            assets.description,\n            assets.visibility,\n            assets.curated,\n            assets.polyid,\n            assets.polydata,\n            assets.thumbnail\n            FROM (public.assets\n            LEFT JOIN public.users ON ((assets.owner_id = users.id)));\n            ",
         ),
     ]
