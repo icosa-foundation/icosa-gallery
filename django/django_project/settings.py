@@ -60,6 +60,7 @@ if (
 ):
     STORAGES = {
         "default": {
+            # TODO make this configurable
             "BACKEND": "storages.backends.s3.S3Storage",
             "OPTIONS": {
                 "bucket_name": DJANGO_STORAGE_URL,
