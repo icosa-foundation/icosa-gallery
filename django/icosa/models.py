@@ -96,8 +96,7 @@ class Asset(models.Model):
     curated = models.BooleanField(blank=True, null=True)
     polyid = models.CharField(max_length=255, blank=True, null=True)
     polydata = models.JSONField(blank=True, null=True)
-    # TODO(james) make `thumbnail` an image field perhaps.
-    thumbnail = models.TextField(blank=True, null=True)
+    thumbnail = models.ImageField(blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
