@@ -4,6 +4,10 @@ from django import forms
 from django.forms.widgets import EmailInput, PasswordInput
 
 
+class AssetUploadForm(forms.Form):
+    file = forms.FileField()
+
+
 class AssetSettingsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

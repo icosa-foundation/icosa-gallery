@@ -10,6 +10,11 @@
         </div>
     </div>
 </div>
+<form action="." method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit" class="btn btn-primary">Upload</button>
+</form>
 <div class="sketch-list">
     <div class="container">
         <div class="row">

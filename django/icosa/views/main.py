@@ -1,4 +1,6 @@
-from icosa.forms import AssetSettingsForm, UserSettingsForm
+from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
+from icosa.helpers.file import upload_asset
+from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
 from icosa.models import PUBLIC, Asset, User
 
@@ -26,11 +28,27 @@ def home(request):
 
 @login_required
 def uploads(request):
-    template = "main/asset_list.html"
+    template = "main/manage_uploads.html"
 
     user = User.from_request(request)
+    if request.method == "POST":
+        form = AssetUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            job_snowflake = generate_snowflake()
+            foo = upload_asset(
+                user,
+                job_snowflake,
+                [request.FILES["file"]],
+                None,
+            )
+            print(foo)
+    elif request.method == "GET":
+        form = AssetUploadForm()
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
     context = {
         "assets": Asset.objects.filter(owner=user).order_by("-id"),
+        "form": form,
     }
     return render(
         request,

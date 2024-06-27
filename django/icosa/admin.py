@@ -17,6 +17,18 @@ class TagAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(IcosaFormat)
+class IcosaFormatAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "asset",
+        "format",
+        "is_mainfile",
+    )
+
+    filter_horizontal = ("subfiles",)
+
+
 class IcosaFormatInline(admin.TabularInline):
     extra = 0
     model = IcosaFormat

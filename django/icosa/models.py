@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from .helpers.snowflake import get_snowflake_timestamp
@@ -74,6 +75,22 @@ def default_orienting_rotation():
     return "[0, 0, 0, 0]"
 
 
+def thumbnail_upload_path(instance, filename):
+    root = settings.MEDIA_ROOT
+    return f"{root}/{instance.owner.id}/{instance.asset.id}/{filename}"
+
+
+def format_upload_path(instance, filename):
+    root = settings.MEDIA_ROOT
+    asset = instance.asset
+    ext = filename.split(".")[-1]
+    if instance.is_mainfile:
+        name = f"model.{ext}"
+    else:
+        name = filename
+    return f"{root}/{asset.owner.id}/{asset.id}/{instance.format}/{name}"
+
+
 class Asset(models.Model):
     COLOR_SPACES = [
         ("LINEAR", "LINEAR"),
@@ -96,7 +113,12 @@ class Asset(models.Model):
     curated = models.BooleanField(blank=True, null=True)
     polyid = models.CharField(max_length=255, blank=True, null=True)
     polydata = models.JSONField(blank=True, null=True)
-    thumbnail = models.ImageField(max_length=255, blank=True, null=True)
+    thumbnail = models.ImageField(
+        max_length=255,
+        blank=True,
+        null=True,
+        upload_to=thumbnail_upload_path,
+    )
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
@@ -155,10 +177,26 @@ class IcosaFormat(models.Model):
     id = models.BigAutoField(primary_key=True)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     url = models.CharField(max_length=255)
+    is_mainfile = models.BooleanField(default=False)
+    file = models.FileField(
+        max_length=255,
+        upload_to=format_upload_path,
+    )
     format = models.CharField(max_length=255)
     subfiles = models.ManyToManyField(
         "self", related_name="parent_files", symmetrical=False, blank=True
     )
+
+    def __str__(self):
+        main_sub = "(sub)"
+        if self.is_mainfile:
+            main_sub = "(main)"
+        return f"{self.format} {main_sub}"
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.url = self.file.url.split("?")[0]
+        super().save(*args, **kwargs)
 
 
 class DeviceCode(models.Model):
