@@ -128,6 +128,7 @@ class Asset(models.Model):
         max_length=50, choices=COLOR_SPACES, default="GAMMA"
     )
     background_color = models.CharField(max_length=7, null=True, blank=True)
+    imported = models.BooleanField(default=False)
 
     @property
     def timestamp(self):

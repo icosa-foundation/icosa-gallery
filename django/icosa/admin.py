@@ -56,6 +56,7 @@ class AssetAdmin(admin.ModelAdmin):
     list_filter = (
         "visibility",
         "curated",
+        "imported",
     )
 
     @admin.display(description="Formats")
