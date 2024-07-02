@@ -143,4 +143,5 @@ cython_debug/
 .DS_Store
 config.json
 gcp-service-account.json
+django/polygone_data/
 
