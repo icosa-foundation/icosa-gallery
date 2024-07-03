@@ -42,5 +42,5 @@ urlpatterns = [
     path("terms/", main_views.terms, name="terms"),
     # TODO: API routes are at the root for now; we should probably handle them
     # at something like /api/v1/
-    path("", api.urls),
+    path("api/v1/", api.urls),
 ]
