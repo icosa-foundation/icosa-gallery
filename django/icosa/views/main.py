@@ -14,8 +14,16 @@ def home(request):
     template = "main/home.html"
 
     context = {
-        "assets": Asset.objects.filter(visibility=PUBLIC).order_by("-id"),
-        "hero": Asset.objects.filter(visibility=PUBLIC, curated=True)
+        # TODO assets imported from polygone are missing files, so exclude
+        # anything that has the `imported` flag set for now.
+        "assets": Asset.objects.filter(
+            visibility=PUBLIC, imported=False
+        ).order_by("-id"),
+        "hero": Asset.objects.filter(
+            visibility=PUBLIC,
+            curated=True,
+            imported=False,
+        )
         .order_by("?")
         .first(),
     }
