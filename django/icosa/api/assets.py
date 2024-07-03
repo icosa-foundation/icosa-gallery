@@ -4,9 +4,10 @@ from typing import List, NoReturn, Optional
 from icosa.models import PUBLIC, Asset, Tag, User
 from ninja import Query, Router
 from ninja.errors import HttpError
-from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
+from django.conf import settings
+from django.core.files.storage import get_storage_class
 from django.db.models import Q
 from django.http import HttpRequest
 
@@ -15,6 +16,7 @@ from .schema import AssetFilters, AssetSchemaOut
 
 router = Router()
 
+default_storage = get_storage_class()()
 
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
@@ -74,25 +76,6 @@ def get_my_id_asset(
     return asset
 
 
-def remove_folder_gcs(folder_path):
-    """Remove entire folder from bucket."""
-    # TODO(james): do we wait until storages is implemented for this?
-    return False
-    # storage_client = storage.Client.from_service_account_json(
-    #     data["service_account_data"]
-    # )
-    # blobs = storage_client.list_blobs(
-    #     data["gcloud_bucket_name"], prefix=folder_path
-    # )
-    # for blob in blobs:
-    #     try:
-    #         blob.delete()
-    #     except Exception as e:
-    #         print(e)
-    #         return False
-    # return True
-
-
 @router.get(
     "/id/{asset}",
     response=AssetSchemaOut,
@@ -104,27 +87,30 @@ def get_id_asset(
     return get_asset_by_id(request, asset)
 
 
-@router.delete(
-    "/{asset}",
-    auth=AuthBearer(),
-    response=AssetSchemaOut,
-)
-def delete_asset(
-    request,
-    asset: int,
-):
-    asset = get_my_id_asset(request, asset)
-    # TODO(james): do we wait until storages is implemented for this?
-    # asset.delete()
-    # Asset removal from storage
-    owner = User.from_ninja_request(request)
-    asset_folder = f"{owner.id}/{asset}/"
-    if not (remove_folder_gcs(asset_folder)):
-        print(f"Failed to remove asset {asset}")
-        raise HttpError(
-            status_code=500, detail=f"Failed to remove asset {asset}"
-        )
-    return asset
+# @router.delete(
+#     "/{asset}",
+#     auth=AuthBearer(),
+#     response=AssetSchemaOut,
+# )
+# def delete_asset(
+#     request,
+#     asset: int,
+# ):
+#     asset = get_my_id_asset(request, asset)
+#     # TODO(james): do we wait until storages is implemented for this?
+#     # Asset removal from storage
+#     owner = User.from_ninja_request(request)
+#     asset_folder = f"{settings.MEDIA_ROOT}/{owner.id}/{asset.id}/"
+#     # path = str(Path(asset.thumbnail.name).parent)
+
+#     try:
+#         default_storage.delete(asset_folder)
+#     except Exception:
+#         raise HttpError(
+#             status_code=500, detail=f"Failed to remove asset {asset.id}"
+#         )
+#     asset.delete()
+#     return asset
 
 
 # TODO(james): do we wait until storages is implemented for this?

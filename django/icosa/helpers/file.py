@@ -11,6 +11,10 @@ from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
+from django.core.files.storage import get_storage_class
+
+default_storage = get_storage_class()()
+
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
 VALID_FORMAT_TYPES = [
