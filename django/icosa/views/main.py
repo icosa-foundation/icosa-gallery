@@ -98,6 +98,19 @@ def view_asset(request, user_url, asset_url):
     )
 
 
+def view_poly_asset(request, asset_url):
+    template = "main/view_asset.html"
+    context = {
+        "user": user,
+        "asset": get_object_or_404(Asset, visibility=PUBLIC, url=asset_url),
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
 @login_required
 def edit_asset(request, user_url, asset_url):
     template = "main/edit_asset.html"

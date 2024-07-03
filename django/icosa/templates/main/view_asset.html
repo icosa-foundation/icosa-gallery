@@ -23,9 +23,11 @@
         <div class="col">
             <div>
                 <h2>{{ asset.name }}</h2>
-                <h4>
-                    <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
-                </h4>
+                {% if asset.owner %}
+                    <h4>
+                        <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
+                    </h4>
+                {% endif %}
                 <span>{{ asset.timestamp|date:"Y-m-d" }}</span>
                 <p>
                 </p>

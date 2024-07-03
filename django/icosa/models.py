@@ -134,29 +134,61 @@ class Asset(models.Model):
     def timestamp(self):
         return get_snowflake_timestamp(self.id)
 
+    # TODO(james): This whole function is cursed
     @property
     def preferred_format(self):
         formats = {}
-        for format in self.formats:
-            formats[format["format"]] = format
-        if "GLTF2" in formats.keys():
-            return formats["GLTF2"]
-        if "GLTF" in formats.keys():
-            return formats["GLTF"]
-        if "TILT" in formats:
-            return formats["TILT"]
+        if self.polydata:
+            # TODO(james): lazy way to get the b2 storage location
+            storage_url = (
+                "https://f005.backblazeb2.com/file/icosa-gallery/poly"
+            )
+            for format in self.formats:
+                format_url = format["root"]["relativePath"]
+                formats[format["formatType"]] = {
+                    "format": format["formatType"],
+                    "url": f"{storage_url}/{self.polyid}/{format_url}",
+                }
+            # If we have a GLTF2 format, it's most likely actually a GLTF1.
+            if "GLTF2" in formats.keys():
+                return formats["GLTF2"]
+            # If we have a GLB format, it's most likely actually a GLTF2.
+            if "GLB" in formats.keys():
+                return formats["GLB"]
+        else:
+            for format in self.formats:
+                formats[format["format"]] = format
+            if "GLTF2" in formats.keys():
+                return formats["GLTF2"]
+            if "GLTF" in formats.keys():
+                return formats["GLTF"]
+            if "TILT" in formats:
+                return formats["TILT"]
         return None
 
     @property
     def is_gltf(self):
-        return self.preferred_format["format"] == "GLTF"
+        if self.polydata:
+            # If we have a GLTF2 format, it's most likely actually a GLTF1.
+            return self.preferred_format["format"] == "GLTF2"
+        else:
+            return self.preferred_format["format"] == "GLTF"
 
     @property
     def is_gltf2(self):
-        return self.preferred_format["format"] == "GLTF2"
+        if self.polydata:
+            # If we have a GLB format, it's most likely actually a GLTF2.
+            return self.preferred_format["format"] == "GLB"
+        else:
+            return self.preferred_format["format"] == "GLTF2"
 
     def get_absolute_url(self):
-        return f"/view/{self.owner.url}/{self.url}"
+        if self.polydata:
+            # TODO(james): hack for not knowing author/user/situation for poly
+            # data right now.
+            return f"/view/{self.url}"
+        else:
+            return f"/view/{self.owner.url}/{self.url}"
 
     def get_edit_url(self):
         return f"/edit/{self.owner.url}/{self.url}"
