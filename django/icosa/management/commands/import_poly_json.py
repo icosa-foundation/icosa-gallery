@@ -76,21 +76,8 @@ class Command(BaseCommand):
                             obj, _ = Tag.objects.get_or_create(name=tag)
                             icosa_tags.append(obj)
                         asset.tags.set(icosa_tags)
-                    else:
-                        print("got it already")
                 except Exception as e:
                     from pprint import pprint
 
                     print(e)
                     pprint(data)
-                # Loop through all the files in the directory; for each file,
-                # create a new File object and associate it with the Asset.
-                # Currently, the sparse checkout does not include these extra
-                # files.
-                # for file in os.listdir(directory):
-                #     file = File.objects.create(
-                #         asset=asset,
-                #         filename=file,
-                #         path=directory + "/" + file,
-                #     )
-                #     file.save()
