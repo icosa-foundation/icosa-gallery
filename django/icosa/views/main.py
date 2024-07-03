@@ -90,6 +90,7 @@ def view_asset(request, user_url, asset_url):
     )
 
 
+@login_required
 def edit_asset(request, user_url, asset_url):
     template = "main/edit_asset.html"
     user = get_object_or_404(User, url=user_url)
