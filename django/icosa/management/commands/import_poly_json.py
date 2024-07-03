@@ -2,24 +2,70 @@ import json
 import os
 import secrets
 from datetime import datetime
+from pathlib import Path
 
+from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import Asset, Tag, User
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
+
+POLY_JSON_DIR = "polygone_data/assets"
+
+
+def get_json_from_b2(dir):
+    info = InMemoryAccountInfo()
+    b2_api = B2Api(info)
+    b2_api.authorize_account(
+        "production",
+        settings.DJANGO_STORAGE_ACCESS_KEY,
+        settings.DJANGO_STORAGE_SECRET_KEY,
+    )
+    bucket = b2_api.get_bucket_by_name("icosa-gallery")
+    json_files = bucket.ls(
+        folder_to_list="poly/*/data.json",
+        latest_only=True,
+        recursive=True,
+        with_wildcard=True,
+    )
+    print("Downloading files...")
+    for version, _ in json_files:
+        # Strip the `/poly/` element off the path; we don't need that.
+        path = os.path.join(dir, *version.file_name.split("/")[1:-1])
+        path_with_file = os.path.join(path, "data.json")
+        if os.path.exists(path_with_file):
+            # Assuming the json data will never change once downloaded.
+            print(version.file_name, "already exists; skipping.")
+        else:
+            print("Downloading", version.file_name, "...")
+            download = version.download()
+            # Create destination path only after download was successful.
+            Path(path).mkdir(parents=True, exist_ok=True)
+            download.save_to(path_with_file)
+    print("Finished downloading files.")
 
 
 class Command(BaseCommand):
 
     help = "Imports poly json files from a local directory"
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--download-only",
+            action="store_true",
+            help="Only download the json files, do not process them",
+        )
 
-        POLY_JSON_DIR = "polygone_data/assets"
+    def handle(self, *args, **options):
 
         # Loop through all directories in the poly json directory
         # For each directory, load the data.json file
         # Create a new Asset object with the data
+        get_json_from_b2(POLY_JSON_DIR)
+        if options["download_only"]:
+            return
+
         for directory in os.listdir(POLY_JSON_DIR):
             if directory.startswith("."):
                 continue
