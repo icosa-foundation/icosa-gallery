@@ -43,13 +43,13 @@ def uploads(request):
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
             job_snowflake = generate_snowflake()
-            foo = upload_asset(
+            upload_asset(
                 user,
                 job_snowflake,
                 [request.FILES["file"]],
                 None,
             )
-            print(foo)
+            return HttpResponseRedirect(reverse("uploads"))
     elif request.method == "GET":
         form = AssetUploadForm()
     else:
