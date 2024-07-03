@@ -77,7 +77,7 @@ def default_orienting_rotation():
 
 def thumbnail_upload_path(instance, filename):
     root = settings.MEDIA_ROOT
-    return f"{root}/{instance.owner.id}/{instance.asset.id}/{filename}"
+    return f"{root}/{instance.owner.id}/{instance.id}/{filename}"
 
 
 def format_upload_path(instance, filename):
