@@ -58,33 +58,40 @@ if (
     and DJANGO_STORAGE_ACCESS_KEY
     and DJANGO_STORAGE_SECRET_KEY
 ):
-    STORAGES = {
-        "default": {
-            # TODO make this configurable
-            "BACKEND": "storages.backends.s3.S3Storage",
-            "OPTIONS": {
-                "bucket_name": DJANGO_STORAGE_BUCKET_NAME,
-                "default_acl": "public-read",
-                "region_name": DJANGO_STORAGE_REGION_NAME,
-                "endpoint_url": DJANGO_STORAGE_URL,
-                "access_key": DJANGO_STORAGE_ACCESS_KEY,
-                "secret_key": DJANGO_STORAGE_SECRET_KEY,
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
+    DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_ACCESS_KEY_ID = DJANGO_STORAGE_ACCESS_KEY
+    AWS_SECRET_ACCESS_KEY = DJANGO_STORAGE_SECRET_KEY
+    AWS_STORAGE_BUCKET_NAME = DJANGO_STORAGE_BUCKET_NAME
+    AWS_S3_REGION_NAME = DJANGO_STORAGE_REGION_NAME
+    AWS_S3_ENDPOINT_URL = DJANGO_STORAGE_URL
+    # STORAGES = {
+    #     "default": {
+    #         # TODO make this configurable
+    #         "BACKEND": "storages.backends.s3.S3Storage",
+    #         "OPTIONS": {
+    #             "bucket_name": DJANGO_STORAGE_BUCKET_NAME,
+    #             "default_acl": "public-read",
+    #             "region_name": DJANGO_STORAGE_REGION_NAME,
+    #             "endpoint_url": DJANGO_STORAGE_URL,
+    #             "access_key": DJANGO_STORAGE_ACCESS_KEY,
+    #             "secret_key": DJANGO_STORAGE_SECRET_KEY,
+    #         },
+    #     },
+    #     "staticfiles": {
+    #         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    #     },
+    # }
 else:
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
-
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    # STORAGES = {
+    #     "default": {
+    #         "BACKEND": "django.core.files.storage.FileSystemStorage",
+    #     },
+    #     "staticfiles": {
+    #         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    #     },
+    # }
 # Application definition
 
 INSTALLED_APPS = [

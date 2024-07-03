@@ -52,78 +52,98 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--download-only",
+            "--skip-import",
             action="store_true",
             help="Only download the json files, do not process them",
+        )
+        parser.add_argument(
+            "--skip-download",
+            action="store_true",
+            help="Process existing json files without downloading any",
         )
 
     def handle(self, *args, **options):
 
+        if options["skip_import"] and options["skip_download"]:
+            print(
+                "Nothing to do when --skip-import and --skip-download are used together."
+            )
+            return
+        if not options["skip_download"]:
+            get_json_from_b2(POLY_JSON_DIR)
+        if options["skip_import"]:
+            return
+
         # Loop through all directories in the poly json directory
         # For each directory, load the data.json file
         # Create a new Asset object with the data
-        get_json_from_b2(POLY_JSON_DIR)
-        if options["download_only"]:
-            return
-
         for directory in os.listdir(POLY_JSON_DIR):
             if directory.startswith("."):
                 continue
             # print(directory)
             full_path = os.path.join(POLY_JSON_DIR, directory, "data.json")
             # print(full_path)
-            with open(full_path) as f:
-                data = json.load(f)
+            try:
+                with open(full_path) as f:
+                    data = json.load(f)
 
-                user = User.objects.filter(url=data["authorId"]).first()
+                    user = User.objects.filter(url=data["authorId"]).first()
 
-                # A couple of background colours are expressed as malformed
-                # rgb() values. Let's make them the default if so.
-                background_color = data["presentationParams"].get(
-                    "backgroundColor", None
-                )
-                if background_color is not None and len(background_color) > 7:
-                    background_color = "#000000"
-
-                try:
-                    asset, asset_created = Asset.objects.get_or_create(
-                        name=data["name"],
-                        # TODO author=data["authorName"],
-                        owner=user,
-                        description=data.get("description", None),
-                        formats=data["formats"],
-                        visibility=data["visibility"],
-                        curated="curated" in data["tags"],
-                        polyid=directory,
-                        polydata=data,
-                        thumbnail=None,
-                        license=data["license"],
-                        # tags=data["tags"],
-                        orienting_rotation=data["presentationParams"][
-                            "orientingRotation"
-                        ],
-                        color_space=data["presentationParams"]["colorSpace"],
-                        background_color=background_color,
-                        create_time=datetime.fromisoformat(
-                            data["createTime"].replace("Z", "+00:00")
-                        ),
-                        update_time=datetime.fromisoformat(
-                            data["updateTime"].replace("Z", "+00:00")
-                        ),
-                        defaults={
-                            "id": generate_snowflake(),
-                            "imported": True,
-                            "url": secrets.token_urlsafe(8),
-                        },
+                    # A couple of background colours are expressed as malformed
+                    # rgb() values. Let's make them the default if so.
+                    background_color = data["presentationParams"].get(
+                        "backgroundColor", None
                     )
-                    if asset_created:
-                        icosa_tags = []
-                        for tag in data["tags"]:
-                            obj, _ = Tag.objects.get_or_create(name=tag)
-                            icosa_tags.append(obj)
-                        asset.tags.set(icosa_tags)
-                except Exception as e:
-                    from pprint import pprint
+                    if (
+                        background_color is not None
+                        and len(background_color) > 7
+                    ):
+                        background_color = "#000000"
 
-                    print(e)
-                    pprint(data)
+                    try:
+                        asset, asset_created = Asset.objects.get_or_create(
+                            name=data["name"],
+                            # TODO author=data["authorName"],
+                            owner=user,
+                            description=data.get("description", None),
+                            formats=data["formats"],
+                            visibility=data["visibility"],
+                            curated="curated" in data["tags"],
+                            polyid=directory,
+                            polydata=data,
+                            thumbnail=None,
+                            license=data["license"],
+                            # tags=data["tags"],
+                            orienting_rotation=data["presentationParams"][
+                                "orientingRotation"
+                            ],
+                            color_space=data["presentationParams"][
+                                "colorSpace"
+                            ],
+                            background_color=background_color,
+                            create_time=datetime.fromisoformat(
+                                data["createTime"].replace("Z", "+00:00")
+                            ),
+                            update_time=datetime.fromisoformat(
+                                data["updateTime"].replace("Z", "+00:00")
+                            ),
+                            defaults={
+                                "id": generate_snowflake(),
+                                "imported": True,
+                                "url": secrets.token_urlsafe(8),
+                            },
+                        )
+                        if asset_created:
+                            icosa_tags = []
+                            for tag in data["tags"]:
+                                obj, _ = Tag.objects.get_or_create(name=tag)
+                                icosa_tags.append(obj)
+                            asset.tags.set(icosa_tags)
+                    except Exception as e:
+                        from pprint import pprint
+
+                        print(e)
+                        pprint(data)
+            except FileNotFoundError as e:
+                print(e)
+                continue
