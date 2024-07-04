@@ -151,6 +151,8 @@ class Asset(models.Model):
             # If we have a GLTF2 format, it's most likely actually a GLTF1.
             if "GLTF2" in formats.keys():
                 return formats["GLTF2"]
+            if "GLTF" in formats.keys():
+                return formats["GLTF"]
             # If we have a GLB format, it's most likely actually a GLTF2.
             if "GLB" in formats.keys():
                 return formats["GLB"]
@@ -171,7 +173,7 @@ class Asset(models.Model):
             return False
         if self.polydata and self.imported:
             # If we have a GLTF2 format, it's most likely actually a GLTF1.
-            return self.preferred_format["format"] == "GLTF2"
+            return self.preferred_format["format"] in ["GLTF", "GLTF2"]
         else:
             return self.preferred_format["format"] == "GLTF"
 
