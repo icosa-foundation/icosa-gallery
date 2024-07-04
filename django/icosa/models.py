@@ -169,16 +169,16 @@ class Asset(models.Model):
     @property
     def is_gltf(self):
         if self.polydata and self.imported:
-            # If we have a GLB format, it's most likely actually a GLTF2.
-            return self.preferred_format["format"] == "GLB"
+            # If we have a GLTF2 format, it's most likely actually a GLTF1.
+            return self.preferred_format["format"] == "GLTF2"
         else:
             return self.preferred_format["format"] == "GLTF"
 
     @property
     def is_gltf2(self):
         if self.polydata and self.imported:
-            # If we have a GLTF2 format, it's most likely actually a GLTF1.
-            return self.preferred_format["format"] == "GLTF2"
+            # If we have a GLB format, it's most likely actually a GLTF2.
+            return self.preferred_format["format"] == "GLB"
         else:
             return self.preferred_format["format"] == "GLTF2"
 
