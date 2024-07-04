@@ -64,6 +64,20 @@ def get_asset_by_id(
     return asset
 
 
+def get_asset_by_url(
+    request: HttpRequest,
+    asset: str,
+) -> Asset:
+    # get_object_or_404 raises the wrong error text
+    try:
+        asset = Asset.objects.get(url=asset)
+    except Asset.DoesNotExist:
+        raise HttpError(404, "Asset not found.")
+    if not user_can_view_asset(request, asset):
+        raise HttpError(404, "Asset not found.")
+    return asset
+
+
 def get_my_id_asset(
     request,
     asset: int,
@@ -77,14 +91,14 @@ def get_my_id_asset(
 
 
 @router.get(
-    "/id/{asset}",
+    "/{asset}",
     response=AssetSchemaOut,
 )
-def get_id_asset(
+def get_asset(
     request,
-    asset: int,
+    asset: str,
 ):
-    return get_asset_by_id(request, asset)
+    return get_asset_by_url(request, asset)
 
 
 # @router.delete(
