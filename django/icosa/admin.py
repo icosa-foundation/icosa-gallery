@@ -5,6 +5,8 @@ from icosa.models import (
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
+    PolyFormat,
+    PolyResource,
     Tag,
     User,
 )
@@ -29,10 +31,44 @@ class IcosaFormatAdmin(admin.ModelAdmin):
     filter_horizontal = ("subfiles",)
 
 
+@admin.register(PolyResource)
+class PolyResourceAdmin(admin.ModelAdmin):
+    pass
+
+
 class IcosaFormatInline(admin.TabularInline):
     extra = 0
     model = IcosaFormat
     filter_horizontal = ("subfiles",)
+
+
+class PolyFormatInline(admin.TabularInline):
+    extra = 0
+    model = PolyFormat
+    show_change_link = True
+
+    fields = ("format_type",)
+
+
+class PolyResourceInline(admin.TabularInline):
+    extra = 0
+    model = PolyResource
+
+    fields = (
+        "is_root",
+        "file",
+    )
+
+
+@admin.register(PolyFormat)
+class PolyFormatAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "asset",
+        "format_type",
+    )
+
+    inlines = (PolyResourceInline,)
 
 
 @admin.register(Asset)
@@ -72,7 +108,7 @@ class AssetAdmin(admin.ModelAdmin):
     )
 
     filter_horizontal = ("tags",)
-    inlines = (IcosaFormatInline,)
+    inlines = (PolyFormatInline,)
 
 
 @admin.register(DeviceCode)

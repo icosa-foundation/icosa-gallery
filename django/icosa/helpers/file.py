@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import Asset, IcosaFormat, User
+from icosa.models import Asset, PolyFormat, PolyResource, User
 from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
@@ -172,7 +172,7 @@ def upload_asset(
 
     # begin upload process
     asset_token = secrets.token_urlsafe(8)
-    formats = []
+    resources = []
 
     # create an asset to attach files to
     asset_data = {
@@ -181,6 +181,7 @@ def upload_asset(
         "name": name,
         "formats": "",
         "owner": current_user,
+        "curated": False,
     }
 
     asset = Asset(**asset_data)
@@ -191,18 +192,20 @@ def upload_asset(
         base_path = f"{current_user.id}/{job_snowflake}/{mainfile.filetype}/"
         # model_path = base_path + f"model.{mainfile.extension}"
         # model_uploaded_url = upload_file_gcs(mainfile.file.file, model_path)
-        mainfile_snowflake = generate_snowflake()
         format_data = {
-            "id": mainfile_snowflake,
-            "file": mainfile.file,
-            "format": mainfile.filetype,
+            "format_type": mainfile.filetype,
             "asset": asset,
-            "url": "",
-            "is_mainfile": True,
         }
-        main_format = IcosaFormat(**format_data)
-        main_format.save()
-        formats.append(main_format)
+        format = PolyFormat(**format_data)
+        format.save()
+        resource_data = {
+            "file": mainfile.file,
+            "is_root": True,
+            "format": format,
+        }
+        main_resource = PolyResource(**resource_data)
+        main_resource.save()
+        resources.append(main_resource)
 
         for subfile in sub_files:
             # Horrendous check for supposedly compatible subfiles. can
@@ -231,17 +234,13 @@ def upload_asset(
                 )
             ):
 
-                subfile_snowflake = generate_snowflake()
-                sub_format_data = {
-                    "id": subfile_snowflake,
-                    "asset": asset,
+                sub_resource_data = {
                     "file": subfile.file,
-                    "format": subfile.filetype,
-                    "url": "",
+                    "format": format,
+                    "is_root": False,
                 }
-                sub_format = IcosaFormat(**sub_format_data)
+                sub_format = PolyResource(**sub_resource_data)
                 sub_format.save()
-                main_format.subfiles.add(sub_format)
 
     if thumbnail:
         extension = thumbnail.name.split(".")[-1].lower()
@@ -253,7 +252,7 @@ def upload_asset(
             asset.thumbnail = thumbnail_upload_details.file
             asset.save()
 
-    if len(formats) == 0:
+    if len(resources) == 0:
         raise HttpError(500, "Unable to upload any files.")
     return asset
 

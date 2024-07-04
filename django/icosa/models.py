@@ -81,17 +81,6 @@ def thumbnail_upload_path(instance, filename):
     return f"{root}/{instance.owner.id}/{instance.id}/{filename}"
 
 
-def format_upload_path(instance, filename):
-    root = settings.MEDIA_ROOT
-    asset = instance.asset
-    ext = filename.split(".")[-1]
-    if instance.is_mainfile:
-        name = f"model.{ext}"
-    else:
-        name = filename
-    return f"{root}/{asset.owner.id}/{asset.id}/{instance.format}/{name}"
-
-
 class Asset(models.Model):
     COLOR_SPACES = [
         ("LINEAR", "LINEAR"),
@@ -220,6 +209,18 @@ class UserAssetLike(models.Model):
     date_liked = models.DateTimeField(auto_now_add=True)
 
 
+def format_upload_path(instance, filename):
+    root = settings.MEDIA_ROOT
+    format = instance.format
+    asset = format.asset
+    ext = filename.split(".")[-1]
+    if instance.is_root:
+        name = f"model.{ext}"
+    else:
+        name = filename
+    return f"{root}/{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
+
+
 class IcosaFormat(models.Model):
     id = models.BigAutoField(primary_key=True)
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
@@ -244,6 +245,42 @@ class IcosaFormat(models.Model):
         if self.file:
             self.url = self.file.url.split("?")[0]
         super().save(*args, **kwargs)
+
+
+class PolyFormat(models.Model):
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    format_type = models.CharField(max_length=255)
+
+    @property
+    def format_complexity(self):
+        # TODO should be a model with the following fields:
+        # lod_hint = models...
+        # triangle_count = models...
+        pass
+
+
+class PolyResource(models.Model):
+    is_root = models.BooleanField(default=False)
+    format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
+    file = models.FileField(
+        max_length=255,
+        upload_to=format_upload_path,
+    )
+
+    @property
+    def url(self):
+        # Derived from the file field.
+        pass
+
+    @property
+    def relative_path(self):
+        # Derived from the file field.
+        pass
+
+    @property
+    def content_type(self):
+        # Derived from the format field
+        pass
 
 
 class DeviceCode(models.Model):
