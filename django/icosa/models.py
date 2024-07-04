@@ -138,7 +138,7 @@ class Asset(models.Model):
     @property
     def preferred_format(self):
         formats = {}
-        if self.polydata:
+        if self.polydata and self.imported:
             # TODO(james): lazy way to get the b2 storage location
             storage_url = (
                 "https://f005.backblazeb2.com/file/icosa-gallery/poly"
@@ -168,7 +168,7 @@ class Asset(models.Model):
 
     @property
     def is_gltf(self):
-        if self.polydata:
+        if self.polydata and self.imported:
             # If we have a GLB format, it's most likely actually a GLTF2.
             return self.preferred_format["format"] == "GLB"
         else:
@@ -176,7 +176,7 @@ class Asset(models.Model):
 
     @property
     def is_gltf2(self):
-        if self.polydata:
+        if self.polydata and self.imported:
             # If we have a GLTF2 format, it's most likely actually a GLTF1.
             return self.preferred_format["format"] == "GLTF2"
         else:
