@@ -41,11 +41,12 @@
 
     var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
 
-    {% if gltf_mode == 1 %}
-        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
-    {% elif gltf_mode == 2 %}
+    try {
         await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
-    {% endif %}
+    } catch (error) {
+        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
+        console.log(error);
+    }
 
 </script>
 {% endblock content %}
