@@ -14,11 +14,11 @@ def home(request):
     template = "main/home.html"
 
     context = {
-        # TODO assets imported from polygone are missing files, so exclude
-        # anything that has the `imported` flag set for now.
-        "assets": Asset.objects.filter(
-            visibility=PUBLIC, imported=False
-        ).order_by("-id"),
+        # TODO(perf): There are too many assets so I'm truncating this list. I
+        # need to implement pagination.
+        "assets": Asset.objects.filter(visibility=PUBLIC).order_by("-id")[
+            :300
+        ],
         "hero": Asset.objects.filter(
             visibility=PUBLIC,
             curated=True,

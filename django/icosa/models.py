@@ -20,6 +20,7 @@ ASSET_VISIBILITY_CHOICES = [
         "Unlisted",
     ),
 ]
+STORAGE_URL = "https://f005.backblazeb2.com/file/icosa-gallery/poly"
 
 
 class User(models.Model):
@@ -139,16 +140,14 @@ class Asset(models.Model):
     def preferred_format(self):
         formats = {}
         if self.polydata and self.imported:
-            # TODO(james): lazy way to get the b2 storage location
-            storage_url = (
-                "https://f005.backblazeb2.com/file/icosa-gallery/poly"
-            )
             for format in self.formats:
                 format_url = format["root"]["relativePath"]
                 formats[format["formatType"]] = {
                     "format": format["formatType"],
-                    "url": f"{storage_url}/{self.polyid}/{format_url}",
+                    "url": f"{STORAGE_URL}/{self.polyid}/{format_url}",
                 }
+            # TODO(james): We need this list to be more exhaustive; we're
+            # returning None in too many cases.
             # If we have a GLTF2 format, it's most likely actually a GLTF1.
             if "GLTF2" in formats.keys():
                 return formats["GLTF2"]
@@ -168,6 +167,8 @@ class Asset(models.Model):
 
     @property
     def is_gltf(self):
+        if self.preferred_format is None:
+            return False
         if self.polydata and self.imported:
             # If we have a GLTF2 format, it's most likely actually a GLTF1.
             return self.preferred_format["format"] == "GLTF2"
@@ -176,6 +177,8 @@ class Asset(models.Model):
 
     @property
     def is_gltf2(self):
+        if self.preferred_format is None:
+            return False
         if self.polydata and self.imported:
             # If we have a GLB format, it's most likely actually a GLTF2.
             return self.preferred_format["format"] == "GLB"
@@ -192,6 +195,15 @@ class Asset(models.Model):
 
     def get_edit_url(self):
         return f"/edit/{self.owner.url}/{self.url}"
+
+    def get_thumbnail_url(self):
+        thumbnail_url = "/static/images/nothumbnail.png?v=1"
+        if self.polydata and self.imported:
+            thumbnail_url = f"{STORAGE_URL}/{self.polyid}/thumbnail.png"
+        else:
+            if self.thumbnail:
+                thumbnail_url = self.thumbnail
+        return thumbnail_url
 
     def __str__(self):
         return self.name
