@@ -82,14 +82,31 @@ def user(request, user_url):
     )
 
 
+def get_gltf_mode(request, asset):
+    if request.GET.get("gltfmode", None) is not None:
+        try:
+            gltf_mode = int(request.GET["gltfmode"])
+        except ValueError:
+            pass
+    elif asset.is_gltf:
+        gltf_mode = 1
+    elif asset.is_gltf2:
+        gltf_mode = 2
+    else:
+        gltf_mode = None
+    return gltf_mode
+
+
 def view_asset(request, user_url, asset_url):
     template = "main/view_asset.html"
     user = get_object_or_404(User, url=user_url)
+    asset = get_object_or_404(
+        Asset, visibility=PUBLIC, owner=user.id, url=asset_url
+    )
     context = {
         "user": user,
-        "asset": get_object_or_404(
-            Asset, visibility=PUBLIC, owner=user.id, url=asset_url
-        ),
+        "asset": asset,
+        "gltf_mode": get_gltf_mode(request, asset),
     }
     return render(
         request,
@@ -100,9 +117,12 @@ def view_asset(request, user_url, asset_url):
 
 def view_poly_asset(request, asset_url):
     template = "main/view_asset.html"
+
+    asset = get_object_or_404(Asset, visibility=PUBLIC, url=asset_url)
     context = {
         "user": user,
-        "asset": get_object_or_404(Asset, visibility=PUBLIC, url=asset_url),
+        "asset": asset,
+        "gltf_mode": get_gltf_mode(request, asset),
     }
     return render(
         request,
