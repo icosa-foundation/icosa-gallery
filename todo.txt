@@ -5,3 +5,5 @@ this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "
 asset and format id fields need to be snowflakes.
 
 make icosa formats have relative urls, not the abs b2 ones we have from gcp_to_b2.py
+
+log somewhere when we catch an exception falling back to gltf1: view_asset.html
