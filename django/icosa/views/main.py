@@ -5,6 +5,7 @@ from icosa.helpers.user import get_owner
 from icosa.models import PUBLIC, Asset, User
 
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.http import HttpResponseNotAllowed, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -13,12 +14,12 @@ from django.urls import reverse
 def home(request):
     template = "main/home.html"
 
+    asset_objs = Asset.objects.filter(visibility=PUBLIC).order_by("-id")
+    paginator = Paginator(asset_objs, 50)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
     context = {
-        # TODO(perf): There are too many assets so I'm truncating this list. I
-        # need to implement pagination.
-        "assets": Asset.objects.filter(visibility=PUBLIC).order_by("-id")[
-            :300
-        ],
+        "assets": assets,
         "hero": Asset.objects.filter(
             visibility=PUBLIC,
             curated=True,
