@@ -12,6 +12,10 @@ class Command(BaseCommand):
     format."""
 
     def handle(self, *args, **options):
+        print(
+            "Not fully tested. Please comment out the early return in this command to run on your local data."
+        )
+        return
         assets = Asset.objects.filter(
             imported=False,
             formats__isnull=False,
