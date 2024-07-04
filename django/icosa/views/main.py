@@ -89,10 +89,6 @@ def get_gltf_mode(request, asset):
             gltf_mode = int(request.GET["gltfmode"])
         except ValueError:
             pass
-    elif asset.is_gltf:
-        gltf_mode = 1
-    elif asset.is_gltf2:
-        gltf_mode = 2
     else:
         gltf_mode = None
     return gltf_mode
