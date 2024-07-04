@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 
-from icosa.models import Asset, Tag
+from icosa.models import Asset
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
 
