@@ -44368,7 +44368,6 @@ class $3c43f222267ed54b$var$EnvironmentPreset {
         this.Guid = preset?.guid ?? null;
         this.Name = preset?.name ?? "No preset";
         this.AmbientLightColor = preset?.renderSettings.ambientColor ?? defaultColor;
-        this.UseGradient = false;
         this.SkyColorA = preset?.skyboxColorA ?? defaultColor;
         this.SkyColorB = preset?.skyboxColorB ?? defaultColor;
         this.SkyGradientDirection = new $ea01ff4a5048cd08$exports.Vector3(0, 1, 0);
@@ -44379,6 +44378,7 @@ class $3c43f222267ed54b$var$EnvironmentPreset {
         this.SceneLight1Color = preset?.lights[1].color ?? defaultColor;
         this.SceneLight1Rotation = preset?.lights[1].rotation ?? defaultRotation;
         this.SkyTexture = preset?.renderSettings.skyboxCubemap ?? null;
+        this.UseGradient = !this.SkyTexture; // Some older gltfs don't set UseGradient so we need to guess
         this.ReflectionTexture = preset?.renderSettings.reflectionCubemap ?? null;
         this.ReflectionIntensity = preset?.renderSettings.reflectionIntensity ?? 1;
     }
