@@ -53,6 +53,9 @@
             console.log(error);
         }
     {% endif %}
+    {% if asset.background_color %}
+        viewer.scene.background = new three.Color("{{ asset.background_color }}");
+    {% endif %}
 
 </script>
 {% endblock content %}
