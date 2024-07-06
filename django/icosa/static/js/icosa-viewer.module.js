@@ -44315,7 +44315,7 @@ class $3c43f222267ed54b$var$SketchMetadata {
         this.EnvironmentGuid = userData["TB_EnvironmentGuid"] ?? "";
         this.Environment = userData["TB_Environment"] ?? "(None)";
         this.EnvironmentPreset = new $3c43f222267ed54b$var$EnvironmentPreset($3c43f222267ed54b$export$2ec4afd9b3c16a85.lookupEnvironment(this.EnvironmentGuid));
-        if (typeof userData["TB_UseGradient"] === "undefined") this.UseGradient = this.EnvironmentPreset.UseGradient;
+        if (typeof userData["TB_UseGradient"] === "undefined") this.UseGradient = this.EnvironmentPreset.SkyTexture != null;
         else this.UseGradient = JSON.parse(userData["TB_UseGradient"].toLowerCase());
         this.SkyColorA = this.parseTBColor(userData["TB_SkyColorA"], this.EnvironmentPreset.SkyColorA);
         this.SkyColorB = this.parseTBColor(userData["TB_SkyColorB"], this.EnvironmentPreset.SkyColorB);
@@ -44378,14 +44378,13 @@ class $3c43f222267ed54b$var$EnvironmentPreset {
         this.SceneLight1Color = preset?.lights[1].color ?? defaultColor;
         this.SceneLight1Rotation = preset?.lights[1].rotation ?? defaultRotation;
         this.SkyTexture = preset?.renderSettings.skyboxCubemap ?? null;
-        this.UseGradient = !this.SkyTexture; // Some older gltfs don't set UseGradient so we need to guess
+        this.UseGradient = false;
         this.ReflectionTexture = preset?.renderSettings.reflectionCubemap ?? null;
         this.ReflectionIntensity = preset?.renderSettings.reflectionIntensity ?? 1;
     }
 }
 class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
     constructor(assetBaseUrl, frame){
-        this.sceneColor = new $ea01ff4a5048cd08$exports.Color("#000000");
         this.icosa_frame = frame;
         // Attempt to find viewer frame if not assigned
         if (!this.icosa_frame) this.icosa_frame = document.getElementById("icosa-viewer");
@@ -45899,16 +45898,18 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             }
         })[guid];
     }
-    async loadGltf1(url, loadEnvironment, tiltUrl) {
+    async loadGltf1(url, loadEnvironment, defaultBackground, tiltUrl) {
         const sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
         await (0, $fcb47f08b3ea937b$export$d51cb1093e099859)(this.brushPath.toString(), sceneGltf.scene);
         this.setupSketchMetaData(sceneGltf.scene);
         if (loadEnvironment) await this.assignEnvironment(sceneGltf.scene);
         if (tiltUrl) this.tiltData = await this.tiltLoader.loadAsync(tiltUrl);
         this.loadedModel = sceneGltf.scene;
+        if (!defaultBackground) defaultBackground = "#000000";
+        this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(defaultBackground);
         this.initializeScene();
     }
-    async loadGltf(url, loadEnvironment, tiltUrl) {
+    async loadGltf(url, loadEnvironment, defaultBackground, tiltUrl) {
         const sceneGltf = await this.gltfLoader.loadAsync(url);
         this.setupSketchMetaData(sceneGltf.scene);
         if (loadEnvironment) await this.assignEnvironment(sceneGltf.scene);
@@ -45918,6 +45919,8 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         // this.tiltData = await this.tiltLoader.loadAsync(tiltUrl);
         }
         this.loadedModel = sceneGltf.scene;
+        if (!defaultBackground) defaultBackground = "#000000";
+        this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(defaultBackground);
         this.initializeScene();
     }
     async loadTilt(url) {
@@ -46008,7 +46011,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         if (this.sketchMetadata.UseGradient) sky = this.generateGradientSky(this.sketchMetadata.SkyColorA, this.sketchMetadata.SkyColorB, this.sketchMetadata.SkyGradientDirection);
         else if (this.sketchMetadata.SkyTexture) sky = this.generateTextureSky(this.sketchMetadata.SkyTexture);
         if (sky !== null) this.loadedModel?.add(sky);
-        else this.scene.background = this.sceneColor;
+        else this.scene.background = this.defaultBackgroundColor;
     }
 }
 

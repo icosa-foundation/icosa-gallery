@@ -43,19 +43,16 @@
     let three = viewer.three;
 
     {% if gltf_mode == 1 %}
-        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
+        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true, {{ asset.background_color|default:"null" }});
     {% elif gltf_mode == 2 %}
-        await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
+        await viewer.loadGltf("{{ asset.preferred_format.url }}", true, {{ asset.background_color|default:"null" }});
     {% else %}
         try {
-            await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
+            await viewer.loadGltf("{{ asset.preferred_format.url }}", true, {{ asset.background_color|default:"null" }});
         } catch (error) {
-            await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
+            await viewer.loadGltf1("{{ asset.preferred_format.url }}", true, {{ asset.background_color|default:"null" }});
             console.log(error);
         }
-    {% endif %}
-    {% if asset.background_color %}
-        viewer.scene.background = new three.Color("{{ asset.background_color }}");
     {% endif %}
 
 </script>
