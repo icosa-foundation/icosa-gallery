@@ -44451,6 +44451,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         xrCamera.updateProjectionMatrix();
         (0, $7a53d4f4e33d695e$export$fc22e28a11679cb8)(this.cameraControls);
         this.scene = new $ea01ff4a5048cd08$exports.Scene();
+        this.three = $ea01ff4a5048cd08$exports;
         const viewer = this;
         const manager = new $ea01ff4a5048cd08$exports.LoadingManager();
         manager.onStart = function() {

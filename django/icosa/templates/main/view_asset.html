@@ -40,6 +40,7 @@
     import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
 
     var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
+    let three = viewer.three;
 
     {% if gltf_mode == 1 %}
         await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
