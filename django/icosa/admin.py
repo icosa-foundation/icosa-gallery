@@ -4,8 +4,10 @@ from icosa.models import (
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
+    OrientingRotation,
     PolyFormat,
     PolyResource,
+    PresentationParams,
     Tag,
     User,
 )
@@ -20,6 +22,16 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(PolyResource)
 class PolyResourceAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(PresentationParams)
+class PresentationParamsAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(OrientingRotation)
+class OrientingRotationAdmin(admin.ModelAdmin):
     pass
 
 

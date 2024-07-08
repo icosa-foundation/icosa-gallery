@@ -103,6 +103,9 @@ class Asset(models.Model):
     curated = models.BooleanField(blank=True, null=True)
     polyid = models.CharField(max_length=255, blank=True, null=True)
     polydata = models.JSONField(blank=True, null=True)
+    presentation_params = models.ForeignKey(
+        "PresentationParams", null=True, blank=True, on_delete=models.CASCADE
+    )
     thumbnail = models.ImageField(
         max_length=255,
         blank=True,
@@ -113,11 +116,6 @@ class Asset(models.Model):
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
     tags = models.ManyToManyField("Tag", blank=True)
-    orienting_rotation = models.JSONField(default=default_orienting_rotation)
-    color_space = models.CharField(
-        max_length=50, choices=COLOR_SPACES, default="GAMMA"
-    )
-    background_color = models.CharField(max_length=7, null=True, blank=True)
     imported = models.BooleanField(default=False)
 
     @property
@@ -252,6 +250,27 @@ class PolyResource(models.Model):
     def content_type(self):
         # TODO: Will be derived from the format field
         return "text/TODO"
+
+
+class OrientingRotation(models.Model):
+    x = models.FloatField(null=True, blank=True)
+    y = models.FloatField(null=True, blank=True)
+    z = models.FloatField(null=True, blank=True)
+    w = models.FloatField(null=True, blank=True)
+
+
+class PresentationParams(models.Model):
+    COLOR_SPACES = [
+        ("LINEAR", "LINEAR"),
+        ("GAMMA", "GAMMA"),
+    ]
+    orienting_rotation = models.ForeignKey(
+        OrientingRotation, on_delete=models.CASCADE
+    )
+    color_space = models.CharField(
+        max_length=50, choices=COLOR_SPACES, default="GAMMA"
+    )
+    background_color = models.CharField(max_length=7, null=True, blank=True)
 
 
 class DeviceCode(models.Model):

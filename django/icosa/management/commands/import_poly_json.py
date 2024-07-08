@@ -9,8 +9,10 @@ from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
     Asset,
     FormatComplexity,
+    OrientingRotation,
     PolyFormat,
     PolyResource,
+    PresentationParams,
     Tag,
     User,
 )
@@ -60,6 +62,14 @@ def get_or_create_asset(dir, data):
     background_color = data["presentationParams"].get("backgroundColor", None)
     if background_color is not None and len(background_color) > 7:
         background_color = "#000000"
+    orienting_rotation = OrientingRotation.objects.create(
+        **data["presentationParams"]["orientingRotation"]
+    )
+    presentation_params = PresentationParams.objects.create(
+        color_space=data["presentationParams"]["colorSpace"],
+        background_color=background_color,
+        orienting_rotation=orienting_rotation,
+    )
     return Asset.objects.get_or_create(
         name=data["name"],
         # TODO author=data["authorName"],
@@ -72,9 +82,7 @@ def get_or_create_asset(dir, data):
         polydata=data,
         thumbnail=None,
         license=data["license"],
-        orienting_rotation=data["presentationParams"]["orientingRotation"],
-        color_space=data["presentationParams"]["colorSpace"],
-        background_color=background_color,
+        presentation_params=presentation_params,
         create_time=datetime.fromisoformat(
             data["createTime"].replace("Z", "+00:00")
         ),

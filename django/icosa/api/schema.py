@@ -88,8 +88,12 @@ class PolyQuaternion(Schema):
 
 class PolyPresentationParams(Schema):
     orientingRotation: Optional[PolyQuaternion] = None
-    colorSpace: Optional[str] = None
-    backgroundColor: Optional[str] = None
+    colorSpace: Optional[str] = Field(None, alias=("color_space"))
+    backgroundColor: Optional[str] = Field(None, alias=("background_color"))
+
+    @staticmethod
+    def resolve_orientingRotation(obj):
+        return obj.orienting_rotation
 
 
 class PolyRemixInfo(Schema):
@@ -232,12 +236,15 @@ class _DBAsset(ModelSchema):
     owner: int = Field(None, alias=("owner.id"))
     visibility: str
     tags: List[str] = []
-    curated: Optional[bool]
+    isCurated: Optional[bool] = Field(None, alias=("curated"))
     # polyid: Optional[str]
     # polydata: Optional[PolyAsset]
     thumbnail: Optional[str]
     ownername: str = Field(None, alias=("owner.displayname"))
     ownerurl: str = Field(None, alias=("owner.url"))
+    presentationParams: Optional[PolyPresentationParams] = Field(
+        None, alias=("presentation_params")
+    )
 
     @staticmethod
     def resolve_formats(obj, context):
