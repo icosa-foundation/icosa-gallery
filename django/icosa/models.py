@@ -221,32 +221,6 @@ def format_upload_path(instance, filename):
     return f"{root}/{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
 
 
-class IcosaFormat(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
-    url = models.CharField(max_length=255)
-    is_mainfile = models.BooleanField(default=False)
-    file = models.FileField(
-        max_length=255,
-        upload_to=format_upload_path,
-    )
-    format = models.CharField(max_length=255)
-    subfiles = models.ManyToManyField(
-        "self", related_name="parent_files", symmetrical=False, blank=True
-    )
-
-    def __str__(self):
-        main_sub = "(sub)"
-        if self.is_mainfile:
-            main_sub = "(main)"
-        return f"{self.format} {main_sub}"
-
-    def save(self, *args, **kwargs):
-        if self.file:
-            self.url = self.file.url.split("?")[0]
-        super().save(*args, **kwargs)
-
-
 class PolyFormat(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)

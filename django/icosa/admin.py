@@ -1,7 +1,6 @@
 from icosa.models import (
     Asset,
     DeviceCode,
-    IcosaFormat,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -19,27 +18,9 @@ class TagAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(IcosaFormat)
-class IcosaFormatAdmin(admin.ModelAdmin):
-
-    list_display = (
-        "asset",
-        "format",
-        "is_mainfile",
-    )
-
-    filter_horizontal = ("subfiles",)
-
-
 @admin.register(PolyResource)
 class PolyResourceAdmin(admin.ModelAdmin):
     pass
-
-
-class IcosaFormatInline(admin.TabularInline):
-    extra = 0
-    model = IcosaFormat
-    filter_horizontal = ("subfiles",)
 
 
 class PolyFormatInline(admin.TabularInline):
