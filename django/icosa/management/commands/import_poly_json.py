@@ -6,7 +6,7 @@ from pathlib import Path
 
 from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import Asset, Tag, User
+from icosa.models import Asset, PolyFormat, PolyResource, Tag, User
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -77,11 +77,11 @@ class Command(BaseCommand):
         # Loop through all directories in the poly json directory
         # For each directory, load the data.json file
         # Create a new Asset object with the data
-        for directory in os.listdir(POLY_JSON_DIR):
-            if directory.startswith("."):
+        for dir in os.listdir(POLY_JSON_DIR):
+            if dir.startswith("."):
                 continue
             # print(directory)
-            full_path = os.path.join(POLY_JSON_DIR, directory, "data.json")
+            full_path = os.path.join(POLY_JSON_DIR, dir, "data.json")
             # print(full_path)
             try:
                 with open(full_path) as f:
@@ -106,14 +106,13 @@ class Command(BaseCommand):
                             # TODO author=data["authorName"],
                             owner=user,
                             description=data.get("description", None),
-                            formats=data["formats"],
+                            formats="",
                             visibility=data["visibility"],
                             curated="curated" in data["tags"],
-                            polyid=directory,
+                            polyid=dir,
                             polydata=data,
                             thumbnail=None,
                             license=data["license"],
-                            # tags=data["tags"],
                             orienting_rotation=data["presentationParams"][
                                 "orientingRotation"
                             ],
@@ -130,7 +129,7 @@ class Command(BaseCommand):
                             defaults={
                                 "id": generate_snowflake(),
                                 "imported": True,
-                                "url": secrets.token_urlsafe(8),
+                                "url": dir,
                             },
                         )
                         if asset_created:
@@ -139,7 +138,38 @@ class Command(BaseCommand):
                                 obj, _ = Tag.objects.get_or_create(name=tag)
                                 icosa_tags.append(obj)
                             asset.tags.set(icosa_tags)
+                            for format_json in data["formats"]:
+                                format = PolyFormat.objects.create(
+                                    asset=asset,
+                                    format_type=format_json["formatType"],
+                                )
+                                root_resource_json = format_json["root"]
+                                root_resource_data = {
+                                    "file": f"poly/{dir}/{root_resource_json['relativePath']}",
+                                    "is_root": True,
+                                    "format": format,
+                                }
+                                PolyResource.objects.create(
+                                    **root_resource_data
+                                )
+                                if (
+                                    format_json.get("resources", None)
+                                    is not None
+                                ):
+                                    for resource_json in format_json[
+                                        "resources"
+                                    ]:
+                                        resource_data = {
+                                            "file": f"poly/{dir}/{resource_json['relativePath']}",
+                                            "is_root": False,
+                                            "format": format,
+                                        }
+                                        PolyResource.objects.create(
+                                            **resource_data
+                                        )
+
                     except Exception as e:
+                        raise
                         from pprint import pprint
 
                         print(e)

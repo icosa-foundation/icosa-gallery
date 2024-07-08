@@ -273,7 +273,7 @@ class PolyResource(models.Model):
 
     @property
     def relative_path(self):
-        return self.file.name
+        return self.file.name.split("/")[-1]
 
     @property
     def content_type(self):
