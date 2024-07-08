@@ -27,6 +27,7 @@ def home(request):
         )
         .order_by("?")
         .first(),
+        "page_number": page_number,
     }
     return render(
         request,
