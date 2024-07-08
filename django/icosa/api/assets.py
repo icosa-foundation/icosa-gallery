@@ -246,7 +246,7 @@ def get_assets(
     curated: bool = False,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    ownername: Optional[str] = None,
+    authorName: Optional[str] = None,
     format: Optional[str] = None,
     filters: AssetFilters = Query(...),
 ):
@@ -264,8 +264,8 @@ def get_assets(
         q &= Q(name__icontains=name)
     if description:
         q &= Q(description__icontains=description)
-    if ownername:
-        q &= Q(owner__displayname__icontains=ownername)
+    if authorName:
+        q &= Q(owner__displayname__icontains=authorName)
     if format:
         q &= Q(formats__contains=[{"format": format}])
     assets = Asset.objects.filter(q).distinct()

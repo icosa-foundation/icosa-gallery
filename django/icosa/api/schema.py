@@ -240,8 +240,8 @@ class _DBAsset(ModelSchema):
     # polyid: Optional[str]
     # polydata: Optional[PolyAsset]
     thumbnail: Optional[str]
-    ownername: str = Field(None, alias=("owner.displayname"))
     ownerurl: str = Field(None, alias=("owner.url"))
+    authorName: str = Field(None, alias=("owner.displayname"))
     presentationParams: Optional[PolyPresentationParams] = Field(
         None, alias=("presentation_params")
     )
