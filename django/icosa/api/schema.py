@@ -158,11 +158,54 @@ class SubAssetFormat(Schema):
     format: str
 
 
-class AssetFormat(Schema):
-    id: int  # TODO(james) should output a str
+# class AssetFormat(Schema):
+#     id: int  # TODO(james) should output a str
+#     url: str
+#     format: str
+#     # subfiles: Optional[List[SubAssetFormat]]  # TODO(james): this is broken
+
+
+class AssetResource(Schema):
+    relativePath: str
+    contentType: str
     url: str
-    format: str
-    # subfiles: Optional[List[SubAssetFormat]]  # TODO(james): this is broken
+
+    @staticmethod
+    def resolve_relativePath(obj):
+        return obj.relative_path
+
+    @staticmethod
+    def resolve_contentType(obj):
+        return obj.content_type
+
+    @staticmethod
+    def resolve_url(obj):
+        return obj.url
+
+
+class FormatComplexity(Schema):
+    triangle_count: int
+    lod_hint: int
+
+
+class AssetFormat(Schema):
+    root: AssetResource
+    resources: List[AssetResource]
+    # format_complexity: FormatComplexity
+    formatType: str
+    # remix info
+
+    @staticmethod
+    def resolve_root(obj):
+        return obj.polyresource_set.filter(is_root=True).first()
+
+    @staticmethod
+    def resolve_resources(obj):
+        return obj.polyresource_set.filter(is_root=False)
+
+    @staticmethod
+    def resolve_formatType(obj):
+        return obj.format_type
 
 
 class AssetFilters(Schema):
@@ -178,11 +221,15 @@ class _DBAsset(ModelSchema):
     visibility: str
     tags: List[str] = []
     curated: Optional[bool]
-    polyid: Optional[str]
-    polydata: Optional[PolyAsset]
+    # polyid: Optional[str]
+    # polydata: Optional[PolyAsset]
     thumbnail: Optional[str]
     ownername: str = Field(None, alias=("owner.displayname"))
     ownerurl: str = Field(None, alias=("owner.url"))
+
+    @staticmethod
+    def resolve_formats(obj, context):
+        return [f for f in obj.polyformat_set.all()]
 
     class Config:
         model = Asset

@@ -269,18 +269,16 @@ class PolyResource(models.Model):
 
     @property
     def url(self):
-        # Derived from the file field.
-        pass
+        return self.file.url
 
     @property
     def relative_path(self):
-        # Derived from the file field.
-        pass
+        return self.file.name
 
     @property
     def content_type(self):
-        # Derived from the format field
-        pass
+        # TODO: Will be derived from the format field
+        return "text/TODO"
 
 
 class DeviceCode(models.Model):
