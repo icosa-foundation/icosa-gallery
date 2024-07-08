@@ -251,12 +251,11 @@ class PolyFormat(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
 
-    @property
-    def format_complexity(self):
-        # TODO should be a model with the following fields:
-        # lod_hint = models...
-        # triangle_count = models...
-        pass
+
+class FormatComplexity(models.Model):
+    format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
+    triangle_count = models.PositiveIntegerField(null=True, blank=True)
+    lod_hint = models.PositiveIntegerField(null=True, blank=True)
 
 
 class PolyResource(models.Model):

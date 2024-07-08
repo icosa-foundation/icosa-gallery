@@ -184,14 +184,22 @@ class AssetResource(Schema):
 
 
 class FormatComplexity(Schema):
-    triangle_count: int
-    lod_hint: int
+    triangleCount: Optional[int] = None
+    lodHint: Optional[int] = None
+
+    @staticmethod
+    def resolve_triangleCount(obj):
+        return obj.triangle_count
+
+    @staticmethod
+    def resolve_lodHint(obj):
+        return obj.lod_hint
 
 
 class AssetFormat(Schema):
     root: AssetResource
     resources: List[AssetResource]
-    # format_complexity: FormatComplexity
+    formatComplexity: FormatComplexity
     formatType: str
     # remix info
 
@@ -206,6 +214,10 @@ class AssetFormat(Schema):
     @staticmethod
     def resolve_formatType(obj):
         return obj.format_type
+
+    @staticmethod
+    def resolve_formatComplexity(obj):
+        return obj.formatcomplexity_set.first()
 
 
 class AssetFilters(Schema):

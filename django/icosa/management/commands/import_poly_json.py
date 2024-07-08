@@ -6,7 +6,14 @@ from pathlib import Path
 
 from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import Asset, PolyFormat, PolyResource, Tag, User
+from icosa.models import (
+    Asset,
+    FormatComplexity,
+    PolyFormat,
+    PolyResource,
+    Tag,
+    User,
+)
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -46,6 +53,74 @@ def get_json_from_b2(dir):
     print("Finished downloading files.")
 
 
+def get_or_create_asset(dir, data):
+    user = User.objects.filter(url=data["authorId"]).first()
+    # A couple of background colours are expressed as malformed
+    # rgb() values. Let's make them the default if so.
+    background_color = data["presentationParams"].get("backgroundColor", None)
+    if background_color is not None and len(background_color) > 7:
+        background_color = "#000000"
+    return Asset.objects.get_or_create(
+        name=data["name"],
+        # TODO author=data["authorName"],
+        owner=user,
+        description=data.get("description", None),
+        formats="",
+        visibility=data["visibility"],
+        curated="curated" in data["tags"],
+        polyid=dir,
+        polydata=data,
+        thumbnail=None,
+        license=data["license"],
+        orienting_rotation=data["presentationParams"]["orientingRotation"],
+        color_space=data["presentationParams"]["colorSpace"],
+        background_color=background_color,
+        create_time=datetime.fromisoformat(
+            data["createTime"].replace("Z", "+00:00")
+        ),
+        update_time=datetime.fromisoformat(
+            data["updateTime"].replace("Z", "+00:00")
+        ),
+        defaults={
+            "id": generate_snowflake(),
+            "imported": True,
+            "url": dir,
+        },
+    )
+
+
+def create_formats(format_json, asset):
+    format = PolyFormat.objects.create(
+        asset=asset,
+        format_type=format_json["formatType"],
+    )
+    if format_json.get("formatComplexity", None) is not None:
+        format_complexity_json = format_json["formatComplexity"]
+        format_complexity_data = {
+            "triangle_count": format_complexity_json.get(
+                "triangleCount", None
+            ),
+            "lod_hint": format_complexity_json.get("lodHint", None),
+            "format": format,
+        }
+        FormatComplexity.objects.create(**format_complexity_data)
+    root_resource_json = format_json["root"]
+    root_resource_data = {
+        "file": f"poly/{dir}/{root_resource_json['relativePath']}",
+        "is_root": True,
+        "format": format,
+    }
+    PolyResource.objects.create(**root_resource_data)
+    if format_json.get("resources", None) is not None:
+        for resource_json in format_json["resources"]:
+            resource_data = {
+                "file": f"poly/{dir}/{resource_json['relativePath']}",
+                "is_root": False,
+                "format": format,
+            }
+            PolyResource.objects.create(**resource_data)
+
+
 class Command(BaseCommand):
 
     help = "Imports poly json files from a local directory"
@@ -80,58 +155,12 @@ class Command(BaseCommand):
         for dir in os.listdir(POLY_JSON_DIR):
             if dir.startswith("."):
                 continue
-            # print(directory)
             full_path = os.path.join(POLY_JSON_DIR, dir, "data.json")
-            # print(full_path)
             try:
                 with open(full_path) as f:
                     data = json.load(f)
-
-                    user = User.objects.filter(url=data["authorId"]).first()
-
-                    # A couple of background colours are expressed as malformed
-                    # rgb() values. Let's make them the default if so.
-                    background_color = data["presentationParams"].get(
-                        "backgroundColor", None
-                    )
-                    if (
-                        background_color is not None
-                        and len(background_color) > 7
-                    ):
-                        background_color = "#000000"
-
                     try:
-                        asset, asset_created = Asset.objects.get_or_create(
-                            name=data["name"],
-                            # TODO author=data["authorName"],
-                            owner=user,
-                            description=data.get("description", None),
-                            formats="",
-                            visibility=data["visibility"],
-                            curated="curated" in data["tags"],
-                            polyid=dir,
-                            polydata=data,
-                            thumbnail=None,
-                            license=data["license"],
-                            orienting_rotation=data["presentationParams"][
-                                "orientingRotation"
-                            ],
-                            color_space=data["presentationParams"][
-                                "colorSpace"
-                            ],
-                            background_color=background_color,
-                            create_time=datetime.fromisoformat(
-                                data["createTime"].replace("Z", "+00:00")
-                            ),
-                            update_time=datetime.fromisoformat(
-                                data["updateTime"].replace("Z", "+00:00")
-                            ),
-                            defaults={
-                                "id": generate_snowflake(),
-                                "imported": True,
-                                "url": dir,
-                            },
-                        )
+                        asset, asset_created = get_or_create_asset(dir, data)
                         if asset_created:
                             icosa_tags = []
                             for tag in data["tags"]:
@@ -139,41 +168,15 @@ class Command(BaseCommand):
                                 icosa_tags.append(obj)
                             asset.tags.set(icosa_tags)
                             for format_json in data["formats"]:
-                                format = PolyFormat.objects.create(
-                                    asset=asset,
-                                    format_type=format_json["formatType"],
-                                )
-                                root_resource_json = format_json["root"]
-                                root_resource_data = {
-                                    "file": f"poly/{dir}/{root_resource_json['relativePath']}",
-                                    "is_root": True,
-                                    "format": format,
-                                }
-                                PolyResource.objects.create(
-                                    **root_resource_data
-                                )
-                                if (
-                                    format_json.get("resources", None)
-                                    is not None
-                                ):
-                                    for resource_json in format_json[
-                                        "resources"
-                                    ]:
-                                        resource_data = {
-                                            "file": f"poly/{dir}/{resource_json['relativePath']}",
-                                            "is_root": False,
-                                            "format": format,
-                                        }
-                                        PolyResource.objects.create(
-                                            **resource_data
-                                        )
+                                create_formats(format_json, asset)
 
                     except Exception as e:
+                        _ = e
+                        # from pprint import pprint
+                        # print(e)
+                        # pprint(data)
+                        # continue
                         raise
-                        from pprint import pprint
-
-                        print(e)
-                        pprint(data)
             except FileNotFoundError as e:
                 print(e)
                 continue
