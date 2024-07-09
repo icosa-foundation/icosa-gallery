@@ -126,11 +126,11 @@ class Asset(models.Model):
     @property
     def preferred_format(self):
         formats = {}
-        if self.polydata and self.imported:
-            for format in self.formats:
-                format_url = format["root"]["relativePath"]
-                formats[format["formatType"]] = {
-                    "format": format["formatType"],
+        if self.imported:
+            for format in self.polyformat_set.all():
+                format_url = format.root_resource.file.url
+                formats[format.format_type] = {
+                    "format": format.format_type,
                     "url": f"{STORAGE_URL}/{self.polyid}/{format_url}",
                 }
             # TODO(james): We need this list to be more exhaustive; we're
@@ -235,6 +235,10 @@ def format_upload_path(instance, filename):
 class PolyFormat(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
+
+    @property
+    def root_resource(self):
+        return self.polyresource_set.filter(is_root=True).first()
 
 
 class FormatComplexity(models.Model):
