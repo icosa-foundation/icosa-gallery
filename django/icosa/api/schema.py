@@ -1,6 +1,6 @@
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
-from icosa.models import Asset
+from icosa.models import Asset, PolyResource
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
 
@@ -169,6 +169,27 @@ class SubAssetFormat(Schema):
 #     # subfiles: Optional[List[SubAssetFormat]]  # TODO(james): this is broken
 
 
+class ThumbnailSchema(Schema):
+    relativePath: str
+    contentType: str
+    url: str
+
+    # @staticmethod
+    # def resolve_relativePath(obj):
+    #     print(type(obj))
+    #     return obj.name.split("/")[-1]
+
+    # @staticmethod
+    # def resolve_contentType(obj):
+    #     print(type(obj))
+    #     return obj.content_type
+
+    # @staticmethod
+    # def resolve_url(obj):
+    #     print(type(obj))
+    #     return obj.url
+
+
 class AssetResource(Schema):
     relativePath: str
     contentType: str
@@ -180,7 +201,7 @@ class AssetResource(Schema):
 
     @staticmethod
     def resolve_contentType(obj):
-        return obj.content_type
+        return obj.contenttype
 
     @staticmethod
     def resolve_url(obj):
@@ -213,7 +234,7 @@ class AssetFormat(Schema):
 
     @staticmethod
     def resolve_resources(obj):
-        return obj.polyresource_set.filter(is_root=False)
+        return obj.polyresource_set.filter(is_root=False, is_thumbnail=False)
 
     @staticmethod
     def resolve_formatType(obj):
@@ -239,7 +260,7 @@ class _DBAsset(ModelSchema):
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     # polyid: Optional[str]
     # polydata: Optional[PolyAsset]
-    thumbnail: Optional[str]
+    thumbnail: Optional[AssetResource]
     ownerurl: str = Field(None, alias=("owner.url"))
     authorName: str = Field(None, alias=("owner.displayname"))
     presentationParams: Optional[PolyPresentationParams] = Field(
@@ -257,6 +278,10 @@ class _DBAsset(ModelSchema):
     @staticmethod
     def resolve_tags(obj):
         return [t.name for t in obj.tags.all()]
+
+    @staticmethod
+    def resolve_thumbnail(obj):
+        return obj.polyresource_set.filter(is_thumbnail=True).first()
 
 
 class AssetSchemaIn(_DBAsset):

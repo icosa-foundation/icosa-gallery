@@ -22,7 +22,20 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(PolyResource)
 class PolyResourceAdmin(admin.ModelAdmin):
-    pass
+    list_display = (
+        "asset",
+        "file",
+        "is_root",
+        "is_thumbnail",
+        "contenttype",
+    )
+
+    list_filter = (
+        "is_root",
+        "is_thumbnail",
+        "contenttype",
+    )
+    search_fields = ("file",)
 
 
 @admin.register(PresentationParams)

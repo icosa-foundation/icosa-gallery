@@ -94,6 +94,7 @@ def get_my_id_asset(
 @router.get(
     "/{asset}",
     response=AssetSchemaOut,
+    **COMMON_ROUTER_SETTINGS,
 )
 def get_asset(
     request,
@@ -256,7 +257,10 @@ def get_assets(
     # TODO(james): limit max pagination to 100 results
     # TODO(james): `limit` query param should be `pageSize`; need to find out
     # what `offset` should be
-    q = Q(visibility=PUBLIC, imported=True)
+    q = Q(
+        visibility=PUBLIC,
+        imported=True,
+    )
 
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)

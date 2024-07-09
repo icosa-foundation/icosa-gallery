@@ -97,36 +97,54 @@ def get_or_create_asset(dir, data):
     )
 
 
-def create_formats(format_json, asset):
-    format = PolyFormat.objects.create(
-        asset=asset,
-        format_type=format_json["formatType"],
-    )
-    if format_json.get("formatComplexity", None) is not None:
-        format_complexity_json = format_json["formatComplexity"]
-        format_complexity_data = {
-            "triangle_count": format_complexity_json.get(
-                "triangleCount", None
-            ),
-            "lod_hint": format_complexity_json.get("lodHint", None),
-            "format": format,
-        }
-        FormatComplexity.objects.create(**format_complexity_data)
-    root_resource_json = format_json["root"]
-    root_resource_data = {
-        "file": f"poly/{dir}/{root_resource_json['relativePath']}",
-        "is_root": True,
-        "format": format,
-    }
-    PolyResource.objects.create(**root_resource_data)
-    if format_json.get("resources", None) is not None:
-        for resource_json in format_json["resources"]:
-            resource_data = {
-                "file": f"poly/{dir}/{resource_json['relativePath']}",
-                "is_root": False,
+def create_formats(directory, formats_json, asset):
+    done_thumbnail = False
+    for format_json in formats_json:
+        format = PolyFormat.objects.create(
+            asset=asset,
+            format_type=format_json["formatType"],
+        )
+        if format_json.get("formatComplexity", None) is not None:
+            format_complexity_json = format_json["formatComplexity"]
+            format_complexity_data = {
+                "triangle_count": format_complexity_json.get(
+                    "triangleCount", None
+                ),
+                "lod_hint": format_complexity_json.get("lodHint", None),
                 "format": format,
             }
-            PolyResource.objects.create(**resource_data)
+            FormatComplexity.objects.create(**format_complexity_data)
+        # Manually create thumbnails from our assumptions about the data.
+        if not done_thumbnail:
+            thumbnail_resource_data = {
+                "file": f"poly/{directory}/thumbnail.png",
+                "is_root": False,
+                "is_thumbnail": True,
+                "format": format,
+                "asset": asset,
+                "contenttype": "image/png",
+            }
+            PolyResource.objects.create(**thumbnail_resource_data)
+        done_thumbnail = True
+        root_resource_json = format_json["root"]
+        root_resource_data = {
+            "file": f"poly/{directory}/{root_resource_json['relativePath']}",
+            "is_root": True,
+            "format": format,
+            "asset": asset,
+            "contenttype": root_resource_json["contentType"],
+        }
+        PolyResource.objects.create(**root_resource_data)
+        if format_json.get("resources", None) is not None:
+            for resource_json in format_json["resources"]:
+                resource_data = {
+                    "file": f"poly/{directory}/{resource_json['relativePath']}",
+                    "is_root": False,
+                    "format": format,
+                    "asset": asset,
+                    "contenttype": resource_json["contentType"],
+                }
+                PolyResource.objects.create(**resource_data)
 
 
 class Command(BaseCommand):
@@ -160,23 +178,24 @@ class Command(BaseCommand):
         # Loop through all directories in the poly json directory
         # For each directory, load the data.json file
         # Create a new Asset object with the data
-        for dir in os.listdir(POLY_JSON_DIR):
-            if dir.startswith("."):
+        for directory in os.listdir(POLY_JSON_DIR):
+            if directory.startswith("."):
                 continue
-            full_path = os.path.join(POLY_JSON_DIR, dir, "data.json")
+            full_path = os.path.join(POLY_JSON_DIR, directory, "data.json")
             try:
                 with open(full_path) as f:
                     data = json.load(f)
                     try:
-                        asset, asset_created = get_or_create_asset(dir, data)
+                        asset, asset_created = get_or_create_asset(
+                            directory, data
+                        )
                         if asset_created:
                             icosa_tags = []
                             for tag in data["tags"]:
                                 obj, _ = Tag.objects.get_or_create(name=tag)
                                 icosa_tags.append(obj)
                             asset.tags.set(icosa_tags)
-                            for format_json in data["formats"]:
-                                create_formats(format_json, asset)
+                            create_formats(directory, data["formats"], asset)
 
                     except Exception as e:
                         _ = e

@@ -194,6 +194,19 @@ class Asset(models.Model):
                 thumbnail_url = self.thumbnail
         return thumbnail_url
 
+    @property
+    def thumbnail_url(self):
+        return self.thumbnail.url
+
+    @property
+    def thumbnail_relative_path(self):
+        return self.thumbnail.name.split("/")[-1]
+
+    @property
+    def thumbnail_content_type(self):
+        # TODO: Will be derived from the format field
+        return self.thumbnail.content_type
+
     def __str__(self):
         return self.name
 
@@ -232,7 +245,12 @@ class FormatComplexity(models.Model):
 
 class PolyResource(models.Model):
     is_root = models.BooleanField(default=False)
+    is_thumbnail = models.BooleanField(default=False)
+    asset = models.ForeignKey(
+        Asset, null=True, blank=False, on_delete=models.CASCADE
+    )
     format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
+    contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
         max_length=255,
         upload_to=format_upload_path,
