@@ -200,7 +200,7 @@ def unpublish_asset(
     "/{str:userurl}/{asseturl}",
     response=AssetSchemaOut,
 )
-def get_asset(
+def get_user_asset(
     request,
     userurl: str,
     asseturl: str,
