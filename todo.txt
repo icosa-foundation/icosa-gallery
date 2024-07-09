@@ -1,11 +1,13 @@
-`formats` field formatting - assets endpoint should use the new format and the poly endpoint the old
+`formats` field formatting - all assets need poly compatible fields
 
 this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
-
-asset and format id fields need to be snowflakes.
 
 make icosa formats have relative urls, not the abs b2 ones we have from gcp_to_b2.py
 
 log somewhere when we catch an exception falling back to gltf1: view_asset.html
 
 Add pagination UI to the home page
+
+Add max complexity as a search filter
+
+create stub users when importing poly data

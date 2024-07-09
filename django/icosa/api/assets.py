@@ -254,7 +254,6 @@ def get_assets(
     format: Optional[str] = None,
     filters: AssetFilters = Query(...),
 ):
-    # TODO(james): limit max pagination to 100 results
     q = Q(
         visibility=PUBLIC,
         imported=True,
