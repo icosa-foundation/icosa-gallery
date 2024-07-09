@@ -1,6 +1,7 @@
-from typing import Dict, List, Literal, Optional
+from datetime import datetime
+from typing import List, Literal, Optional
 
-from icosa.models import Asset, PolyResource
+from icosa.models import Asset
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
 
@@ -61,7 +62,7 @@ class EmailChangeAuthenticated(Schema):
 
 
 # Poly helpers
-class PolyResource(Schema):
+class PolyResourceSchema(Schema):
     relativePath: str
     url: str
     contentType: str
@@ -73,8 +74,8 @@ class PolyFormatComplexity(Schema):
 
 
 class PolyFormat(Schema):
-    root: PolyResource
-    resources: Optional[List[PolyResource]] = None
+    root: PolyResourceSchema
+    resources: Optional[List[PolyResourceSchema]] = None
     formatComplexity: Optional[PolyFormatComplexity] = None
     formatType: str
 
@@ -136,7 +137,7 @@ class PolyAsset(Schema):
     createTime: str
     updateTime: str
     formats: List[PolyFormat]
-    thumbnail: Optional[PolyResource] = None
+    thumbnail: Optional[PolyResourceSchema] = None
     licence: Optional[str] = None
     visibility: str
     isCurated: Optional[bool] = None
@@ -250,11 +251,14 @@ class AssetFilters(Schema):
 
 
 class _DBAsset(ModelSchema):
-    url: Optional[str]
-    formats: List[AssetFormat]
     name: str
     description: Optional[str]
-    owner: int = Field(None, alias=("owner.id"))
+    authorId: str
+    createTime: datetime = Field(..., alias=("create_time"))
+    updateTime: datetime = Field(..., alias=("update_time"))
+    url: Optional[str]
+    formats: List[AssetFormat]
+    displayName: str = Field(..., alias=("name"))
     visibility: str
     tags: List[str] = []
     isCurated: Optional[bool] = Field(None, alias=("curated"))
@@ -262,7 +266,7 @@ class _DBAsset(ModelSchema):
     # polydata: Optional[PolyAsset]
     thumbnail: Optional[AssetResource]
     ownerurl: str = Field(None, alias=("owner.url"))
-    authorName: str = Field(None, alias=("owner.displayname"))
+    authorName: str
     presentationParams: Optional[PolyPresentationParams] = Field(
         None, alias=("presentation_params")
     )
@@ -282,6 +286,20 @@ class _DBAsset(ModelSchema):
     @staticmethod
     def resolve_thumbnail(obj):
         return obj.polyresource_set.filter(is_thumbnail=True).first()
+
+    @staticmethod
+    def resolve_authorId(obj):
+        if not obj.owner:
+            return ""
+        else:
+            return str(obj.owner.id)
+
+    @staticmethod
+    def resolve_authorName(obj):
+        if not obj.owner:
+            return ""
+        else:
+            return obj.owner.name
 
 
 class AssetSchemaIn(_DBAsset):
