@@ -94,6 +94,7 @@ class AssetAdmin(admin.ModelAdmin):
     search_fields = (
         "name",
         "url",
+        "tags",
     )
     list_filter = (
         "visibility",
