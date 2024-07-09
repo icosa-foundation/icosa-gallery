@@ -128,10 +128,9 @@ class Asset(models.Model):
         formats = {}
         if self.imported:
             for format in self.polyformat_set.all():
-                format_url = format.root_resource.file.url
                 formats[format.format_type] = {
                     "format": format.format_type,
-                    "url": f"{STORAGE_URL}/{self.polyid}/{format_url}",
+                    "url": format.root_resource.file.url,
                 }
             # TODO(james): We need this list to be more exhaustive; we're
             # returning None in too many cases.
