@@ -1,6 +1,7 @@
 import re
 from typing import List, NoReturn, Optional
 
+from icosa.api import COMMON_ROUTER_SETTINGS
 from icosa.models import PUBLIC, Asset, Tag, User
 from ninja import Query, Router
 from ninja.errors import HttpError
@@ -234,11 +235,13 @@ def get_asset(
 @router.get(
     "",
     response=List[AssetSchemaOut],
+    **COMMON_ROUTER_SETTINGS,
 )
 @router.get(
     "/",
     response=List[AssetSchemaOut],
     include_in_schema=False,
+    **COMMON_ROUTER_SETTINGS,
 )
 @paginate
 def get_assets(
