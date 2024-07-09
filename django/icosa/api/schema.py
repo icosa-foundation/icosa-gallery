@@ -264,7 +264,9 @@ class AssetSchemaIn(_DBAsset):
 
 
 class AssetSchemaOut(_DBAsset):
-    id: int  # TODO(james) should output a str
+    # TODO: If this doesn't differ from AssetSchemaIn, we should probably
+    # remove inheritence.
+    pass
 
 
 class AssetPatchData(Schema):
