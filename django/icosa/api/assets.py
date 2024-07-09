@@ -255,8 +255,6 @@ def get_assets(
     filters: AssetFilters = Query(...),
 ):
     # TODO(james): limit max pagination to 100 results
-    # TODO(james): `limit` query param should be `pageSize`; need to find out
-    # what `offset` should be
     q = Q(
         visibility=PUBLIC,
         imported=True,

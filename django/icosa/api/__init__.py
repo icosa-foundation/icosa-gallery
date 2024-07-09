@@ -26,6 +26,8 @@ class AssetPagination(PaginationBase):
         self, queryset, pagination: Input, request, **params
     ):
         pageSize = pagination.pageSize or 20
+        if pageSize > 100:
+            pageSize = 100
         offset = (pagination.pageToken - 1) * pageSize
         count = self._items_count(queryset)
         pagination_data = {
