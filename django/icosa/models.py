@@ -291,6 +291,10 @@ class PresentationParams(models.Model):
     )
     background_color = models.CharField(max_length=7, null=True, blank=True)
 
+    class Meta:
+        verbose_name = "Presentation Params"
+        verbose_name_plural = "Presentation Params"
+
 
 class DeviceCode(models.Model):
     id = models.BigAutoField(primary_key=True)
