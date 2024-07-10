@@ -13,6 +13,7 @@ from icosa.models import (
 )
 
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 
 
 @admin.register(Tag)
@@ -82,6 +83,7 @@ class PolyFormatAdmin(admin.ModelAdmin):
 class AssetAdmin(admin.ModelAdmin):
     list_display = (
         "name",
+        "_thumbnail_image",
         "url",
         "owner",
         "description",
@@ -90,7 +92,6 @@ class AssetAdmin(admin.ModelAdmin):
         "curated",
         "polyid",
         "polydata",
-        "thumbnail",
     )
     search_fields = (
         "name",
@@ -109,6 +110,19 @@ class AssetAdmin(admin.ModelAdmin):
         return (
             f"{', '.join([x['format'] for x in obj.formats if 'format' in x])}"
         )
+
+    def _thumbnail_image(self, obj):
+        html = ""
+
+        thumbnail_resource = PolyResource.objects.filter(
+            asset=obj, is_thumbnail=True
+        ).first()
+        if thumbnail_resource:
+            html = f'<img src="{thumbnail_resource.file.url}" width="150" loading="lazy">'
+        return mark_safe(html)
+
+    _thumbnail_image.short_description = "Thumbnail"
+    _thumbnail_image.allow_tags = True
 
     search_fields = (
         "name",
