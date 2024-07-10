@@ -90,8 +90,6 @@ class AssetAdmin(admin.ModelAdmin):
         "_formats",
         "visibility",
         "curated",
-        "polyid",
-        "polydata",
     )
     search_fields = (
         "name",
