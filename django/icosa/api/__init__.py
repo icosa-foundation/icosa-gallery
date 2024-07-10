@@ -18,6 +18,7 @@ POLY_CATEGORY_MAP = {
     "PEOPLE": "people",
     "PLACES": "scenes",
     "TECH": "tech",
+    "TECHNOLOGY": "tech",
     "TRANSPORT": "transport",
 }
 
