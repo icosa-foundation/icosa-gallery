@@ -97,6 +97,8 @@ class AssetAdmin(admin.ModelAdmin):
         "name",
         "url",
         "tags",
+        "owner__displayname",
+        "description",
     )
     list_filter = (
         "visibility",
