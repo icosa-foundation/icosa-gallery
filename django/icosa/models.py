@@ -28,7 +28,7 @@ class User(models.Model):
     url = models.CharField("User Name / URL", max_length=255, unique=True)
     email = models.CharField(max_length=255, null=True)
     password = models.BinaryField()
-    displayname = models.CharField("Display Name", max_length=50)
+    displayname = models.CharField("Display Name", max_length=255)
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
     likes = models.ManyToManyField(
