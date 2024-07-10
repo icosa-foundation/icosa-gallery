@@ -274,8 +274,8 @@ def get_assets(
         category_str = category.upper()
         if category_str in POLY_CATEGORY_MAP.keys():
             category_str = POLY_CATEGORY_MAP[category_str]
-            category = Tag.objects.filter(name__iexact=category_str)
-            q &= Q(tags__in=category)
+        category = Tag.objects.filter(name__iexact=category_str)
+        q &= Q(tags__in=category)
     if curated:
         q &= Q(curated=True)
     if name:
