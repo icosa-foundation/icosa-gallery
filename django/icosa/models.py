@@ -203,7 +203,6 @@ class Asset(models.Model):
 
     @property
     def thumbnail_content_type(self):
-        # TODO: Will be derived from the format field
         return self.thumbnail.content_type
 
     def __str__(self):
@@ -269,8 +268,7 @@ class PolyResource(models.Model):
 
     @property
     def content_type(self):
-        # TODO: Will be derived from the format field
-        return "text/TODO"
+        return self.file.content_type
 
 
 class OrientingRotation(models.Model):

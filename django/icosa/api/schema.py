@@ -163,34 +163,6 @@ class SubAssetFormat(Schema):
     format: str
 
 
-# class AssetFormat(Schema):
-#     id: int  # TODO(james) should output a str
-#     url: str
-#     format: str
-#     # subfiles: Optional[List[SubAssetFormat]]  # TODO(james): this is broken
-
-
-class ThumbnailSchema(Schema):
-    relativePath: str
-    contentType: str
-    url: str
-
-    # @staticmethod
-    # def resolve_relativePath(obj):
-    #     print(type(obj))
-    #     return obj.name.split("/")[-1]
-
-    # @staticmethod
-    # def resolve_contentType(obj):
-    #     print(type(obj))
-    #     return obj.content_type
-
-    # @staticmethod
-    # def resolve_url(obj):
-    #     print(type(obj))
-    #     return obj.url
-
-
 class AssetResource(Schema):
     relativePath: str
     contentType: str
@@ -202,7 +174,10 @@ class AssetResource(Schema):
 
     @staticmethod
     def resolve_contentType(obj):
-        return obj.contenttype
+        if obj.contenttype:
+            return obj.contenttype
+        else:
+            return ""
 
     @staticmethod
     def resolve_url(obj):
@@ -296,10 +271,10 @@ class _DBAsset(ModelSchema):
 
     @staticmethod
     def resolve_authorName(obj):
-        if not obj.owner:
-            return ""
+        if obj.owner:
+            return f"{obj.owner}"
         else:
-            return obj.owner.name
+            return ""
 
 
 class AssetSchemaIn(_DBAsset):

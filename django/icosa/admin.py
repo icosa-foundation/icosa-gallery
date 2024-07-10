@@ -23,6 +23,7 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(PolyResource)
 class PolyResourceAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "asset",
         "file",
         "is_root",
@@ -100,6 +101,7 @@ class AssetAdmin(admin.ModelAdmin):
         "visibility",
         "curated",
         "imported",
+        ("thumbnail", admin.EmptyFieldListFilter),
     )
 
     @admin.display(description="Formats")

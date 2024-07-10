@@ -1,9 +1,32 @@
-import json
 import os
 
 from icosa.models import Asset, PolyFormat, PolyResource
 
 from django.core.management.base import BaseCommand
+
+STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
+
+CONTENT_TYPE_MAP = {
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "tilt": "application/octet-stream",
+    "glb": "model/gltf-binary",
+    "gltf": "model/gltf+json",
+    "bin": "application/octet-stream",
+    "obj": "text/plain",
+    "mtl": "text/plain",
+    "fbx": "application/octet-stream",
+    "fbm": "application/octet-stream",
+}
+
+
+def get_content_type(filename):
+    extension = os.path.splitext(filename)[-1].replace(".", "")
+    # if CONTENT_TYPE_MAP.get(extension, None) is None:
+    #     print(filename, extension)
+    #     print(CONTENT_TYPE_MAP.get(extension, "Not found"))
+    return CONTENT_TYPE_MAP.get(extension, None)
 
 
 class Command(BaseCommand):
@@ -12,54 +35,65 @@ class Command(BaseCommand):
     format."""
 
     def handle(self, *args, **options):
-        # print(
-        #     "Not fully tested. Please comment out the early return in this command to run on your local data."
-        # )
-        # return
         assets = Asset.objects.filter(
             imported=False,
             formats__isnull=False,
         ).exclude(formats="")
-        skipped_assets = []
         for idx, asset in enumerate(assets):
-            print(
-                f"\tProcessing {asset} - {asset.id} ({idx} of {assets.count()})..."
-            )
-            preferred_format = asset.preferred_format
-            if preferred_format is None:
-                print(
-                    f"Cannot determine preferred format for {asset} - {asset.id}"
+            # print(f"Processing {asset.id} ({idx} of {assets.count()})...")
+            done_thumbnail = False
+            for format_json in asset.formats:
+                format_data = {
+                    "format_type": format_json["format"],
+                    "asset": asset,
+                }
+                format, created = PolyFormat.objects.get_or_create(
+                    **format_data
                 )
-                skipped_assets.append(asset)
-                continue
-            format_data = {
-                "format_type": preferred_format["format"],
-                "asset": asset,
-            }
-            format, created = PolyFormat.objects.get_or_create(**format_data)
-            if created:
-                for main_format in asset.formats:
-                    resource_data = {
-                        "file": main_format["url"].replace(
-                            "https://f005.backblazeb2.com/file/icosa-gallery/",
-                            "",
-                        ),
+                if created:
+                    file_path = format_json["url"].replace(
+                        STORAGE_ROOT,
+                        "",
+                    )
+                    root_resource_data = {
+                        "file": file_path,
                         "is_root": True,
+                        "asset": asset,
                         "format": format,
+                        "contenttype": get_content_type(file_path),
                     }
-                    main_resource = PolyResource(**resource_data)
-                    main_resource.save()
+                    PolyResource.objects.create(**root_resource_data)
 
-                    if main_format.get("subfiles", None) is not None:
-                        for sub_format in main_format["subfiles"]:
-                            sub_resource_data = {
-                                "file": sub_format["url"].replace(
-                                    "https://f005.backblazeb2.com/file/icosa-gallery/",
+                    if asset.thumbnail and done_thumbnail is False:
+                        asset_thumbnail = asset.thumbnail
+                        try:
+                            filename = asset_thumbnail.file.name
+                            thumbnail_resource_data = {
+                                "file": filename,
+                                "is_root": False,
+                                "is_thumbnail": True,
+                                "format": format,
+                                "asset": asset,
+                                "contenttype": get_content_type(
+                                    asset_thumbnail.name
+                                ),
+                            }
+                            PolyResource.objects.create(
+                                **thumbnail_resource_data
+                            )
+                        except FileNotFoundError as e:
+                            print(e)
+                        done_thumbnail = True
+                    if format_json.get("subfiles", None) is not None:
+                        for resource in format_json["subfiles"]:
+                            resource_data = {
+                                "file": resource["url"].replace(
+                                    STORAGE_ROOT,
                                     "",
                                 ),
-                                "format": format,
                                 "is_root": False,
+                                "asset": asset,
+                                "format": format,
+                                "contenttype": get_content_type(file_path),
                             }
-                            sub_format = PolyResource(**sub_resource_data)
-                            sub_format.save()
-        print(f"Skipped {len(skipped_assets)} assets.")
+                            PolyResource.objects.create(**resource_data)

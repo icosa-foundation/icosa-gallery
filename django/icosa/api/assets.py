@@ -261,7 +261,6 @@ def get_assets(
 ):
     q = Q(
         visibility=PUBLIC,
-        imported=True,
     )
 
     if filters.tag:
