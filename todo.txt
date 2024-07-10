@@ -11,3 +11,5 @@ Add pagination UI to the home page
 Add max complexity as a search filter
 
 create stub users when importing poly data
+
+impl nicer full-text search
