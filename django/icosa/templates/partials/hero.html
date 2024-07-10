@@ -3,7 +3,7 @@
         <div class="carousel-inner">
             <div class="active carousel-item">
                 <img class="d"
-                    src="{{ hero.thumbnail.url }}"
+                    src="{{ hero.get_thumbnail_url }}"
                     alt="{{ hero.description }} by {{ hero.owner.displayname }}">
                 <div class="carousel-caption">
                     <a href="{{ hero.get_absolute_url }}">
