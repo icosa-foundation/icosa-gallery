@@ -255,6 +255,7 @@ def get_assets(
     name: Optional[str] = None,
     description: Optional[str] = None,
     authorName: Optional[str] = None,
+    category: Optional[str] = None,
     format: Optional[str] = None,
     filters: AssetFilters = Query(...),
 ):
@@ -266,12 +267,12 @@ def get_assets(
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
         q &= Q(tags__in=tags)
-    if filters.category:
+    if category:
         # Categories are a special enum. I've elected to ingnore any categories
         # that do not match. I could as easily return zero results for
         # non-matches. I've also assumed that OpenBrush hands us uppercase
         # strings, but I could be wrong.
-        category_str = filters.category.upper()
+        category_str = category.upper()
         if category_str in POLY_CATEGORY_MAP.keys():
             category_str = POLY_CATEGORY_MAP[category_str]
             category = Tag.objects.filter(name__iexact=category_str)
