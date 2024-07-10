@@ -186,11 +186,11 @@ class Asset(models.Model):
 
     def get_thumbnail_url(self):
         thumbnail_url = "/static/images/nothumbnail.png?v=1"
-        if self.polydata and self.imported:
+        if self.imported:
             thumbnail_url = f"{STORAGE_URL}/{self.polyid}/thumbnail.png"
         else:
             if self.thumbnail:
-                thumbnail_url = self.thumbnail
+                thumbnail_url = self.thumbnail.url
         return thumbnail_url
 
     @property
