@@ -13,3 +13,7 @@ Add max complexity as a search filter
 create stub users when importing poly data
 
 impl nicer full-text search
+
+devicecode needs to be a web view, not an api endpoint
+
+check auth returns just one user when using tokens

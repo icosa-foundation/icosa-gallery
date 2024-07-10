@@ -1,5 +1,6 @@
 import json
 import os
+import secrets
 from datetime import datetime
 from pathlib import Path
 
@@ -55,7 +56,14 @@ def get_json_from_b2(dir):
 
 
 def get_or_create_asset(dir, data):
-    user = User.objects.filter(url=data["authorId"]).first()
+    user, _ = User.objects.get_or_create(
+        url=data["authorId"],
+        defaults={
+            "password": secrets.token_bytes(16),
+            "displayname": data["authorName"],
+        },
+    )
+    # user = None
     # A couple of background colours are expressed as malformed
     # rgb() values. Let's make them the default if so.
     background_color = data["presentationParams"].get("backgroundColor", None)
@@ -71,7 +79,6 @@ def get_or_create_asset(dir, data):
     )
     return Asset.objects.get_or_create(
         name=data["name"],
-        # TODO author=data["authorName"],
         owner=user,
         description=data.get("description", None),
         formats="",

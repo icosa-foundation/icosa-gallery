@@ -102,6 +102,7 @@ class AssetAdmin(admin.ModelAdmin):
         "visibility",
         "curated",
         "imported",
+        "owner",
         ("thumbnail", admin.EmptyFieldListFilter),
     )
 
@@ -164,6 +165,7 @@ class UserAdmin(admin.ModelAdmin):
         "url",
         "id",
     )
+    list_filter = (("email", admin.EmptyFieldListFilter),)
     inlines = (UserAssetLikeInline,)
 
 
