@@ -23,7 +23,6 @@ def home(request):
         "hero": Asset.objects.filter(
             visibility=PUBLIC,
             curated=True,
-            imported=False,
         )
         .order_by("?")
         .first(),
