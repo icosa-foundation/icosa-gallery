@@ -15,7 +15,7 @@ def home(request):
     template = "main/home.html"
 
     asset_objs = Asset.objects.filter(visibility=PUBLIC).order_by("-id")
-    paginator = Paginator(asset_objs, 50)
+    paginator = Paginator(asset_objs, 40)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
