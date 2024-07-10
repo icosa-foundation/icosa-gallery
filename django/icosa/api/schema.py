@@ -248,6 +248,7 @@ class AssetFormat(Schema):
 
 class AssetFilters(Schema):
     tag: List[str] = Field(None, alias="tag")
+    category: str
 
 
 class _DBAsset(ModelSchema):

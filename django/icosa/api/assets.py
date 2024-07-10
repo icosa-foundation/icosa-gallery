@@ -1,7 +1,11 @@
 import re
 from typing import List, NoReturn, Optional
 
-from icosa.api import COMMON_ROUTER_SETTINGS, AssetPagination
+from icosa.api import (
+    COMMON_ROUTER_SETTINGS,
+    POLY_CATEGORY_MAP,
+    AssetPagination,
+)
 from icosa.models import PUBLIC, Asset, Tag, User
 from ninja import Query, Router
 from ninja.errors import HttpError
@@ -262,6 +266,16 @@ def get_assets(
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
         q &= Q(tags__in=tags)
+    if filters.category:
+        # Categories are a special enum. I've elected to ingnore any categories
+        # that do not match. I could as easily return zero results for
+        # non-matches. I've also assumed that OpenBrush hands us uppercase
+        # strings, but I could be wrong.
+        category_str = filters.category.upper()
+        if category_str in POLY_CATEGORY_MAP.keys():
+            category_str = POLY_CATEGORY_MAP[category_str]
+            category = Tag.objects.filter(name__iexact=category_str)
+            q &= Q(tags__in=category)
     if curated:
         q &= Q(curated=True)
     if name:

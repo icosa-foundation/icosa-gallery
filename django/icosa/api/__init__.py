@@ -8,6 +8,19 @@ COMMON_ROUTER_SETTINGS = {
     "exclude_defaults": True,
 }
 
+POLY_CATEGORY_MAP = {
+    "ANIMALS": "animals",
+    "ARCHITECTURE": "architecture",
+    "ART": "art",
+    "FOOD": "food",
+    "NATURE": "nature",
+    "OBJECTS": "objects",
+    "PEOPLE": "people",
+    "PLACES": "scenes",
+    "TECH": "tech",
+    "TRANSPORT": "transport",
+}
+
 
 class AssetPagination(PaginationBase):
     # only `skip` param, defaults to 5 per page
