@@ -69,7 +69,7 @@ def uploads(request):
 
 
 def user_show(request, user_url):
-    template = "main/user.html"
+    template = "main/user_show.html"
 
     owner = get_object_or_404(IcosaUser, url=user_url)
     q = Q(owner=owner.id)
@@ -79,6 +79,41 @@ def user_show(request, user_url):
     context = {
         "user": owner,
         "assets": Asset.objects.filter(q).order_by("-id"),
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+def user_likes(request, user_url):
+    template = "main/likes.html"
+
+    owner = get_object_or_404(IcosaUser, url=user_url)
+
+    liked_assets = owner.likes.filter(visibility=PUBLIC)
+
+    context = {
+        "user": owner,
+        "assets": liked_assets,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+def my_likes(request):
+    template = "main/likes.html"
+
+    owner = IcosaUser.from_request(request)
+    liked_assets = owner.likes.filter(visibility=PUBLIC)
+
+    context = {
+        "user": owner,
+        "assets": liked_assets,
     }
     return render(
         request,

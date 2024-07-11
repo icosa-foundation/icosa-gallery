@@ -30,6 +30,10 @@ urlpatterns = [
     path("uploads/", main_views.uploads, name="uploads"),
     path("user/<str:user_url>/", main_views.user_show, name="user_show"),
     path(
+        "user/<str:user_url>/likes/", main_views.user_likes, name="user_likes"
+    ),
+    path("likes/", main_views.my_likes, name="my_likes"),
+    path(
         "view/<str:user_url>/<str:asset_url>/",
         main_views.view_asset,
         name="view_asset",
