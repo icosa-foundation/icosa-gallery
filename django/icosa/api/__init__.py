@@ -44,9 +44,13 @@ class AssetPagination(PaginationBase):
             pageSize = 100
         offset = (pagination.pageToken - 1) * pageSize
         count = self._items_count(queryset)
+        if type(queryset) == list:
+            queryset_count = len(queryset)
+        else:
+            queryset_count = queryset.count()
         pagination_data = {
             "assets": queryset[offset : offset + pageSize],
-            "totalSize": queryset.count(),
+            "totalSize": queryset_count,
         }
         if offset + pageSize < count:
             pagination_data.update(
