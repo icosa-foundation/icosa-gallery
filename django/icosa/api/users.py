@@ -141,6 +141,7 @@ def get_me_assets(
         q &= Q(description__icontains=filters.description)
     if filters.authorName:
         q &= Q(owner__displayname__icontains=filters.authorName)
+    # TODO: orderBy
     assets = Asset.objects.filter(q)
     return assets
 
