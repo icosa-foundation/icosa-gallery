@@ -1,11 +1,11 @@
 import io
+import os
 import re
 import secrets
 import zipfile
 from dataclasses import dataclass
 from typing import List, Optional
 
-from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import Asset, PolyFormat, PolyResource, User
 from ninja import File
 from ninja.errors import HttpError
@@ -14,6 +14,8 @@ from ninja.files import UploadedFile
 from django.core.files.storage import get_storage_class
 
 default_storage = get_storage_class()()
+
+ASSET_NOT_FOUND = HttpError(404, "Asset not found.")
 
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
@@ -28,7 +30,24 @@ VALID_FORMAT_TYPES = [
     "fbm",
 ]
 
-ASSET_NOT_FOUND = HttpError(404, "Asset not found.")
+CONTENT_TYPE_MAP = {
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "tilt": "application/octet-stream",
+    "glb": "model/gltf-binary",
+    "gltf": "model/gltf+json",
+    "bin": "application/octet-stream",
+    "obj": "text/plain",
+    "mtl": "text/plain",
+    "fbx": "application/octet-stream",
+    "fbm": "application/octet-stream",
+}
+
+
+def get_content_type(filename):
+    extension = os.path.splitext(filename)[-1].replace(".", "")
+    return CONTENT_TYPE_MAP.get(extension, None)
 
 
 def upload_file_gcs(source_file, destination_blob_name):
@@ -184,10 +203,11 @@ def upload_asset(
         "curated": False,
     }
 
-    asset = Asset(**asset_data)
-    asset.save()
+    asset = Asset.objects.create(**asset_data)
+    first_format = None
 
     for mainfile in main_files:
+        is_first_format = True
         # Main files determine folder
         base_path = f"{current_user.id}/{job_snowflake}/{mainfile.filetype}/"
         # model_path = base_path + f"model.{mainfile.extension}"
@@ -198,13 +218,17 @@ def upload_asset(
         }
         format = PolyFormat(**format_data)
         format.save()
+        if is_first_format:
+            first_format = format
+            is_first_format = False
         resource_data = {
             "file": mainfile.file,
             "is_root": True,
+            "asset": asset,
             "format": format,
+            "contenttype": mainfile.file.content_type,
         }
-        main_resource = PolyResource(**resource_data)
-        main_resource.save()
+        main_resource = PolyResource.objects.create(**resource_data)
         resources.append(main_resource)
 
         for subfile in sub_files:
@@ -238,19 +262,27 @@ def upload_asset(
                     "file": subfile.file,
                     "format": format,
                     "is_root": False,
+                    "asset": asset,
+                    "contenttype": mainfile.file.content_type,
                 }
-                sub_format = PolyResource(**sub_resource_data)
-                sub_format.save()
+                sub_format = PolyResource.objects.create(**sub_resource_data)
 
-    if thumbnail:
+    if thumbnail and first_format:
         extension = thumbnail.name.split(".")[-1].lower()
         thumbnail_upload_details = validate_file(file, extension)
         if (
             thumbnail_upload_details is not None
             and thumbnail_upload_details.filetype == "IMAGE"
         ):
-            asset.thumbnail = thumbnail_upload_details.file
-            asset.save()
+            thumbnail_resource_data = {
+                "file": thumbnail_upload_details.file,
+                "format": first_format,
+                "is_root": False,
+                "is_thumbnail": True,
+                "asset": asset,
+                "contenttype": thumbnail_upload_details.file.content_type,
+            }
+            PolyResource.objects.create(**thumbnail_resource_data)
 
     if len(resources) == 0:
         raise HttpError(500, "Unable to upload any files.")

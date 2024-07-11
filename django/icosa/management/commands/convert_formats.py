@@ -1,32 +1,9 @@
-import os
-
+from icosa.helpers.file import get_content_type
 from icosa.models import Asset, PolyFormat, PolyResource
 
 from django.core.management.base import BaseCommand
 
 STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
-
-CONTENT_TYPE_MAP = {
-    "jpeg": "image/jpeg",
-    "jpg": "image/jpeg",
-    "png": "image/png",
-    "tilt": "application/octet-stream",
-    "glb": "model/gltf-binary",
-    "gltf": "model/gltf+json",
-    "bin": "application/octet-stream",
-    "obj": "text/plain",
-    "mtl": "text/plain",
-    "fbx": "application/octet-stream",
-    "fbm": "application/octet-stream",
-}
-
-
-def get_content_type(filename):
-    extension = os.path.splitext(filename)[-1].replace(".", "")
-    # if CONTENT_TYPE_MAP.get(extension, None) is None:
-    #     print(filename, extension)
-    #     print(CONTENT_TYPE_MAP.get(extension, "Not found"))
-    return CONTENT_TYPE_MAP.get(extension, None)
 
 
 class Command(BaseCommand):
