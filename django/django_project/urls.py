@@ -24,6 +24,7 @@ urlpatterns = [
     # Auth views
     path("login/", auth_views.custom_login, name="login"),
     path("logout/", auth_views.custom_logout, name="logout"),
+    path("devicecode/", auth_views.devicecode, name="devicecode"),
     # Other views
     path("", main_views.home, name="home"),
     path("uploads/", main_views.uploads, name="uploads"),
@@ -45,7 +46,5 @@ urlpatterns = [
     ),
     path("settings/", main_views.settings, name="settings"),
     path("terms/", main_views.terms, name="terms"),
-    # TODO: API routes are at the root for now; we should probably handle them
-    # at something like /api/v1/
     path("api/v1/", api.urls),
 ]

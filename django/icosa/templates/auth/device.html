@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container logindevice">
+    <div class="row">
+        <div class="col text-center">
+            <h2>OPEN BRUSH LOGIN CODE</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">&nbsp;</div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="text-center">
+                {% if request.user.is_authenticated %}
+                    <p class="device-code">{{ device_code }}</p>
+                    <p>Enter this code into Open Brush. This will log you in to your Icosa account.</p>
+                    <p><em>Only do this if you've downloaded your copy of Open Brush from a reputable source</em></p>
+                {% else %}
+                <p>
+                    You must <a href="/login">login</a> to get a device code.
+                </p>
+                <p>
+                    Or if it's easier visit <strong>
+                        <a href="{{ request.build_absolute_uri }}">{{ request.build_absolute_uri }}</a>
+                    </strong> on another device.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

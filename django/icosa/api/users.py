@@ -1,6 +1,3 @@
-import secrets
-import string
-from datetime import datetime, timedelta
 from typing import List
 
 from icosa.api import (
@@ -8,7 +5,7 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
-from icosa.models import Asset, DeviceCode, Tag, User
+from icosa.models import Asset, Tag, User
 from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
@@ -19,21 +16,11 @@ from .authentication import AuthBearer
 from .schema import (
     AssetFilters,
     AssetSchemaOut,
-    DeviceCodeSchema,
     FullUserSchema,
     PatchUserSchema,
 )
 
 router = Router()
-
-
-def generate_code(length=5):
-    # Define a string of characters to exclude
-    exclude = "I1O0"
-    characters = "".join(
-        set(string.ascii_uppercase + string.digits) - set(exclude)
-    )
-    return "".join(secrets.choice(characters) for i in range(length))
 
 
 @router.get(
@@ -69,36 +56,6 @@ def update_user(
             setattr(current_user, key, value)
     current_user.save()
     return current_user
-
-
-@router.get(
-    "/me/devicecode",
-    auth=AuthBearer(),
-    response=DeviceCodeSchema,
-)
-def get_users_device_code(
-    request,
-):
-    current_user = User.from_ninja_request(request)
-    if current_user is not None:
-        code = generate_code()
-        expiry_time = datetime.utcnow() + timedelta(minutes=1)
-
-        # Delete all codes for this user
-        DeviceCode.objects.filter(user=current_user).delete()
-        # Delete all expired codes for any user
-        DeviceCode.objects.filter(expiry__lt=datetime.utcnow()).delete()
-
-        foo = DeviceCode.objects.create(
-            user=current_user,
-            devicecode=code,
-            expiry=expiry_time,
-        )
-        print(foo)
-
-        return {"deviceCode": code}
-    # headers={"WWW-Authenticate": "Bearer"},
-    raise HttpError(401, "Authentication failed.")
 
 
 @router.get(

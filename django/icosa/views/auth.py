@@ -1,9 +1,24 @@
+import secrets
+import string
+from datetime import datetime, timedelta
+
 import requests
+from icosa.models import DeviceCode
 from icosa.models import User as IcosaUser
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
+
+
+def generate_code(length=5):
+    # Define a string of characters to exclude
+    exclude = "I1O0"
+    characters = "".join(
+        set(string.ascii_uppercase + string.digits) - set(exclude)
+    )
+    return "".join(secrets.choice(characters) for i in range(length))
 
 
 def custom_login(request):
@@ -66,3 +81,29 @@ def custom_logout(request):
         return redirect("home")
     else:
         return render(request, "auth/logout.html")
+
+
+def devicecode(request):
+    template = "auth/device.html"
+    user = request.user
+    context = {}
+    if user.is_authenticated:
+        owner = IcosaUser.from_request(request)
+        code = generate_code()
+        expiry_time = datetime.utcnow() + timedelta(minutes=1)
+
+        # Delete all codes for this user
+        DeviceCode.objects.filter(user=owner).delete()
+        # Delete all expired codes for any user
+        DeviceCode.objects.filter(expiry__lt=datetime.utcnow()).delete()
+
+        DeviceCode.objects.create(
+            user=owner,
+            devicecode=code,
+            expiry=expiry_time,
+        )
+
+        context = {
+            "device_code": code.upper(),
+        }
+    return render(request, template, context)
