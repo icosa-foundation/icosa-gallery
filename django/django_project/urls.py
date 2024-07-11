@@ -28,7 +28,7 @@ urlpatterns = [
     # Other views
     path("", main_views.home, name="home"),
     path("uploads/", main_views.uploads, name="uploads"),
-    path("user/<str:user_url>/", main_views.user, name="user"),
+    path("user/<str:user_url>/", main_views.user_show, name="user_show"),
     path(
         "view/<str:user_url>/<str:asset_url>/",
         main_views.view_asset,

@@ -2,10 +2,12 @@ from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
 from icosa.helpers.file import upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
-from icosa.models import PUBLIC, Asset, User
+from icosa.models import PUBLIC, Asset
+from icosa.models import User as IcosaUser
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponseNotAllowed, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -39,7 +41,7 @@ def home(request):
 def uploads(request):
     template = "main/manage_uploads.html"
 
-    user = User.from_request(request)
+    user = IcosaUser.from_request(request)
     if request.method == "POST":
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -66,15 +68,17 @@ def uploads(request):
     )
 
 
-def user(request, user_url):
+def user_show(request, user_url):
     template = "main/user.html"
 
-    user = get_object_or_404(User, url=user_url)
+    owner = get_object_or_404(IcosaUser, url=user_url)
+    q = Q(owner=owner.id)
+    if IcosaUser.from_request(request) != owner:
+        q &= Q(visibility=PUBLIC)
+
     context = {
-        "user": user,
-        "assets": Asset.objects.filter(
-            visibility=PUBLIC, owner=user.id
-        ).order_by("-id"),
+        "user": owner,
+        "assets": Asset.objects.filter(q).order_by("-id"),
     }
     return render(
         request,
@@ -96,7 +100,7 @@ def get_gltf_mode(request, asset):
 
 def view_asset(request, user_url, asset_url):
     template = "main/view_asset.html"
-    user = get_object_or_404(User, url=user_url)
+    user = get_object_or_404(IcosaUser, url=user_url)
     asset = get_object_or_404(
         Asset, visibility=PUBLIC, owner=user.id, url=asset_url
     )
@@ -117,7 +121,7 @@ def view_poly_asset(request, asset_url):
 
     asset = get_object_or_404(Asset, visibility=PUBLIC, url=asset_url)
     context = {
-        "user": user,
+        "user": asset.owner,
         "asset": asset,
         "gltf_mode": get_gltf_mode(request, asset),
     }
@@ -131,7 +135,7 @@ def view_poly_asset(request, asset_url):
 @login_required
 def edit_asset(request, user_url, asset_url):
     template = "main/edit_asset.html"
-    user = get_object_or_404(User, url=user_url)
+    user = get_object_or_404(IcosaUser, url=user_url)
     asset = get_object_or_404(Asset, owner=user.id, url=asset_url)
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
