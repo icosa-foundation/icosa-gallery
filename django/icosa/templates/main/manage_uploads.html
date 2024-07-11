@@ -4,41 +4,56 @@
 {% endblock extrahead %}
 {% block content %}
 <div class="container">
+</div>
+<div class="container">
     <div class="row">
         <div class="col">
-            <h2>Manage Uploads</h2>
+            <h1>My Uploads</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <h2>Upload New File</h2>
+            <hr>
+            <p>
+                Note: We only support GLTF (+bin) and GLB files at the moment.
+                <br>
+                .tilt file support will be added with our upcoming Open Brush
+                integration.
+            </p>
+            <p>
+                Upload <strong>one</strong> asset at a time, and make sure you
+                select <strong>all</strong> relevant files
+                <br>
+                (for example, if uploading sketch.gltf, make sure sketch.bin is
+                also selected!)
+                <br>
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <form action="." class="file-form" method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <input multiple type="file" class="form-control-file" name="file" required>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
         </div>
     </div>
 </div>
-<form action="." method="post" enctype="multipart/form-data" novalidate>
-    {% csrf_token %}
-    {{ form }}
-    <button type="submit" class="btn btn-primary">Upload</button>
-</form>
 <div class="sketch-list">
     <div class="container">
         <div class="row">
-            {% with edit_asset=True %}
-                {% for asset in assets %}
-                    {% include "partials/sketch_list_item.html" %}
-                {% endfor %}
-            {% endwith %}
-        </div>
-    </div>
-</div>
-<div class="sketch-info container">
-    <div class="row">
-        <div class="col">
-            <div>
-                <h2>{{ asset.name }}</h2>
-                <h4>
-                    <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
-                </h4>
-                <span>{{ asset.timestamp|date:"Y-m-d" }}</span>
-                <p>
-                </p>
-                <h6>{{ asset.license|default_if_none:"All rights reserved" }}</h6>
+            <div class="col">
+                <h2>Manage Uploads</h2>
             </div>
+        </div>
+        <div class="row">
+            {% with edit_asset=True %}
+            {% for asset in assets %}
+            {% include "partials/sketch_list_item.html" %}
+            {% endfor %}
+            {% endwith %}
         </div>
     </div>
 </div>
