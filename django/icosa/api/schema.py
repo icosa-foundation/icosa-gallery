@@ -222,7 +222,14 @@ class AssetFormat(Schema):
 
 
 class AssetFilters(Schema):
+    curated: bool = False
+    name: Optional[str] = None
+    description: Optional[str] = None
+    authorName: Optional[str] = None
+    category: Optional[str] = None
+    format: Optional[str] = None
     tag: List[str] = Field(None, alias="tag")
+    orderBy: Optional[str] = None
 
 
 class _DBAsset(ModelSchema):

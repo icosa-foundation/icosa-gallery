@@ -1,17 +1,16 @@
 import re
-from typing import List, NoReturn, Optional
+from typing import List, NoReturn
 
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
-from icosa.models import PUBLIC, Asset, Tag, User
+from icosa.models import PUBLIC, Asset, PolyResource, Tag, User
 from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
 
-from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db.models import Q
 from django.http import HttpRequest
@@ -251,12 +250,6 @@ def get_user_asset(
 @paginate(AssetPagination)
 def get_assets(
     request,
-    curated: bool = False,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    authorName: Optional[str] = None,
-    category: Optional[str] = None,
-    format: Optional[str] = None,
     filters: AssetFilters = Query(...),
 ):
     q = Q(
@@ -267,26 +260,29 @@ def get_assets(
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
         q &= Q(tags__in=tags)
-    if category:
+    if filters.category:
         # Categories are a special enum. I've elected to ingnore any categories
         # that do not match. I could as easily return zero results for
         # non-matches. I've also assumed that OpenBrush hands us uppercase
         # strings, but I could be wrong.
-        category_str = category.upper()
+        category_str = filters.category.upper()
         if category_str in POLY_CATEGORY_MAP.keys():
             category_str = POLY_CATEGORY_MAP[category_str]
         category = Tag.objects.filter(name__iexact=category_str)
         q &= Q(tags__in=category)
-    if curated:
+    if filters.curated:
         q &= Q(curated=True)
-    if name:
-        q &= Q(name__icontains=name)
-    if description:
-        q &= Q(description__icontains=description)
-    if authorName:
-        q &= Q(owner__displayname__icontains=authorName)
-    if format:
-        q &= Q(formats__contains=[{"format": format}])
+    if filters.name:
+        q &= Q(name__icontains=filters.name)
+    if filters.description:
+        q &= Q(description__icontains=filters.description)
+    if filters.authorName:
+        q &= Q(owner__displayname__icontains=filters.authorName)
+    if filters.format:
+        resources = PolyResource.objects.filter(
+            is_root=True, format__format_type=filters.format
+        )
+        q &= Q(polyresource__in=resources)
     assets = Asset.objects.filter(q).distinct()
 
     return assets

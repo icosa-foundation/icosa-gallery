@@ -1,11 +1,13 @@
 import secrets
 import string
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List
 
+from icosa.api import COMMON_ROUTER_SETTINGS, AssetPagination
 from icosa.models import Asset, DeviceCode, Tag, User
 from ninja import Query, Router
 from ninja.errors import HttpError
+from ninja.pagination import paginate
 
 from django.db.models import Q
 
@@ -108,22 +110,22 @@ def get_me_assets(request):
     "/me/likedassets",
     auth=AuthBearer(),
     response=List[AssetSchemaOut],
+    **COMMON_ROUTER_SETTINGS,
 )
+@paginate(AssetPagination)
 def get_me_likedassets(
     request,
-    format: Optional[str] = None,
-    orderBy: Optional[str] = None,
     filters: AssetFilters = Query(...),
-    results: int = 20,
-    page: int = 0,
 ):
     owner = User.from_ninja_request(request)
     liked_assets = owner.userassetlike_set.all()
-    q = Q(visibility="PUBLIC")
-    if format:
-        q &= Q(formats__contains=[{"format": format}])
+    q = Q(
+        visibility="PUBLIC",
+    )
+    if filters.format:
+        q &= Q(formats__contains=[{"format": filters.format}])
 
-    if orderBy and orderBy == "LIKED_TIME":
+    if filters.orderBy and filters.orderBy == "LIKED_TIME":
         liked_assets = liked_assets.order_by("-date_liked")
 
     # Get the ordered IDs for sorting later, if we need to. We can't use
@@ -137,7 +139,7 @@ def get_me_likedassets(
         q &= Q(tags__in=tags)
 
     assets = Asset.objects.filter(q)
-    if orderBy and orderBy == "LIKED_TIME":
+    if filters.orderBy and filters.orderBy == "LIKED_TIME":
         # Sort the assets by order of liked ID. Slow, but database-agnostic.
         # Postgres and MySql have different ways to do this, and we'd need to
         # use the `extra` params in our query, which are database-specific.
