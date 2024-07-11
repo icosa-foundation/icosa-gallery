@@ -12,7 +12,7 @@
     <div class="row">
         <div class="col">
             <div class="text-center">
-                {% if request.user.is_authenticated %}
+                {% if request.user.is_authenticated and device_code %}
                     <p class="device-code">{{ device_code }}</p>
                     <p>Enter this code into Open Brush. This will log you in to your Icosa account.</p>
                     <p><em>Only do this if you've downloaded your copy of Open Brush from a reputable source</em></p>

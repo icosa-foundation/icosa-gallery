@@ -89,21 +89,22 @@ def devicecode(request):
     context = {}
     if user.is_authenticated:
         owner = IcosaUser.from_request(request)
-        code = generate_code()
-        expiry_time = datetime.utcnow() + timedelta(minutes=1)
+        if owner:
+            code = generate_code()
+            expiry_time = datetime.utcnow() + timedelta(minutes=1)
 
-        # Delete all codes for this user
-        DeviceCode.objects.filter(user=owner).delete()
-        # Delete all expired codes for any user
-        DeviceCode.objects.filter(expiry__lt=datetime.utcnow()).delete()
+            # Delete all codes for this user
+            DeviceCode.objects.filter(user=owner).delete()
+            # Delete all expired codes for any user
+            DeviceCode.objects.filter(expiry__lt=datetime.utcnow()).delete()
 
-        DeviceCode.objects.create(
-            user=owner,
-            devicecode=code,
-            expiry=expiry_time,
-        )
+            DeviceCode.objects.create(
+                user=owner,
+                devicecode=code,
+                expiry=expiry_time,
+            )
 
-        context = {
-            "device_code": code.upper(),
-        }
+            context = {
+                "device_code": code.upper(),
+            }
     return render(request, template, context)
