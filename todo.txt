@@ -17,3 +17,5 @@ impl nicer full-text search
 devicecode needs to be a web view, not an api endpoint
 
 check auth returns just one user when using tokens
+
+we should accept snake_case and camelCase url params and do the translation. The openapi docs should list both as accepted styles. If we get both variants of the same param, just choose the value of whatever we got first.
