@@ -105,6 +105,7 @@ def user_likes(request, user_url):
     )
 
 
+@login_required
 def my_likes(request):
     template = "main/likes.html"
 
