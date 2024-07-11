@@ -1,3 +1,4 @@
+{% if request.user.is_authenticated %}
 {% if is_liked %}
 <span class="pro-icon">
     <svg aria-hidden="true" focusable="false" data-prefix="fas"
@@ -18,4 +19,5 @@
         </path>
     </svg>
 </span>
+{% endif %}
 {% endif %}
