@@ -226,7 +226,7 @@ def upload_asset(
             "is_root": True,
             "asset": asset,
             "format": format,
-            "contenttype": mainfile.file.content_type,
+            "contenttype": get_content_type(mainfile.file.name),
         }
         main_resource = PolyResource.objects.create(**resource_data)
         resources.append(main_resource)
@@ -263,9 +263,9 @@ def upload_asset(
                     "format": format,
                     "is_root": False,
                     "asset": asset,
-                    "contenttype": mainfile.file.content_type,
+                    "contenttype": get_content_type(subfile.file.name),
                 }
-                sub_format = PolyResource.objects.create(**sub_resource_data)
+                PolyResource.objects.create(**sub_resource_data)
 
     if thumbnail and first_format:
         extension = thumbnail.name.split(".")[-1].lower()
@@ -280,7 +280,9 @@ def upload_asset(
                 "is_root": False,
                 "is_thumbnail": True,
                 "asset": asset,
-                "contenttype": thumbnail_upload_details.file.content_type,
+                "contenttype": get_content_type(
+                    thumbnail_upload_details.file.name
+                ),
             }
             PolyResource.objects.create(**thumbnail_resource_data)
 
