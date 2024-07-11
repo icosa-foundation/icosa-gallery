@@ -126,31 +126,21 @@ class Asset(models.Model):
     @property
     def preferred_format(self):
         formats = {}
-        if self.imported:
-            for format in self.polyformat_set.all():
-                formats[format.format_type] = {
-                    "format": format.format_type,
-                    "url": format.root_resource.file.url,
-                }
-            # TODO(james): We need this list to be more exhaustive; we're
-            # returning None in too many cases.
-            # If we have a GLTF2 format, it's most likely actually a GLTF1.
-            if "GLTF2" in formats.keys():
-                return formats["GLTF2"]
-            if "GLTF" in formats.keys():
-                return formats["GLTF"]
-            # If we have a GLB format, it's most likely actually a GLTF2.
-            if "GLB" in formats.keys():
-                return formats["GLB"]
-        else:
-            for format in self.formats:
-                formats[format["format"]] = format
-            if "GLTF2" in formats.keys():
-                return formats["GLTF2"]
-            if "GLTF" in formats.keys():
-                return formats["GLTF"]
-            if "TILT" in formats:
-                return formats["TILT"]
+        for format in self.polyformat_set.all():
+            formats[format.format_type] = {
+                "format": format.format_type,
+                "url": format.root_resource.file.url,
+            }
+        # TODO(james): We need this list to be more exhaustive; we're
+        # returning None in too many cases.
+        # If we have a GLTF2 format, it's most likely actually a GLTF1.
+        if "GLTF2" in formats.keys():
+            return formats["GLTF2"]
+        if "GLTF" in formats.keys():
+            return formats["GLTF"]
+        # If we have a GLB format, it's most likely actually a GLTF2.
+        if "GLB" in formats.keys():
+            return formats["GLB"]
         return None
 
     @property
