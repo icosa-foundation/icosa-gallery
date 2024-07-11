@@ -3,7 +3,11 @@ import string
 from datetime import datetime, timedelta
 from typing import List
 
-from icosa.api import COMMON_ROUTER_SETTINGS, AssetPagination
+from icosa.api import (
+    COMMON_ROUTER_SETTINGS,
+    POLY_CATEGORY_MAP,
+    AssetPagination,
+)
 from icosa.models import Asset, DeviceCode, Tag, User
 from ninja import Query, Router
 from ninja.errors import HttpError
@@ -101,9 +105,44 @@ def get_users_device_code(
     "/me/assets",
     auth=AuthBearer(),
     response=List[AssetSchemaOut],
+    **COMMON_ROUTER_SETTINGS,
 )
-def get_me_assets(request):
-    return Asset.objects.filter(user=User.from_ninja_request(request))
+@paginate(AssetPagination)
+def get_me_assets(
+    request,
+    filters: AssetFilters = Query(...),
+):
+    owner = User.from_ninja_request(request)
+    q = Q(
+        visibility="PUBLIC",
+        user=owner,
+    )
+    if filters.format:
+        q &= Q(formats__contains=[{"format": filters.format}])
+
+    if filters.tag:
+        tags = Tag.objects.filter(name__in=filters.tag)
+        q &= Q(tags__in=tags)
+    if filters.category:
+        # Categories are a special enum. I've elected to ingnore any categories
+        # that do not match. I could as easily return zero results for
+        # non-matches. I've also assumed that OpenBrush hands us uppercase
+        # strings, but I could be wrong.
+        category_str = filters.category.upper()
+        if category_str in POLY_CATEGORY_MAP.keys():
+            category_str = POLY_CATEGORY_MAP[category_str]
+        category = Tag.objects.filter(name__iexact=category_str)
+        q &= Q(tags__in=category)
+    if filters.curated:
+        q &= Q(curated=True)
+    if filters.name:
+        q &= Q(name__icontains=filters.name)
+    if filters.description:
+        q &= Q(description__icontains=filters.description)
+    if filters.authorName:
+        q &= Q(owner__displayname__icontains=filters.authorName)
+    assets = Asset.objects.filter(q)
+    return assets
 
 
 @router.get(
@@ -137,6 +176,24 @@ def get_me_likedassets(
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
         q &= Q(tags__in=tags)
+    if filters.category:
+        # Categories are a special enum. I've elected to ingnore any categories
+        # that do not match. I could as easily return zero results for
+        # non-matches. I've also assumed that OpenBrush hands us uppercase
+        # strings, but I could be wrong.
+        category_str = filters.category.upper()
+        if category_str in POLY_CATEGORY_MAP.keys():
+            category_str = POLY_CATEGORY_MAP[category_str]
+        category = Tag.objects.filter(name__iexact=category_str)
+        q &= Q(tags__in=category)
+    if filters.curated:
+        q &= Q(curated=True)
+    if filters.name:
+        q &= Q(name__icontains=filters.name)
+    if filters.description:
+        q &= Q(description__icontains=filters.description)
+    if filters.authorName:
+        q &= Q(owner__displayname__icontains=filters.authorName)
 
     assets = Asset.objects.filter(q)
     if filters.orderBy and filters.orderBy == "LIKED_TIME":
