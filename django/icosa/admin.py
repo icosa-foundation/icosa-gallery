@@ -148,6 +148,7 @@ class DeviceCodeAdmin(admin.ModelAdmin):
 class UserAssetLikeInline(admin.TabularInline):
     extra = 0
     model = User.likes.through
+    raw_id_fields = ["asset"]
 
 
 @admin.register(User)
