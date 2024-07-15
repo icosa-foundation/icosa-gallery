@@ -301,6 +301,10 @@ class AssetPatchData(Schema):
     visibility: Optional[str]
 
 
+class UploadJobSchemaOut(Schema):
+    upload_job: int
+
+
 class OembedOut(Schema):
     type: Literal["rich"]
     version: Literal["1.0"]

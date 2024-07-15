@@ -20,7 +20,7 @@ from django.db.models import Q
 from django.http import HttpRequest
 
 from .authentication import AuthBearer
-from .schema import AssetFilters, AssetSchemaOut
+from .schema import AssetFilters, AssetSchemaOut, UploadJobSchemaOut
 
 router = Router()
 
@@ -226,12 +226,12 @@ def get_user_asset(
 
 @router.post(
     "",
-    response={201: AssetSchemaOut},
+    response={201: UploadJobSchemaOut},
     auth=AuthBearer(),
 )
 @router.post(
     "/",
-    response={201: AssetSchemaOut},
+    response={201: UploadJobSchemaOut},
     auth=AuthBearer(),
     include_in_schema=False,
 )
@@ -252,7 +252,7 @@ def upload_new_assets(
         )
     except HttpError:
         raise
-    return 201, asset
+    return 201, {"upload_job": job_snowflake}
 
 
 @router.get(
