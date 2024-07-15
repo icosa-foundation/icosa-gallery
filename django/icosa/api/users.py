@@ -5,7 +5,8 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
-from icosa.models import Asset, PolyResource, Tag, User
+from icosa.models import Asset, PolyResource, Tag
+from icosa.models import User as IcosaUser
 from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
@@ -29,7 +30,7 @@ router = Router()
     response=FullUserSchema,
 )
 def get_users_me(request):
-    return User.from_ninja_request(request)
+    return IcosaUser.from_ninja_request(request)
 
 
 @router.patch(
@@ -41,11 +42,11 @@ def update_user(
     request,
     patch_user: PatchUserSchema,
 ):
-    current_user = User.from_ninja_request(request)
+    current_user = IcosaUser.from_ninja_request(request)
     url = getattr(patch_user, "url", "").strip() or current_user.url
 
     if (
-        User.objects.filter(url__iexact=url).count() != 0
+        IcosaUser.objects.filter(url__iexact=url).count() != 0
         and url != current_user.url
     ):
         # Used to return 403. James believes this is the wrong status code.
@@ -69,10 +70,10 @@ def get_me_assets(
     request,
     filters: AssetFilters = Query(...),
 ):
-    owner = User.from_ninja_request(request)
+    owner = IcosaUser.from_ninja_request(request)
     q = Q(
         visibility="PUBLIC",
-        user=owner,
+        owner=owner,
     )
     if filters.format:
         if filters.format == "BLOCKS":
@@ -126,8 +127,8 @@ def get_me_likedassets(
     request,
     filters: AssetFilters = Query(...),
 ):
-    owner = User.from_ninja_request(request)
-    liked_assets = owner.userassetlike_set.all()
+    owner = IcosaUser.from_ninja_request(request)
+    liked_assets = owner.likedassets.all()
     q = Q(
         visibility="PUBLIC",
     )
