@@ -6,9 +6,13 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
-from icosa.models import PUBLIC, Asset, PolyResource, Tag, User
-from ninja import Query, Router
+from icosa.helpers.file import upload_asset
+from icosa.helpers.snowflake import generate_snowflake
+from icosa.models import PUBLIC, Asset, Tag
+from icosa.models import User as IcosaUser
+from ninja import File, Query, Router
 from ninja.errors import HttpError
+from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
 from django.core.files.storage import get_storage_class
@@ -40,7 +44,7 @@ def user_owns_asset(
 ) -> bool:
     if (
         request.auth.is_anonymous
-        or User.from_ninja_request(request) != asset.owner
+        or IcosaUser.from_ninja_request(request) != asset.owner
     ):
         return False
     return True
@@ -118,7 +122,7 @@ def get_asset(
 #     asset = get_my_id_asset(request, asset)
 #     # TODO(james): do we wait until storages is implemented for this?
 #     # Asset removal from storage
-#     owner = User.from_ninja_request(request)
+#     owner = IcosaUser.from_ninja_request(request)
 #     asset_folder = f"{settings.MEDIA_ROOT}/{owner.id}/{asset.id}/"
 #     # path = str(Path(asset.thumbnail.name).parent)
 
@@ -220,20 +224,35 @@ def get_user_asset(
     return asset
 
 
-# @router.post("", status_code=202)
-# @router.post("/", status_code=202, include_in_schema=False)
-# async def upload_new_assets(
-#     background_tasks: BackgroundTasks,
-#     current_user: User = Depends(get_current_user),
-#     files: List[UploadedFile] = File(...),
-# ):
-#     if len(files) == 0:
-#         raise HTTPException(422, "No files provided.")
-#     job_snowflake = generate_snowflake()
-#     background_tasks.add_task(
-#         upload_background, current_user, files, None, job_snowflake
-#     )
-#     return {"upload_job": str(job_snowflake)}
+@router.post(
+    "",
+    response={201: AssetSchemaOut},
+    auth=AuthBearer(),
+)
+@router.post(
+    "/",
+    response={201: AssetSchemaOut},
+    auth=AuthBearer(),
+    include_in_schema=False,
+)
+def upload_new_assets(
+    request,
+    files: List[UploadedFile] = File(...),
+):
+    user = IcosaUser.from_ninja_request(request)
+    if len(files) == 0:
+        raise HttpError(422, "No files provided.")
+    job_snowflake = generate_snowflake()
+    try:
+        asset = upload_asset(
+            user,
+            job_snowflake,
+            files,
+            None,
+        )
+    except HttpError:
+        raise
+    return 201, asset
 
 
 @router.get(

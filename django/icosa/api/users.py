@@ -5,7 +5,7 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
-from icosa.models import Asset, PolyResource, Tag
+from icosa.models import Asset, Tag
 from icosa.models import User as IcosaUser
 from ninja import Query, Router
 from ninja.errors import HttpError
