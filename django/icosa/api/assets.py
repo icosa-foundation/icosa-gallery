@@ -279,9 +279,18 @@ def get_assets(
     if filters.authorName:
         q &= Q(owner__displayname__icontains=filters.authorName)
     if filters.format:
-        resources = PolyResource.objects.filter(
-            is_root=True, format__format_type=filters.format
-        )
+        if filters.format == "BLOCKS":
+            resources = PolyResource.objects.filter(
+                is_root=True,
+                format__format_type__in=[
+                    "GLTF",
+                    "GLTF2",
+                ],
+            )
+        else:
+            resources = PolyResource.objects.filter(
+                is_root=True, format__format_type=filters.format
+            )
         q &= Q(polyresource__in=resources)
     assets = Asset.objects.filter(q).distinct()
 
