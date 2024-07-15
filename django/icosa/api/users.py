@@ -74,20 +74,18 @@ def get_me_assets(
     q = Q(
         owner=owner,
     )
+    ex_q = Q()
     if filters.format:
         if filters.format == "BLOCKS":
-            resources = PolyResource.objects.filter(
-                is_root=True,
-                format__format_type__in=[
+            q &= Q(
+                polyresource__format__format_type__in=[
                     "GLTF",
                     "GLTF2",
-                ],
+                ]
             )
+            ex_q &= Q(polyresource__format__format_type="TILT")
         else:
-            resources = PolyResource.objects.filter(
-                is_root=True, format__format_type=filters.format
-            )
-        q &= Q(polyresource__in=resources)
+            q &= Q(polyresource__format__format_type=filters.format)
 
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
@@ -111,7 +109,7 @@ def get_me_assets(
     if filters.authorName:
         q &= Q(owner__displayname__icontains=filters.authorName)
     # TODO: orderBy
-    assets = Asset.objects.filter(q)
+    assets = Asset.objects.filter(q).exclude(ex_q).distinct()
     return assets
 
 
@@ -131,20 +129,18 @@ def get_me_likedassets(
     q = Q(
         visibility="PUBLIC",
     )
+    ex_q = Q()
     if filters.format:
         if filters.format == "BLOCKS":
-            resources = PolyResource.objects.filter(
-                is_root=True,
-                format__format_type__in=[
+            q &= Q(
+                polyresource__format__format_type__in=[
                     "GLTF",
                     "GLTF2",
-                ],
+                ]
             )
+            ex_q &= Q(polyresource__format__format_type="TILT")
         else:
-            resources = PolyResource.objects.filter(
-                is_root=True, format__format_type=filters.format
-            )
-        q &= Q(polyresource__in=resources)
+            q &= Q(polyresource__format__format_type=filters.format)
 
     if filters.orderBy and filters.orderBy == "LIKED_TIME":
         liked_assets = liked_assets.order_by("-date_liked")
@@ -177,7 +173,7 @@ def get_me_likedassets(
     if filters.authorName:
         q &= Q(owner__displayname__icontains=filters.authorName)
 
-    assets = Asset.objects.filter(q)
+    assets = Asset.objects.filter(q).exclude(ex_q).distinct()
     if filters.orderBy and filters.orderBy == "LIKED_TIME":
         # Sort the assets by order of liked ID. Slow, but database-agnostic.
         # Postgres and MySql have different ways to do this, and we'd need to

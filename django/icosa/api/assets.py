@@ -256,6 +256,7 @@ def get_assets(
         visibility=PUBLIC,
         # imported=True,
     )
+    ex_q = Q()
 
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
@@ -280,18 +281,15 @@ def get_assets(
         q &= Q(owner__displayname__icontains=filters.authorName)
     if filters.format:
         if filters.format == "BLOCKS":
-            resources = PolyResource.objects.filter(
-                is_root=True,
-                format__format_type__in=[
+            q &= Q(
+                polyresource__format__format_type__in=[
                     "GLTF",
                     "GLTF2",
-                ],
+                ]
             )
+            ex_q &= Q(polyresource__format__format_type="TILT")
         else:
-            resources = PolyResource.objects.filter(
-                is_root=True, format__format_type=filters.format
-            )
-        q &= Q(polyresource__in=resources)
-    assets = Asset.objects.filter(q).distinct()
+            q &= Q(polyresource__format__format_type=filters.format)
+    assets = Asset.objects.filter(q).exclude(ex_q).distinct()
 
     return assets
