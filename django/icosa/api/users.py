@@ -106,8 +106,9 @@ def get_me_assets(
         q &= Q(name__icontains=filters.name)
     if filters.description:
         q &= Q(description__icontains=filters.description)
-    if filters.authorName:
-        q &= Q(owner__displayname__icontains=filters.authorName)
+    author_name = filters.authorName or filters.author_name or None
+    if author_name is not None:
+        q &= Q(owner__displayname__icontains=author_name)
     # TODO: orderBy
     assets = Asset.objects.filter(q).exclude(ex_q).distinct()
     return assets
@@ -170,8 +171,10 @@ def get_me_likedassets(
         q &= Q(name__icontains=filters.name)
     if filters.description:
         q &= Q(description__icontains=filters.description)
-    if filters.authorName:
-        q &= Q(owner__displayname__icontains=filters.authorName)
+    author_name = filters.authorName or filters.author_name or None
+    if author_name is not None:
+        q &= Q(owner__displayname__icontains=author_name)
+    # TODO: orderBy
 
     assets = Asset.objects.filter(q).exclude(ex_q).distinct()
     if filters.orderBy and filters.orderBy == "LIKED_TIME":

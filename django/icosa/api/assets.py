@@ -296,8 +296,10 @@ def get_assets(
         q &= Q(name__icontains=filters.name)
     if filters.description:
         q &= Q(description__icontains=filters.description)
-    if filters.authorName:
-        q &= Q(owner__displayname__icontains=filters.authorName)
+    author_name = filters.authorName or filters.author_name or None
+    if author_name is not None:
+        q &= Q(owner__displayname__icontains=author_name)
+    # TODO: orderBy
     if filters.format:
         if filters.format == "BLOCKS":
             q &= Q(
