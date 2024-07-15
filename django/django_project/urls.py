@@ -24,7 +24,7 @@ urlpatterns = [
     # Auth views
     path("login/", auth_views.custom_login, name="login"),
     path("logout/", auth_views.custom_logout, name="logout"),
-    path("devicecode/", auth_views.devicecode, name="devicecode"),
+    path("device/", auth_views.devicecode, name="devicecode"),
     # Other views
     path("", main_views.home, name="home"),
     path("uploads/", main_views.uploads, name="uploads"),
