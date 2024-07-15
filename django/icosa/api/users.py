@@ -5,7 +5,7 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
-from icosa.models import Asset, Tag, User
+from icosa.models import Asset, PolyResource, Tag, User
 from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
@@ -75,7 +75,19 @@ def get_me_assets(
         user=owner,
     )
     if filters.format:
-        q &= Q(formats__contains=[{"format": filters.format}])
+        if filters.format == "BLOCKS":
+            resources = PolyResource.objects.filter(
+                is_root=True,
+                format__format_type__in=[
+                    "GLTF",
+                    "GLTF2",
+                ],
+            )
+        else:
+            resources = PolyResource.objects.filter(
+                is_root=True, format__format_type=filters.format
+            )
+        q &= Q(polyresource__in=resources)
 
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
@@ -120,7 +132,19 @@ def get_me_likedassets(
         visibility="PUBLIC",
     )
     if filters.format:
-        q &= Q(formats__contains=[{"format": filters.format}])
+        if filters.format == "BLOCKS":
+            resources = PolyResource.objects.filter(
+                is_root=True,
+                format__format_type__in=[
+                    "GLTF",
+                    "GLTF2",
+                ],
+            )
+        else:
+            resources = PolyResource.objects.filter(
+                is_root=True, format__format_type=filters.format
+            )
+        q &= Q(polyresource__in=resources)
 
     if filters.orderBy and filters.orderBy == "LIKED_TIME":
         liked_assets = liked_assets.order_by("-date_liked")
