@@ -24,13 +24,14 @@ POLY_CATEGORY_MAP = {
 
 
 class AssetPagination(PaginationBase):
-    # only `skip` param, defaults to 5 per page
     class Input(Schema):
-        pageToken: int = Field(1, ge=1)
+        pageToken: int = None
+        page_token: int = None
         pageSize: int = None
+        page_size: int = None
 
     class Output(Schema):
-        assets: List[Any]  # `items` is a default attribute
+        assets: List[Any]
         totalSize: int
         nextPageToken: Optional[str] = None
 
@@ -39,10 +40,11 @@ class AssetPagination(PaginationBase):
     def paginate_queryset(
         self, queryset, pagination: Input, request, **params
     ):
-        pageSize = pagination.pageSize or 20
+        pageSize = pagination.pageSize or pagination.page_size or 20
         if pageSize > 100:
             pageSize = 100
-        offset = (pagination.pageToken - 1) * pageSize
+        page_token = pagination.pageToken or pagination.page_token or 1
+        offset = (page_token - 1) * pageSize
         count = self._items_count(queryset)
         if type(queryset) == list:
             queryset_count = len(queryset)
@@ -55,7 +57,7 @@ class AssetPagination(PaginationBase):
         if offset + pageSize < count:
             pagination_data.update(
                 {
-                    "nextPageToken": str(pagination.pageToken + 1),
+                    "nextPageToken": str(page_token + 1),
                 }
             )
         return pagination_data
