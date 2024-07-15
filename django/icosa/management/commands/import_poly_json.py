@@ -104,6 +104,10 @@ def get_or_create_asset(dir, data):
 
 
 def create_formats(directory, formats_json, asset):
+    # TODO: remove duplicates
+    # if not (len(set(vv)) == len(vv)) and not (str(vals[0] == str(vals[1]))):
+    # vv is the list of relative paths and vals is the whole json
+    # (if there's a dup then I am 90% sure there are only two items)
     done_thumbnail = False
     for format_json in formats_json:
         format = PolyFormat.objects.create(
