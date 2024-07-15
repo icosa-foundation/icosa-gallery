@@ -40,21 +40,21 @@ class AssetPagination(PaginationBase):
     def paginate_queryset(
         self, queryset, pagination: Input, request, **params
     ):
-        pageSize = pagination.pageSize or pagination.page_size or 20
-        if pageSize > 100:
-            pageSize = 100
+        page_size = pagination.pageSize or pagination.page_size or 20
+        if page_size > 100:
+            page_size = 100
         page_token = pagination.pageToken or pagination.page_token or 1
-        offset = (page_token - 1) * pageSize
+        offset = (page_token - 1) * page_size
         count = self._items_count(queryset)
         if type(queryset) == list:
             queryset_count = len(queryset)
         else:
             queryset_count = queryset.count()
         pagination_data = {
-            "assets": queryset[offset : offset + pageSize],
+            "assets": queryset[offset : offset + page_size],
             "totalSize": queryset_count,
         }
-        if offset + pageSize < count:
+        if offset + page_size < count:
             pagination_data.update(
                 {
                     "nextPageToken": str(page_token + 1),
