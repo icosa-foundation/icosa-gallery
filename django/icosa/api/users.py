@@ -72,7 +72,6 @@ def get_me_assets(
 ):
     owner = IcosaUser.from_ninja_request(request)
     q = Q(
-        visibility="PUBLIC",
         owner=owner,
     )
     if filters.format:
