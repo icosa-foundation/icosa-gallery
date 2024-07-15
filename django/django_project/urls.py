@@ -20,31 +20,31 @@ api.add_router("users", users_router, tags=["Users"])
 
 urlpatterns = [
     path("admin_tools/", include("admin_tools.urls")),
-    path("admin/", admin.site.urls),
+    path("admin", admin.site.urls),
     # Auth views
-    path("login/", auth_views.custom_login, name="login"),
-    path("logout/", auth_views.custom_logout, name="logout"),
-    path("device/", auth_views.devicecode, name="devicecode"),
+    path("login", auth_views.custom_login, name="login"),
+    path("logout", auth_views.custom_logout, name="logout"),
+    path("device", auth_views.devicecode, name="devicecode"),
     # Other views
     path("", main_views.home, name="home"),
-    path("uploads/", main_views.uploads, name="uploads"),
-    path("user/<str:user_url>/", main_views.user_show, name="user_show"),
+    path("uploads", main_views.uploads, name="uploads"),
+    path("user/<str:user_url>", main_views.user_show, name="user_show"),
     path(
-        "user/<str:user_url>/likes/", main_views.user_likes, name="user_likes"
+        "user/<str:user_url>/likes", main_views.user_likes, name="user_likes"
     ),
     path("likes/", main_views.my_likes, name="my_likes"),
     path(
-        "view/<str:user_url>/<str:asset_url>/",
+        "view/<str:user_url>/<str:asset_url>",
         main_views.view_asset,
         name="view_asset",
     ),
     path(
-        "view/<str:asset_url>/",
+        "view/<str:asset_url>",
         main_views.view_poly_asset,
         name="view_poly_asset",
     ),
     path(
-        "edit/<str:user_url>/<str:asset_url>/",
+        "edit/<str:user_url>/<str:asset_url>",
         main_views.edit_asset,
         name="edit_asset",
     ),
