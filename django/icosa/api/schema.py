@@ -305,6 +305,7 @@ class AssetPatchData(Schema):
 
 class UploadJobSchemaOut(Schema):
     upload_job: int
+    edit_url: str
 
 
 class OembedOut(Schema):

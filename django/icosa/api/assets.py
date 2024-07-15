@@ -18,6 +18,7 @@ from ninja.pagination import paginate
 from django.core.files.storage import get_storage_class
 from django.db.models import Q
 from django.http import HttpRequest
+from django.urls import reverse
 
 from .authentication import AuthBearer
 from .schema import AssetFilters, AssetSchemaOut, UploadJobSchemaOut
@@ -252,7 +253,18 @@ def upload_new_assets(
         )
     except HttpError:
         raise
-    return 201, {"upload_job": job_snowflake}
+    return 201, {
+        "upload_job": job_snowflake,
+        "edit_url": request.build_absolute_uri(
+            reverse(
+                "edit_asset",
+                kwargs={
+                    "user_url": user.url,
+                    "asset_url": asset.url,
+                },
+            )
+        ),
+    }
 
 
 @router.get(
