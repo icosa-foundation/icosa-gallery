@@ -239,6 +239,10 @@ class FormatComplexity(models.Model):
     triangle_count = models.PositiveIntegerField(null=True, blank=True)
     lod_hint = models.PositiveIntegerField(null=True, blank=True)
 
+    class Meta:
+        verbose_name = "Format Complexity Object"
+        verbose_name_plural = "Format Complexity Objects"
+
 
 class PolyResource(models.Model):
     is_root = models.BooleanField(default=False)

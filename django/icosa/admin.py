@@ -1,6 +1,7 @@
 from icosa.models import (
     Asset,
     DeviceCode,
+    FormatComplexity,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -54,6 +55,16 @@ class PolyResourceInline(admin.TabularInline):
     )
 
 
+class FormatComplexityInline(admin.TabularInline):
+    extra = 0
+    model = FormatComplexity
+
+    fields = (
+        "triangle_count",
+        "lod_hint",
+    )
+
+
 @admin.register(PolyFormat)
 class PolyFormatAdmin(admin.ModelAdmin):
 
@@ -62,7 +73,10 @@ class PolyFormatAdmin(admin.ModelAdmin):
         "format_type",
     )
 
-    inlines = (PolyResourceInline,)
+    inlines = (
+        PolyResourceInline,
+        FormatComplexityInline,
+    )
 
 
 @admin.register(Asset)
