@@ -18,7 +18,8 @@ from icosa.models import (
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-POLY_JSON_DIR = "polygone_data/assets"
+POLY_JSON_DIR = "polygone_data"
+ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
 
 
 def get_json_from_b2(dir):
@@ -105,11 +106,7 @@ def get_or_create_asset(dir, data):
     )
 
 
-def create_formats(directory, formats_json, asset):
-    # TODO: remove duplicates
-    # if not (len(set(vv)) == len(vv)) and not (str(vals[0] == str(vals[1]))):
-    # vv is the list of relative paths and vals is the whole json
-    # (if there's a dup then I am 90% sure there are only two items)
+def create_formats(directory, gltf2_data, formats_json, asset):
     done_thumbnail = False
     for format_json in formats_json:
         format = PolyFormat.objects.create(
@@ -133,6 +130,17 @@ def create_formats(directory, formats_json, asset):
             asset.save()
         done_thumbnail = True
         root_resource_json = format_json["root"]
+
+        # Retrospectively override the parent Format's type if we find a
+        # special case.
+        gltf_override_key = (
+            f"{directory}\\{root_resource_json['relativePath']}"
+        )
+        if gltf2_data.get(gltf_override_key, False):
+            print(f"Overwriting format_type for {gltf_override_key}")
+            format.format_type = "GLTF2"
+            format.save()
+
         root_resource_data = {
             "file": f"poly/{directory}/{root_resource_json['relativePath']}",
             "is_root": True,
@@ -177,39 +185,67 @@ class Command(BaseCommand):
             )
             return
         if not options["skip_download"]:
-            get_json_from_b2(POLY_JSON_DIR)
+            get_json_from_b2(ASSETS_JSON_DIR)
         if options["skip_import"]:
             return
 
-        # Loop through all directories in the poly json directory
-        # For each directory, load the data.json file
-        # Create a new Asset object with the data
-        for directory in os.listdir(POLY_JSON_DIR):
-            if directory.startswith("."):
-                continue
-            full_path = os.path.join(POLY_JSON_DIR, directory, "data.json")
-            try:
-                with open(full_path) as f:
-                    data = json.load(f)
-                    try:
-                        asset, asset_created = get_or_create_asset(
-                            directory, data
-                        )
-                        if asset_created:
-                            icosa_tags = []
-                            for tag in data["tags"]:
-                                obj, _ = Tag.objects.get_or_create(name=tag)
-                                icosa_tags.append(obj)
-                            asset.tags.set(icosa_tags)
-                            create_formats(directory, data["formats"], asset)
+        with open(os.path.join(POLY_JSON_DIR, "gltf2.json")) as g:
+            gltf2_data = json.load(g)
+            # Loop through all directories in the poly json directory
+            # For each directory, load the data.json file
+            # Create a new Asset object with the data
+            for directory in os.listdir(ASSETS_JSON_DIR):
+                if directory.startswith("."):
+                    continue
+                full_path = os.path.join(
+                    ASSETS_JSON_DIR, directory, "data.json"
+                )
+                try:
+                    with open(full_path) as f:
+                        data = json.load(f)
 
-                    except Exception as e:
-                        _ = e
-                        # from pprint import pprint
-                        # print(e)
-                        # pprint(data)
-                        # continue
-                        raise
-            except FileNotFoundError as e:
-                print(e)
-                continue
+                        formats = data["formats"]
+                        new_formats = []
+                        dup_types = {}
+
+                        # Check json for duplicate gltf entries
+                        for format in formats:
+                            relative_path = format["root"]["relativePath"]
+                            if dup_types.get(relative_path):
+                                if relative_path != "model.gltf":
+                                    print(
+                                        f"found duplicate for {directory} - {relative_path}"
+                                    )
+                                continue
+                            new_formats.append(format)
+                            dup_types.update({relative_path: True})
+
+                        try:
+                            asset, asset_created = get_or_create_asset(
+                                directory, data
+                            )
+                            if asset_created:
+                                icosa_tags = []
+                                for tag in data["tags"]:
+                                    obj, _ = Tag.objects.get_or_create(
+                                        name=tag
+                                    )
+                                    icosa_tags.append(obj)
+                                asset.tags.set(icosa_tags)
+                                create_formats(
+                                    directory,
+                                    gltf2_data,
+                                    new_formats,
+                                    asset,
+                                )
+
+                        except Exception as e:
+                            _ = e
+                            # from pprint import pprint
+                            # print(e)
+                            # pprint(data)
+                            # continue
+                            raise
+                except FileNotFoundError as e:
+                    print(e)
+                    continue
