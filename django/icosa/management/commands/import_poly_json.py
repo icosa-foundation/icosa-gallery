@@ -125,7 +125,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
             FormatComplexity.objects.create(**format_complexity_data)
         # Manually create thumbnails from our assumptions about the data.
         if not done_thumbnail:
-            asset.thumbnail.file = f"poly/{directory}/thumbnail.png"
+            asset.thumbnail = f"poly/{directory}/thumbnail.png"
             asset.thumbnail_contenttype = "image/png"
             asset.save()
         done_thumbnail = True
