@@ -9,10 +9,8 @@ from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
     Asset,
     FormatComplexity,
-    OrientingRotation,
     PolyFormat,
     PolyResource,
-    PresentationParams,
     Tag,
     User,
 )
@@ -69,14 +67,14 @@ def get_or_create_asset(dir, data):
     background_color = data["presentationParams"].get("backgroundColor", None)
     if background_color is not None and len(background_color) > 7:
         background_color = "#000000"
-    orienting_rotation = OrientingRotation.objects.create(
-        **data["presentationParams"]["orientingRotation"]
+    orienting_rotation = data["presentationParams"].get(
+        "orientingRotation", None
     )
-    presentation_params = PresentationParams.objects.create(
-        color_space=data["presentationParams"]["colorSpace"],
-        background_color=background_color,
-        orienting_rotation=orienting_rotation,
-    )
+    orienting_rotation_x = orienting_rotation.get("x", None)
+    orienting_rotation_y = orienting_rotation.get("y", None)
+    orienting_rotation_z = orienting_rotation.get("z", None)
+    orienting_rotation_w = orienting_rotation.get("w", None)
+
     return Asset.objects.get_or_create(
         name=data["name"],
         owner=user,
@@ -86,15 +84,19 @@ def get_or_create_asset(dir, data):
         curated="curated" in data["tags"],
         polyid=dir,
         polydata=data,
-        thumbnail=None,
         license=data["license"],
-        presentation_params=presentation_params,
         create_time=datetime.fromisoformat(
             data["createTime"].replace("Z", "+00:00")
         ),
         update_time=datetime.fromisoformat(
             data["updateTime"].replace("Z", "+00:00")
         ),
+        color_space=data["presentationParams"]["colorSpace"],
+        background_color=background_color,
+        orienting_rotation_x=orienting_rotation_x,
+        orienting_rotation_y=orienting_rotation_y,
+        orienting_rotation_z=orienting_rotation_z,
+        orienting_rotation_w=orienting_rotation_w,
         defaults={
             "id": generate_snowflake(),
             "imported": True,
@@ -126,15 +128,9 @@ def create_formats(directory, formats_json, asset):
             FormatComplexity.objects.create(**format_complexity_data)
         # Manually create thumbnails from our assumptions about the data.
         if not done_thumbnail:
-            thumbnail_resource_data = {
-                "file": f"poly/{directory}/thumbnail.png",
-                "is_root": False,
-                "is_thumbnail": True,
-                "format": format,
-                "asset": asset,
-                "contenttype": "image/png",
-            }
-            PolyResource.objects.create(**thumbnail_resource_data)
+            asset.thumbnail.file = f"poly/{directory}/thumbnail.png"
+            asset.thumbnail_contenttype = "image/png"
+            asset.save()
         done_thumbnail = True
         root_resource_json = format_json["root"]
         root_resource_data = {

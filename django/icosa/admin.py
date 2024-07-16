@@ -4,10 +4,8 @@ from icosa.models import (
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
-    OrientingRotation,
     PolyFormat,
     PolyResource,
-    PresentationParams,
     Tag,
     User,
 )
@@ -28,26 +26,14 @@ class PolyResourceAdmin(admin.ModelAdmin):
         "asset",
         "file",
         "is_root",
-        "is_thumbnail",
         "contenttype",
     )
 
     list_filter = (
         "is_root",
-        "is_thumbnail",
         "contenttype",
     )
     search_fields = ("file",)
-
-
-@admin.register(PresentationParams)
-class PresentationParamsAdmin(admin.ModelAdmin):
-    pass
-
-
-@admin.register(OrientingRotation)
-class OrientingRotationAdmin(admin.ModelAdmin):
-    pass
 
 
 class PolyFormatInline(admin.TabularInline):
@@ -114,11 +100,10 @@ class AssetAdmin(admin.ModelAdmin):
     def _thumbnail_image(self, obj):
         html = ""
 
-        thumbnail_resource = PolyResource.objects.filter(
-            asset=obj, is_thumbnail=True
-        ).first()
-        if thumbnail_resource:
-            html = f'<img src="{thumbnail_resource.file.url}" width="150" loading="lazy">'
+        if obj.thumbnail:
+            html = f"""
+<img src="{obj.thumbnail.url}" width="150" loading="lazy">
+            """
         return mark_safe(html)
 
     _thumbnail_image.short_description = "Thumbnail"

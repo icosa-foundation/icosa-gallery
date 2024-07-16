@@ -88,13 +88,9 @@ class PolyQuaternion(Schema):
 
 
 class PolyPresentationParams(Schema):
-    orientingRotation: Optional[PolyQuaternion] = None
-    colorSpace: Optional[str] = Field(None, alias=("color_space"))
-    backgroundColor: Optional[str] = Field(None, alias=("background_color"))
-
-    @staticmethod
-    def resolve_orientingRotation(obj):
-        return obj.orienting_rotation
+    orientingRotation: Optional[PolyQuaternion]
+    colorSpace: Optional[str] = None
+    backgroundColor: Optional[str] = None
 
 
 class PolyRemixInfo(Schema):
@@ -184,6 +180,12 @@ class AssetResource(Schema):
         return obj.url
 
 
+class Thumbnail(Schema):
+    relativePath: Optional[str] = None
+    contentType: Optional[str] = None
+    url: Optional[str] = None
+
+
 class FormatComplexity(Schema):
     triangleCount: Optional[int] = None
     lodHint: Optional[int] = None
@@ -210,7 +212,7 @@ class AssetFormat(Schema):
 
     @staticmethod
     def resolve_resources(obj):
-        return obj.polyresource_set.filter(is_root=False, is_thumbnail=False)
+        return obj.polyresource_set.filter(is_root=False)
 
     @staticmethod
     def resolve_formatType(obj):
@@ -246,22 +248,18 @@ class _DBAsset(ModelSchema):
     visibility: str
     tags: List[str] = []
     isCurated: Optional[bool] = Field(None, alias=("curated"))
-    # polyid: Optional[str]
-    # polydata: Optional[PolyAsset]
-    thumbnail: Optional[AssetResource]
+    thumbnail: Optional[Thumbnail]
     ownerurl: str = Field(None, alias=("owner.url"))
     authorName: str
-    presentationParams: Optional[PolyPresentationParams] = Field(
-        None, alias=("presentation_params")
-    )
-
-    @staticmethod
-    def resolve_formats(obj, context):
-        return [f for f in obj.polyformat_set.all()]
+    presentationParams: Optional[PolyPresentationParams] = None
 
     class Config:
         model = Asset
         model_fields = ["url"]
+
+    @staticmethod
+    def resolve_formats(obj, context):
+        return [f for f in obj.polyformat_set.all()]
 
     @staticmethod
     def resolve_tags(obj):
@@ -269,7 +267,14 @@ class _DBAsset(ModelSchema):
 
     @staticmethod
     def resolve_thumbnail(obj):
-        return obj.polyresource_set.filter(is_thumbnail=True).first()
+        data = {}
+        if obj.thumbnail:
+            data = {
+                "relativePath": obj.thumbnail.name.split("/")[-1],
+                "contentType": obj.thumbnail_contenttype,
+                "url": obj.thumbnail.url,
+            }
+        return data
 
     @staticmethod
     def resolve_authorId(obj):
@@ -284,6 +289,19 @@ class _DBAsset(ModelSchema):
             return f"{obj.owner}"
         else:
             return ""
+
+    @staticmethod
+    def resolve_presentationParams(obj):
+        params = {}
+        params["backgroundColor"] = obj.background_color
+        params["orientingRotation"] = {
+            "x": getattr(obj, "orienting_rotation_x", None),
+            "y": getattr(obj, "orienting_rotation_y", None),
+            "z": getattr(obj, "orienting_rotation_z", None),
+            "w": getattr(obj, "orienting_rotation_w", None),
+        }
+        params["colorSpace"] = obj.color_space
+        return params
 
 
 class AssetSchemaIn(_DBAsset):

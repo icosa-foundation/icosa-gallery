@@ -103,19 +103,25 @@ class Asset(models.Model):
     curated = models.BooleanField(blank=True, null=True)
     polyid = models.CharField(max_length=255, blank=True, null=True)
     polydata = models.JSONField(blank=True, null=True)
-    presentation_params = models.ForeignKey(
-        "PresentationParams", null=True, blank=True, on_delete=models.CASCADE
-    )
     thumbnail = models.ImageField(
         max_length=255,
         blank=True,
         null=True,
         upload_to=thumbnail_upload_path,
     )
+    thumbnail_contenttype = models.CharField(blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
     tags = models.ManyToManyField("Tag", blank=True)
+    color_space = models.CharField(
+        max_length=50, choices=COLOR_SPACES, default="GAMMA"
+    )
+    background_color = models.CharField(max_length=7, null=True, blank=True)
+    orienting_rotation_x = models.FloatField(null=True, blank=True)
+    orienting_rotation_y = models.FloatField(null=True, blank=True)
+    orienting_rotation_z = models.FloatField(null=True, blank=True)
+    orienting_rotation_w = models.FloatField(null=True, blank=True)
     imported = models.BooleanField(default=False)
 
     @property
@@ -178,12 +184,6 @@ class Asset(models.Model):
         thumbnail_url = "/static/images/nothumbnail.png?v=1"
         if self.thumbnail:
             thumbnail_url = self.thumbnail.url
-        else:
-            thumbnail_resource = self.polyresource_set.filter(
-                is_thumbnail=True
-            ).first()
-            if thumbnail_resource is not None:
-                thumbnail_url = thumbnail_resource.file.url
         return thumbnail_url
 
     @property
@@ -242,7 +242,6 @@ class FormatComplexity(models.Model):
 
 class PolyResource(models.Model):
     is_root = models.BooleanField(default=False)
-    is_thumbnail = models.BooleanField(default=False)
     asset = models.ForeignKey(
         Asset, null=True, blank=False, on_delete=models.CASCADE
     )
@@ -264,31 +263,6 @@ class PolyResource(models.Model):
     @property
     def content_type(self):
         return self.file.content_type
-
-
-class OrientingRotation(models.Model):
-    x = models.FloatField(null=True, blank=True)
-    y = models.FloatField(null=True, blank=True)
-    z = models.FloatField(null=True, blank=True)
-    w = models.FloatField(null=True, blank=True)
-
-
-class PresentationParams(models.Model):
-    COLOR_SPACES = [
-        ("LINEAR", "LINEAR"),
-        ("GAMMA", "GAMMA"),
-    ]
-    orienting_rotation = models.ForeignKey(
-        OrientingRotation, on_delete=models.CASCADE
-    )
-    color_space = models.CharField(
-        max_length=50, choices=COLOR_SPACES, default="GAMMA"
-    )
-    background_color = models.CharField(max_length=7, null=True, blank=True)
-
-    class Meta:
-        verbose_name = "Presentation Params"
-        verbose_name_plural = "Presentation Params"
 
 
 class DeviceCode(models.Model):

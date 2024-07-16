@@ -274,17 +274,11 @@ def upload_asset(
             thumbnail_upload_details is not None
             and thumbnail_upload_details.filetype == "IMAGE"
         ):
-            thumbnail_resource_data = {
-                "file": thumbnail_upload_details.file,
-                "format": first_format,
-                "is_root": False,
-                "is_thumbnail": True,
-                "asset": asset,
-                "contenttype": get_content_type(
-                    thumbnail_upload_details.file.name
-                ),
-            }
-            PolyResource.objects.create(**thumbnail_resource_data)
+            asset.thumbnail = thumbnail_upload_details.file
+            asset.thumbnail_contenttype = get_content_type(
+                thumbnail_upload_details.file.name
+            )
+            asset.save()
 
     if len(resources) == 0:
         raise HttpError(500, "Unable to upload any files.")

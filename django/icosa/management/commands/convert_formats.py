@@ -43,23 +43,11 @@ class Command(BaseCommand):
 
                     if asset.thumbnail and done_thumbnail is False:
                         asset_thumbnail = asset.thumbnail
-                        try:
-                            filename = asset_thumbnail.file.name
-                            thumbnail_resource_data = {
-                                "file": filename,
-                                "is_root": False,
-                                "is_thumbnail": True,
-                                "format": format,
-                                "asset": asset,
-                                "contenttype": get_content_type(
-                                    asset_thumbnail.name
-                                ),
-                            }
-                            PolyResource.objects.create(
-                                **thumbnail_resource_data
-                            )
-                        except FileNotFoundError as e:
-                            print(e)
+                        asset.thumbnail_contenttype = get_content_type(
+                            asset_thumbnail.name
+                        )
+                        print(asset.thumbnail, asset.thumbnail_contenttype)
+                        asset.save()
                         done_thumbnail = True
                     if format_json.get("subfiles", None) is not None:
                         for resource in format_json["subfiles"]:

@@ -1,6 +1,6 @@
 from typing import Any, List, Optional
 
-from ninja import Field, Schema
+from ninja import Schema
 from ninja.pagination import PaginationBase
 
 COMMON_ROUTER_SETTINGS = {
