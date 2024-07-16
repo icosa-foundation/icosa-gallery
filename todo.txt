@@ -21,8 +21,6 @@ flatten orienting rotation and presentation params into asset model and instead 
 
 pagination for all front end listers
 
-authorname should link to author view page in listers
-
 make asset uploads async
 
 include middleware to strip trailing slashes without 404
