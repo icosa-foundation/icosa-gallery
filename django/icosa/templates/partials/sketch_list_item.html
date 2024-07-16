@@ -15,7 +15,7 @@
             </div>
         </a>
         <div class="sketchinfo">
-            <div class="author">{{ asset.owner.displayname }}</div>
+            <div class="author"><a href="{% url 'user_show' user_url=asset.owner.url %}">{{ asset.owner.displayname }}</a></div>
             <div class="date">{{ asset.timestamp|date:"Y-m-d" }}</div>
         </div>
     </div>

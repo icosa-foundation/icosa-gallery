@@ -1,48 +1,55 @@
 .sketch-list {
-    .sketchbox {
-        margin: 1em;
-        border-radius: 1em;
+  .sketchbox {
+    margin: 1em;
+    border-radius: 1em;
 
-        .sketchimage {
-            height: 13em;
+    .sketchimage {
+      height: 13em;
 
-            @media(max-width: 1024px) {
-                height: 16em;
-            }
+      @media(max-width: 1024px) {
+        height: 16em;
+      }
 
-            display: flex;
-            align-items: flex-end;
-            border-radius: 1em 1em 0 0;
-            color: #ffffff;
-            background-size: cover;
+      display: flex;
+      align-items: flex-end;
+      border-radius: 1em 1em 0 0;
+      color: #ffffff;
+      background-size: cover;
 
-            &:hover {
-                opacity: 0.8;
-                text-decoration: none;
-                ;
-            }
+      &:hover {
+        opacity: 0.8;
+        text-decoration: none;
+      }
 
-            .title {
-                background: rgba(0, 0, 0, 0.3);
-                width: 100%;
+      .title {
+        background: rgba(0, 0, 0, 0.3);
+        width: 100%;
 
-                h6 {
-                    padding: 0.3em;
-                }
-            }
+        h6 {
+          padding: 0.3em;
         }
-
-        .sketchinfo {
-            height: 3em;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 0.5em;
-
-            .date {
-
-                color: #53E0DB;
-            }
-        }
-
+      }
     }
+
+    .sketchinfo {
+      height: 3em;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 0.5em;
+
+      a {
+        color: #ffffff;
+
+        &:hover {
+          text-decoration-color: #008f5c;
+        }
+      }
+
+      .date {
+
+        color: #53E0DB;
+      }
+    }
+
+  }
 }
