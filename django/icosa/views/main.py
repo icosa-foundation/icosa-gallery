@@ -92,7 +92,7 @@ def my_likes(request):
     template = "main/likes.html"
 
     owner = IcosaUser.from_request(request)
-    q = Q(visibility=PUBLIC)
+    q = Q(visibility__in=[PUBLIC, UNLISTED])
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
     liked_assets = owner.likes.filter(q)
 
