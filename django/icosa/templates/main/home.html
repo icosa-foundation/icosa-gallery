@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <div>
-    {% if page_number == None or page_number == "1" %}
-        {% include "partials/hero.html" %}
+    {% if hero %}
+        {% if page_number == None or page_number == "1" %}
+            {% include "partials/hero.html" %}
+        {% endif %}
     {% endif %}
     <div class="sketch-list">
         <div class="container">

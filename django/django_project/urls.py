@@ -27,6 +27,8 @@ urlpatterns = [
     path("device", auth_views.devicecode, name="devicecode"),
     # Other views
     path("", main_views.home, name="home"),
+    path("tiltbrush", main_views.home_tiltbrush, name="home_tiltbrush"),
+    path("blocks", main_views.home_blocks, name="home_blocks"),
     path("uploads", main_views.uploads, name="uploads"),
     path("user/<str:user_url>", main_views.user_show, name="user_show"),
     path("likes/", main_views.my_likes, name="my_likes"),

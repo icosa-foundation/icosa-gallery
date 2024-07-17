@@ -13,27 +13,68 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 
-def home(request):
+def landing_page(
+    request,
+    inc_q=Q(visibility=PUBLIC),
+    exc_q=Q(),
+    show_hero=True,
+):
     template = "main/home.html"
-
-    asset_objs = Asset.objects.filter(visibility=PUBLIC).order_by("-id")
+    if show_hero is True:
+        hero = (
+            Asset.objects.filter(
+                curated=True,
+            )
+            .filter(inc_q)
+            .exclude(exc_q)
+            .distinct()
+            .order_by("?")
+            .first()
+        )
+    else:
+        hero = None
+    asset_objs = (
+        Asset.objects.filter(inc_q).exclude(exc_q).distinct().order_by("-id")
+    )
     paginator = Paginator(asset_objs, 40)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
         "assets": assets,
-        "hero": Asset.objects.filter(
-            visibility=PUBLIC,
-            curated=True,
-        )
-        .order_by("?")
-        .first(),
+        "hero": hero,
         "page_number": page_number,
     }
     return render(
         request,
         template,
         context,
+    )
+
+
+def home(request):
+    return landing_page(request)
+
+
+def home_tiltbrush(request):
+    return landing_page(
+        request,
+        Q(visibility=PUBLIC, polyresource__format__format_type="TILT"),
+        show_hero=True,
+    )
+
+
+def home_blocks(request):
+    return landing_page(
+        request,
+        Q(
+            visibility=PUBLIC,
+            polyresource__format__format_type__in=[
+                "GLTF",
+                "GLTF2",
+            ],
+        ),
+        Q(polyresource__format__format_type="TILT"),
+        show_hero=True,
     )
 
 
