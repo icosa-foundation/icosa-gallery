@@ -223,18 +223,25 @@ class AssetFormat(Schema):
         return obj.formatcomplexity_set.first()
 
 
-class AssetFilters(Schema):
+class FilterBase(Schema):
     category: Optional[str] = None
     curated: bool = False
     format: Optional[str] = None
     keywords: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
-    authorName: Optional[str] = None
-    author_name: Optional[str] = None
     tag: List[str] = Field(None, alias="tag")
     orderBy: Optional[str] = None
     order_by: Optional[str] = None
+
+
+class AssetFilters(Schema):
+    authorName: Optional[str] = None
+    author_name: Optional[str] = None
+
+
+class UserAssetFilters(FilterBase):
+    visibility: Optional[str] = None
 
 
 class _DBAsset(ModelSchema):

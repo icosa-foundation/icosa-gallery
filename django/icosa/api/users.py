@@ -19,6 +19,7 @@ from .schema import (
     AssetSchemaOut,
     FullUserSchema,
     PatchUserSchema,
+    UserAssetFilters,
 )
 
 router = Router()
@@ -68,13 +69,19 @@ def update_user(
 @paginate(AssetPagination)
 def get_me_assets(
     request,
-    filters: AssetFilters = Query(...),
+    filters: UserAssetFilters = Query(...),
 ):
     owner = IcosaUser.from_ninja_request(request)
     q = Q(
         owner=owner,
     )
     ex_q = Q()
+    if filters.visibility and filters.visibility in [
+        PUBLIC,
+        PRIVATE,
+        UNLISTED,
+    ]:
+        q &= Q(visibility=filters.visibility)
     if filters.format:
         if filters.format == "BLOCKS":
             q &= Q(
@@ -106,9 +113,6 @@ def get_me_assets(
         q &= Q(name__icontains=filters.name)
     if filters.description:
         q &= Q(description__icontains=filters.description)
-    author_name = filters.authorName or filters.author_name or None
-    if author_name is not None:
-        q &= Q(owner__displayname__icontains=author_name)
     # TODO: orderBy
     assets = Asset.objects.filter(q).exclude(ex_q).distinct()
     return assets
