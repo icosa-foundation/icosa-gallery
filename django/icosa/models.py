@@ -93,7 +93,7 @@ class Asset(models.Model):
         "User", null=True, blank=True, on_delete=models.SET_NULL
     )
     description = models.TextField(blank=True, null=True)
-    formats = models.JSONField()
+    formats = models.JSONField(null=True, blank=True)
     visibility = models.CharField(
         max_length=255,
         default=PRIVATE,
