@@ -2,7 +2,7 @@ from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
 from icosa.helpers.file import upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
-from icosa.models import PUBLIC, Asset
+from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset
 from icosa.models import User as IcosaUser
 
 from django.contrib.auth.decorators import login_required
@@ -92,7 +92,9 @@ def my_likes(request):
     template = "main/likes.html"
 
     owner = IcosaUser.from_request(request)
-    liked_assets = owner.likes.filter(visibility=PUBLIC)
+    q = Q(visibility=PUBLIC)
+    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
+    liked_assets = owner.likes.filter(q)
 
     context = {
         "user": owner,
