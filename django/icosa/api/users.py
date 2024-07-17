@@ -76,12 +76,22 @@ def get_me_assets(
         owner=owner,
     )
     ex_q = Q()
-    if filters.visibility and filters.visibility in [
-        PUBLIC,
-        PRIVATE,
-        UNLISTED,
-    ]:
-        q &= Q(visibility=filters.visibility)
+    if filters.visibility:
+        if filters.visibility in [
+            PRIVATE,
+            UNLISTED,
+        ]:
+            q &= Q(visibility=filters.visibility)
+        elif filters.visibility == "PUBLISHED":
+            q &= Q(visibility=PUBLIC)
+        elif filters.visibility == "UNSPECIFIED":
+            pass
+        else:
+            raise HttpError(
+                400,
+                f"Unknown visibility specifier. Expected one of UNSPECIFIED, PUBLISHED, PRIVATE, UNLISTED.",  # TODO: brittle
+            )
+
     if filters.format:
         if filters.format == "BLOCKS":
             q &= Q(
