@@ -87,24 +87,6 @@ def user_show(request, user_url):
     )
 
 
-def user_likes(request, user_url):
-    template = "main/likes.html"
-
-    owner = get_object_or_404(IcosaUser, url=user_url)
-
-    liked_assets = owner.likes.filter(visibility=PUBLIC)
-
-    context = {
-        "user": owner,
-        "assets": liked_assets,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
-
-
 @login_required
 def my_likes(request):
     template = "main/likes.html"
