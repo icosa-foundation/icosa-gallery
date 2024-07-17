@@ -5,7 +5,7 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
-from icosa.models import Asset, Tag
+from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, Tag
 from icosa.models import User as IcosaUser
 from ninja import Query, Router
 from ninja.errors import HttpError
@@ -128,8 +128,9 @@ def get_me_likedassets(
     owner = IcosaUser.from_ninja_request(request)
     liked_assets = owner.likedassets.all()
     q = Q(
-        visibility="PUBLIC",
+        visibility__in=[PUBLIC, UNLISTED],
     )
+    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
     ex_q = Q()
     if filters.format:
         if filters.format == "BLOCKS":
