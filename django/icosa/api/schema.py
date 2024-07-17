@@ -224,13 +224,14 @@ class AssetFormat(Schema):
 
 
 class AssetFilters(Schema):
+    category: Optional[str] = None
     curated: bool = False
+    format: Optional[str] = None
+    keywords: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
     authorName: Optional[str] = None
     author_name: Optional[str] = None
-    category: Optional[str] = None
-    format: Optional[str] = None
     tag: List[str] = Field(None, alias="tag")
     orderBy: Optional[str] = None
     order_by: Optional[str] = None

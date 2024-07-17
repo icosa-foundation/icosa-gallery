@@ -297,11 +297,10 @@ def get_assets(
         # that do not match. I could as easily return zero results for
         # non-matches. I've also assumed that OpenBrush hands us uppercase
         # strings, but I could be wrong.
-        category_str = filters.category.upper()
-        if category_str in POLY_CATEGORY_MAP.keys():
+        category_str = filters.category
+        if category_str.upper() in POLY_CATEGORY_MAP.keys():
             category_str = POLY_CATEGORY_MAP[category_str]
-        category = Tag.objects.filter(name__iexact=category_str)
-        q &= Q(tags__in=category)
+        q &= Q(tags__name__iexact=category_str)
     if filters.curated:
         q &= Q(curated=True)
     if filters.name:
@@ -323,6 +322,17 @@ def get_assets(
             ex_q &= Q(polyresource__format__format_type="TILT")
         else:
             q &= Q(polyresource__format__format_type=filters.format)
-    assets = Asset.objects.filter(q).exclude(ex_q).distinct()
+    keyword_q = Q()
+    if filters.keywords:
+        # TODO: should we limit the number of possible keywords?
+        # If so, do we truncate silently, or error?
+        for keyword in filters.keywords.split(" "):
+            keyword_q &= (
+                Q(description__icontains=keyword)
+                | Q(name__icontains=keyword)
+                | Q(tags__name__icontains=keyword)
+            )
+
+    assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
 
     return assets
