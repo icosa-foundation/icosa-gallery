@@ -11,11 +11,7 @@ We should improve this, but probably keep the existing variants working. BEST co
 
 impl nicer full-text search
 
-check auth returns just one user when using tokens
-
 we should accept snake_case and camelCase url params and do the translation. The openapi docs should list both as accepted styles. If we get both variants of the same param, just choose the value of whatever we got first.
-
-landing pages for blocks and tiltbrush (format=TILT, format=GLTF1/2 and not TILT)
 
 flatten orienting rotation and presentation params into asset model and instead make a schema to return the correct format.
 

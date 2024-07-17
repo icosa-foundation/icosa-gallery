@@ -26,7 +26,12 @@ class AuthBearer(HttpBearer):
         except jwt.PyJWTError:
             # headers={"WWW-Authenticate": "Bearer"},
             raise authentication_error
-        user = User.objects.get(email=username)
+        try:
+            user = User.objects.get(email=username)
+        except User.MultipleObjectsReturned:
+            # headers={"WWW-Authenticate": "Bearer"},
+            # TODO: or do we want to return the first that we find?
+            raise authentication_error
         if user is None:
             # headers={"WWW-Authenticate": "Bearer"},
             raise authentication_error
