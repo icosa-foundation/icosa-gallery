@@ -21,7 +21,12 @@ from django.http import HttpRequest
 from django.urls import reverse
 
 from .authentication import AuthBearer
-from .schema import AssetFilters, AssetSchemaOut, UploadJobSchemaOut
+from .schema import (
+    AssetFilters,
+    AssetSchemaOut,
+    UploadJobSchemaOut,
+    get_keyword_q,
+)
 
 router = Router()
 
@@ -322,16 +327,10 @@ def get_assets(
             ex_q &= Q(polyresource__format__format_type="TILT")
         else:
             q &= Q(polyresource__format__format_type=filters.format)
-    keyword_q = Q()
-    if filters.keywords:
-        # TODO: should we limit the number of possible keywords?
-        # If so, do we truncate silently, or error?
-        for keyword in filters.keywords.split(" "):
-            keyword_q &= (
-                Q(description__icontains=keyword)
-                | Q(name__icontains=keyword)
-                | Q(tags__name__icontains=keyword)
-            )
+    try:
+        keyword_q = get_keyword_q(filters)
+    except HttpError:
+        raise
 
     assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
 

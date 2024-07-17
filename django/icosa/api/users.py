@@ -20,6 +20,7 @@ from .schema import (
     FullUserSchema,
     PatchUserSchema,
     UserAssetFilters,
+    get_keyword_q,
 )
 
 router = Router()
@@ -123,8 +124,12 @@ def get_me_assets(
         q &= Q(name__icontains=filters.name)
     if filters.description:
         q &= Q(description__icontains=filters.description)
+    try:
+        keyword_q = get_keyword_q(filters)
+    except HttpError:
+        raise
     # TODO: orderBy
-    assets = Asset.objects.filter(q).exclude(ex_q).distinct()
+    assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
     return assets
 
 
@@ -191,7 +196,11 @@ def get_me_likedassets(
         q &= Q(owner__displayname__icontains=author_name)
     # TODO: orderBy
 
-    assets = Asset.objects.filter(q).exclude(ex_q).distinct()
+    try:
+        keyword_q = get_keyword_q(filters)
+    except HttpError:
+        raise
+    assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
     if filters.orderBy and filters.orderBy == "LIKED_TIME":
         # Sort the assets by order of liked ID. Slow, but database-agnostic.
         # Postgres and MySql have different ways to do this, and we'd need to

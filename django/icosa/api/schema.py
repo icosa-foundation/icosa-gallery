@@ -3,7 +3,10 @@ from typing import List, Literal, Optional
 
 from icosa.models import Asset
 from ninja import Field, ModelSchema, Schema
+from ninja.errors import HttpError
 from pydantic import EmailStr
+
+from django.db.models import Q
 
 
 class LoginToken(Schema):
@@ -235,13 +238,32 @@ class FilterBase(Schema):
     order_by: Optional[str] = None
 
 
-class AssetFilters(Schema):
+class AssetFilters(FilterBase):
     authorName: Optional[str] = None
     author_name: Optional[str] = None
 
 
 class UserAssetFilters(FilterBase):
     visibility: Optional[str] = None
+
+
+def get_keyword_q(filters):
+    keyword_q = Q()
+    if filters.keywords:
+        # The original API spec says "Multiple keywords should be separated
+        # by spaces.". I believe this could be implemented better to allow
+        # multi-word searches. Perhaps implemented in a different namespace,
+        # such as `search=` and have multiple queries as `search=a&search=b`.
+        keyword_list = filters.keywords.split(" ")
+        if len(keyword_list) > 16:
+            raise HttpError(400, "Exceeded 16 space-separated keywords.")
+        for keyword in keyword_list:
+            keyword_q &= (
+                Q(description__icontains=keyword)
+                | Q(name__icontains=keyword)
+                | Q(tags__name__icontains=keyword)
+            )
+    return keyword_q
 
 
 class _DBAsset(ModelSchema):
