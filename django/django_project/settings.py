@@ -102,7 +102,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "django_project.urls"
-LOGIN_URL = "/login/"
+LOGIN_URL = "/login"
 
 TEMPLATES = [
     {
