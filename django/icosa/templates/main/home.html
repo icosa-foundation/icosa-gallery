@@ -6,17 +6,12 @@
             {% include "partials/hero.html" %}
         {% endif %}
     {% endif %}
-    <div class="sketch-list">
-        <div class="container">
-            <div class="row">
-                {% for asset in assets %}
-                    {% include "partials/sketch_list_item.html" %}
-                {% endfor %}
-            </div>
-        </div>
-    </div>
     <div class="container">
-    	<div class="row">
+    <div class="sketch-list">
+        {% for asset in assets %}
+            {% include "partials/sketch_list_item.html" %}
+        {% endfor %}
+    </div>
             <div class="paginator text-center">
                 <span class="step-links">
                     {% if assets.has_previous %}
@@ -35,6 +30,5 @@
                 </span>
             </div>
         </div>
-    </div>
 </div>
 {% endblock content %}

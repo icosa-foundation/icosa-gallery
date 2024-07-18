@@ -1,7 +1,25 @@
 .sketch-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+
+  @media(min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media(min-width: 1024px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .sketchbox {
     margin: 1em;
     border-radius: 1em;
+
+    >* {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .sketchimage {
       height: 13em;
@@ -10,45 +28,35 @@
         height: 16em;
       }
 
-      display: flex;
-      align-items: flex-end;
-      border-radius: 1em 1em 0 0;
+      border-radius: 0.25rem;
       color: #ffffff;
       background-size: cover;
+      background-position: 50% 50%;
+      margin-bottom: 1rem;
 
       &:hover {
         opacity: 0.8;
         text-decoration: none;
       }
 
-      .title {
-        background: rgba(0, 0, 0, 0.3);
-        width: 100%;
+    }
 
-        h6 {
-          padding: 0.3em;
-        }
+    h4 {
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 0;
+    }
+
+    a {
+      color: #ffffff;
+
+      &:hover {
+        text-decoration-color: #008f5c;
       }
     }
 
-    .sketchinfo {
-      height: 3em;
-      display: flex;
-      justify-content: space-between;
-      padding: 0 0.5em;
-
-      a {
-        color: #ffffff;
-
-        &:hover {
-          text-decoration-color: #008f5c;
-        }
-      }
-
-      .date {
-
-        color: #53E0DB;
-      }
+    .date {
+      color: #53E0DB;
     }
 
   }

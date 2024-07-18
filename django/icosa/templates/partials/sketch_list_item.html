@@ -1,22 +1,18 @@
 {% load asset_tags %}
-<div class="col-md-3 col-12">
-    <div class="sketchbox">
-        <a href="{% if edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}">
-            <div class="sketchimage"
-                style="background-image: url('{{ asset.get_thumbnail_url }}');">
-                <div class="title">
-                    <h6>
-                    {{ asset.name }}
-                    {% if not edit_asset %}
-                        {% like_button request asset %}
-                    {% endif %}
-                    </h6>
-                </div>
-            </div>
-        </a>
-        <div class="sketchinfo">
-            <div class="author"><a href="{% url 'user_show' user_url=asset.owner.url %}">{{ asset.owner.displayname }}</a></div>
-            <div class="date">{{ asset.timestamp|date:"Y-m-d" }}</div>
+<article class="sketchbox">
+    <a href="{% if edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}" role="presentation">
+        <div class="sketchimage"
+            style="background-image: url('{{ asset.get_thumbnail_url }}');">
         </div>
-    </div>
-</div>
+    </a>
+    <h4>
+        <a href="{% if edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}">
+            {{ asset.name }}
+        </a>
+        {% if not edit_asset %}
+            {% like_button request asset %}
+        {% endif %}
+    </h4>
+    <a href="{% url 'user_show' user_url=asset.owner.url %}">{{ asset.owner.displayname }}</a>
+    <div class="date">{{ asset.timestamp|date:"Y-m-d" }}</div>
+</article>
