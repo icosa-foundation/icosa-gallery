@@ -1,7 +1,15 @@
 from icosa.models import Asset, User
 
 from django import forms
-from django.forms.widgets import EmailInput, PasswordInput
+from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
+from django.utils.translation import gettext_lazy as _
+
+
+class CustomImageInput(ClearableFileInput):
+    clear_checkbox_label = _("Remove")
+    initial_text = _("Currently")
+    input_text = _("Change")
+    template_name = "widgets/custom_clearable_image_input.html"
 
 
 class AssetUploadForm(forms.Form):
@@ -13,6 +21,8 @@ class AssetSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
 
+    thumbnail = forms.FileField(required=False, widget=CustomImageInput)
+
     class Meta:
         model = Asset
 
@@ -20,6 +30,7 @@ class AssetSettingsForm(forms.ModelForm):
             "name",
             "description",
             "visibility",
+            "thumbnail",
         ]
 
 

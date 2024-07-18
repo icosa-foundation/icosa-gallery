@@ -9,7 +9,7 @@
     </div>
     <div class="editor">
         <div class="sketcheditor container">
-            <form action="." method="post" novalidate>
+            <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 {{ form }}
                 <button type="submit" class="btn btn-primary">Update</button>
