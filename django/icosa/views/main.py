@@ -202,7 +202,6 @@ def edit_asset(request, user_url, asset_url):
         form = AssetSettingsForm(instance=asset)
     elif request.method == "POST":
         form = AssetSettingsForm(request.POST, request.FILES, instance=asset)
-        print(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse("uploads"))
