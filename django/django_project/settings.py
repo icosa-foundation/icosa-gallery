@@ -78,8 +78,6 @@ else:
 APPEND_SLASH = False
 
 INSTALLED_APPS = [
-    # "admin_tools",
-    # "admin_tools.dashboard",
     "icosa",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -88,7 +86,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "compressor",
-    # "main_dashboard",
 ]
 
 MIDDLEWARE = [
@@ -118,7 +115,6 @@ TEMPLATES = [
             ],
             "loaders": [
                 "django.template.loaders.app_directories.Loader",
-                "admin_tools.template_loaders.Loader",
             ],
         },
     },
@@ -195,9 +191,6 @@ MEDIA_ROOT = "icosa"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Admin Tools settings
-
-ADMIN_TOOLS_INDEX_DASHBOARD = "main_dashboard.dashboard.MainDashboard"
 
 # Compressor settings
 
