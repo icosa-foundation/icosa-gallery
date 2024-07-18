@@ -123,6 +123,7 @@ class Asset(models.Model):
     orienting_rotation_z = models.FloatField(null=True, blank=True)
     orienting_rotation_w = models.FloatField(null=True, blank=True)
     imported = models.BooleanField(default=False)
+    search_text = models.TextField(null=True, blank=True)
 
     @property
     def timestamp(self):
@@ -200,6 +201,14 @@ class Asset(models.Model):
 
     def __str__(self):
         return self.name
+
+    def update_search_text(self):
+        tag_str = " ".join([t.name for t in self.tags.all()])
+        self.search_text = f"{self.name} {self.description} {tag_str}"
+
+    def save(self, *args, **kwargs):
+        self.update_search_text()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = "assets"

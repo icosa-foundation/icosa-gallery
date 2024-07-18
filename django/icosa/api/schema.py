@@ -258,11 +258,7 @@ def get_keyword_q(filters):
         if len(keyword_list) > 16:
             raise HttpError(400, "Exceeded 16 space-separated keywords.")
         for keyword in keyword_list:
-            keyword_q &= (
-                Q(description__icontains=keyword)
-                | Q(name__icontains=keyword)
-                | Q(tags__name__icontains=keyword)
-            )
+            keyword_q &= Q(search_text__icontains=keyword)
     return keyword_q
 
 

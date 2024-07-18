@@ -129,6 +129,11 @@ class AssetAdmin(admin.ModelAdmin):
         "owner__displayname",
     )
 
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        form.instance.update_search_text()
+        form.instance.save()
+
     filter_horizontal = ("tags",)
     inlines = (PolyFormatInline,)
 
