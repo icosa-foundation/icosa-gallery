@@ -41,20 +41,18 @@
         </div>
     </div>
 </div>
-<div class="sketch-list">
-    <div class="container">
-        <div class="row">
-            <div class="col">
-                <h2>Manage Uploads</h2>
-            </div>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h2>Manage Uploads</h2>
         </div>
-        <div class="row">
-            {% with edit_asset=True %}
+    </div>
+    <div class="sketch-list">
+        {% with edit_asset=True %}
             {% for asset in assets %}
-            {% include "partials/sketch_list_item.html" %}
+                {% include "partials/sketch_list_item.html" %}
             {% endfor %}
-            {% endwith %}
-        </div>
+        {% endwith %}
     </div>
 </div>
 {% endblock content %}
