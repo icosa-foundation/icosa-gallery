@@ -5,6 +5,7 @@ from icosa.helpers.user import get_owner
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset
 from icosa.models import User as IcosaUser
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -36,7 +37,7 @@ def landing_page(
     asset_objs = (
         Asset.objects.filter(inc_q).exclude(exc_q).distinct().order_by("-id")
     )
-    paginator = Paginator(asset_objs, 40)
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
@@ -98,8 +99,14 @@ def uploads(request):
         form = AssetUploadForm()
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
+
+    asset_objs = Asset.objects.filter(owner=user)
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
+
     context = {
-        "assets": Asset.objects.filter(owner=user).order_by("-id"),
+        "assets": assets,
         "form": form,
     }
     return render(
@@ -117,9 +124,13 @@ def user_show(request, user_url):
     if IcosaUser.from_request(request) != owner:
         q &= Q(visibility=PUBLIC)
 
+    asset_objs = Asset.objects.filter(q).order_by("-id")
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
     context = {
         "user": owner,
-        "assets": Asset.objects.filter(q).order_by("-id"),
+        "assets": assets,
     }
     return render(
         request,
@@ -220,7 +231,7 @@ def edit_asset(request, user_url, asset_url):
 
 
 @login_required
-def settings(request):
+def user_settings(request):
     template = "main/settings.html"
     user = request.user
     owner = get_owner(user)

@@ -122,6 +122,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "django_project.wsgi.application"
 
+PAGINATION_PER_PAGE = 40
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
