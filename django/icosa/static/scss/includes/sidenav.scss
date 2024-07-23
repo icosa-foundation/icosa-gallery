@@ -16,7 +16,22 @@
       .toggler {
         text-align: center;
       }
+    }
 
+    .pro-menu {
+      .pro-menu-item {
+        .pro-inner-item {
+          padding: 8px 20px 8px 23px;
+
+          .pro-icon-wrapper {
+            margin-right: 0;
+          }
+        }
+
+        .pro-item-content {
+          display: none;
+        }
+      }
     }
   }
 
