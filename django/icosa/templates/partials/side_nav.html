@@ -349,9 +349,14 @@
     </div>
 </div>
 <script>
-    function toggleNav() {
-        document.querySelector("#sidenav").classList.toggle("collapsed");
-    }
-    document.querySelector("#toggler").addEventListener("click", toggleNav);
+    document.addEventListener("DOMContentLoaded", (event) => {
+        function toggleNav() {
+            document.querySelector("#sidenav").classList.toggle("collapsed");
+        }
+        let togglers = document.querySelectorAll(".toggler");
+        for (var i = 0; i < togglers.length; i++) {
+            togglers[i].addEventListener("click", toggleNav);
+        }
+    });
 </script>
 
