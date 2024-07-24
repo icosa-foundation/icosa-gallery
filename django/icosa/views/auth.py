@@ -1,18 +1,22 @@
 import secrets
 import string
 from datetime import datetime, timedelta
+from typing import Optional
 
-import requests
+import jwt
 from icosa.models import DeviceCode
 from icosa.models import User as IcosaUser
+from passlib.context import CryptContext
 
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
+ALGORITHM = "HS256"
 
-def generate_code(length=5):
+
+def generate_device_code(length=5):
     # Define a string of characters to exclude
     exclude = "I1O0"
     characters = "".join(
@@ -21,11 +25,57 @@ def generate_code(length=5):
     return "".join(secrets.choice(characters) for i in range(length))
 
 
+def authenticate_icosa_user(
+    username: str,
+    password: str,
+) -> Optional[IcosaUser]:
+    username = username.lower()
+    try:
+        user = IcosaUser.objects.get(
+            email=username
+        )  # This code used to check either url or username. Seems odd.
+
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        if not pwd_context.verify(password, bytes(user.password)):
+            return None
+
+        return user
+
+    except IcosaUser.DoesNotExist:
+        return None
+
+
+def create_access_token(*, data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=timedelta)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.JWT_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def save_access_token(user: IcosaUser):
+    access_token_expires = timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    user.access_token = access_token
+    user.save()
+
+
 def custom_login(request):
     if request.method == "POST":
         username = request.POST.get("username", None)
         password = request.POST.get("password", None)
         user_is_authenticated = False
+
+        icosa_user = authenticate_icosa_user(username, password)
+        if icosa_user is not None:
+            save_access_token(icosa_user)
 
         if username is not None and password is not None:
             user = authenticate(request, username=username, password=password)
@@ -34,16 +84,7 @@ def custom_login(request):
             else:
                 # Authenticate with fastapi and try to create a django user
 
-                response = requests.post(
-                    "http://api-fastapi:8000/login",
-                    data={
-                        "username": username,
-                        "password": password,
-                    },
-                    verify=False,
-                )
-                status = response.status_code
-                if status == 200:
+                if icosa_user is not None:
                     # Auth succeeded, create the user for django
                     User.objects.create_user(
                         username=username,
@@ -90,7 +131,7 @@ def devicecode(request):
     if user.is_authenticated:
         owner = IcosaUser.from_request(request)
         if owner:
-            code = generate_code()
+            code = generate_device_code()
             expiry_time = datetime.utcnow() + timedelta(minutes=1)
 
             # Delete all codes for this user

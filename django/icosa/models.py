@@ -34,6 +34,11 @@ class User(models.Model):
     likes = models.ManyToManyField(
         "Asset", through="UserAssetLike", blank=True
     )
+    access_token = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )  # Only used while we are emulating fastapi auth. Should be removed.
 
     @classmethod
     def from_ninja_request(cls, request):
