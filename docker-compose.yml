@@ -5,34 +5,11 @@ volumes:
 
 services:
   web:
-    build: ./gallery-web
-    container_name: ig-web
-    ports:
-      - "3000:3000"
-    depends_on:
-      - api-fastapi
-    env_file: .env
-
-  api-fastapi:
-    build:
-      context: ./fastapi
-    container_name: ig-api-fastapi
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./fastapi/config.json:/usr/src/app/config.json
-      - ./fastapi/gcp-service-account.json:/usr/src/app/gcp-service-account.json
-      - ./fastapi/:/usr/src/app/
-    depends_on:
-      - db
-    env_file: .env
-
-  api-django:
     build:
       context: ./django
-    container_name: ig-api-django
+    container_name: ig-web
     ports:
-      - "8001:8001"
+      - "8000:8000"
     volumes:
       - static:/opt/static/
       - logs:/opt/logs/
@@ -50,7 +27,6 @@ services:
     ports:
       - 5432:5432
 
-
   proxy:
     platform: linux/amd64
     image: nginx:latest
@@ -60,6 +36,6 @@ services:
     ports:
         - "80:80"
     volumes:
-        - ./nginx/templates/:/etc/nginx/templates/
+        - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template
     env_file: .env
 

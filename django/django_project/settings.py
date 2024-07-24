@@ -27,7 +27,8 @@ JWT_KEY = os.environ.get("JWT_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEPLOYMENT_ENV = os.environ.get("DEPLOYMENT_ENV")
-DEPLOYMENT_HOST_DJANGO = os.environ.get("DEPLOYMENT_HOST_DJANGO")
+DEPLOYMENT_HOST_WEB = os.environ.get("DEPLOYMENT_HOST_WEB")
+DEPLOYMENT_HOST_API = os.environ.get("DEPLOYMENT_HOST_API")
 DEBUG = False
 if DEPLOYMENT_ENV in [
     "development",
@@ -37,13 +38,17 @@ if DEPLOYMENT_ENV in [
 
 ALLOWED_HOSTS = [
     "localhost",
-    f"{DEPLOYMENT_HOST_DJANGO}",
+    f"{DEPLOYMENT_HOST_WEB}",
 ]
+if DEPLOYMENT_HOST_API:
+    ALLOWED_HOSTS.append(f"{DEPLOYMENT_HOST_API}")
 
 CSRF_TRUSTED_ORIGINS = [
-    f"https://{DEPLOYMENT_HOST_DJANGO}",
     "https://*.127.0.0.1",
+    f"https://{DEPLOYMENT_HOST_WEB}",
 ]
+if DEPLOYMENT_HOST_API:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{DEPLOYMENT_HOST_API}")
 
 DJANGO_DEFAULT_FILE_STORAGE = os.environ.get("DJANGO_DEFAULT_FILE_STORAGE")
 DJANGO_STORAGE_URL = os.environ.get("DJANGO_STORAGE_URL")
