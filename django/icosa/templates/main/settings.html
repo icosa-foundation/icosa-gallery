@@ -4,7 +4,7 @@
         <div class="row">
             <div class="col">
                 <h1>My Settings</h1>
-                <form action="." method="post" novalidate>
+                <form action="{% url 'settings' %}" method="post" novalidate>
                     {% csrf_token %}
                     {{ form.as_p }}
                     <button class="btn btn-primary" type="submit">Update</button>

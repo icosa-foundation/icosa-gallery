@@ -48,7 +48,7 @@ urlpatterns = [
         main_views.edit_asset,
         name="edit_asset",
     ),
-    path("settings/", main_views.user_settings, name="settings"),
-    path("terms/", main_views.terms, name="terms"),
+    path("settings", main_views.user_settings, name="settings"),
+    path("terms", main_views.terms, name="terms"),
     path("api/v1/", api.urls),
 ]

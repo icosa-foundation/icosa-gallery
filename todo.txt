@@ -20,3 +20,5 @@ pagination for all front end listers
 make asset uploads async
 
 include middleware to strip trailing slashes without 404
+
+settings view should accept current username/url - at the moment it fails uniqueness checks
