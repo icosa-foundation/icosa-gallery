@@ -95,3 +95,36 @@ class UserSettingsForm(forms.ModelForm):
             "description",
             "email",
         ]
+
+
+class NewUserForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password_new"] = forms.CharField(
+            required=True, widget=PasswordInput
+        )
+        self.fields["password_confirm"] = forms.CharField(
+            required=False, widget=PasswordInput
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        password_new = cleaned_data.get("password_new")
+        password_confirm = cleaned_data.get("password_confirm")
+
+        if (
+            password_new or password_confirm
+        ) and password_new != password_confirm:
+            msg = "Passwords must match"
+            self.add_error("password_new", msg)
+            self.add_error("password_confirm", msg)
+
+    class Meta:
+        model = User
+
+        fields = [
+            "url",
+            "displayname",
+            "email",
+        ]
