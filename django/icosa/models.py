@@ -122,7 +122,12 @@ class Asset(models.Model):
     color_space = models.CharField(
         max_length=50, choices=COLOR_SPACES, default="GAMMA"
     )
-    background_color = models.CharField(max_length=7, null=True, blank=True)
+    background_color = models.CharField(
+        max_length=7,
+        null=True,
+        blank=True,
+        help_text="A valid css colour, such as #00CC83",
+    )
     orienting_rotation_x = models.FloatField(null=True, blank=True)
     orienting_rotation_y = models.FloatField(null=True, blank=True)
     orienting_rotation_z = models.FloatField(null=True, blank=True)
