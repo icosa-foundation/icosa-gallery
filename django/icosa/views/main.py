@@ -146,11 +146,15 @@ def my_likes(request):
     owner = IcosaUser.from_request(request)
     q = Q(visibility__in=[PUBLIC, UNLISTED])
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
-    liked_assets = owner.likes.filter(q)
+
+    asset_objs = owner.likes.filter(q)
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
 
     context = {
         "user": owner,
-        "assets": liked_assets,
+        "assets": assets,
     }
     return render(
         request,
