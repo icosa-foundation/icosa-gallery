@@ -7,11 +7,12 @@
         {% endif %}
     {% endif %}
     <div class="container">
-    <div class="sketch-list">
-        {% for asset in assets %}
-            {% include "partials/sketch_list_item.html" %}
-        {% endfor %}
+        <div class="sketch-list">
+            {% for asset in assets %}
+                {% include "partials/sketch_list_item.html" %}
+            {% endfor %}
+        </div>
+        {% include "partials/pagination.html" %}
     </div>
-    {% include "partials/pagination.html" %}
 </div>
 {% endblock content %}

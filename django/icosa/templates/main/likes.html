@@ -3,23 +3,17 @@
     <div class="container">
         <div class="row">
             <div class="col">
-                <div>
-                    <h2>{{ user.displayname }} Likes</h2>
-                    <div class="sketch-list">
-                        <div class="container">
-                            <div class="row">
-                                {% if assets %}
-                                    {% for asset in assets %}
-                                        {% include "partials/sketch_list_item.html" %}
-                                    {% endfor %}
-                                {% else %}
-                                    <p>You haven't liked anything yet.</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <h2>{{ user.displayname }} Likes</h2>
             </div>
+        </div>
+        <div class="sketch-list">
+            {% if assets %}
+                {% for asset in assets %}
+                    {% include "partials/sketch_list_item.html" %}
+                {% endfor %}
+            {% else %}
+                <p>You haven't liked anything yet.</p>
+            {% endif %}
         </div>
     </div>
 {% endblock content %}
