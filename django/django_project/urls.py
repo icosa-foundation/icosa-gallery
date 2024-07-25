@@ -1,3 +1,4 @@
+from icosa.api import DocsViewer
 from icosa.api.assets import router as assets_router
 from icosa.api.login import router as login_router
 from icosa.api.oembed import router as oembed_router
@@ -11,7 +12,7 @@ from django.conf.urls import include
 from django.contrib import admin
 from django.urls import path
 
-api = NinjaAPI()
+api = NinjaAPI(docs=DocsViewer())
 api.add_router("assets", assets_router, tags=["Assets"])
 api.add_router("login", login_router, tags=["Login"])
 api.add_router("oembed", oembed_router, tags=["Oembed"])
