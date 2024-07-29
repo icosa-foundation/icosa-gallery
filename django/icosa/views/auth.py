@@ -92,7 +92,6 @@ def custom_login(request):
         icosa_user = authenticate_icosa_user(username, password)
         if icosa_user is None:
             # Icosa user auth failed, so we return early.
-            print("failed at icosa user")
             return error_response
         else:
             save_access_token(icosa_user)
@@ -105,7 +104,6 @@ def custom_login(request):
         if user is None:
             # This is really for type safety/data integrity, the django
             # user should pass this test.
-            print("failed at django user")
             return error_response
         if created:
             icosa_user.migrated = True
@@ -116,7 +114,6 @@ def custom_login(request):
                 # yet confirmed their email address. We could provide a more
                 # helpful error message here, but that would leak the existence
                 # of an incomplete registration.
-                print("failed at active user")
                 return error_response
 
         login(request, user)
@@ -137,8 +134,14 @@ def register(request):
     if request.method == "POST":
         form = NewUserForm(request.POST)
         if form.is_valid():
-            url = form.cleaned_data["url"]
             email = form.cleaned_data["email"]
+            if (
+                settings.ALLOWED_REGISTRATION_EMAILS
+                and email not in settings.ALLOWED_REGISTRATION_EMAILS
+            ):
+                return HttpResponse("Registration is currently closed.")
+
+            url = form.cleaned_data["url"]
             password = form.cleaned_data["password_new"]
             displayname = form.cleaned_data["displayname"]
 

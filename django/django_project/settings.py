@@ -212,3 +212,14 @@ COMPRESS_PRECOMPILERS = (("text/x-scss", "django_libsass.SassCompiler"),)
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
+
+# Registration settings
+
+ALLOWED_REGISTRATION_EMAILS = [
+    x
+    for x in os.environ.get(
+        "DJANGO_ALLOWED_REGISTRATION_EMAILS",
+        "",
+    ).split(",")
+    if x
+]
