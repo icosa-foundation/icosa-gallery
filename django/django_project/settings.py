@@ -125,12 +125,16 @@ TEMPLATES = [
     },
 ]
 
+EMAIL_HOST = os.environ.get("DJANGO_EMAIL_HOST", "localhost")
+EMAIL_HOST_USER = os.environ.get("DJANGO_EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("DJANGO_EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.environ.get("DJANGO_DEFAULT_FROM_EMAIL", "")
+
 WSGI_APPLICATION = "django_project.wsgi.application"
 
 PAGINATION_PER_PAGE = 40
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 131400
-
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

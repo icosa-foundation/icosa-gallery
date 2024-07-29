@@ -12,7 +12,7 @@
                     <div class="login-form row">
                         <div class="col-md-8 col-12 offset-md-2">
                             {% if error %}
-                                <div role="alert" class="fade alert alert-danger show">Please input a valid Username and Password</div>
+                                <div role="alert" class="fade alert alert-danger show">{{ error }}</div>
                             {% endif %}
                             <form class="form-inline" action="{% url 'login' %}" method="post">
                                 {% csrf_token %}

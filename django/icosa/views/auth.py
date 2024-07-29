@@ -81,47 +81,46 @@ def custom_login(request):
     if request.method == "POST":
         username = request.POST.get("username", None)
         password = request.POST.get("password", None)
-        user_is_authenticated = False
+        # Creating the error response up front is slower for the happy path,
+        # but makes the code perhaps more readable.
+        error_response = render(
+            request,
+            "auth/login.html",
+            {"error": "Please enter a valid username or password"},
+        )
 
         icosa_user = authenticate_icosa_user(username, password)
-        if icosa_user is not None:
+        if icosa_user is None:
+            # Icosa user auth failed, so we return early.
+            print("failed at icosa user")
+            return error_response
+        else:
             save_access_token(icosa_user)
 
-        if username is not None and password is not None:
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                user_is_authenticated = True
-            else:
-                # Authenticate with fastapi and try to create a django user
-
-                if icosa_user is not None:
-                    # Auth succeeded, create the user for django
-                    User.objects.create_user(
-                        username=username,
-                        email=username,
-                        password=password,
-                    )
-                    user = authenticate(
-                        request, username=username, password=password
-                    )
-                    if user is not None:
-                        try:
-                            icosa_user = IcosaUser.objects.get(email=username)
-                            icosa_user.migrated = True
-                            icosa_user.save()
-                        except IcosaUser.DoesNotExist:
-                            pass
-                        user_is_authenticated = True
-
-        if user_is_authenticated is True:
-            login(request, user)
-            return redirect("home")
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={"password": password},
+        )
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            # This is really for type safety/data integrity, the django
+            # user should pass this test.
+            print("failed at django user")
+            return error_response
+        if created:
+            icosa_user.migrated = True
+            icosa_user.save()
         else:
-            return render(
-                request,
-                "auth/login.html",
-                {"error": "Invalid username or password"},
-            )
+            if user.is_active is False:
+                # This is the case for when a user has registered, but not
+                # yet confirmed their email address. We could provide a more
+                # helpful error message here, but that would leak the existence
+                # of an incomplete registration.
+                print("failed at active user")
+                return error_response
+
+        login(request, user)
+        return redirect("home")
     else:
         return render(request, "auth/login.html")
 
@@ -140,7 +139,7 @@ def register(request):
         if form.is_valid():
             url = form.cleaned_data["url"]
             email = form.cleaned_data["email"]
-            password = form.cleaned_data["password"]
+            password = form.cleaned_data["password_new"]
             displayname = form.cleaned_data["displayname"]
 
             salt = bcrypt.gensalt(10)
@@ -157,9 +156,9 @@ def register(request):
             )
 
             user = User.objects.create_user(
-                username=icosa_user.username,
+                username=icosa_user.email,
                 email=icosa_user.email,
-                password=icosa_user.password,
+                password=password,
             )
             user.is_active = False
             user.save()
@@ -167,7 +166,7 @@ def register(request):
             current_site = get_current_site(request)
             mail_subject = "Activate your Icosa Gallery account."  # TODO, should probably hook into the site name.
             message = render_to_string(
-                "confirm_registration_email.html",
+                "auth/confirm_registration_email.html",
                 {
                     "user": user,
                     "domain": current_site.domain,
@@ -176,7 +175,11 @@ def register(request):
                 },
             )
             to_email = form.cleaned_data.get("email")
-            email = EmailMessage(mail_subject, message, to=[to_email])
+            email = EmailMessage(
+                mail_subject,
+                message,
+                to=[to_email],
+            )
             email.send()
             return HttpResponse(
                 "Please confirm your email address to complete the registration"
@@ -184,6 +187,26 @@ def register(request):
     else:
         form = NewUserForm()
     return render(request, "auth/register.html", {"form": form})
+
+
+def activate_registration(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    if user is not None and PasswordResetTokenGenerator().check_token(
+        user, token
+    ):
+        user.is_active = True
+        user.save()
+        login(request, user)
+        # return redirect('home')
+        return HttpResponse(
+            "Thank you for your email confirmation. Now you can log in."
+        )
+    else:
+        return HttpResponse("Activation link is invalid!")
 
 
 def devicecode(request):

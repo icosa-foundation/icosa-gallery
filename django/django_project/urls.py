@@ -26,6 +26,11 @@ urlpatterns = [
     path("login", auth_views.custom_login, name="login"),
     path("logout", auth_views.custom_logout, name="logout"),
     path("register", auth_views.register, name="register"),
+    path(
+        r"activate/<str:uidb64>/<str:token>",
+        auth_views.activate_registration,
+        name="activate_registration",
+    ),
     path("device", auth_views.devicecode, name="devicecode"),
     # Other views
     path("", main_views.home, name="home"),
