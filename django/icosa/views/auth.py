@@ -168,10 +168,11 @@ def register(request):
             user.save()
 
             current_site = get_current_site(request)
-            mail_subject = f"Activate your {settings.SITE_NAME} account."
+            mail_subject = f"Activate your {current_site.name} account."
             message = render_to_string(
                 "auth/confirm_registration_email.html",
                 {
+                    "request": request,
                     "user": user,
                     "domain": current_site.domain,
                     "uid": urlsafe_base64_encode(force_bytes(user.pk)),
@@ -186,7 +187,6 @@ def register(request):
             )
             email.send()
             success = True
-            return HttpResponse()
     else:
         form = NewUserForm()
     return render(

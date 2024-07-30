@@ -38,10 +38,6 @@ if DEPLOYMENT_ENV in [
 
 SITE_ID = 1
 
-SITE_DOMAIN = DEPLOYMENT_HOST_WEB
-
-SITE_NAME = os.environ.get("DJANGO_SITE_NAME", "Icosa Gallery")
-
 ALLOWED_HOSTS = [
     "localhost",
     f"{DEPLOYMENT_HOST_WEB}",
