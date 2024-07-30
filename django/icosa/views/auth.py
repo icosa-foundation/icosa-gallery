@@ -14,7 +14,7 @@ from passlib.context import CryptContext
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
 from django.http import HttpResponse
@@ -176,7 +176,7 @@ def register(request):
                     "user": user,
                     "domain": current_site.domain,
                     "uid": urlsafe_base64_encode(force_bytes(user.pk)),
-                    "token": PasswordResetTokenGenerator().make_token(user),
+                    "token": default_token_generator.make_token(user),
                 },
             )
             to_email = form.cleaned_data.get("email")
@@ -205,18 +205,19 @@ def activate_registration(request, uidb64, token):
         user = User.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
-    if user is not None and PasswordResetTokenGenerator().check_token(
-        user, token
-    ):
+    if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save()
-        login(request, user)
-        # return redirect('home')
-        return HttpResponse(
-            "Thank you for your email confirmation. Now you can log in."
-        )
+        success = True
     else:
-        return HttpResponse("Activation link is invalid!")
+        success = False
+    return render(
+        request,
+        "auth/activation.html",
+        {
+            "success": success,
+        },
+    )
 
 
 def devicecode(request):

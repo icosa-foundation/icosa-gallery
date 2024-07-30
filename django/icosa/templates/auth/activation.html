@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col col-lg-6 offset-lg-3">
+                <h1>Register</h1>
+                {% if success %}
+                    <p>Registration was successful, you can now <a href="{% url 'login' %}">login</a>.</p>
+                {% else %}
+                    <p>Activation link is invalid.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}
