@@ -167,34 +167,38 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--skip-import",
+            "--download",
             action="store_true",
-            help="Only download the json files, do not process them",
+            help="Download data files from B2",
         )
         parser.add_argument(
-            "--skip-download",
-            action="store_true",
-            help="Process existing json files without downloading any",
+            "--ids",
+            nargs="*",
+            help="Space-separated list of specific IDs to import.",
+            default=[],
+            type=str,
         )
 
     def handle(self, *args, **options):
 
-        if options["skip_import"] and options["skip_download"]:
+        if options["download"]:
+            get_json_from_b2(ASSETS_JSON_DIR)
             print(
-                "Nothing to do when --skip-import and --skip-download are used together."
+                "Finished downloading. Run this command again without --download to process the files"
             )
             return
-        if not options["skip_download"]:
-            get_json_from_b2(ASSETS_JSON_DIR)
-        if options["skip_import"]:
-            return
+
+        if options["ids"]:
+            directories = list(options["ids"])
+        else:
+            directories = os.listdir(ASSETS_JSON_DIR)
 
         with open(os.path.join(POLY_JSON_DIR, "gltf2.json")) as g:
             gltf2_data = json.load(g)
             # Loop through all directories in the poly json directory
             # For each directory, load the data.json file
             # Create a new Asset object with the data
-            for directory in os.listdir(ASSETS_JSON_DIR):
+            for directory in directories:
                 if directory.startswith("."):
                     continue
                 full_path = os.path.join(
