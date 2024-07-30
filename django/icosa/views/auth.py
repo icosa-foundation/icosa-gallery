@@ -131,6 +131,7 @@ def custom_logout(request):
 
 
 def register(request):
+    success = False
     if request.method == "POST":
         form = NewUserForm(request.POST)
         if form.is_valid():
@@ -184,12 +185,18 @@ def register(request):
                 to=[to_email],
             )
             email.send()
-            return HttpResponse(
-                "Please confirm your email address to complete the registration"
-            )
+            success = True
+            return HttpResponse()
     else:
         form = NewUserForm()
-    return render(request, "auth/register.html", {"form": form})
+    return render(
+        request,
+        "auth/register.html",
+        {
+            "form": form,
+            "success": success,
+        },
+    )
 
 
 def activate_registration(request, uidb64, token):

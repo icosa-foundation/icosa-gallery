@@ -4,11 +4,15 @@
         <div class="row">
             <div class="col col-lg-6 offset-lg-3">
                 <h1>Register</h1>
-                <form action="{% url 'register' %}" method="post" novalidate>
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button class="btn btn-primary" type="submit">Register</button>
-                </form>
+                {% if success %}
+                    <p>Please click the link in the email we've sent you to complete your registration.</p>
+                {% else %}
+                    <form action="{% url 'register' %}" method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button class="btn btn-primary" type="submit">Register</button>
+                    </form>
+                {% endif %}
             </div>
         </div>
     </div>
