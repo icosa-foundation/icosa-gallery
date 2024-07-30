@@ -1,6 +1,6 @@
 import os
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 checkout_script = """#!/bin/bash
 REPO_URL="https://github.com/arodic/polygone.art.git"
