@@ -271,7 +271,7 @@ class PolyResource(models.Model):
     format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
-        max_length=255,
+        max_length=1024,
         upload_to=format_upload_path,
     )
 
