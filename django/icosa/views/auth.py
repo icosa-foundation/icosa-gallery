@@ -168,7 +168,7 @@ def register(request):
             user.save()
 
             current_site = get_current_site(request)
-            mail_subject = "Activate your Icosa Gallery account."  # TODO, should probably hook into the site name.
+            mail_subject = f"Activate your {settings.SITE_NAME} account."
             message = render_to_string(
                 "auth/confirm_registration_email.html",
                 {

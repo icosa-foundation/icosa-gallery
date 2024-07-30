@@ -36,6 +36,12 @@ if DEPLOYMENT_ENV in [
 ]:
     DEBUG = True
 
+SITE_ID = 1
+
+SITE_DOMAIN = DEPLOYMENT_HOST_WEB
+
+SITE_NAME = os.environ.get("DJANGO_SITE_NAME", "Icosa Gallery")
+
 ALLOWED_HOSTS = [
     "localhost",
     f"{DEPLOYMENT_HOST_WEB}",
@@ -88,8 +94,9 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
-    "django.contrib.messages",
+    "django.contrib.sites",
     "django.contrib.staticfiles",
+    "django.contrib.messages",
     "compressor",
 ]
 
