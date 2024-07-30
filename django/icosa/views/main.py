@@ -59,7 +59,10 @@ def home(request):
 def home_tiltbrush(request):
     return landing_page(
         request,
-        Q(visibility=PUBLIC, polyresource__format__format_type="TILT"),
+        Q(
+            visibility=PUBLIC,
+            polyresource__format__format_type="TILT",
+        ),
         show_hero=True,
     )
 
@@ -69,12 +72,8 @@ def home_blocks(request):
         request,
         Q(
             visibility=PUBLIC,
-            polyresource__format__format_type__in=[
-                "GLTF",
-                "GLTF2",
-            ],
+            polyresource__format__format_type="BLOCKS",
         ),
-        Q(polyresource__format__format_type="TILT"),
         show_hero=True,
     )
 

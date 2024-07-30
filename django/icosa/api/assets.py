@@ -317,16 +317,7 @@ def get_assets(
         q &= Q(owner__displayname__icontains=author_name)
     # TODO: orderBy
     if filters.format:
-        if filters.format == "BLOCKS":
-            q &= Q(
-                polyresource__format__format_type__in=[
-                    "GLTF",
-                    "GLTF2",
-                ]
-            )
-            ex_q &= Q(polyresource__format__format_type="TILT")
-        else:
-            q &= Q(polyresource__format__format_type=filters.format)
+        q &= Q(polyresource__format__format_type=filters.format)
     try:
         keyword_q = get_keyword_q(filters)
     except HttpError:
