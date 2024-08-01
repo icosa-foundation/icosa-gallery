@@ -6,6 +6,7 @@ from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset
 from icosa.models import User as IcosaUser
 
 from django.conf import settings
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -235,29 +236,33 @@ def edit_asset(request, user_url, asset_url):
 
 @login_required
 def user_settings(request):
+    need_login = False
     template = "main/settings.html"
     user = request.user
-    owner = get_owner(user)
+    icosa_user = get_owner(user)
     if request.method == "POST":
-        form = UserSettingsForm(request.POST, instance=owner, user=user)
+        form = UserSettingsForm(request.POST, instance=icosa_user, user=user)
         if form.is_valid():
-            updated_owner = form.save()
+            updated_user = form.save()
             password_new = request.POST.get("password_new")
-            need_login = False
             if password_new:
                 user.set_password(password_new)
+                icosa_user.set_password(password_new)
                 need_login = True
             email = request.POST.get("email")
-            if email and owner.email != updated_owner.email:
+            if email and icosa_user.email != updated_user.email:
                 user.email = email
                 need_login = True
             user.save()
             if need_login:
-                return redirect("login")
+                logout(request)
 
     else:
-        form = UserSettingsForm(instance=owner, user=user)
-    context = {"form": form}
+        form = UserSettingsForm(instance=icosa_user, user=user)
+    context = {
+        "form": form,
+        "need_login": need_login,
+    }
     return render(request, template, context)
 
 
