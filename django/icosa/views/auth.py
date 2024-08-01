@@ -10,6 +10,7 @@ from icosa.forms import (
     PasswordResetConfirmForm,
     PasswordResetForm,
 )
+from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
 from icosa.models import DeviceCode
@@ -21,7 +22,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -188,12 +188,7 @@ def register(request):
                 },
             )
             to_email = form.cleaned_data.get("email")
-            email = EmailMessage(
-                mail_subject,
-                message,
-                to=[to_email],
-            )
-            email.send()
+            spawn_send_html_mail(mail_subject, message, [to_email])
             success = True
     else:
         form = NewUserForm()
@@ -250,12 +245,7 @@ def password_reset(request):
                     },
                 )
                 to_email = form.cleaned_data.get("email")
-                email = EmailMessage(
-                    mail_subject,
-                    message,
-                    to=[to_email],
-                )
-                email.send()
+                spawn_send_html_mail(mail_subject, message, [to_email])
             except User.DoesNotExist:
                 pass
             return redirect(reverse("password_reset_done"))
