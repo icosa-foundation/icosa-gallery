@@ -1,3 +1,5 @@
+import bcrypt
+
 from django.conf import settings
 from django.db import models
 
@@ -62,6 +64,12 @@ class User(models.Model):
 
     def get_absolute_url(self):
         return f"/user/{self.url}"
+
+    def set_password(self, password):
+        salt = bcrypt.gensalt(10)
+        hashed_password = bcrypt.hashpw(password.encode(), salt)
+        self.password = hashed_password
+        self.save()
 
     def __str__(self):
         return self.displayname

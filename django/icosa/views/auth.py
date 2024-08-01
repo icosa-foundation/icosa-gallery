@@ -5,8 +5,13 @@ from typing import Optional
 
 import bcrypt
 import jwt
-from icosa.forms import NewUserForm
+from icosa.forms import (
+    NewUserForm,
+    PasswordResetConfirmForm,
+    PasswordResetForm,
+)
 from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.user import get_owner
 from icosa.models import DeviceCode
 from icosa.models import User as IcosaUser
 from passlib.context import CryptContext
@@ -17,13 +22,16 @@ from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 ALGORITHM = "HS256"
+
+INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
 
 
 def generate_device_code(length=5):
@@ -217,6 +225,115 @@ def activate_registration(request, uidb64, token):
         {
             "success": success,
         },
+    )
+
+
+def password_reset(request):
+    if request.method == "POST":
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            try:
+                user = User.objects.get(email=form.cleaned_data["email"])
+
+                current_site = get_current_site(request)
+                mail_subject = (
+                    f"Reset your {current_site.name} account password."
+                )
+                message = render_to_string(
+                    "auth/password_reset_email.html",
+                    {
+                        "request": request,
+                        "user": user,
+                        "domain": current_site.domain,
+                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                        "token": default_token_generator.make_token(user),
+                    },
+                )
+                to_email = form.cleaned_data.get("email")
+                email = EmailMessage(
+                    mail_subject,
+                    message,
+                    to=[to_email],
+                )
+                email.send()
+            except User.DoesNotExist:
+                pass
+            return redirect(reverse("password_reset_done"))
+    else:
+        form = PasswordResetForm()
+        return render(
+            request,
+            "auth/password_reset.html",
+            {
+                "form": form,
+            },
+        )
+
+
+def password_reset_done(request):
+    return render(
+        request,
+        "auth/password_reset_done.html",
+        {},
+    )
+
+
+def password_reset_confirm(request, uidb64, token):
+    valid_link = False
+    redirected_url_token = "set-password"
+    done = False
+    form = PasswordResetConfirmForm()
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    if user is not None:
+        if token == redirected_url_token:
+            # Store the token in the session and redirect to the password reset
+            # form at a URL without the token. That avoids the possibility of
+            # leaking the token in the HTTP Referer header.
+            session_token = request.session.get(INTERNAL_RESET_SESSION_TOKEN)
+            if default_token_generator.check_token(user, session_token):
+                valid_link = True
+                if request.method == "POST":
+                    form = PasswordResetConfirmForm(request.POST)
+                    if form.is_valid():
+                        password = form.cleaned_data["password_new"]
+                        user.set_password(password)
+                        user.save()
+                        logout(request)
+                        icosa_user = get_owner(user)
+                        icosa_user.set_password(password)
+                        return HttpResponseRedirect(
+                            reverse("password_reset_complete")
+                        )
+        else:
+            if default_token_generator.check_token(user, token):
+                request.session[INTERNAL_RESET_SESSION_TOKEN] = token
+                redirect_url = request.path.replace(
+                    token, redirected_url_token
+                )
+                return HttpResponseRedirect(redirect_url)
+
+    return render(
+        request,
+        "auth/password_reset_confirm.html",
+        {
+            "form": form,
+            "valid_link": valid_link,
+            "done": done,
+            "uidb64": uidb64,
+            "token": token,
+        },
+    )
+
+
+def password_reset_complete(request):
+    return render(
+        request,
+        "auth/password_reset_complete.html",
+        {},
     )
 
 

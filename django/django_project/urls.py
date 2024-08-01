@@ -31,6 +31,22 @@ urlpatterns = [
         auth_views.activate_registration,
         name="activate_registration",
     ),
+    path("password_reset", auth_views.password_reset, name="password_reset"),
+    path(
+        "password_reset_done",
+        auth_views.password_reset_done,
+        name="password_reset_done",
+    ),
+    path(
+        "password_reset_complete",
+        auth_views.password_reset_complete,
+        name="password_reset_complete",
+    ),
+    path(
+        r"password_reset_confirm/<str:uidb64>/<str:token>",
+        auth_views.password_reset_confirm,
+        name="password_reset_confirm",
+    ),
     path("device", auth_views.devicecode, name="devicecode"),
     # Other views
     path("", main_views.home, name="home"),
