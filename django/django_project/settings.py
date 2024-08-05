@@ -86,6 +86,7 @@ APPEND_SLASH = False
 
 INSTALLED_APPS = [
     "icosa",
+    "after_response",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -93,9 +94,9 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.staticfiles",
     "django.contrib.messages",
+    # "huey.contrib.djhuey",
     "compressor",
 ]
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

@@ -10,8 +10,12 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponseNotAllowed, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import (
+    HttpResponse,
+    HttpResponseNotAllowed,
+    HttpResponseRedirect,
+)
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 
@@ -88,7 +92,7 @@ def uploads(request):
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
             job_snowflake = generate_snowflake()
-            upload_asset(
+            upload_asset.after_response(
                 user,
                 job_snowflake,
                 [request.FILES["file"]],
