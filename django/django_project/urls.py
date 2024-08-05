@@ -1,4 +1,3 @@
-from icosa.api import DocsViewer
 from icosa.api.assets import router as assets_router
 from icosa.api.login import router as login_router
 from icosa.api.oembed import router as oembed_router
@@ -8,11 +7,12 @@ from icosa.views import auth as auth_views
 from icosa.views import main as main_views
 from ninja import NinjaAPI
 
+from django.conf import settings
 from django.conf.urls import include
 from django.contrib import admin
 from django.urls import path
 
-api = NinjaAPI(docs=DocsViewer())
+api = NinjaAPI()
 api.add_router("assets", assets_router, tags=["Assets"])
 api.add_router("login", login_router, tags=["Login"])
 api.add_router("oembed", oembed_router, tags=["Oembed"])
@@ -72,5 +72,13 @@ urlpatterns = [
     ),
     path("settings", main_views.user_settings, name="settings"),
     path("terms", main_views.terms, name="terms"),
-    path("api/v1/", api.urls),
 ]
+
+if settings.DEPLOYMENT_HOST_API:
+    urlpatterns.append(
+        path("v1/", api.urls),
+    )
+else:
+    urlpatterns.append(
+        path("api/v1/", api.urls),
+    )

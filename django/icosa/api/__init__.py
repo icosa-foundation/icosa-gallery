@@ -64,12 +64,3 @@ class AssetPagination(PaginationBase):
                 }
             )
         return pagination_data
-
-
-class DocsViewer(Swagger):
-
-    def get_openapi_url(self, api: "NinjaAPI", path_params: DictStrAny) -> str:
-        if settings.DEPLOYMENT_HOST_API is not None:
-            return "/v1/openapi.json"
-        else:
-            return "/api/v1/openapi.json"

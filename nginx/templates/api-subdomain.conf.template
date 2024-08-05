@@ -7,23 +7,6 @@ server {
     client_max_body_size 500M;
 
     location / {
-        proxy_pass http://web/api/;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header Host $host;
-        proxy_redirect off;
-        proxy_read_timeout 600;
-        proxy_connect_timeout 600;
-        proxy_send_timeout 600;
-    }
-
-    listen 80;
-    server_name ${DEPLOYMENT_HOST_API};
-}
-
-server {
-    client_max_body_size 500M;
-
-    location / {
         proxy_pass http://web;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header Host $host;
@@ -33,12 +16,32 @@ server {
         proxy_send_timeout 600;
     }
 
-    location ^~ /api/ {
+    location ^~ /v1/ {
         return 404;
     }
 
     listen 80;
     server_name ${DEPLOYMENT_HOST_WEB};
+}
+server {
+    client_max_body_size 500M;
+
+    location /v1/ {
+        proxy_pass http://web;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+        proxy_read_timeout 600;
+        proxy_connect_timeout 600;
+        proxy_send_timeout 600;
+    }
+
+    location ^~ / {
+        return 404;
+    }
+
+    listen 80;
+    server_name ${DEPLOYMENT_HOST_API};
 }
 
 server {
