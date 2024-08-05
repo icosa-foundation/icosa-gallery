@@ -29,7 +29,7 @@ class FullUserSchema(Schema):
     id: int
     url: str
     email: EmailStr
-    displayname: str
+    displayName: str = Field(None, alias="displayname")
     description: str
 
 
