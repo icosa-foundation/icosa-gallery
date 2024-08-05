@@ -18,13 +18,6 @@ class DeviceCodeSchema(Schema):
     deviceCode: str
 
 
-class NewUser(Schema):
-    email: EmailStr
-    url: Optional[str] = None
-    password: str
-    displayName: str
-
-
 class FullUserSchema(Schema):
     id: int
     url: str
@@ -33,15 +26,9 @@ class FullUserSchema(Schema):
     description: str
 
 
-class UserSchema(Schema):
-    url: str
-    displayname: str
-    description: Optional[str]
-
-
 class PatchUserSchema(Schema):
     url: Optional[str] = None
-    displayname: Optional[str] = None
+    displayName: str = Field(None, alias="displayname")
     description: Optional[str] = None
 
 
