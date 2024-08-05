@@ -225,6 +225,7 @@ def edit_asset(request, user_url, asset_url):
     context = {
         "user": user,
         "asset": asset,
+        "gltf_mode": get_gltf_mode(request, asset),
         "form": form,
     }
     return render(

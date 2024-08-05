@@ -17,16 +17,5 @@
         </div>
     </div>
 </div>
-<script type="module">
-    import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
-
-    var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
-
-    {% if asset.is_gltf %}
-        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true);
-    {% elif asset.is_gltf2 %}
-        await viewer.loadGltf("{{ asset.preferred_format.url }}", true);
-    {% endif %}
-
-</script>
+{% include "partials/viewer.html" %}
 {% endblock content %}

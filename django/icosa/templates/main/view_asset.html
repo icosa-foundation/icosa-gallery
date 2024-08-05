@@ -28,26 +28,5 @@
         </div>
     </div>
 </div>
-<script type="module">
-    import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
-
-    var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
-    let three = viewer.three;
-
-    let defaultBgColor = '{{ asset.background_color|default:"#000000" }}';
-
-    {% if gltf_mode == 1 %}
-        await viewer.loadGltf1("{{ asset.preferred_format.url }}", true, defaultBgColor);
-    {% elif gltf_mode == 2 %}
-        await viewer.loadGltf("{{ asset.preferred_format.url }}", true, defaultBgColor);
-    {% else %}
-        try {
-            await viewer.loadGltf("{{ asset.preferred_format.url }}", true, defaultBgColor);
-        } catch (error) {
-            await viewer.loadGltf1("{{ asset.preferred_format.url }}", true, defaultBgColor);
-            console.log(error);
-        }
-    {% endif %}
-
-</script>
+{% include "partials/viewer.html" %}
 {% endblock content %}
