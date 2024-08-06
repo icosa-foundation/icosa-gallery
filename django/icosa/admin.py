@@ -52,6 +52,7 @@ class PolyResourceInline(admin.TabularInline):
     fields = (
         "is_root",
         "file",
+        "external_url",
     )
 
 

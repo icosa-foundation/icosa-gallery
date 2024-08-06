@@ -279,21 +279,34 @@ class PolyResource(models.Model):
     format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
+        null=True,
+        blank=True,
         max_length=1024,
         upload_to=format_upload_path,
     )
+    external_url = models.CharField(max_length=1024, null=True, blank=True)
 
     @property
     def url(self):
-        return self.file.url
+        url_str = None
+        if self.file:
+            url_str = self.file.url
+        elif self.external_url:
+            url_str = self.external_url
+        return url_str
 
     @property
     def relative_path(self):
-        return self.file.name.split("/")[-1]
+        file_name = None
+        if self.file:
+            file_name = self.file.name.split("/")[-1]
+        elif self.external_url:
+            file_name = self.external_url.split("/")[-1]
+        return file_name
 
     @property
     def content_type(self):
-        return self.file.content_type
+        return self.file.content_type if self.file else self.contenttype
 
 
 class DeviceCode(models.Model):

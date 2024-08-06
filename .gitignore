@@ -144,5 +144,8 @@ cython_debug/
 .DS_Store
 config.json
 gcp-service-account.json
+
+# Data for import
 django/polygone_data*
+django/blocks.csv
 
