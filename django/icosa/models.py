@@ -166,7 +166,7 @@ class Asset(models.Model):
             return formats["GLTF"]
         # If we have a GLB format, it's most likely actually a GLTF2.
         if "GLB" in formats.keys():
-            return formats["GLTF2"]
+            return formats["GLB"]
         return None
 
     @property
