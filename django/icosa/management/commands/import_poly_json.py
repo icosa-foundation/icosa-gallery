@@ -77,32 +77,32 @@ def get_or_create_asset(dir, data):
     orienting_rotation_w = orienting_rotation.get("w", None)
 
     return Asset.objects.get_or_create(
-        name=data["name"],
-        owner=user,
-        description=data.get("description", None),
-        formats="",
-        visibility=data["visibility"],
-        curated="curated" in data["tags"],
-        polyid=dir,
-        polydata=data,
-        license=data["license"],
-        create_time=datetime.fromisoformat(
-            data["createTime"].replace("Z", "+00:00")
+        url=dir,
+        defaults=dict(
+            name=data["name"],
+            id=generate_snowflake(),
+            imported=True,
+            formats="",
+            owner=user,
+            description=data.get("description", None),
+            visibility=data["visibility"],
+            curated="curated" in data["tags"],
+            polyid=dir,
+            polydata=data,
+            license=data["license"],
+            create_time=datetime.fromisoformat(
+                data["createTime"].replace("Z", "+00:00")
+            ),
+            update_time=datetime.fromisoformat(
+                data["updateTime"].replace("Z", "+00:00")
+            ),
+            color_space=data["presentationParams"]["colorSpace"],
+            background_color=background_color,
+            orienting_rotation_x=orienting_rotation_x,
+            orienting_rotation_y=orienting_rotation_y,
+            orienting_rotation_z=orienting_rotation_z,
+            orienting_rotation_w=orienting_rotation_w,
         ),
-        update_time=datetime.fromisoformat(
-            data["updateTime"].replace("Z", "+00:00")
-        ),
-        color_space=data["presentationParams"]["colorSpace"],
-        background_color=background_color,
-        orienting_rotation_x=orienting_rotation_x,
-        orienting_rotation_y=orienting_rotation_y,
-        orienting_rotation_z=orienting_rotation_z,
-        orienting_rotation_w=orienting_rotation_w,
-        defaults={
-            "id": generate_snowflake(),
-            "imported": True,
-            "url": dir,
-        },
     )
 
 
