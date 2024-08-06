@@ -152,9 +152,10 @@ class Asset(models.Model):
     def preferred_format(self):
         formats = {}
         for format in self.polyformat_set.all():
+            root = format.root_resource
             formats[format.format_type] = {
                 "format": format.format_type,
-                "url": format.root_resource.file.url,
+                "url": root.file.url if root.file else root.external_url,
             }
         # TODO(james): We need this list to be more exhaustive; we're
         # returning None in too many cases.
@@ -165,7 +166,7 @@ class Asset(models.Model):
             return formats["GLTF"]
         # If we have a GLB format, it's most likely actually a GLTF2.
         if "GLB" in formats.keys():
-            return formats["GLB"]
+            return formats["GLTF2"]
         return None
 
     @property
