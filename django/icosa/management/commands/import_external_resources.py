@@ -61,11 +61,11 @@ def process_row(row):
 
 class Command(BaseCommand):
 
-    help = "Adds BLOCKS formats from a local csv"
+    help = "Adds BLOCKS formats from a local tsv file"
 
     def handle(self, *args, **options):
 
-        with open("blocks.csv", "r") as f:
+        with open("blocks.tsv", "r") as f:
             reader = csv.reader(f, delimiter="\t")
 
             for row in reader:
