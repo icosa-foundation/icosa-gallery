@@ -6,7 +6,7 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
-from icosa.helpers.file import upload_asset
+from icosa.helpers.file import upload_asset, upload_format, upload_thumbnail
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import PUBLIC, Asset, Tag
 from icosa.models import User as IcosaUser
@@ -61,7 +61,7 @@ def check_user_owns_asset(
     asset: Asset,
 ) -> NoReturn:
     if not user_owns_asset(request, asset):
-        raise HttpError(403, "Unauthorized user.")
+        raise HttpError(404, "Asset not found.")
 
 
 def get_asset_by_id(
@@ -105,7 +105,7 @@ def get_my_id_asset(
 
 
 @router.get(
-    "/{asset}",
+    "/{str:asset}",
     response=AssetSchemaOut,
     **COMMON_ROUTER_SETTINGS,
 )
@@ -142,57 +142,33 @@ def get_asset(
 #     return asset
 
 
-# TODO(james): do we wait until storages is implemented for this?
-# @router.patch(
-#     "/{asset}",
-#     auth=AuthBearer(),
-#     response_model=Asset,
-# )
-# def update_asset(
-#     request
-#     background_tasks: BackgroundTasks,
-#     request: Request,
-#     asset: int,
-#     data: Optional[AssetPatchData] = None,
-#     name: Optional[str] = Form(None),
-#     url: Optional[str] = Form(None),
-#     description: Optional[str] = Form(None),
-#     visibility: Optional[str] = Form(None),
-#     current_user: User = Depends(get_current_user),
-#     thumbnail: Optional[UploadedFile] = File(None),
-# ):
-#     current_asset = _DBAsset(**(await get_my_id_asset(asset, current_user)))
+@router.post(
+    "/{str:asset}/format",
+    auth=AuthBearer(),
+    response=AssetSchemaOut,
+)
+def add_asset_format(
+    request,
+    asset: str,
+    files: Optional[List[UploadedFile]] = File(None),
+    # thumbnail: Optional[UploadedFile] = File(None),
+):
+    user = IcosaUser.from_ninja_request(request)
+    asset = get_asset_by_url(request, asset)
+    check_user_owns_asset(request, asset)
 
-#     if request.headers.get("content-type") == "application/json":
-#         update_data = data.dict(exclude_unset=True)
-#     elif request.headers.get("content-type").startswith("multipart/form-data"):
-#         update_data = {
-#             k: v
-#             for k, v in {
-#                 "name": name,
-#                 "url": url,
-#                 "description": description,
-#                 "visibility": visibility,
-#             }.items()
-#             if v is not None
-#         }
-#     else:
-#         raise HTTPException(
-#             status_code=415, detail="Unsupported content type."
-#         )
+    if request.headers.get("content-type").startswith("multipart/form-data"):
+        try:
+            upload_format(user, asset, files)
+        except HttpError:
+            raise
+    else:
+        raise HttpError(415, "Unsupported content type.")
 
-#     updated_asset = current_asset.copy(update=update_data)
-#     updated_asset.id = int(updated_asset.id)
-#     updated_asset.owner = int(updated_asset.owner)
-#     query = assets.update(None)
-#     query = query.where(assets.c.id == updated_asset.id)
-#     query = query.values(updated_asset.dict())
-#     await database.execute(query)
-#     if thumbnail:
-#         background_tasks.add_task(
-#             upload_thumbnail_background, current_user, thumbnail, asset
-#         )
-#     return await get_my_id_asset(asset, current_user)
+    asset.save()
+    # if thumbnail:
+    #     upload_thumbnail(thumbnail, asset)
+    return get_my_id_asset(request, asset.pk)
 
 
 @router.patch(
@@ -211,7 +187,7 @@ def unpublish_asset(
 
 
 @router.get(
-    "/{str:userurl}/{asseturl}",
+    "/{str:userurl}/{str:asseturl}",
     response=AssetSchemaOut,
 )
 def get_user_asset(

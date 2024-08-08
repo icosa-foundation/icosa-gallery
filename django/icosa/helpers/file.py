@@ -91,6 +91,7 @@ def validate_file(
         mainfile = True
     if extension == "gltf":
         # TODO: need extra checks here to determine if GLTF 1 or 2.
+        # is_v2 = not isinstance(gltf["buffers"], dict)
         filetype = "GLTF2"
         mainfile = True
     if extension == "bin":
@@ -183,6 +184,37 @@ def add_thumbnail_to_asset(thumbnail, asset):
         asset.save()
 
 
+def upload_format(
+    current_user: User,
+    asset: Asset,
+    files: Optional[List[UploadedFile]] = File(None),
+):
+    if files is None:
+        raise HttpError(422, "Must upload at least one file.")
+    main_files = []
+    sub_files = []
+    for file in files:
+        splitnames = file.name.split(
+            "."
+        )  # TODO(james): better handled by the `os` module?
+        extension = splitnames[-1].lower()
+        upload_details = validate_file(file, extension)
+        if upload_details is not None:
+            if upload_details.mainfile is True:
+                main_files.append(upload_details)
+            else:
+                sub_files.append(upload_details)
+
+    for mainfile in main_files:
+        process_main_file(
+            mainfile,
+            sub_files,
+            asset,
+        )
+
+    return asset
+
+
 def upload_asset(
     current_user: User,
     job_snowflake: int,
@@ -272,21 +304,13 @@ def upload_asset(
     return asset
 
 
-# async def upload_thumbnail_background(
-#     current_user: User, thumbnail: UploadedFile, asset_id: int
-# ):
-#     splitnames = thumbnail.name.split(".")
-#     extension = splitnames[-1].lower()
-#     if not IMAGE_REGEX.match(extension):
-#         raise HttpError(415, "Thumbnail must be png or jpg")
+def upload_thumbnail(
+    thumbnail: UploadedFile,
+    asset: Asset,
+):
+    splitnames = thumbnail.name.split(".")
+    extension = splitnames[-1].lower()
+    if not IMAGE_REGEX.match(extension):
+        raise HttpError(415, "Thumbnail must be png or jpg")
 
-#     base_path = f'{current_user["id"]}/{asset_id}/'
-#     thumbnail_path = f"{base_path}thumbnail.{extension}"
-#     thumbnail_uploaded_url = upload_file_gcs(thumbnail.file, thumbnail_path)
-
-#     if thumbnail_uploaded_url:
-#         # Update database
-#         query = assets.update(None)
-#         query = query.where(assets.c.id == asset_id)
-#         query = query.values(thumbnail=thumbnail_uploaded_url)
-#         database.execute(query)
+    add_thumbnail_to_asset(thumbnail, asset)

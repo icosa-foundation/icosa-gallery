@@ -35,6 +35,7 @@ def landing_page(
         )
     else:
         hero = None
+    # TODO(james): filter out assets with no formats
     asset_objs = (
         Asset.objects.filter(inc_q).exclude(exc_q).distinct().order_by("-id")
     )
