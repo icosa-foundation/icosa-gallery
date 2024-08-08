@@ -122,21 +122,81 @@ def validate_file(
     )
 
 
+def process_main_file(mainfile, sub_files, asset):
+    is_first_format = True
+    # Main files determine folder
+    format_data = {
+        "format_type": mainfile.filetype,
+        "asset": asset,
+    }
+    format = PolyFormat.objects.create(**format_data)
+    if is_first_format:
+        is_first_format = False
+    resource_data = {
+        "file": mainfile.file,
+        "is_root": True,
+        "asset": asset,
+        "format": format,
+        "contenttype": get_content_type(mainfile.file.name),
+    }
+    PolyResource.objects.create(**resource_data)
+
+    for subfile in sub_files:
+        # Horrendous check for supposedly compatible subfiles. can
+        # definitely be improved with parsing, but is it necessary?
+        if (
+            (
+                mainfile.filetype == "GLTF2"
+                and (subfile.filetype == "BIN" or subfile.filetype == "IMAGE")
+            )
+            or (
+                mainfile.filetype == "OBJ"
+                and (subfile.filetype == "MTL" or subfile.filetype == "IMAGE")
+            )
+            or (
+                mainfile.filetype == "FBX"
+                and (subfile.filetype == "FBM" or subfile.filetype == "IMAGE")
+            )
+        ):
+
+            sub_resource_data = {
+                "file": subfile.file,
+                "format": format,
+                "is_root": False,
+                "asset": asset,
+                "contenttype": get_content_type(subfile.file.name),
+            }
+            PolyResource.objects.create(**sub_resource_data)
+
+
+def add_thumbnail_to_asset(thumbnail, asset):
+    extension = thumbnail.name.split(".")[-1].lower()
+    thumbnail_upload_details = validate_file(thumbnail, extension)
+    if (
+        thumbnail_upload_details is not None
+        and thumbnail_upload_details.filetype == "IMAGE"
+    ):
+        asset.thumbnail = thumbnail_upload_details.file
+        asset.thumbnail_contenttype = get_content_type(
+            thumbnail_upload_details.file.name
+        )
+        asset.save()
+
+
 def upload_asset(
     current_user: User,
     job_snowflake: int,
-    files: List[UploadedFile] = File(...),
+    files: Optional[List[UploadedFile]] = File(None),
     thumbnail: UploadedFile = File(...),
 ):
-    if len(files) == 0:
-        raise HttpError(422, "No files provided.")
-
     # We need to see one of: tilt, glb, gltf, obj, fbx
     main_files = []
     sub_files = []
-    name = ""
+    name = "Untitled Asset"
 
-    processed_files = []
+    unzipped_files = []
+    if files is None:
+        files = []
     for file in files:
         # Handle thumbnail included in the zip
         # How do we handle multiple thumbnails? Currently non-zip thumbnails
@@ -162,16 +222,16 @@ def upload_asset(
                             name=zip_info.filename,
                             file=io.BytesIO(content),
                         )
-                        processed_files.append(processed_file)
+                        unzipped_files.append(processed_file)
                         if thumbnail is None and zip_info.filename.lower() in [
                             "thumbnail.png",
                             "thumbnail.jpg",
                         ]:
                             thumbnail = processed_file
         else:
-            processed_files.append(file)
+            unzipped_files.append(file)
 
-    for file in processed_files:
+    for file in unzipped_files:
         splitnames = file.name.split(
             "."
         )  # TODO(james): better handled by the `os` module?
@@ -184,14 +244,8 @@ def upload_asset(
             else:
                 sub_files.append(upload_details)
 
-    if name == "":
-        raise HttpError(
-            415, "Not supplied with one of tilt, glb, gltf, obj, fbx."
-        )
-
     # begin upload process
     asset_token = secrets.token_urlsafe(8)
-    resources = []
 
     # create an asset to attach files to
     asset_data = {
@@ -204,102 +258,35 @@ def upload_asset(
     }
 
     asset = Asset.objects.create(**asset_data)
-    first_format = None
 
     for mainfile in main_files:
-        is_first_format = True
-        # Main files determine folder
-        base_path = f"{current_user.id}/{job_snowflake}/{mainfile.filetype}/"
-        # model_path = base_path + f"model.{mainfile.extension}"
-        # model_uploaded_url = upload_file_gcs(mainfile.file.file, model_path)
-        format_data = {
-            "format_type": mainfile.filetype,
-            "asset": asset,
-        }
-        format = PolyFormat(**format_data)
-        format.save()
-        if is_first_format:
-            first_format = format
-            is_first_format = False
-        resource_data = {
-            "file": mainfile.file,
-            "is_root": True,
-            "asset": asset,
-            "format": format,
-            "contenttype": get_content_type(mainfile.file.name),
-        }
-        main_resource = PolyResource.objects.create(**resource_data)
-        resources.append(main_resource)
+        process_main_file(
+            mainfile,
+            sub_files,
+            asset,
+        )
 
-        for subfile in sub_files:
-            # Horrendous check for supposedly compatible subfiles. can
-            # definitely be improved with parsing, but is it necessary?
-            if (
-                (
-                    mainfile.filetype == "GLTF2"
-                    and (
-                        subfile.filetype == "BIN"
-                        or subfile.filetype == "IMAGE"
-                    )
-                )
-                or (
-                    mainfile.filetype == "OBJ"
-                    and (
-                        subfile.filetype == "MTL"
-                        or subfile.filetype == "IMAGE"
-                    )
-                )
-                or (
-                    mainfile.filetype == "FBX"
-                    and (
-                        subfile.filetype == "FBM"
-                        or subfile.filetype == "IMAGE"
-                    )
-                )
-            ):
+    if thumbnail:
+        add_thumbnail_to_asset(thumbnail, asset)
 
-                sub_resource_data = {
-                    "file": subfile.file,
-                    "format": format,
-                    "is_root": False,
-                    "asset": asset,
-                    "contenttype": get_content_type(subfile.file.name),
-                }
-                PolyResource.objects.create(**sub_resource_data)
-
-    if thumbnail and first_format:
-        extension = thumbnail.name.split(".")[-1].lower()
-        thumbnail_upload_details = validate_file(file, extension)
-        if (
-            thumbnail_upload_details is not None
-            and thumbnail_upload_details.filetype == "IMAGE"
-        ):
-            asset.thumbnail = thumbnail_upload_details.file
-            asset.thumbnail_contenttype = get_content_type(
-                thumbnail_upload_details.file.name
-            )
-            asset.save()
-
-    if len(resources) == 0:
-        raise HttpError(500, "Unable to upload any files.")
     return asset
 
 
-async def upload_thumbnail_background(
-    current_user: User, thumbnail: UploadedFile, asset_id: int
-):
-    splitnames = thumbnail.name.split(".")
-    extension = splitnames[-1].lower()
-    if not IMAGE_REGEX.match(extension):
-        raise HttpError(415, "Thumbnail must be png or jpg")
+# async def upload_thumbnail_background(
+#     current_user: User, thumbnail: UploadedFile, asset_id: int
+# ):
+#     splitnames = thumbnail.name.split(".")
+#     extension = splitnames[-1].lower()
+#     if not IMAGE_REGEX.match(extension):
+#         raise HttpError(415, "Thumbnail must be png or jpg")
 
-    base_path = f'{current_user["id"]}/{asset_id}/'
-    thumbnail_path = f"{base_path}thumbnail.{extension}"
-    thumbnail_uploaded_url = upload_file_gcs(thumbnail.file, thumbnail_path)
+#     base_path = f'{current_user["id"]}/{asset_id}/'
+#     thumbnail_path = f"{base_path}thumbnail.{extension}"
+#     thumbnail_uploaded_url = upload_file_gcs(thumbnail.file, thumbnail_path)
 
-    # if thumbnail_uploaded_url:
-    #     # Update database
-    #     query = assets.update(None)
-    #     query = query.where(assets.c.id == asset_id)
-    #     query = query.values(thumbnail=thumbnail_uploaded_url)
-    #     database.execute(query)
+#     if thumbnail_uploaded_url:
+#         # Update database
+#         query = assets.update(None)
+#         query = query.where(assets.c.id == asset_id)
+#         query = query.values(thumbnail=thumbnail_uploaded_url)
+#         database.execute(query)

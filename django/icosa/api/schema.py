@@ -190,8 +190,8 @@ class FormatComplexity(Schema):
 
 
 class AssetFormat(Schema):
-    root: AssetResource
-    resources: List[AssetResource]
+    root: Optional[AssetResource]
+    resources: Optional[List[AssetResource]]
     formatComplexity: FormatComplexity
     formatType: str
     # remix info

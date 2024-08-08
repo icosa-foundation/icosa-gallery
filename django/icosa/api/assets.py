@@ -1,5 +1,5 @@
 import re
-from typing import List, NoReturn
+from typing import List, NoReturn, Optional
 
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
@@ -243,11 +243,9 @@ def get_user_asset(
 )
 def upload_new_assets(
     request,
-    files: List[UploadedFile] = File(...),
+    files: Optional[List[UploadedFile]] = File(None),
 ):
     user = IcosaUser.from_ninja_request(request)
-    if len(files) == 0:
-        raise HttpError(422, "No files provided.")
     job_snowflake = generate_snowflake()
     try:
         asset = upload_asset(
