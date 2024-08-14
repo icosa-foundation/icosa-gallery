@@ -48,12 +48,7 @@ def user_owns_asset(
     request: HttpRequest,
     asset: Asset,
 ) -> bool:
-    if (
-        request.user.is_anonymous
-        or IcosaUser.from_ninja_request(request) != asset.owner
-    ):
-        return False
-    return True
+    return IcosaUser.from_ninja_request(request) == asset.owner
 
 
 def check_user_owns_asset(
