@@ -11,6 +11,7 @@ from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import PUBLIC, Asset, Tag
 from icosa.models import User as IcosaUser
 from ninja import File, Query, Router
+from ninja.security import HttpBearer
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
@@ -47,9 +48,13 @@ def user_can_view_asset(
 def user_owns_asset(
     request: HttpRequest,
     asset: Asset,
+    auth=HttpBearer(),
 ) -> bool:
+    if not auth:
+        return False
+    user = auth.authenticate(request)
     if (
-        request.auth.is_anonymous
+        not user
         or IcosaUser.from_ninja_request(request) != asset.owner
     ):
         return False
