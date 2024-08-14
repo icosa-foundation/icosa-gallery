@@ -49,8 +49,12 @@ def user_owns_asset(
     request: HttpRequest,
     asset: Asset,
 ) -> bool:
+    # This probably needs to be done in from_ninja_request
+    # but putting requests stuff in models seemed wrong
+    # so probably needs a refactor
     if not hasattr(request, "auth"):
         header = request.headers.get("Authorization")
+        if header is None: return False
         if not header.startswith("Bearer "): return False
         token = header.replace("Bearer ", "")
         user = AuthBearer().authenticate(request, token)
