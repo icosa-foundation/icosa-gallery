@@ -50,9 +50,11 @@ def user_owns_asset(
     asset: Asset,
 ) -> bool:
     if not hasattr(request, "auth"):
-        token = request.headers.get("Authorization")
+        header = request.headers.get("Authorization")
+        if not header.startswith("Bearer "): return False
+        token = header.replace("Bearer ", "")
         user = AuthBearer().authenticate(request, token)
-        return IcosaUser.from_django_user(user) == asset.owner
+        return user is not None and IcosaUser.from_django_user(user) == asset.owner
     return IcosaUser.from_ninja_request(request) == asset.owner
 
 
