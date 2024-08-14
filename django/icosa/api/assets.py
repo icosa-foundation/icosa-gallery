@@ -6,6 +6,7 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
 )
+from icosa.api.authentication import AuthBearer
 from icosa.helpers.file import upload_asset, upload_format, upload_thumbnail
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import PUBLIC, Asset, Tag
@@ -48,6 +49,10 @@ def user_owns_asset(
     request: HttpRequest,
     asset: Asset,
 ) -> bool:
+    if not hasattr(request, "auth"):
+        token = request.headers.get("Authorization")
+        user = AuthBearer().authenticate(request, token)
+        return IcosaUser.from_django_user(user) == asset.owner
     return IcosaUser.from_ninja_request(request) == asset.owner
 
 

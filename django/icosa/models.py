@@ -53,6 +53,16 @@ class User(models.Model):
         return instance
 
     @classmethod
+    def from_django_user(cls, user):
+        instance = None
+        if getattr(user, "email", None):
+            try:
+                instance = cls.objects.get(email=user.email)
+            except cls.DoesNotExist:
+                pass
+        return instance
+
+    @classmethod
     def from_request(cls, request):
         instance = None
         if getattr(request.user, "email", None):
