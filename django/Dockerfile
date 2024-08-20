@@ -40,6 +40,7 @@ RUN set -x \
     && BUILD_DEPS=" \
     git \
     libpq-dev \
+    htop \
     " \
     && apt-get update \
     && apt-get install -y --no-install-recommends $BUILD_DEPS
