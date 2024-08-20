@@ -148,6 +148,13 @@ cython_debug/
 config.json
 gcp-service-account.json
 
+# huey specifics
+
+django/huey.db
+django/huey.db-wal
+django/huey.db-shm
+
+
 # Data for import
 django/polygone_data*
 django/*.tsv
