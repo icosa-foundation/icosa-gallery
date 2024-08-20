@@ -148,4 +148,5 @@ gcp-service-account.json
 # Data for import
 django/polygone_data*
 django/*.tsv
+django/*.jsonl
 
