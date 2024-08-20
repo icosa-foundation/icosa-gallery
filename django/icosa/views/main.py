@@ -1,9 +1,9 @@
 from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
-from icosa.helpers.file import upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset
 from icosa.models import User as IcosaUser
+from icosa.tasks import queue_upload
 
 from django.conf import settings
 from django.contrib.auth import logout
@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponseNotAllowed, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 
@@ -89,7 +89,7 @@ def uploads(request):
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
             job_snowflake = generate_snowflake()
-            upload_asset(
+            queue_upload(
                 user,
                 job_snowflake,
                 [request.FILES["file"]],
