@@ -157,6 +157,12 @@ def create_formats(formats_json, asset):
                     "contenttype": get_content_type(url),
                 }
                 PolyResource.objects.create(**resource_data)
+            # If a format has many files associated with it (i.e. it has a
+            # `resources` key), then we want to grab the archive url if we have
+            # it so we can provide this in the download options for the user.
+            if format_json.get("archive", None):
+                format.archive_url = format_json["archive"]["url"]
+                format.save()
 
 
 class Command(BaseCommand):

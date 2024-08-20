@@ -42,7 +42,10 @@ class PolyFormatInline(admin.TabularInline):
     model = PolyFormat
     show_change_link = True
 
-    fields = ("format_type",)
+    fields = (
+        "format_type",
+        "archive_url",
+    )
 
 
 class PolyResourceInline(admin.TabularInline):

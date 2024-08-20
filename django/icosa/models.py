@@ -320,6 +320,7 @@ def format_upload_path(instance, filename):
 class PolyFormat(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
+    archive_url = models.CharField(max_length=1024, null=True, blank=True)
 
     @property
     def root_resource(self):
