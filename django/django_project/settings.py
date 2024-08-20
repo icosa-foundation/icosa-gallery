@@ -252,3 +252,38 @@ ALLOWED_REGISTRATION_EMAILS = [
     ).split(",")
     if x
 ]
+
+
+# Category settings
+#
+# Google Poly originally came with a set of categories that were not
+# user-editable. The official install of Icosa Gallery respects these, but
+# allows user installations to override them in settings. To avoid hard-coding
+# the categories, which would result in a migration and source code changes to
+# amend them, we are instead mapping from an int to a string here.
+ASSET_CATEGORIES_MAP = {
+    1: ("Art", "art"),
+    2: ("Animals & Pets", "animals"),
+    3: ("Architecture", "architecture"),
+    4: ("Places & Scenes", "places"),
+    5: ("Unused", "unused"),
+    6: ("Food & Drink", "food"),
+    7: ("Nature", "nature"),
+    8: ("People & Characters", "people"),
+    9: ("Tools & Technology", "tech"),
+    10: ("Transport", "transport"),
+    11: ("Miscellaneous", "miscellaneous"),
+    12: ("Objects", "objects"),
+    13: ("Culture & Humanity", "culture"),
+    14: ("Current Events", "current_events"),
+    15: ("Furniture & Home", "home"),
+    16: ("History", "history"),
+    17: ("Science", "science"),
+    18: ("Sports & Fitness", "sport"),
+    19: ("Travel & Leisure", "travel"),
+}
+# TODO(james): move this to somewhere else so that categories can be overridden
+# in local settings and still be reverse mapped correctly.
+ASSET_CATEGORIES_REVERSE_MAP = {
+    v[1]: k for k, v in ASSET_CATEGORIES_MAP.items()
+}
