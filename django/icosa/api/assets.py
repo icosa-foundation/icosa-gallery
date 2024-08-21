@@ -165,7 +165,7 @@ def add_asset_format(
     # thumbnail: Optional[UploadedFile] = File(None),
 ):
     print("**************************************************")
-    print(request.headers, request.body, asset, files)
+    print(request.headers, request.data, asset, files)
     user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
