@@ -54,11 +54,16 @@ def user_owns_asset(
     # so probably needs a refactor
     if not hasattr(request, "auth"):
         header = request.headers.get("Authorization")
-        if header is None: return False
-        if not header.startswith("Bearer "): return False
+        if header is None:
+            return False
+        if not header.startswith("Bearer "):
+            return False
         token = header.replace("Bearer ", "")
         user = AuthBearer().authenticate(request, token)
-        return user is not None and IcosaUser.from_django_user(user) == asset.owner
+        return (
+            user is not None
+            and IcosaUser.from_django_user(user) == asset.owner
+        )
     return IcosaUser.from_ninja_request(request) == asset.owner
 
 
@@ -159,6 +164,8 @@ def add_asset_format(
     files: Optional[List[UploadedFile]] = File(None),
     # thumbnail: Optional[UploadedFile] = File(None),
 ):
+    print("**************************************************")
+    print(request.headers, request.body, asset, files)
     user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
