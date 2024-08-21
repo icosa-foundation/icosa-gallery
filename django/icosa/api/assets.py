@@ -159,7 +159,7 @@ def get_asset(
 @router.post(
     "/{str:asset}/format",
     auth=AuthBearer(),
-    response=AssetSchemaOut,
+    response={201: str},
     include_in_schema=False,
 )
 def add_asset_format(
@@ -190,7 +190,7 @@ def add_asset_format(
         raise HttpError(415, "Unsupported content type.")
 
     asset.save()
-    return get_my_id_asset(request, asset.pk)
+    return 201, "ok"
 
 
 @router.post(
