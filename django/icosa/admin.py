@@ -56,6 +56,7 @@ class PolyResourceInline(admin.TabularInline):
         "is_root",
         "file",
         "external_url",
+        "role",
     )
 
 

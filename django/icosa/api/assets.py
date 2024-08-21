@@ -7,9 +7,9 @@ from icosa.api import (
     AssetPagination,
 )
 from icosa.api.authentication import AuthBearer
-from icosa.helpers.file import upload_asset, upload_format, upload_thumbnail
+from icosa.helpers.file import upload_asset, upload_format
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import PUBLIC, Asset, Tag
+from icosa.models import PUBLIC, Asset, PolyFormat, Tag
 from icosa.models import User as IcosaUser
 from ninja import File, Query, Router
 from ninja.errors import HttpError
@@ -153,19 +153,30 @@ def get_asset(
 #     return asset
 
 
+# This endpoint is for internal OpenBrush use for now. It's more complex than
+# it needs to  be until OpenBrush can send the formats data in a zip or some
+# other way.
 @router.post(
     "/{str:asset}/format",
     auth=AuthBearer(),
     response=AssetSchemaOut,
+    include_in_schema=False,
 )
 def add_asset_format(
     request,
     asset: str,
     files: Optional[List[UploadedFile]] = File(None),
-    # thumbnail: Optional[UploadedFile] = File(None),
 ):
-    print("**************************************************")
-    print(request.headers, request.POST, request.FILES, asset, files)
+    print("***** REQUEST DEBUG START *****")
+    print("HEADERS:")
+    print(request.headers)
+    print("POST DATA:")
+    print(request.POST)
+    print("FILES:")
+    print(request.FILES)
+    print("ASSET:")
+    print(asset)
+    print("***** REQUEST DEBUG END *****")
     user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
@@ -179,9 +190,27 @@ def add_asset_format(
         raise HttpError(415, "Unsupported content type.")
 
     asset.save()
-    # if thumbnail:
-    #     upload_thumbnail(thumbnail, asset)
     return get_my_id_asset(request, asset.pk)
+
+
+@router.post(
+    "/{str:asset}/finalize",
+    auth=AuthBearer(),
+    response=AssetSchemaOut,
+    include_in_schema=False,
+)
+def finalize_asset(
+    request,
+    asset: str,
+):
+    asset = get_asset_by_url(request, asset)
+    check_user_owns_asset(request, asset)
+    # TODO(james): This can probably be done in one query
+    resources = asset.polyresource_set.filter(file="")
+    format_pks = list(set([x.format.pk for x in resources]))
+    formats = PolyFormat.objects.filter(pk__in=format_pks)
+    formats.delete()
+    return asset
 
 
 @router.patch(
