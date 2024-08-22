@@ -1,6 +1,7 @@
 import bcrypt
 
 from django.conf import settings
+from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 
 from .helpers.snowflake import get_snowflake_timestamp
@@ -83,6 +84,16 @@ class User(models.Model):
         return instance
 
     @classmethod
+    def from_django_request(cls, request):
+        instance = None
+        if getattr(request.user, "email", None):
+            try:
+                instance = cls.objects.get(email=request.user.email)
+            except cls.DoesNotExist:
+                pass
+        return instance
+
+    @classmethod
     def from_django_user(cls, user):
         instance = None
         if getattr(user, "email", None):
@@ -92,13 +103,12 @@ class User(models.Model):
                 pass
         return instance
 
-    @classmethod
-    def from_django_request(cls, request):
+    def to_django_user(self):
         instance = None
-        if getattr(request.user, "email", None):
+        if getattr(self, "email", None):
             try:
-                instance = cls.objects.get(email=request.user.email)
-            except cls.DoesNotExist:
+                instance = DjangoUser.objects.get(email=self.email)
+            except DjangoUser.DoesNotExist:
                 pass
         return instance
 
