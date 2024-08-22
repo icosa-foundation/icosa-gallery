@@ -258,6 +258,7 @@ def get_user_asset(
     "",
     response={201: UploadJobSchemaOut},
     auth=AuthBearer(),
+    include_in_schema=False,
 )
 @router.post(
     "/",
