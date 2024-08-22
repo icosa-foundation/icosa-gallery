@@ -28,6 +28,14 @@ def user_can_view_asset(
     return True
 
 
+def check_user_can_view_asset(
+    user: DjangoUser,
+    asset: Asset,
+):
+    if not user_can_view_asset(user, asset):
+        raise Http404()
+
+
 def landing_page(
     request,
     inc_q=Q(visibility=PUBLIC),
@@ -188,13 +196,14 @@ def get_gltf_mode(request, asset):
     return gltf_mode
 
 
+# TODO(james): This is very similar to view_poly_asset. Do we need both?
 def view_asset(request, user_url, asset_url):
     template = "main/view_asset.html"
     icosa_user = get_object_or_404(IcosaUser, url=user_url)
     asset = get_object_or_404(Asset, owner=icosa_user.id, url=asset_url)
-    if not user_can_view_asset(request.user, asset):
-        raise Http404()
+    check_user_can_view_asset(request.user, asset)
     context = {
+        "request_user": IcosaUser.from_django_user(request.user),
         "user": icosa_user,
         "asset": asset,
         "gltf_mode": get_gltf_mode(request, asset),
@@ -206,11 +215,14 @@ def view_asset(request, user_url, asset_url):
     )
 
 
+# TODO(james): This is very similar to view_asset. Do we need both?
 def view_poly_asset(request, asset_url):
     template = "main/view_asset.html"
 
-    asset = get_object_or_404(Asset, visibility=PUBLIC, url=asset_url)
+    asset = get_object_or_404(Asset, url=asset_url)
+    check_user_can_view_asset(request.user, asset)
     context = {
+        "request_user": IcosaUser.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
         "gltf_mode": get_gltf_mode(request, asset),
