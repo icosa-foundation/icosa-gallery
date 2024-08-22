@@ -8,11 +8,24 @@ from icosa.tasks import queue_upload
 from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User as DjangoUser
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404, HttpResponseNotAllowed, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+
+
+def user_can_view_asset(
+    user: DjangoUser,
+    asset: Asset,
+) -> bool:
+    if asset.visibility == PRIVATE:
+        return (
+            user.is_authenticated
+            and IcosaUser.from_django_user(user) == asset.owner
+        )
+    return True
 
 
 def landing_page(
@@ -177,12 +190,12 @@ def get_gltf_mode(request, asset):
 
 def view_asset(request, user_url, asset_url):
     template = "main/view_asset.html"
-    user = get_object_or_404(IcosaUser, url=user_url)
-    asset = get_object_or_404(
-        Asset, visibility=PUBLIC, owner=user.id, url=asset_url
-    )
+    icosa_user = get_object_or_404(IcosaUser, url=user_url)
+    asset = get_object_or_404(Asset, owner=icosa_user.id, url=asset_url)
+    if not user_can_view_asset(request.user, asset):
+        raise Http404()
     context = {
-        "user": user,
+        "user": icosa_user,
         "asset": asset,
         "gltf_mode": get_gltf_mode(request, asset),
     }
