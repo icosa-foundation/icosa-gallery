@@ -93,7 +93,7 @@ class User(models.Model):
         return instance
 
     @classmethod
-    def from_request(cls, request):
+    def from_django_request(cls, request):
         instance = None
         if getattr(request.user, "email", None):
             try:

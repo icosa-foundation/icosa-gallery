@@ -84,7 +84,7 @@ def home_blocks(request):
 def uploads(request):
     template = "main/manage_uploads.html"
 
-    user = IcosaUser.from_request(request)
+    user = IcosaUser.from_django_request(request)
     if request.method == "POST":
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -122,7 +122,7 @@ def user_show(request, user_url):
 
     owner = get_object_or_404(IcosaUser, url=user_url)
     q = Q(owner=owner.id)
-    if IcosaUser.from_request(request) != owner:
+    if IcosaUser.from_django_request(request) != owner:
         q &= Q(visibility=PUBLIC)
 
     asset_objs = Asset.objects.filter(q).order_by("-id")
@@ -144,7 +144,7 @@ def user_show(request, user_url):
 def my_likes(request):
     template = "main/likes.html"
 
-    owner = IcosaUser.from_request(request)
+    owner = IcosaUser.from_django_request(request)
     q = Q(visibility__in=[PUBLIC, UNLISTED])
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
 

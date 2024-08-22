@@ -332,7 +332,7 @@ def devicecode(request):
     user = request.user
     context = {}
     if user.is_authenticated:
-        owner = IcosaUser.from_request(request)
+        owner = IcosaUser.from_django_request(request)
         if owner:
             code = generate_device_code()
             expiry_time = datetime.utcnow() + timedelta(minutes=1)
