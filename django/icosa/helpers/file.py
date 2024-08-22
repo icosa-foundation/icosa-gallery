@@ -362,6 +362,7 @@ def upload_format(
         asset.thumbnail = f.file
         asset.thumbnail_contenttype = get_content_type(f.file.name)
         asset.save()
+        print("*********************** SAVED OK")
     else:
         process_normally(asset, f)
 
