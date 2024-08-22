@@ -173,16 +173,6 @@ def add_asset_format(
     asset: str,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    print("***** REQUEST DEBUG START *****")
-    print("HEADERS:")
-    print(request.headers)
-    print("POST DATA:")
-    print(request.POST)
-    print("FILES:")
-    print(request.FILES)
-    print("ASSET:")
-    print(asset)
-    print("***** REQUEST DEBUG END *****")
     user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
@@ -191,6 +181,16 @@ def add_asset_format(
         try:
             upload_format(user, asset, files)
         except HttpError:
+            print("***** REQUEST DEBUG START *****")
+            print("HEADERS:")
+            print(request.headers)
+            print("POST DATA:")
+            print(request.POST)
+            print("FILES:")
+            print(request.FILES)
+            print("ASSET:")
+            print(asset)
+            print("***** REQUEST DEBUG END *****")
             raise
     else:
         raise HttpError(415, "Unsupported content type.")
