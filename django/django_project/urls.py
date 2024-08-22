@@ -21,7 +21,7 @@ api.add_router("users", users_router, tags=["Users"])
 
 urlpatterns = [
     path("admin_tools/", include("admin_tools.urls")),
-    path("admin", admin.site.urls),
+    path("admin/", admin.site.urls),
     # Auth views
     path("login", auth_views.custom_login, name="login"),
     path("logout", auth_views.custom_logout, name="logout"),
