@@ -178,19 +178,16 @@ def add_asset_format(
     check_user_owns_asset(request, asset)
 
     if request.headers.get("content-type").startswith("multipart/form-data"):
+        print("***** REQUEST DEBUG START *****")
         try:
+            print("FILES:")
+            print(request.FILES)
             upload_format(user, asset, files)
         except HttpError:
-            print("***** REQUEST DEBUG START *****")
             print("HEADERS:")
             print(request.headers)
             print("POST DATA:")
             print(request.POST)
-            print("FILES:")
-            print(request.FILES)
-            print("ASSET:")
-            print(asset)
-            print("***** REQUEST DEBUG END *****")
             raise
     else:
         raise HttpError(415, "Unsupported content type.")
