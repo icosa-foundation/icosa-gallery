@@ -122,7 +122,7 @@ def uploads(request):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    asset_objs = Asset.objects.filter(owner=user)
+    asset_objs = Asset.objects.filter(owner=user).order_by("-create_time")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
