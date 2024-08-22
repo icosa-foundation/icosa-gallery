@@ -10,7 +10,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponseNotAllowed, HttpResponseRedirect
+from django.http import Http404, HttpResponseNotAllowed, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
@@ -214,6 +214,8 @@ def edit_asset(request, user_url, asset_url):
     template = "main/edit_asset.html"
     user = get_object_or_404(IcosaUser, url=user_url)
     asset = get_object_or_404(Asset, owner=user.id, url=asset_url)
+    if IcosaUser.from_django_user(user) != user:
+        raise Http404()
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
     elif request.method == "POST":
