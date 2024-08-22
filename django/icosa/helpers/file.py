@@ -28,6 +28,7 @@ VALID_FORMAT_TYPES = [
     "mtl",
     "fbx",
     "fbm",
+    "blocks",
 ]
 
 CONTENT_TYPE_MAP = {
@@ -42,6 +43,7 @@ CONTENT_TYPE_MAP = {
     "mtl": "text/plain",
     "fbx": "application/octet-stream",
     "fbm": "application/octet-stream",
+    "blocks": "application/octet-stream",
 }
 
 
@@ -83,6 +85,10 @@ def validate_file(
 
     if extension == "tilt":
         filetype = "TILT"
+        mainfile = True
+
+    if extension == "blocks":
+        filetype = "BLOCKS"
         mainfile = True
 
     # GLTF/GLB/BIN
@@ -200,6 +206,8 @@ def get_role_id(f: UploadedFormat) -> Optional[int]:
         return 6
     if filetype == "TILT":
         return 2
+    if filetype == "BLOCKS":
+        return 7
 
 
 def get_obj_non_triangulated(asset: Asset) -> Optional[PolyResource]:
@@ -333,15 +341,17 @@ def upload_format(
     )  # TODO(james): better handled by the `os` module?
     extension = splitnames[-1].lower()
     f = validate_file(file, extension)
-    print("FILE DETAILS:")
-    print(f)
     if f is None:
-        print("--FILE WAS INVALID")
         raise HttpError(422, "Invalid file.")
 
     filetype = f.filetype
+    existing_resource = asset.polyresource_set.filter(
+        role=get_role_id(f), file__endswith=f.file.name
+    ).first()
 
-    if filetype == "MTL":
+    if existing_resource is not None:
+        existing_resource.file = f.file
+    elif filetype == "MTL":
         process_mtl(asset, f)
     elif filetype == "BIN":
         process_bin(asset, f)
