@@ -70,6 +70,11 @@ urlpatterns = [
         main_views.edit_asset,
         name="edit_asset",
     ),
+    path(
+        "publish/<str:asset_url>",
+        main_views.publish_asset,
+        name="publish_asset",
+    ),
     path("settings", main_views.user_settings, name="settings"),
     path("terms", main_views.terms, name="terms"),
 ]

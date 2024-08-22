@@ -239,6 +239,34 @@ def edit_asset(request, user_url, asset_url):
 
 
 @login_required
+def publish_asset(request, asset_url):
+    template = "main/edit_asset.html"
+    asset = get_object_or_404(Asset, url=asset_url)
+    if IcosaUser.from_django_user(request.user) != asset.owner:
+        raise Http404()
+    if request.method == "GET":
+        form = AssetSettingsForm(instance=asset)
+    elif request.method == "POST":
+        form = AssetSettingsForm(request.POST, request.FILES, instance=asset)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse("uploads"))
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "user": asset.owner,
+        "asset": asset,
+        "gltf_mode": get_gltf_mode(request, asset),
+        "form": form,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@login_required
 def user_settings(request):
     need_login = False
     template = "main/settings.html"
