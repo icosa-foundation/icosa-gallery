@@ -12,16 +12,17 @@ from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import PUBLIC, Asset, PolyFormat, Tag
 from icosa.models import User as IcosaUser
 from ninja import File, Query, Router
+from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
 from django.core.files.storage import get_storage_class
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest
 from django.urls import reverse
 
-from .authentication import AuthBearer
 from .schema import (
     AssetFilters,
     AssetSchemaOut,
@@ -162,6 +163,7 @@ def get_asset(
     response={201: str},
     include_in_schema=False,
 )
+@decorate_view(transaction.atomic)
 def add_asset_format(
     request,
     asset: str,
@@ -196,7 +198,7 @@ def add_asset_format(
 @router.post(
     "/{str:asset}/finalize",
     auth=AuthBearer(),
-    response=AssetSchemaOut,
+    response={201: str},
     include_in_schema=False,
 )
 def finalize_asset(
@@ -210,7 +212,7 @@ def finalize_asset(
     format_pks = list(set([x.format.pk for x in resources]))
     formats = PolyFormat.objects.filter(pk__in=format_pks)
     formats.delete()
-    return asset
+    return 200, "ok"
 
 
 @router.patch(
