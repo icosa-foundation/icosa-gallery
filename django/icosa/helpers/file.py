@@ -333,7 +333,10 @@ def upload_format(
     )  # TODO(james): better handled by the `os` module?
     extension = splitnames[-1].lower()
     f = validate_file(file, extension)
+    print("FILE DETAILS:")
+    print(f)
     if f is None:
+        print("--FILE WAS INVALID")
         raise HttpError(422, "Invalid file.")
 
     filetype = f.filetype
