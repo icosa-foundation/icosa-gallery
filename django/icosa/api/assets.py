@@ -198,7 +198,7 @@ def add_asset_format(
 @router.post(
     "/{str:asset}/finalize",
     auth=AuthBearer(),
-    response={201: str},
+    response={200: str},
     include_in_schema=False,
 )
 def finalize_asset(
