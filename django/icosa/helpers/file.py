@@ -358,6 +358,7 @@ def upload_format(
     elif filetype in ["OBJ", "GLTF2"]:
         process_root(asset, f)
     elif filetype == "IMAGE" and f.file.name == "thumbnail.png":
+        print("******** PROCESSING THUMBNAIL: ", f)
         asset.thumbnail = f.file
         asset.thumbnail_contenttype = get_content_type(f.file.name)
         asset.save()
