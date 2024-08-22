@@ -17,6 +17,7 @@ from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
+from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
 from django.db.models import Q
@@ -100,7 +101,10 @@ def get_asset_by_url(
     except Asset.DoesNotExist:
         raise HttpError(404, "Asset not found.")
     if not user_can_view_asset(request, asset):
-        raise HttpError(404, "Asset not found.")
+        if settings.DEBUG:
+            raise HttpError(401, "Not authorized.")
+        else:
+            raise HttpError(404, "Asset not found.")
     return asset
 
 
