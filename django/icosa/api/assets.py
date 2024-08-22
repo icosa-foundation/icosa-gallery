@@ -202,6 +202,7 @@ def add_asset_format(
     response={200: str},
     include_in_schema=False,
 )
+@decorate_view(transaction.atomic)
 def finalize_asset(
     request,
     asset: str,
