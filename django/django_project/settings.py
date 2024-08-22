@@ -143,7 +143,7 @@ WSGI_APPLICATION = "django_project.wsgi.application"
 
 PAGINATION_PER_PAGE = 40
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 131400
+ACCESS_TOKEN_EXPIRE_MINUTES = 20_160  # 2 weeks
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
