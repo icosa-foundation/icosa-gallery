@@ -47,7 +47,7 @@ class RemoveSlashMiddleware(MiddlewareMixin):
             and request.path_info.endswith("/")
             and not request.path_info.startswith("/admin")
         ):
-            urlconf = settings.ROOT_URLCONF
+            urlconf = getattr(request, "urlconf", None)
             if not is_valid_path(request.path_info, urlconf):
                 new_path = request.path_info.rstrip("/")
                 match = is_valid_path(new_path, urlconf)

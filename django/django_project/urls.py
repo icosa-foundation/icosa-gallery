@@ -54,7 +54,7 @@ urlpatterns = [
     path("blocks", main_views.home_blocks, name="home_blocks"),
     path("uploads", main_views.uploads, name="uploads"),
     path("user/<str:user_url>", main_views.user_show, name="user_show"),
-    path("likes/", main_views.my_likes, name="my_likes"),
+    path("likes", main_views.my_likes, name="my_likes"),
     path(
         "view/<str:user_url>/<str:asset_url>",
         main_views.view_asset,
