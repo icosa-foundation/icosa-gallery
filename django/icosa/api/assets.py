@@ -158,7 +158,7 @@ def get_asset(
 # it needs to  be until OpenBrush can send the formats data in a zip or some
 # other way.
 @router.post(
-    "/{str:asset}/format",
+    "/{str:asset}/blocks_format",
     auth=AuthBearer(),
     response={201: str},
     include_in_schema=False,
@@ -196,7 +196,7 @@ def add_asset_format(
 
 
 @router.post(
-    "/{str:asset}/finalize",
+    "/{str:asset}/blocks_finalize",
     auth=AuthBearer(),
     response={200: str},
     include_in_schema=False,
