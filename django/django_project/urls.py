@@ -21,7 +21,7 @@ api.add_router("users", users_router, tags=["Users"])
 
 urlpatterns = [
     path("admin_tools/", include("admin_tools.urls")),
-    path("admin", admin.site.urls),
+    path("admin/", admin.site.urls),
     # Auth views
     path("login", auth_views.custom_login, name="login"),
     path("logout", auth_views.custom_logout, name="logout"),
@@ -54,7 +54,7 @@ urlpatterns = [
     path("blocks", main_views.home_blocks, name="home_blocks"),
     path("uploads", main_views.uploads, name="uploads"),
     path("user/<str:user_url>", main_views.user_show, name="user_show"),
-    path("likes/", main_views.my_likes, name="my_likes"),
+    path("likes", main_views.my_likes, name="my_likes"),
     path(
         "view/<str:user_url>/<str:asset_url>",
         main_views.view_asset,
@@ -69,6 +69,11 @@ urlpatterns = [
         "edit/<str:user_url>/<str:asset_url>",
         main_views.edit_asset,
         name="edit_asset",
+    ),
+    path(
+        "publish/<str:asset_url>",
+        main_views.publish_asset,
+        name="publish_asset",
     ),
     path("settings", main_views.user_settings, name="settings"),
     path("terms", main_views.terms, name="terms"),

@@ -7,7 +7,7 @@ register = template.Library()
 
 @register.inclusion_tag("main/tags/like_button.html")
 def like_button(request, asset):
-    owner = IcosaUser.from_request(request)
+    owner = IcosaUser.from_django_request(request)
     if owner is not None:
         is_liked = asset.id in owner.likes.values_list("id", flat=True)
     else:

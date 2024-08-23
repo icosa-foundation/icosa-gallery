@@ -1,18 +1,39 @@
 from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
-from icosa.helpers.file import upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset
 from icosa.models import User as IcosaUser
+from icosa.tasks import queue_upload
 
 from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User as DjangoUser
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponseNotAllowed, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import Http404, HttpResponseNotAllowed, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+
+
+def user_can_view_asset(
+    user: DjangoUser,
+    asset: Asset,
+) -> bool:
+    if asset.visibility == PRIVATE:
+        return (
+            user.is_authenticated
+            and IcosaUser.from_django_user(user) == asset.owner
+        )
+    return True
+
+
+def check_user_can_view_asset(
+    user: DjangoUser,
+    asset: Asset,
+):
+    if not user_can_view_asset(user, asset):
+        raise Http404()
 
 
 def landing_page(
@@ -84,12 +105,12 @@ def home_blocks(request):
 def uploads(request):
     template = "main/manage_uploads.html"
 
-    user = IcosaUser.from_request(request)
+    user = IcosaUser.from_django_request(request)
     if request.method == "POST":
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
             job_snowflake = generate_snowflake()
-            upload_asset(
+            queue_upload(
                 user,
                 job_snowflake,
                 [request.FILES["file"]],
@@ -101,7 +122,7 @@ def uploads(request):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    asset_objs = Asset.objects.filter(owner=user)
+    asset_objs = Asset.objects.filter(owner=user).order_by("-create_time")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
@@ -122,7 +143,7 @@ def user_show(request, user_url):
 
     owner = get_object_or_404(IcosaUser, url=user_url)
     q = Q(owner=owner.id)
-    if IcosaUser.from_request(request) != owner:
+    if IcosaUser.from_django_request(request) != owner:
         q &= Q(visibility=PUBLIC)
 
     asset_objs = Asset.objects.filter(q).order_by("-id")
@@ -144,7 +165,7 @@ def user_show(request, user_url):
 def my_likes(request):
     template = "main/likes.html"
 
-    owner = IcosaUser.from_request(request)
+    owner = IcosaUser.from_django_request(request)
     q = Q(visibility__in=[PUBLIC, UNLISTED])
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
 
@@ -175,14 +196,15 @@ def get_gltf_mode(request, asset):
     return gltf_mode
 
 
+# TODO(james): This is very similar to view_poly_asset. Do we need both?
 def view_asset(request, user_url, asset_url):
     template = "main/view_asset.html"
-    user = get_object_or_404(IcosaUser, url=user_url)
-    asset = get_object_or_404(
-        Asset, visibility=PUBLIC, owner=user.id, url=asset_url
-    )
+    icosa_user = get_object_or_404(IcosaUser, url=user_url)
+    asset = get_object_or_404(Asset, owner=icosa_user.id, url=asset_url)
+    check_user_can_view_asset(request.user, asset)
     context = {
-        "user": user,
+        "request_user": IcosaUser.from_django_user(request.user),
+        "user": icosa_user,
         "asset": asset,
         "gltf_mode": get_gltf_mode(request, asset),
     }
@@ -193,11 +215,14 @@ def view_asset(request, user_url, asset_url):
     )
 
 
+# TODO(james): This is very similar to view_asset. Do we need both?
 def view_poly_asset(request, asset_url):
     template = "main/view_asset.html"
 
-    asset = get_object_or_404(Asset, visibility=PUBLIC, url=asset_url)
+    asset = get_object_or_404(Asset, url=asset_url)
+    check_user_can_view_asset(request.user, asset)
     context = {
+        "request_user": IcosaUser.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
         "gltf_mode": get_gltf_mode(request, asset),
@@ -214,6 +239,8 @@ def edit_asset(request, user_url, asset_url):
     template = "main/edit_asset.html"
     user = get_object_or_404(IcosaUser, url=user_url)
     asset = get_object_or_404(Asset, owner=user.id, url=asset_url)
+    if IcosaUser.from_django_user(user) != user:
+        raise Http404()
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
     elif request.method == "POST":
@@ -225,6 +252,34 @@ def edit_asset(request, user_url, asset_url):
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
         "user": user,
+        "asset": asset,
+        "gltf_mode": get_gltf_mode(request, asset),
+        "form": form,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@login_required
+def publish_asset(request, asset_url):
+    template = "main/edit_asset.html"
+    asset = get_object_or_404(Asset, url=asset_url)
+    if IcosaUser.from_django_user(request.user) != asset.owner:
+        raise Http404()
+    if request.method == "GET":
+        form = AssetSettingsForm(instance=asset)
+    elif request.method == "POST":
+        form = AssetSettingsForm(request.POST, request.FILES, instance=asset)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse("uploads"))
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "user": asset.owner,
         "asset": asset,
         "gltf_mode": get_gltf_mode(request, asset),
         "form": form,

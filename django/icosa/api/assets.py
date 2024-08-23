@@ -7,21 +7,23 @@ from icosa.api import (
     AssetPagination,
 )
 from icosa.api.authentication import AuthBearer
-from icosa.helpers.file import upload_asset, upload_format, upload_thumbnail
+from icosa.helpers.file import upload_asset, upload_format
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import PUBLIC, Asset, Tag
+from icosa.models import PUBLIC, Asset, PolyFormat, Tag
 from icosa.models import User as IcosaUser
 from ninja import File, Query, Router
+from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
+from django.conf import settings
 from django.core.files.storage import get_storage_class
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest
 from django.urls import reverse
 
-from .authentication import AuthBearer
 from .schema import (
     AssetFilters,
     AssetSchemaOut,
@@ -54,11 +56,16 @@ def user_owns_asset(
     # so probably needs a refactor
     if not hasattr(request, "auth"):
         header = request.headers.get("Authorization")
-        if header is None: return False
-        if not header.startswith("Bearer "): return False
+        if header is None:
+            return False
+        if not header.startswith("Bearer "):
+            return False
         token = header.replace("Bearer ", "")
         user = AuthBearer().authenticate(request, token)
-        return user is not None and IcosaUser.from_django_user(user) == asset.owner
+        return (
+            user is not None
+            and IcosaUser.from_django_user(user) == asset.owner
+        )
     return IcosaUser.from_ninja_request(request) == asset.owner
 
 
@@ -94,7 +101,10 @@ def get_asset_by_url(
     except Asset.DoesNotExist:
         raise HttpError(404, "Asset not found.")
     if not user_can_view_asset(request, asset):
-        raise HttpError(404, "Asset not found.")
+        if settings.DEBUG:
+            raise HttpError(401, "Not authorized.")
+        else:
+            raise HttpError(404, "Asset not found.")
     return asset
 
 
@@ -148,33 +158,63 @@ def get_asset(
 #     return asset
 
 
+# This endpoint is for internal OpenBrush use for now. It's more complex than
+# it needs to  be until OpenBrush can send the formats data in a zip or some
+# other way.
 @router.post(
-    "/{str:asset}/format",
+    "/{str:asset}/blocks_format",
     auth=AuthBearer(),
-    response=AssetSchemaOut,
+    response={201: str},
+    include_in_schema=False,
 )
+@decorate_view(transaction.atomic)
 def add_asset_format(
     request,
     asset: str,
     files: Optional[List[UploadedFile]] = File(None),
-    # thumbnail: Optional[UploadedFile] = File(None),
 ):
     user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
     if request.headers.get("content-type").startswith("multipart/form-data"):
+        print("***** REQUEST DEBUG START *****")
         try:
+            print("FILES:")
+            print(request.FILES)
             upload_format(user, asset, files)
         except HttpError:
+            print("HEADERS:")
+            print(request.headers)
+            print("POST DATA:")
+            print(request.POST)
             raise
     else:
         raise HttpError(415, "Unsupported content type.")
 
     asset.save()
-    # if thumbnail:
-    #     upload_thumbnail(thumbnail, asset)
-    return get_my_id_asset(request, asset.pk)
+    return 201, "ok"
+
+
+@router.post(
+    "/{str:asset}/blocks_finalize",
+    auth=AuthBearer(),
+    response={200: str},
+    include_in_schema=False,
+)
+@decorate_view(transaction.atomic)
+def finalize_asset(
+    request,
+    asset: str,
+):
+    asset = get_asset_by_url(request, asset)
+    check_user_owns_asset(request, asset)
+    # TODO(james): This can probably be done in one query
+    resources = asset.polyresource_set.filter(file="")
+    format_pks = list(set([x.format.pk for x in resources]))
+    formats = PolyFormat.objects.filter(pk__in=format_pks)
+    formats.delete()
+    return 200, "ok"
 
 
 @router.patch(
@@ -216,6 +256,7 @@ def get_user_asset(
     "",
     response={201: UploadJobSchemaOut},
     auth=AuthBearer(),
+    include_in_schema=False,
 )
 @router.post(
     "/",

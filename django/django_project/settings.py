@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 
+import huey
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -94,6 +96,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.messages",
     "compressor",
+    "huey.contrib.djhuey",
 ]
 
 MIDDLEWARE = [
@@ -104,6 +107,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "icosa.middleware.redirect.RemoveSlashMiddleware",
 ]
 
 ROOT_URLCONF = "django_project.urls"
@@ -139,7 +143,7 @@ WSGI_APPLICATION = "django_project.wsgi.application"
 
 PAGINATION_PER_PAGE = 40
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 131400
+ACCESS_TOKEN_EXPIRE_MINUTES = 20_160  # 2 weeks
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -214,6 +218,27 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 COMPRESS_PRECOMPILERS = (("text/x-scss", "django_libsass.SassCompiler"),)
 
+# Huey settings
+
+HUEY = {
+    "huey_class": "huey.SqliteHuey",  # Huey implementation to use.
+    "results": True,  # Store return values of tasks.
+    "store_none": False,  # If a task returns None, do not save to results.
+    "immediate": False,  # If DEBUG=True, run synchronously.
+    "utc": True,  # Use UTC for all times internally.
+    "consumer": {
+        "workers": 1,
+        "worker_type": "thread",
+        "initial_delay": 0.1,  # Smallest polling interval, same as -d.
+        "backoff": 1.15,  # Exponential backoff using this rate, -b.
+        "max_delay": 10.0,  # Max possible polling interval, -m.
+        "scheduler_interval": 1,  # Check schedule every second, -s.
+        "periodic": True,  # Enable crontab feature.
+        "check_worker_health": True,  # Enable worker health checks.
+        "health_check_interval": 1,  # Check worker health every second.
+    },
+}
+
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
@@ -228,3 +253,38 @@ ALLOWED_REGISTRATION_EMAILS = [
     ).split(",")
     if x
 ]
+
+
+# Category settings
+#
+# Google Poly originally came with a set of categories that were not
+# user-editable. The official install of Icosa Gallery respects these, but
+# allows user installations to override them in settings. To avoid hard-coding
+# the categories, which would result in a migration and source code changes to
+# amend them, we are instead mapping from an int to a string here.
+ASSET_CATEGORIES_MAP = {
+    1: ("Art", "art"),
+    2: ("Animals & Pets", "animals"),
+    3: ("Architecture", "architecture"),
+    4: ("Places & Scenes", "places"),
+    5: ("Unused", "unused"),
+    6: ("Food & Drink", "food"),
+    7: ("Nature", "nature"),
+    8: ("People & Characters", "people"),
+    9: ("Tools & Technology", "tech"),
+    10: ("Transport", "transport"),
+    11: ("Miscellaneous", "miscellaneous"),
+    12: ("Objects", "objects"),
+    13: ("Culture & Humanity", "culture"),
+    14: ("Current Events", "current_events"),
+    15: ("Furniture & Home", "home"),
+    16: ("History", "history"),
+    17: ("Science", "science"),
+    18: ("Sports & Fitness", "sport"),
+    19: ("Travel & Leisure", "travel"),
+}
+# TODO(james): move this to somewhere else so that categories can be overridden
+# in local settings and still be reverse mapped correctly.
+ASSET_CATEGORIES_REVERSE_MAP = {
+    v[1]: k for k, v in ASSET_CATEGORIES_MAP.items()
+}

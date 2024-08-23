@@ -1,6 +1,7 @@
 import bcrypt
 
 from django.conf import settings
+from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 
 from .helpers.snowflake import get_snowflake_timestamp
@@ -22,6 +23,36 @@ ASSET_VISIBILITY_CHOICES = [
         "Unlisted",
     ),
 ]
+
+RESOURCE_ROLE_CHOICES = [
+    (1, "Original OBJ File"),
+    (2, "Tilt File"),
+    (4, "Unknown GLTF File"),
+    (6, "Original FBX File"),
+    (7, "Blocks File"),
+    (8, "USD File"),
+    (11, "HTML File"),
+    (12, "Original glTF File"),
+    (13, "Tour Creator Experience"),
+    (15, "JSON File"),
+    (16, "lullmodel File"),
+    (17, "sand File"),
+    (18, "GLB File"),
+    (19, "sand File"),
+    (20, "sandc File"),
+    (21, "pb File"),
+    (22, "Unknown GLTF File"),
+    (24, "Original Triangulated OBJ File"),
+    (25, "JPG (Buggy)"),
+    (26, "USDZ File"),
+    (30, "Updated glTF File"),
+    (32, "Editor settings pb file"),
+    (35, "Unknown GLTF File"),
+    (36, "Unknown GLB File"),
+    (38, "Unknown GLB File"),
+]
+
+
 STORAGE_URL = "https://f005.backblazeb2.com/file/icosa-gallery/poly"
 
 
@@ -53,6 +84,16 @@ class User(models.Model):
         return instance
 
     @classmethod
+    def from_django_request(cls, request):
+        instance = None
+        if getattr(request.user, "email", None):
+            try:
+                instance = cls.objects.get(email=request.user.email)
+            except cls.DoesNotExist:
+                pass
+        return instance
+
+    @classmethod
     def from_django_user(cls, user):
         instance = None
         if getattr(user, "email", None):
@@ -62,13 +103,12 @@ class User(models.Model):
                 pass
         return instance
 
-    @classmethod
-    def from_request(cls, request):
+    def to_django_user(self):
         instance = None
-        if getattr(request.user, "email", None):
+        if getattr(self, "email", None):
             try:
-                instance = cls.objects.get(email=request.user.email)
-            except cls.DoesNotExist:
+                instance = DjangoUser.objects.get(email=self.email)
+            except DjangoUser.DoesNotExist:
                 pass
         return instance
 
@@ -160,12 +200,35 @@ class Asset(models.Model):
     # TODO(james): This whole function is cursed
     @property
     def preferred_format(self):
+        updated_gltf = self.polyresource_set.filter(
+            is_root=True, role=30
+        ).first()
+        original_gltf = None
+        if updated_gltf:
+            return {
+                "format": updated_gltf.format.format_type,
+                "url": updated_gltf.url,
+            }
+        else:
+            original_gltf = self.polyresource_set.filter(
+                is_root=True, role=12
+            ).first()
+            if original_gltf:
+                return {
+                    "format": original_gltf.format.format_type,
+                    "url": original_gltf.url,
+                }
+
         formats = {}
         for format in self.polyformat_set.all():
             root = format.root_resource
             formats[format.format_type] = {
                 "format": format.format_type,
-                "url": root.file.url if root.file else root.external_url,
+                "url": (
+                    root.file.url
+                    if getattr(root, "file")
+                    else root.external_url
+                ),
             }
         # TODO(james): We need this list to be more exhaustive; we're
         # returning None in too many cases.
@@ -267,6 +330,7 @@ def format_upload_path(instance, filename):
 class PolyFormat(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
+    archive_url = models.CharField(max_length=1024, null=True, blank=True)
 
     @property
     def root_resource(self):
@@ -297,6 +361,12 @@ class PolyResource(models.Model):
         upload_to=format_upload_path,
     )
     external_url = models.CharField(max_length=1024, null=True, blank=True)
+    role = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=RESOURCE_ROLE_CHOICES,
+    )
 
     @property
     def url(self):
