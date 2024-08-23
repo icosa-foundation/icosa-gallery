@@ -6,6 +6,8 @@
 
     let defaultBgColor = '{{ asset.background_color|default:"#000000" }}';
 
+    window.viewer = viewer; // For debugging
+
     {% if gltf_mode == 1 %}
         await viewer.loadGltf1("{{ asset.preferred_format.url }}", true, defaultBgColor);
     {% elif gltf_mode == 2 %}
@@ -18,7 +20,5 @@
             console.log(error);
         }
     {% endif %}
-
-    console.log(viewer); // For debugging
 
 </script>
