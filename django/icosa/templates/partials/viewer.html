@@ -9,19 +9,18 @@
     {% elif gltf_mode == 2 %}
         await viewer.loadGltf("{{ asset.preferred_format.url }}", true, defaultBgColor);
     {% else %}
+
+        // For debugging
+        window.viewer = viewer;
+        window.THREE = viewer.three;
+
         try {
             console.log("Trying to load gltf2");
             await viewer.loadGltf("{{ asset.preferred_format.url }}", true, defaultBgColor);
-            // For debugging
-            window.viewer = viewer;
-            window.THREE = viewer.three;
         } catch (error) {
             console.log(error);
             console.log("GLTF2 failed. Trying to load gltf1");
             await viewer.loadGltf1("{{ asset.preferred_format.url }}", true, defaultBgColor);
-            // For debugging
-            window.viewer = viewer;
-            window.THREE = viewer.three;
         }
     {% endif %}
 
