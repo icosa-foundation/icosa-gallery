@@ -4,10 +4,6 @@
     var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
     let defaultBgColor = '{{ asset.background_color|default:"#000000" }}';
 
-    // For debugging
-    window.viewer = viewer;
-    window.THREE = viewer.three;
-
     {% if gltf_mode == 1 %}
         await viewer.loadGltf1("{{ asset.preferred_format.url }}", true, defaultBgColor);
     {% elif gltf_mode == 2 %}
@@ -20,5 +16,9 @@
             console.log(error);
         }
     {% endif %}
+
+    // For debugging
+    window.viewer = viewer;
+    window.THREE = viewer.three;
 
 </script>
