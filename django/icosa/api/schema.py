@@ -334,6 +334,12 @@ class AssetPatchData(Schema):
     visibility: Optional[str]
 
 
+class AssetFinalizeData(Schema):
+    objPolyCount: int
+    triangulatedObjPolyCount: int
+    remixIds: Optional[str] = None
+
+
 class UploadJobSchemaOut(Schema):
     upload_job: int
     edit_url: str

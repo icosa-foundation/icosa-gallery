@@ -33,6 +33,7 @@ from django.urls import reverse
 
 from .schema import (
     AssetFilters,
+    AssetFinalizeData,
     AssetSchemaOut,
     UploadJobSchemaOut,
     get_keyword_q,
@@ -217,9 +218,7 @@ def add_asset_format(
 def finalize_asset(
     request,
     asset: str,
-    objPolyCount: int,
-    triangulatedObjPolyCount: int,
-    remixIds: Optional[str] = None,
+    data: AssetFinalizeData,
 ):
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
@@ -237,12 +236,12 @@ def finalize_asset(
     non_triangulated_resources = asset.polyresource_set.filter(
         role__in=non_tri_roles
     )
-    non_triangulated_resources.update(triangle_count=objPolyCount)
+    non_triangulated_resources.update(triangle_count=data.objPolyCount)
 
     triangulated_resources = asset.polyresource_set.exclude(
         role__in=non_tri_roles
     )
-    triangulated_resources.update(triangle_count=triangulatedObjPolyCount)
+    triangulated_resources.update(triangle_count=data.triangulatedObjPolyCount)
 
     formats = PolyFormat.objects.filter(asset=asset)
     for format in formats:
@@ -255,8 +254,8 @@ def finalize_asset(
             create_defaults={"triangle_count": max_tri_complexity},
         )
 
-    if remixIds is not None:
-        asset.remix_ids = remixIds.split(",")
+    if getattr(data, "remixIds") is not None:
+        asset.remix_ids = data.remixIds.split(",")
         asset.save()
 
     return 200, "ok"
