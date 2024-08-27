@@ -1,20 +1,41 @@
 .login-container {
-    text-align: center;
+  text-align: center;
 
-    form {
-        flex-flow: column;
-        padding: 1em;
+  form {
+    flex-flow: column;
+    padding: 1em;
 
-        .form-group {
-            label {
-                margin: 0 1em;
-                width: 5em;
-                text-align: right;
-            }
+    .form-group {
+      label {
+        margin: 0 1em;
+        width: 5em;
+        text-align: right;
+      }
 
-            input {
-                width: 25em;
-            }
-        }
+      input {
+        width: 25em;
+      }
     }
+  }
+}
+
+ul.messages {
+  padding: 0;
+  list-style-type: none;
+  display: block;
+
+
+  li {
+    padding: 1rem;
+    background-color: rebeccapurple;
+    border-radius: 0.25rem;
+
+    +li {
+      margin-top: 1rem;
+    }
+
+    &.info {
+      background-color: #009962;
+    }
+  }
 }

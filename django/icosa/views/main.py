@@ -6,6 +6,7 @@ from icosa.models import User as IcosaUser
 from icosa.tasks import queue_upload
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User as DjangoUser
@@ -115,6 +116,12 @@ def uploads(request):
                 job_snowflake,
                 [request.FILES["file"]],
                 None,
+            )
+            messages.add_message(
+                request,
+                messages.INFO,
+                """Your upload has started.
+Plese check back here shortly to see it""",
             )
             return HttpResponseRedirect(reverse("uploads"))
     elif request.method == "GET":
