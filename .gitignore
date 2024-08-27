@@ -159,4 +159,5 @@ django/huey.db-shm
 django/polygone_data*
 django/*.tsv
 django/*.jsonl
+uploads.sh
 
