@@ -255,7 +255,7 @@ def finalize_asset(
         )
 
     if getattr(data, "remixIds") is not None:
-        asset.remix_ids = data.remixIds.split(",")
+        asset.remix_ids = data.remixIds
         asset.save()
 
     return 200, "ok"

@@ -337,7 +337,7 @@ class AssetPatchData(Schema):
 class AssetFinalizeData(Schema):
     objPolyCount: int
     triangulatedObjPolyCount: int
-    remixIds: Optional[str] = None
+    remixIds: Optional[List[str]] = None
 
 
 class UploadJobSchemaOut(Schema):
