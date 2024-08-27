@@ -192,6 +192,7 @@ class Asset(models.Model):
     orienting_rotation_w = models.FloatField(null=True, blank=True)
     imported = models.BooleanField(default=False)
     search_text = models.TextField(null=True, blank=True)
+    remix_ids = models.JSONField(null=True, blank=True)
 
     @property
     def timestamp(self):
@@ -322,6 +323,8 @@ def format_upload_path(instance, filename):
     ext = filename.split(".")[-1]
     if instance.is_root:
         name = f"model.{ext}"
+    if ext == "obj" and instance.role == 24:
+        name = f"model-triangulated.{ext}"
     else:
         name = filename
     return f"{root}/{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
@@ -367,6 +370,7 @@ class PolyResource(models.Model):
         blank=True,
         choices=RESOURCE_ROLE_CHOICES,
     )
+    triangle_count = models.PositiveIntegerField(default=0, db_default=0)
 
     @property
     def url(self):

@@ -9,7 +9,14 @@ from icosa.api import (
 from icosa.api.authentication import AuthBearer
 from icosa.helpers.file import upload_asset, upload_format
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import PUBLIC, Asset, PolyFormat, Tag
+from icosa.models import (
+    PUBLIC,
+    Asset,
+    FormatComplexity,
+    PolyFormat,
+    PolyResource,
+    Tag,
+)
 from icosa.models import User as IcosaUser
 from ninja import File, Query, Router
 from ninja.decorators import decorate_view
@@ -20,7 +27,7 @@ from ninja.pagination import paginate
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.http import HttpRequest
 from django.urls import reverse
 
@@ -165,7 +172,9 @@ def get_asset(
     "/{str:asset}/blocks_format",
     auth=AuthBearer(),
     response={201: str},
-    include_in_schema=False,
+    include_in_schema=False,  # TODO this route, coupled with finalize_asset
+    # has a race condition. If this route becomes public, this will probably
+    # need to be fixed.
 )
 @decorate_view(transaction.atomic)
 def add_asset_format(
@@ -200,20 +209,56 @@ def add_asset_format(
     "/{str:asset}/blocks_finalize",
     auth=AuthBearer(),
     response={200: str},
-    include_in_schema=False,
+    # include_in_schema=False,  # TODO this route has a race condition with
+    # add_asset_format and will overwrite the last format uploaded. If this
+    # route becomes public, this will probably need to be fixed.
 )
 @decorate_view(transaction.atomic)
 def finalize_asset(
     request,
     asset: str,
+    objPolyCount: int,
+    triangulatedObjPolyCount: int,
+    remixIds: Optional[str] = None,
 ):
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
+
+    # Clean up formats with no root resource.
     # TODO(james): This can probably be done in one query
     resources = asset.polyresource_set.filter(file="")
     format_pks = list(set([x.format.pk for x in resources]))
     formats = PolyFormat.objects.filter(pk__in=format_pks)
     formats.delete()
+
+    # Apply triangle counts to all formats and resources.
+
+    non_tri_roles = [1, 7]  # Original OBJ, BLOCKS
+    non_triangulated_resources = asset.polyresource_set.filter(
+        role__in=non_tri_roles
+    )
+    non_triangulated_resources.update(triangle_count=objPolyCount)
+
+    triangulated_resources = asset.polyresource_set.exclude(
+        role__in=non_tri_roles
+    )
+    triangulated_resources.update(triangle_count=triangulatedObjPolyCount)
+
+    formats = PolyFormat.objects.filter(asset=asset)
+    for format in formats:
+        max_tri_complexity = PolyResource.objects.filter(
+            format=format
+        ).aggregate(Max("triangle_count"))["triangle_count__max"]
+
+        FormatComplexity.objects.update_or_create(
+            format=format,
+            create_defaults={"triangle_count": max_tri_complexity},
+        )
+
+    if remixIds is not None:
+        asset.remix_ids = remixIds.split(",")
+        asset.save()
+
     return 200, "ok"
 
 
