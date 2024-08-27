@@ -209,7 +209,7 @@ def add_asset_format(
     "/{str:asset}/blocks_finalize",
     auth=AuthBearer(),
     response={200: str},
-    # include_in_schema=False,  # TODO this route has a race condition with
+    include_in_schema=False,  # TODO this route has a race condition with
     # add_asset_format and will overwrite the last format uploaded. If this
     # route becomes public, this will probably need to be fixed.
 )
