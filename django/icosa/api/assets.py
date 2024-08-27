@@ -254,9 +254,8 @@ def finalize_asset(
             create_defaults={"triangle_count": max_tri_complexity},
         )
 
-    if getattr(data, "remixIds") is not None:
-        asset.remix_ids = data.remixIds
-        asset.save()
+    asset.remix_ids = getattr(data, "remixIds", None)
+    asset.save()
 
     return 200, "ok"
 
