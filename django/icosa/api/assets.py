@@ -244,16 +244,14 @@ def finalize_asset(
     # Apply triangle counts to all formats and resources.
 
     non_tri_roles = [1, 7]  # Original OBJ, BLOCKS
+
     non_triangulated_resources = asset.polyresource_set.filter(
         role__in=non_tri_roles
     )
     format_pks = list(set([x.format.pk for x in non_triangulated_resources]))
     formats = PolyFormat.objects.filter(pk__in=format_pks)
     for format in formats:
-        FormatComplexity.objects.update_or_create(
-            format=format,
-            create_defaults={"triangle_count": data.objPolyCount},
-        )
+        format.update_or_create_format_complexity(data.objPolyCount)
 
     triangulated_resources = asset.polyresource_set.exclude(
         role__in=non_tri_roles
@@ -261,9 +259,8 @@ def finalize_asset(
     format_pks = list(set([x.format.pk for x in triangulated_resources]))
     formats = PolyFormat.objects.filter(pk__in=format_pks)
     for format in formats:
-        FormatComplexity.objects.update_or_create(
-            format=format,
-            create_defaults={"triangle_count": data.triangulatedObjPolyCount},
+        format.update_or_create_format_complexity(
+            data.triangulatedObjPolyCount
         )
 
     asset.remix_ids = getattr(data, "remixIds", None)
