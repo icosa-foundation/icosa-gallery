@@ -231,7 +231,6 @@ def finalize_asset(
     asset: str,
     data: AssetFinalizeData,
 ):
-    user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
