@@ -220,7 +220,7 @@ def add_asset_format(
 @router.post(
     "/{str:asset}/blocks_finalize",
     auth=AuthBearer(),
-    response={200: UploadJobSchemaOut},
+    response=AssetSchemaOut,
     include_in_schema=False,  # TODO this route has a race condition with
     # add_asset_format and will overwrite the last format uploaded. If this
     # route becomes public, this will probably need to be fixed.
@@ -269,18 +269,7 @@ def finalize_asset(
     asset.remix_ids = getattr(data, "remixIds", None)
     asset.save()
 
-    return 200, {
-        "editUrl": request.build_absolute_uri(
-            reverse(
-                "edit_asset",
-                kwargs={
-                    "user_url": user.url,
-                    "asset_url": asset.url,
-                },
-            )
-        ),
-        "assetId": asset.url,
-    }
+    return asset
 
 
 @router.patch(
