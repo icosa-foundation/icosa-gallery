@@ -172,7 +172,7 @@ def get_asset(
 @router.post(
     "/{str:asset}/blocks_format",
     auth=AuthBearer(),
-    response={201: str},
+    response={201: UploadJobSchemaOut},
     include_in_schema=False,  # TODO this route, coupled with finalize_asset
     # has a race condition. If this route becomes public, this will probably
     # need to be fixed.
@@ -203,13 +203,24 @@ def add_asset_format(
         raise HttpError(415, "Unsupported content type.")
 
     asset.save()
-    return 201, "ok"
+    return 201, {
+        "editUrl": request.build_absolute_uri(
+            reverse(
+                "edit_asset",
+                kwargs={
+                    "user_url": user.url,
+                    "asset_url": asset.url,
+                },
+            )
+        ),
+        "assetId": asset.url,
+    }
 
 
 @router.post(
     "/{str:asset}/blocks_finalize",
     auth=AuthBearer(),
-    response={200: str},
+    response={200: UploadJobSchemaOut},
     include_in_schema=False,  # TODO this route has a race condition with
     # add_asset_format and will overwrite the last format uploaded. If this
     # route becomes public, this will probably need to be fixed.
@@ -220,6 +231,7 @@ def finalize_asset(
     asset: str,
     data: AssetFinalizeData,
 ):
+    user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
@@ -257,7 +269,18 @@ def finalize_asset(
     asset.remix_ids = getattr(data, "remixIds", None)
     asset.save()
 
-    return 200, "ok"
+    return 200, {
+        "editUrl": request.build_absolute_uri(
+            reverse(
+                "edit_asset",
+                kwargs={
+                    "user_url": user.url,
+                    "asset_url": asset.url,
+                },
+            )
+        ),
+        "assetId": asset.url,
+    }
 
 
 @router.patch(
@@ -323,8 +346,8 @@ def upload_new_assets(
     except HttpError:
         raise
     return 201, {
-        "upload_job": job_snowflake,
-        "edit_url": request.build_absolute_uri(
+        "uploadJob": job_snowflake,
+        "editUrl": request.build_absolute_uri(
             reverse(
                 "edit_asset",
                 kwargs={
@@ -333,6 +356,7 @@ def upload_new_assets(
                 },
             )
         ),
+        "assetId": asset.url,
     }
 
 

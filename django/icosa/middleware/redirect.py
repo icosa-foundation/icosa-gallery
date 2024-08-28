@@ -68,6 +68,10 @@ class RemoveSlashMiddleware(MiddlewareMixin):
             return self.response_redirect_class(
                 self.get_full_path_without_slash(request)
             )
+        elif request.path_info.startswith(
+            "/admin"
+        ) and not request.path_info.endswith("/"):
+            return self.response_redirect_class(request.get_full_path(request))
 
         # Add the Content-Length header to non-streaming responses if not
         # already set.

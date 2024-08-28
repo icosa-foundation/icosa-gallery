@@ -341,8 +341,9 @@ class AssetFinalizeData(Schema):
 
 
 class UploadJobSchemaOut(Schema):
-    upload_job: int
-    edit_url: str
+    uploadJob: Optional[int] = None
+    editUrl: str
+    assetId: str
 
 
 class OembedOut(Schema):
