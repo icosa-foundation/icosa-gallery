@@ -6,6 +6,7 @@ import zipfile
 from dataclasses import dataclass
 from typing import List, Optional
 
+import ijson
 from icosa.models import Asset, PolyFormat, PolyResource, User
 from ninja import File
 from ninja.errors import HttpError
@@ -65,6 +66,16 @@ class UploadedFormat:
     mainfile: bool
 
 
+def is_gltf2(file: UploadedFile) -> bool:
+    parser = ijson.parse(file.file, multiple_values=True)
+    for prefix, event, value in parser:
+        if (prefix, event) == ("buffers", "map_key"):
+            # We are mapping a dictionary at the key `buffers`, which means
+            # this is gltf1.
+            return False
+    return True
+
+
 def validate_file(
     file: UploadedFile, extension: str
 ) -> Optional[UploadedFormat]:
@@ -96,9 +107,10 @@ def validate_file(
         filetype = "GLTF2"
         mainfile = True
     if extension == "gltf":
-        # TODO: need extra checks here to determine if GLTF 1 or 2.
-        # is_v2 = not isinstance(gltf["buffers"], dict)
-        filetype = "GLTF2"
+        if is_gltf2(file):
+            filetype = "GLTF2"
+        else:
+            filetype = "GLTF"
         mainfile = True
     if extension == "bin":
         filetype = "BIN"
@@ -200,7 +212,7 @@ def get_role_id(f: UploadedFormat) -> Optional[int]:
             return 24
         if name == "model":
             return 1
-    if filetype == "GLTF2":
+    if filetype in ["GLTF", "GLTF2"]:
         return 12
     if filetype == "FBX":
         return 6
@@ -289,8 +301,11 @@ def process_bin(asset: Asset, f: UploadedFormat):
     gltf = get_gltf(asset)
 
     if gltf is None:
+        format_type = "GLTF"
+        if is_gltf2(f):
+            format_type = "GLTF2"
         format_data = {
-            "format_type": "GLTF2",
+            "format_type": format_type,
             "asset": asset,
         }
         format = PolyFormat.objects.create(**format_data)
@@ -356,7 +371,7 @@ def upload_format(
         process_mtl(asset, f)
     elif filetype == "BIN":
         process_bin(asset, f)
-    elif filetype in ["OBJ", "GLTF2"]:
+    elif filetype in ["OBJ", "GLTF2", "GLTF"]:
         process_root(asset, f)
     elif filetype == "IMAGE" and f.file.name == "thumbnail.png":
         asset.thumbnail = f.file
