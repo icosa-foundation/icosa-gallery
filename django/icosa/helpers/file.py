@@ -351,6 +351,7 @@ def upload_format(
 
     if existing_resource is not None:
         existing_resource.file = f.file
+        existing_resource.save()
     elif filetype == "MTL":
         process_mtl(asset, f)
     elif filetype == "BIN":
@@ -360,6 +361,9 @@ def upload_format(
     elif filetype == "IMAGE" and f.file.name == "thumbnail.png":
         asset.thumbnail = f.file
         asset.thumbnail_contenttype = get_content_type(f.file.name)
+        # We save outside of this function too. Saving here is more explicit,
+        # but might reduce perf.
+        asset.save()
     else:
         process_normally(asset, f)
 
