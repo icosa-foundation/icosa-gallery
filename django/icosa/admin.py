@@ -57,7 +57,6 @@ class PolyResourceInline(admin.TabularInline):
         "file",
         "external_url",
         "role",
-        "triangle_count",
     )
 
 
