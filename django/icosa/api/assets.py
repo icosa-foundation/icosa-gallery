@@ -247,22 +247,23 @@ def finalize_asset(
     non_triangulated_resources = asset.polyresource_set.filter(
         role__in=non_tri_roles
     )
-    non_triangulated_resources.update(triangle_count=data.objPolyCount)
+    format_pks = list(set([x.format.pk for x in non_triangulated_resources]))
+    formats = PolyFormat.objects.filter(pk__in=format_pks)
+    for format in formats:
+        FormatComplexity.objects.update_or_create(
+            format=format,
+            create_defaults={"triangle_count": data.objPolyCount},
+        )
 
     triangulated_resources = asset.polyresource_set.exclude(
         role__in=non_tri_roles
     )
-    triangulated_resources.update(triangle_count=data.triangulatedObjPolyCount)
-
-    formats = PolyFormat.objects.filter(asset=asset)
+    format_pks = list(set([x.format.pk for x in triangulated_resources]))
+    formats = PolyFormat.objects.filter(pk__in=format_pks)
     for format in formats:
-        max_tri_complexity = PolyResource.objects.filter(
-            format=format
-        ).aggregate(Max("triangle_count"))["triangle_count__max"]
-
         FormatComplexity.objects.update_or_create(
             format=format,
-            create_defaults={"triangle_count": max_tri_complexity},
+            create_defaults={"triangle_count": data.triangulatedObjPolyCount},
         )
 
     asset.remix_ids = getattr(data, "remixIds", None)
