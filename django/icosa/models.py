@@ -370,7 +370,6 @@ class PolyResource(models.Model):
         blank=True,
         choices=RESOURCE_ROLE_CHOICES,
     )
-    triangle_count = models.PositiveIntegerField(default=0, db_default=0)
 
     @property
     def url(self):
