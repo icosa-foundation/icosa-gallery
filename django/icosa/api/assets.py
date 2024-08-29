@@ -44,6 +44,25 @@ default_storage = get_storage_class()()
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
 
+def get_publish_url(request, asset: Asset) -> str:
+    url = request.build_absolute_uri(
+        reverse(
+            "publish_asset",
+            kwargs={
+                "asset_url": asset.url,
+            },
+        )
+    )
+    if settings.DEPLOYMENT_HOST_API is not None:
+        url = url.replace(
+            settings.DEPLOYMENT_HOST_API, settings.DEPLOYMENT_HOST_WEB
+        )
+    return 200, {
+        "publishUrl": url,
+        "assetId": asset.url,
+    }
+
+
 def user_can_view_asset(
     request: HttpRequest,
     asset: Asset,
@@ -201,18 +220,7 @@ def add_asset_format(
         raise HttpError(415, "Unsupported content type.")
 
     asset.save()
-    return 200, {
-        "editUrl": request.build_absolute_uri(
-            reverse(
-                "edit_asset",
-                kwargs={
-                    "user_url": user.url,
-                    "asset_url": asset.url,
-                },
-            )
-        ),
-        "assetId": asset.url,
-    }
+    return get_publish_url(request, asset)
 
 
 @router.post(
@@ -229,24 +237,12 @@ def finalize_asset(
     asset: str,
     data: AssetFinalizeData,
 ):
-    user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
     queue_finalize_asset(asset.url, data)
 
-    return 200, {
-        "editUrl": request.build_absolute_uri(
-            reverse(
-                "edit_asset",
-                kwargs={
-                    "user_url": user.url,
-                    "asset_url": asset.url,
-                },
-            )
-        ),
-        "assetId": asset.url,
-    }
+    return get_publish_url(request, asset)
 
 
 @router.patch(
@@ -315,19 +311,7 @@ def upload_new_assets(
             asset,
             files,
         )
-    return 200, {
-        "uploadJob": job_snowflake,
-        "editUrl": request.build_absolute_uri(
-            reverse(
-                "edit_asset",
-                kwargs={
-                    "user_url": user.url,
-                    "asset_url": asset_token,
-                },
-            )
-        ),
-        "assetId": asset_token,
-    }
+    return get_publish_url(request, asset)
 
 
 @router.get(
