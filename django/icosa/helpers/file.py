@@ -1,7 +1,6 @@
 import io
 import os
 import re
-import secrets
 import zipfile
 from dataclasses import dataclass
 from typing import List, Optional
@@ -387,7 +386,7 @@ def upload_format(
 
 def upload_asset(
     current_user: User,
-    job_snowflake: int,
+    asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
     thumbnail: UploadedFile = File(...),
 ):
@@ -447,19 +446,9 @@ def upload_asset(
                 sub_files.append(upload_details)
 
     # begin upload process
-    asset_token = secrets.token_urlsafe(8)
 
-    # create an asset to attach files to
-    asset_data = {
-        "id": job_snowflake,
-        "url": asset_token,
-        "name": name,
-        "formats": "",
-        "owner": current_user,
-        "curated": False,
-    }
-
-    asset = Asset.objects.create(**asset_data)
+    asset.name = name
+    asset.save()
 
     for mainfile in main_files:
         process_main_file(

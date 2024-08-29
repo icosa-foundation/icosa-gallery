@@ -1,9 +1,11 @@
+import secrets
+
 from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset
 from icosa.models import User as IcosaUser
-from icosa.tasks import queue_upload
+from icosa.tasks import queue_upload_asset
 
 from django.conf import settings
 from django.contrib import messages
@@ -111,11 +113,16 @@ def uploads(request):
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
             job_snowflake = generate_snowflake()
-            queue_upload(
+            asset_token = secrets.token_urlsafe(8)
+            asset = Asset.objects.create(
+                id=job_snowflake,
+                url=asset_token,
+                owner=user,
+            )
+            queue_upload_asset(
                 user,
-                job_snowflake,
+                asset,
                 [request.FILES["file"]],
-                None,
             )
             messages.add_message(
                 request,

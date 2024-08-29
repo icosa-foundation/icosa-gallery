@@ -92,7 +92,6 @@ class AssetAdmin(admin.ModelAdmin):
         "url",
         "owner",
         "description",
-        "_formats",
         "visibility",
         "curated",
     )
@@ -109,12 +108,6 @@ class AssetAdmin(admin.ModelAdmin):
         "imported",
         ("thumbnail", admin.EmptyFieldListFilter),
     )
-
-    @admin.display(description="Formats")
-    def _formats(self, obj):
-        return (
-            f"{', '.join([x['format'] for x in obj.formats if 'format' in x])}"
-        )
 
     def _thumbnail_image(self, obj):
         html = ""

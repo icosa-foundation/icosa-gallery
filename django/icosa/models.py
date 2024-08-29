@@ -163,7 +163,7 @@ class Asset(models.Model):
         choices=ASSET_VISIBILITY_CHOICES,
         db_default=PRIVATE,
     )
-    curated = models.BooleanField(blank=True, null=True)
+    curated = models.BooleanField(default=False)
     polyid = models.CharField(max_length=255, blank=True, null=True)
     polydata = models.JSONField(blank=True, null=True)
     thumbnail = models.ImageField(
@@ -293,7 +293,7 @@ class Asset(models.Model):
         return self.thumbnail.content_type
 
     def __str__(self):
-        return self.name
+        return self.name if self.name else "(Un-named asset)"
 
     def update_search_text(self):
         tag_str = " ".join([t.name for t in self.tags.all()])

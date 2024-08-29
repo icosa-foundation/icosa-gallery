@@ -1,4 +1,5 @@
 import re
+import secrets
 from typing import List, NoReturn, Optional
 
 from icosa.api import (
@@ -7,17 +8,14 @@ from icosa.api import (
     AssetPagination,
 )
 from icosa.api.authentication import AuthBearer
-from icosa.helpers.file import upload_asset, upload_format
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import (
-    PUBLIC,
-    Asset,
-    FormatComplexity,
-    PolyFormat,
-    PolyResource,
-    Tag,
-)
+from icosa.models import PUBLIC, Asset, Tag
 from icosa.models import User as IcosaUser
+from icosa.tasks import (
+    queue_finalize_asset,
+    queue_upload_asset,
+    queue_upload_format,
+)
 from ninja import File, Query, Router
 from ninja.decorators import decorate_view
 from ninja.errors import HttpError
@@ -27,7 +25,7 @@ from ninja.pagination import paginate
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Q
 from django.http import HttpRequest
 from django.urls import reverse
 
@@ -172,7 +170,7 @@ def get_asset(
 @router.post(
     "/{str:asset}/blocks_format",
     auth=AuthBearer(),
-    response={201: UploadJobSchemaOut},
+    response={200: UploadJobSchemaOut},
     include_in_schema=False,  # TODO this route, coupled with finalize_asset
     # has a race condition. If this route becomes public, this will probably
     # need to be fixed.
@@ -192,7 +190,7 @@ def add_asset_format(
         try:
             print("FILES:")
             print(request.FILES)
-            upload_format(user, asset, files)
+            queue_upload_format(user, asset, files)
         except HttpError:
             print("HEADERS:")
             print(request.headers)
@@ -203,7 +201,7 @@ def add_asset_format(
         raise HttpError(415, "Unsupported content type.")
 
     asset.save()
-    return 201, {
+    return 200, {
         "editUrl": request.build_absolute_uri(
             reverse(
                 "edit_asset",
@@ -220,7 +218,7 @@ def add_asset_format(
 @router.post(
     "/{str:asset}/blocks_finalize",
     auth=AuthBearer(),
-    response=AssetSchemaOut,
+    response={200: UploadJobSchemaOut},
     include_in_schema=False,  # TODO this route has a race condition with
     # add_asset_format and will overwrite the last format uploaded. If this
     # route becomes public, this will probably need to be fixed.
@@ -231,42 +229,24 @@ def finalize_asset(
     asset: str,
     data: AssetFinalizeData,
 ):
+    user = IcosaUser.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
-    # Clean up formats with no root resource.
-    # TODO(james): This can probably be done in one query
-    resources = asset.polyresource_set.filter(file="")
-    format_pks = list(set([x.format.pk for x in resources]))
-    formats = PolyFormat.objects.filter(pk__in=format_pks)
-    formats.delete()
+    queue_finalize_asset(asset.url, data)
 
-    # Apply triangle counts to all formats and resources.
-
-    non_tri_roles = [1, 7]  # Original OBJ, BLOCKS
-
-    non_triangulated_resources = asset.polyresource_set.filter(
-        role__in=non_tri_roles
-    )
-    format_pks = list(set([x.format.pk for x in non_triangulated_resources]))
-    formats = PolyFormat.objects.filter(pk__in=format_pks)
-    for format in formats:
-        format.update_or_create_format_complexity(data.objPolyCount)
-
-    triangulated_resources = asset.polyresource_set.exclude(
-        role__in=non_tri_roles
-    )
-    format_pks = list(set([x.format.pk for x in triangulated_resources]))
-    formats = PolyFormat.objects.filter(pk__in=format_pks)
-    for format in formats:
-        format.update_or_create_format_complexity(
-            data.triangulatedObjPolyCount
-        )
-
-    asset.remix_ids = getattr(data, "remixIds", None)
-    asset.save()
-
-    return asset
+    return 200, {
+        "editUrl": request.build_absolute_uri(
+            reverse(
+                "edit_asset",
+                kwargs={
+                    "user_url": user.url,
+                    "asset_url": asset.url,
+                },
+            )
+        ),
+        "assetId": asset.url,
+    }
 
 
 @router.patch(
@@ -306,7 +286,7 @@ def get_user_asset(
 
 @router.post(
     "",
-    response={201: UploadJobSchemaOut},
+    response={200: UploadJobSchemaOut},
     auth=AuthBearer(),
     include_in_schema=False,
 )
@@ -322,27 +302,31 @@ def upload_new_assets(
 ):
     user = IcosaUser.from_ninja_request(request)
     job_snowflake = generate_snowflake()
-    try:
-        asset = upload_asset(
+    asset_token = secrets.token_urlsafe(8)
+    asset = Asset.objects.create(
+        id=job_snowflake,
+        url=asset_token,
+        owner=user,
+        name="Untitled Asset",
+    )
+    if files is not None:
+        queue_upload_asset(
             user,
-            job_snowflake,
+            asset,
             files,
-            None,
         )
-    except HttpError:
-        raise
-    return 201, {
+    return 200, {
         "uploadJob": job_snowflake,
         "editUrl": request.build_absolute_uri(
             reverse(
                 "edit_asset",
                 kwargs={
                     "user_url": user.url,
-                    "asset_url": asset.url,
+                    "asset_url": asset_token,
                 },
             )
         ),
-        "assetId": asset.url,
+        "assetId": asset_token,
     }
 
 
