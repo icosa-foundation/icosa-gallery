@@ -52,10 +52,10 @@ RESOURCE_ROLE_CHOICES = [
     (38, "Unknown GLB File"),
 ]
 
-VIEWABLE_ROLES = [
-    12,
-    18,
-    30,
+VIEWABLE_TYPES = [
+    "GLB",
+    "GLTF",
+    "GLTF2",
 ]
 
 
@@ -309,7 +309,7 @@ class Asset(models.Model):
 
     def validate(self):
         return bool(
-            self.polyresource_set.filter(role__in=VIEWABLE_ROLES).count()
+            self.polyformat_set.filter(format_type__in=VIEWABLE_TYPES).count()
         )
 
     def save(self, *args, **kwargs):
