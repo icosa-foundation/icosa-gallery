@@ -52,6 +52,12 @@ RESOURCE_ROLE_CHOICES = [
     (38, "Unknown GLB File"),
 ]
 
+VIEWABLE_ROLES = [
+    12,
+    18,
+    30,
+]
+
 
 STORAGE_URL = "https://f005.backblazeb2.com/file/icosa-gallery/poly"
 
@@ -193,6 +199,7 @@ class Asset(models.Model):
     imported = models.BooleanField(default=False)
     search_text = models.TextField(null=True, blank=True)
     remix_ids = models.JSONField(null=True, blank=True)
+    is_valid = models.BooleanField(default=False)
 
     @property
     def timestamp(self):
@@ -300,8 +307,14 @@ class Asset(models.Model):
         description = self.description if self.description is not None else ""
         self.search_text = f"{self.name} {description} {tag_str}"
 
+    def validate(self):
+        return bool(
+            self.polyresource_set.filter(role__in=VIEWABLE_ROLES).count()
+        )
+
     def save(self, *args, **kwargs):
         self.update_search_text()
+        self.is_valid = self.validate()
         super().save(*args, **kwargs)
 
     class Meta:

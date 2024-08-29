@@ -94,6 +94,7 @@ class AssetAdmin(admin.ModelAdmin):
         "description",
         "visibility",
         "curated",
+        "is_valid",
     )
     search_fields = (
         "name",
