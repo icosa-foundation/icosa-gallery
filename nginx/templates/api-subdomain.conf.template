@@ -16,6 +16,20 @@ server {
         proxy_send_timeout 600;
     }
 
+    location ^~ /archive/ {
+        proxy_ssl_server_name on;
+        proxy_pass https://web.archive.org/web/;
+        proxy_set_header Host web.archive.org;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Set CORS headers
+        add_header Access-Control-Allow-Origin "*";
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
+        add_header Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization";
+    }
+
     location ^~ /v1/ {
         return 404;
     }
