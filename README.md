@@ -13,14 +13,9 @@ Copy the supplied example config files to their correct locations:
 
 ```
 cp example.env .env
-cp fastapi/config.example.json fastapi/config.json
-cp fastapi/gcp-service-account.example.json fastapi/gcp-service-account.json
 ```
 
 TODO Explain what each of these files are for and what values you need to change
-
-When running in docker, the api service needs its host specified as `db` instead of `localhost` where `db` is the postgres service name.
-This is currently set in the `dblocation` key inside `config.json`.
 
 TODO this is confusing ^
 
