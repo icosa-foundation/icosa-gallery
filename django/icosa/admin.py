@@ -83,6 +83,7 @@ class PolyFormatAdmin(admin.ModelAdmin):
         PolyResourceInline,
         FormatComplexityInline,
     )
+    raw_id_fields = ["asset"]
 
 
 @admin.register(Asset)
