@@ -65,8 +65,8 @@ class UploadedFormat:
     mainfile: bool
 
 
-def is_gltf2(file: UploadedFile) -> bool:
-    parser = ijson.parse(file.file, multiple_values=True)
+def is_gltf2(file) -> bool:
+    parser = ijson.parse(file, multiple_values=True)
     for prefix, event, value in parser:
         if (prefix, event) == ("buffers", "map_key"):
             # We are mapping a dictionary at the key `buffers`, which means
@@ -106,7 +106,7 @@ def validate_file(
         filetype = "GLTF2"
         mainfile = True
     if extension == "gltf":
-        if is_gltf2(file):
+        if is_gltf2(file.file):
             filetype = "GLTF2"
         else:
             filetype = "GLTF"
@@ -301,7 +301,7 @@ def process_bin(asset: Asset, f: UploadedFormat):
 
     if gltf is None:
         format_type = "GLTF"
-        if is_gltf2(f):
+        if is_gltf2(f.file):
             format_type = "GLTF2"
         format_data = {
             "format_type": format_type,

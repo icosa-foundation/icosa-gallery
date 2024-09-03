@@ -7,6 +7,7 @@ from pathlib import Path
 from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
+    RESOURCE_ROLE_CHOICES,
     Asset,
     FormatComplexity,
     PolyFormat,
@@ -20,6 +21,18 @@ from django.core.management.base import BaseCommand
 
 POLY_JSON_DIR = "polygone_data"
 ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
+
+EXTENSION_ROLE_MAP = {
+    ".obj": 1,
+    ".tilt": 2,
+    ".fbx": 6,
+    ".blocks": 7,
+    ".usd": 8,
+    ".html": 11,
+    ".json": 15,
+    ".glb": 36,
+    ".gltf": 39,
+}
 
 
 def get_json_from_b2(dir):
@@ -141,22 +154,34 @@ def create_formats(directory, gltf2_data, formats_json, asset):
             format.format_type = "GLTF2"
             format.save()
 
+        file_path = root_resource_json["relativePath"]
+        extension = os.path.splitext(file_path)[-1].lower()
+        role = EXTENSION_ROLE_MAP.get(extension)
+
         root_resource_data = {
-            "file": f"poly/{directory}/{root_resource_json['relativePath']}",
+            "file": f"poly/{directory}/{file_path}",
             "is_root": True,
             "format": format,
             "asset": asset,
             "contenttype": root_resource_json["contentType"],
+            "role": role,
         }
         PolyResource.objects.create(**root_resource_data)
+
         if format_json.get("resources", None) is not None:
             for resource_json in format_json["resources"]:
+
+                file_path = resource_json["relativePath"]
+                extension = os.path.splitext(file_path)[-1].lower()
+                role = EXTENSION_ROLE_MAP.get(extension)
+
                 resource_data = {
-                    "file": f"poly/{directory}/{resource_json['relativePath']}",
+                    "file": f"poly/{directory}/{file_path}",
                     "is_root": False,
                     "format": format,
                     "asset": asset,
                     "contenttype": resource_json["contentType"],
+                    "role": role,
                 }
                 PolyResource.objects.create(**resource_data)
 

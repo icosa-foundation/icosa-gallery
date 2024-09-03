@@ -200,17 +200,6 @@ def my_likes(request):
     )
 
 
-def get_gltf_mode(request, asset):
-    if request.GET.get("gltfmode", None) is not None:
-        try:
-            gltf_mode = int(request.GET["gltfmode"])
-        except ValueError:
-            pass
-    else:
-        gltf_mode = None
-    return gltf_mode
-
-
 # TODO(james): This is very similar to view_poly_asset. Do we need both?
 def view_asset(request, user_url, asset_url):
     template = "main/view_asset.html"
@@ -221,7 +210,6 @@ def view_asset(request, user_url, asset_url):
         "request_user": IcosaUser.from_django_user(request.user),
         "user": icosa_user,
         "asset": asset,
-        "gltf_mode": get_gltf_mode(request, asset),
     }
     return render(
         request,
@@ -240,7 +228,6 @@ def view_poly_asset(request, asset_url):
         "request_user": IcosaUser.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
-        "gltf_mode": get_gltf_mode(request, asset),
     }
     return render(
         request,
@@ -268,7 +255,6 @@ def edit_asset(request, user_url, asset_url):
     context = {
         "user": user,
         "asset": asset,
-        "gltf_mode": get_gltf_mode(request, asset),
         "form": form,
     }
     return render(
@@ -296,7 +282,6 @@ def publish_asset(request, asset_url):
     context = {
         "user": asset.owner,
         "asset": asset,
-        "gltf_mode": get_gltf_mode(request, asset),
         "form": form,
     }
     return render(

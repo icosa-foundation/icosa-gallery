@@ -1,4 +1,4 @@
-import csv
+import json
 from dataclasses import dataclass
 
 from icosa.models import Asset, PolyFormat, PolyResource
@@ -15,14 +15,7 @@ class ProcessedRow:
     resource: PolyResource
 
 
-def process_row(row):
-    asset_id = row[0]
-
-    try:
-        resource_url = row[1]
-    except IndexError:
-        print(f"No resource url for line `{asset_id}`. Skipping.")
-        return None
+def process_blocks_row(asset_id, resource_url):
 
     try:
         asset = Asset.objects.get(url=asset_id)
@@ -49,6 +42,7 @@ def process_row(row):
             "format": format,
             "asset": asset,
             "contenttype": "application/octet-stream",
+            "role": 7,
         }
         resource = PolyResource.objects.create(**root_resource_data)
 
@@ -59,14 +53,28 @@ def process_row(row):
     )
 
 
+def get_blocks_resource(data):
+    for format in data["formats"]:
+        if format["root"]["role"] == "Blocks File":
+            return format["root"]
+    return None
+
+
 class Command(BaseCommand):
 
     help = "Adds BLOCKS formats from a local tsv file"
 
     def handle(self, *args, **options):
 
-        with open("blocks.tsv", "r") as f:
-            reader = csv.reader(f, delimiter="\t")
+        with open("./all_data.jsonl", "r") as json_file:
+            json_list = list(json_file)
 
-            for row in reader:
-                _ = process_row(row)
+            for item in json_list:
+                data = json.loads(item)
+                blocks_resource = get_blocks_resource(data)
+                if blocks_resource is not None:
+                    asset_id = data["assetId"]
+                    resource_url = blocks_resource["url"]
+                    _ = process_blocks_row(asset_id, resource_url)
+                else:
+                    continue

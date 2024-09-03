@@ -50,6 +50,7 @@ RESOURCE_ROLE_CHOICES = [
     (35, "Unknown GLTF File"),
     (36, "Unknown GLB File"),
     (38, "Unknown GLB File"),
+    (39, "Polygone GLTF File"),
 ]
 
 VIEWABLE_TYPES = [
@@ -249,26 +250,6 @@ class Asset(models.Model):
         if "GLB" in formats.keys():
             return formats["GLB"]
         return None
-
-    @property
-    def is_gltf(self):
-        if self.preferred_format is None:
-            return False
-        if self.polydata and self.imported:
-            # If we have a GLTF2 format, it's most likely actually a GLTF1.
-            return self.preferred_format["format"] in ["GLTF", "GLTF2"]
-        else:
-            return self.preferred_format["format"] == "GLTF"
-
-    @property
-    def is_gltf2(self):
-        if self.preferred_format is None:
-            return False
-        if self.polydata and self.imported:
-            # If we have a GLB format, it's most likely actually a GLTF2.
-            return self.preferred_format["format"] == "GLB"
-        else:
-            return self.preferred_format["format"] == "GLTF2"
 
     def get_absolute_url(self):
         if self.polydata:

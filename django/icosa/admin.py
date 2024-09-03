@@ -33,6 +33,7 @@ class PolyResourceAdmin(admin.ModelAdmin):
     list_filter = (
         "is_root",
         "contenttype",
+        "role",
     )
     search_fields = ("file",)
 
