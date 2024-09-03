@@ -53,10 +53,12 @@ RESOURCE_ROLE_CHOICES = [
     (39, "Polygone GLTF File"),
 ]
 
-VIEWABLE_TYPES = [
+BLOCKS_VIEWABLE_TYPES = [
     "GLB",
-    "GLTF",
     "GLTF2",
+]
+VIEWABLE_TYPES = BLOCKS_VIEWABLE_TYPES + [
+    "GLTF",
 ]
 
 
@@ -206,9 +208,9 @@ class Asset(models.Model):
     def timestamp(self):
         return get_snowflake_timestamp(self.id)
 
-    # TODO(james): This whole function is cursed
     @property
     def preferred_format(self):
+        # Return early with either of the role-based formats we care about.
         updated_gltf = self.polyresource_set.filter(
             is_root=True, role=30
         ).first()
@@ -228,6 +230,8 @@ class Asset(models.Model):
                     "url": original_gltf.url,
                 }
 
+        # If we didn't get any role-based formats, find the remaining formats
+        # we care about and choose the "best" one of those.
         formats = {}
         for format in self.polyformat_set.all():
             root = format.root_resource
@@ -239,16 +243,15 @@ class Asset(models.Model):
                     else root.external_url
                 ),
             }
-        # TODO(james): We need this list to be more exhaustive; we're
-        # returning None in too many cases.
-        # If we have a GLTF2 format, it's most likely actually a GLTF1.
-        if "GLTF2" in formats.keys():
-            return formats["GLTF2"]
-        if "GLTF" in formats.keys():
-            return formats["GLTF"]
-        # If we have a GLB format, it's most likely actually a GLTF2.
+        # GLB is our primary preferred format;
         if "GLB" in formats.keys():
             return formats["GLB"]
+        # GLTF2 is the next best option;
+        if "GLTF2" in formats.keys():
+            return formats["GLTF2"]
+        # GLTF1, if we must.
+        if "GLTF" in formats.keys():
+            return formats["GLTF"]
         return None
 
     def get_absolute_url(self):
@@ -289,9 +292,21 @@ class Asset(models.Model):
         self.search_text = f"{self.name} {description} {tag_str}"
 
     def validate(self):
-        return bool(
-            self.polyformat_set.filter(format_type__in=VIEWABLE_TYPES).count()
+        is_blocks = bool(
+            self.polyformat_set.filter(format_type="BLOCKS").count()
         )
+        if is_blocks:
+            return bool(
+                self.polyformat_set.filter(
+                    format_type__in=BLOCKS_VIEWABLE_TYPES
+                ).count()
+            )
+        else:
+            return bool(
+                self.polyformat_set.filter(
+                    format_type__in=VIEWABLE_TYPES
+                ).count()
+            )
 
     def save(self, *args, **kwargs):
         self.update_search_text()

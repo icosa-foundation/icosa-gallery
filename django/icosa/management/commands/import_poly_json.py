@@ -5,9 +5,9 @@ from datetime import datetime
 from pathlib import Path
 
 from b2sdk.v2 import B2Api, InMemoryAccountInfo
+from icosa.helpers.file import is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
-    RESOURCE_ROLE_CHOICES,
     Asset,
     FormatComplexity,
     PolyFormat,
@@ -75,12 +75,13 @@ def get_or_create_asset(dir, data):
             "displayname": data["authorName"],
         },
     )
-    # user = None
+
     # A couple of background colours are expressed as malformed
     # rgb() values. Let's make them the default if so.
     background_color = data["presentationParams"].get("backgroundColor", None)
     if background_color is not None and len(background_color) > 7:
         background_color = "#000000"
+
     orienting_rotation = data["presentationParams"].get(
         "orientingRotation", None
     )
@@ -136,6 +137,7 @@ def create_formats(directory, formats_json, asset):
                 "format": format,
             }
             FormatComplexity.objects.create(**format_complexity_data)
+
         # Manually create thumbnails from our assumptions about the data.
         if not done_thumbnail:
             asset.thumbnail = f"poly/{directory}/thumbnail.png"
@@ -156,7 +158,15 @@ def create_formats(directory, formats_json, asset):
             "contenttype": root_resource_json["contentType"],
             "role": role,
         }
-        PolyResource.objects.create(**root_resource_data)
+        root_resource = PolyResource.objects.create(**root_resource_data)
+
+        # Don't trust the format_type we got from the json. Instead, parse the
+        # gltf to work out if it's version 1 or 2.
+        if extension == ".gltf":
+            if is_gltf2(root_resource.file.file):
+                format.format_type = "GLTF2"
+            else:
+                format.format_type = "GLTF"
 
         if format_json.get("resources", None) is not None:
             for resource_json in format_json["resources"]:
@@ -250,6 +260,8 @@ class Command(BaseCommand):
                                 new_formats,
                                 asset,
                             )
+                            # Re-save the asset to trigger model validation.
+                            asset.save()
 
                     except Exception as e:
                         _ = e

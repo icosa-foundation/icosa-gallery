@@ -75,6 +75,9 @@ class Command(BaseCommand):
                 if blocks_resource is not None:
                     asset_id = data["assetId"]
                     resource_url = blocks_resource["url"]
-                    _ = process_blocks_row(asset_id, resource_url)
+                    processed_row = process_blocks_row(asset_id, resource_url)
+                    # Re-save the asset to trigger validation
+                    if processed_row is not None:
+                        processed_row.asset.save()
                 else:
                     continue

@@ -300,9 +300,10 @@ def process_bin(asset: Asset, f: UploadedFormat):
     gltf = get_gltf(asset)
 
     if gltf is None:
-        format_type = "GLTF"
         if is_gltf2(f.file):
             format_type = "GLTF2"
+        else:
+            format_type = "GLTF"
         format_data = {
             "format_type": format_type,
             "asset": asset,
