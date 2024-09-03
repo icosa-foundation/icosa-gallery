@@ -170,7 +170,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
             # special case.
             gltf_override_key = f"{directory}\\{file_path}"
             if gltf2_data.get(gltf_override_key, False):
-                print(f"Overwriting format_type for {gltf_override_key}")
+                # print(f"Overwriting format_type for {gltf_override_key}")
                 format.format_type = "GLTF2"
                 format.save()
 
@@ -234,6 +234,7 @@ class Command(BaseCommand):
         else:
             directories = os.listdir(ASSETS_JSON_DIR)
 
+        print("Importing...")
         with open(os.path.join(POLY_JSON_DIR, "gltf2.json")) as g:
             gltf2_data = json.load(g)
             # Loop through all directories in the poly json directory
@@ -296,3 +297,4 @@ class Command(BaseCommand):
                 except FileNotFoundError as e:
                     print(e)
                     continue
+        print("Finished")
