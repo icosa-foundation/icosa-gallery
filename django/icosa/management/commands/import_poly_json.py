@@ -34,6 +34,8 @@ EXTENSION_ROLE_MAP = {
     ".gltf": 39,
 }
 
+# Only one of these should be enabled at any given time, but other than b2
+# access and slowdown, there is no harm to the data by enabling them both.
 PROCESS_VIA_JSON_OVERRIDES = True
 PROCESS_VIA_GLTF_PARSING = False
 
