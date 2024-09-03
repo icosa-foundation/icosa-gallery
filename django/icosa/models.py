@@ -202,7 +202,7 @@ class Asset(models.Model):
     imported = models.BooleanField(default=False)
     search_text = models.TextField(null=True, blank=True)
     remix_ids = models.JSONField(null=True, blank=True)
-    is_valid = models.BooleanField(default=False)
+    is_viewer_compatible = models.BooleanField(default=False)
 
     @property
     def timestamp(self):
@@ -310,7 +310,7 @@ class Asset(models.Model):
 
     def save(self, *args, **kwargs):
         self.update_search_text()
-        self.is_valid = self.validate()
+        self.is_viewer_compatible = self.validate()
         super().save(*args, **kwargs)
 
     class Meta:

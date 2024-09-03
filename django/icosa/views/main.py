@@ -46,7 +46,7 @@ def landing_page(
     show_hero=True,
 ):
     template = "main/home.html"
-    inc_q &= Q(is_valid=True)
+    inc_q &= Q(is_viewer_compatible=True)
     if show_hero is True:
         hero = (
             Asset.objects.filter(
