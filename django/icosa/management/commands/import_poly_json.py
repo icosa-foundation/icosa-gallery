@@ -34,6 +34,9 @@ EXTENSION_ROLE_MAP = {
     ".gltf": 39,
 }
 
+PROCESS_VIA_JSON_OVERRIDES = True
+PROCESS_VIA_GLTF_PARSING = False
+
 
 def get_json_from_b2(dir):
     info = InMemoryAccountInfo()
@@ -120,7 +123,7 @@ def get_or_create_asset(dir, data):
     )
 
 
-def create_formats(directory, formats_json, asset):
+def create_formats(directory, gltf2_data, formats_json, asset):
     done_thumbnail = False
     for format_json in formats_json:
         format = PolyFormat.objects.create(
@@ -160,30 +163,41 @@ def create_formats(directory, formats_json, asset):
         }
         root_resource = PolyResource.objects.create(**root_resource_data)
 
-        # Don't trust the format_type we got from the json. Instead, parse the
-        # gltf to work out if it's version 1 or 2.
-        if extension == ".gltf":
-            if is_gltf2(root_resource.file.file):
+        if PROCESS_VIA_JSON_OVERRIDES:
+            # Retrospectively override the parent Format's type if we find a
+            # special case.
+            gltf_override_key = f"{directory}\\{file_path}"
+            if gltf2_data.get(gltf_override_key, False):
+                print(f"Overwriting format_type for {gltf_override_key}")
                 format.format_type = "GLTF2"
-            else:
-                format.format_type = "GLTF"
+                format.save()
 
-        if format_json.get("resources", None) is not None:
-            for resource_json in format_json["resources"]:
+        if PROCESS_VIA_GLTF_PARSING:
+            # Don't trust the format_type we got from the json. Instead, parse the
+            # gltf to work out if it's version 1 or 2.
+            if extension == ".gltf":
+                if is_gltf2(root_resource.file.file):
+                    format.format_type = "GLTF2"
+                else:
+                    format.format_type = "GLTF"
+                format.save()
 
-                file_path = resource_json["relativePath"]
-                extension = os.path.splitext(file_path)[-1].lower()
-                role = EXTENSION_ROLE_MAP.get(extension)
+            if format_json.get("resources", None) is not None:
+                for resource_json in format_json["resources"]:
 
-                resource_data = {
-                    "file": f"poly/{directory}/{file_path}",
-                    "is_root": False,
-                    "format": format,
-                    "asset": asset,
-                    "contenttype": resource_json["contentType"],
-                    "role": role,
-                }
-                PolyResource.objects.create(**resource_data)
+                    file_path = resource_json["relativePath"]
+                    extension = os.path.splitext(file_path)[-1].lower()
+                    role = EXTENSION_ROLE_MAP.get(extension)
+
+                    resource_data = {
+                        "file": f"poly/{directory}/{file_path}",
+                        "is_root": False,
+                        "format": format,
+                        "asset": asset,
+                        "contenttype": resource_json["contentType"],
+                        "role": role,
+                    }
+                    PolyResource.objects.create(**resource_data)
 
 
 class Command(BaseCommand):
@@ -218,58 +232,65 @@ class Command(BaseCommand):
         else:
             directories = os.listdir(ASSETS_JSON_DIR)
 
-        # Loop through all directories in the poly json directory
-        # For each directory, load the data.json file
-        # Create a new Asset object with the data
-        for directory in directories:
-            if directory.startswith("."):
-                continue
-            full_path = os.path.join(ASSETS_JSON_DIR, directory, "data.json")
-            try:
-                with open(full_path) as f:
-                    data = json.load(f)
+        with open(os.path.join(POLY_JSON_DIR, "gltf2.json")) as g:
+            gltf2_data = json.load(g)
+            # Loop through all directories in the poly json directory
+            # For each directory, load the data.json file
+            # Create a new Asset object with the data
+            for directory in directories:
+                if directory.startswith("."):
+                    continue
+                full_path = os.path.join(
+                    ASSETS_JSON_DIR, directory, "data.json"
+                )
+                try:
+                    with open(full_path) as f:
+                        data = json.load(f)
 
-                    formats = data["formats"]
-                    new_formats = []
-                    dup_types = {}
+                        formats = data["formats"]
+                        new_formats = []
+                        dup_types = {}
 
-                    # Check json for duplicate gltf entries
-                    for format in formats:
-                        relative_path = format["root"]["relativePath"]
-                        if dup_types.get(relative_path):
-                            if relative_path != "model.gltf":
-                                print(
-                                    f"found duplicate for {directory} - {relative_path}"
-                                )
-                            continue
-                        new_formats.append(format)
-                        dup_types.update({relative_path: True})
+                        # Check json for duplicate gltf entries
+                        for format in formats:
+                            relative_path = format["root"]["relativePath"]
+                            if dup_types.get(relative_path):
+                                if relative_path != "model.gltf":
+                                    print(
+                                        f"found duplicate for {directory} - {relative_path}"
+                                    )
+                                continue
+                            new_formats.append(format)
+                            dup_types.update({relative_path: True})
 
-                    try:
-                        asset, asset_created = get_or_create_asset(
-                            directory, data
-                        )
-                        if asset_created:
-                            icosa_tags = []
-                            for tag in data["tags"]:
-                                obj, _ = Tag.objects.get_or_create(name=tag)
-                                icosa_tags.append(obj)
-                            asset.tags.set(icosa_tags)
-                            create_formats(
-                                directory,
-                                new_formats,
-                                asset,
+                        try:
+                            asset, asset_created = get_or_create_asset(
+                                directory, data
                             )
-                            # Re-save the asset to trigger model validation.
-                            asset.save()
+                            if asset_created:
+                                icosa_tags = []
+                                for tag in data["tags"]:
+                                    obj, _ = Tag.objects.get_or_create(
+                                        name=tag
+                                    )
+                                    icosa_tags.append(obj)
+                                asset.tags.set(icosa_tags)
+                                create_formats(
+                                    directory,
+                                    gltf2_data,
+                                    new_formats,
+                                    asset,
+                                )
+                                # Re-save the asset to trigger model validation.
+                                asset.save()
 
-                    except Exception as e:
-                        _ = e
-                        # from pprint import pprint
-                        # print(e)
-                        # pprint(data)
-                        # continue
-                        raise
-            except FileNotFoundError as e:
-                print(e)
-                continue
+                        except Exception as e:
+                            _ = e
+                            # from pprint import pprint
+                            # print(e)
+                            # pprint(data)
+                            # continue
+                            raise
+                except FileNotFoundError as e:
+                    print(e)
+                    continue
