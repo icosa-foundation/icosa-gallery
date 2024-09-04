@@ -144,3 +144,16 @@ form {
 .paginator {
   width: 100%;
 }
+
+.like-widget {
+  display: inline-block;
+
+  button {
+    background: transparent;
+    border: none;
+
+    span {
+      color: #ffffff;
+    }
+  }
+}

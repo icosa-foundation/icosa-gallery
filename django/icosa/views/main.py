@@ -6,6 +6,7 @@ from icosa.helpers.user import get_owner
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset
 from icosa.models import User as IcosaUser
 from icosa.tasks import queue_upload_asset
+from icosa.templatetags.asset_tags import like_button
 
 from django.conf import settings
 from django.contrib import messages
@@ -14,8 +15,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User as DjangoUser
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import Http404, HttpResponseNotAllowed, HttpResponseRedirect
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseNotAllowed,
+    HttpResponseRedirect,
+)
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 
 
@@ -353,6 +360,40 @@ def search(request):
         "page_number": page_number,
         "result_count": asset_objs.count(),
         "search_query": query,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+def toggle_like(request):
+    error_return = HttpResponse(status=422)
+
+    owner = IcosaUser.from_django_request(request)
+    if owner is None:
+        return error_return
+
+    print(owner, request.POST)
+    asset_url = request.POST.get("assetId", None)
+    if asset_url is None:
+        return error_return
+
+    try:
+        asset = Asset.objects.get(url=asset_url)
+    except Asset.DoesNotExist:
+        return error_return
+
+    is_liked = asset.id in owner.likes.values_list("id", flat=True)
+    if is_liked:
+        owner.likes.remove(asset)
+    else:
+        owner.likes.add(asset)
+    template = "main/tags/like_button.html"
+    context = {
+        "is_liked": not is_liked,
+        "asset_url": asset.url,
     }
     return render(
         request,

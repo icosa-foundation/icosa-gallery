@@ -13,4 +13,8 @@ def like_button(request, asset):
     else:
         is_liked = False
 
-    return {"is_liked": is_liked, "request": request}
+    return {
+        "is_liked": is_liked,
+        "asset_url": asset.url,
+        "request": request,
+    }
