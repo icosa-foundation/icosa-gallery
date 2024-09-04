@@ -122,7 +122,9 @@ class AssetAdmin(admin.ModelAdmin):
 
         if obj.thumbnail:
             html = f"""
+<a href="{obj.get_absolute_url()}">
 <img src="{obj.thumbnail.url}" width="150" loading="lazy">
+</a>
             """
         return mark_safe(html)
 
