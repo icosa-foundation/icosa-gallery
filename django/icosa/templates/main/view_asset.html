@@ -17,12 +17,13 @@
                 <h2>{{ asset.name }}{% if user == request_user %}{% if asset.visibility == "PRIVATE" %} <span style="color:red;">(PRIVATE)</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span style="color:orange;">(UNLISTED)</span>{% endif %}{% endif %}</h2>
                 {% if asset.owner %}
                     <h4>
-                        <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
+                        By <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
                     </h4>
                 {% endif %}
-                <span>{{ asset.timestamp|date:"Y-m-d" }}</span>
-                <p>
-                </p>
+                <p>{{ asset.timestamp|date:"Y-m-d" }}</p>
+                {% if asset.description %}
+                    <p>{{ asset.description|linebreaksbr }}</p>
+                {% endif %}
                 <h6>{{ asset.license|default_if_none:"All rights reserved" }}</h6>
             </div>
         </div>
