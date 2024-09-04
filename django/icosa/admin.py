@@ -126,6 +126,11 @@ class AssetAdmin(admin.ModelAdmin):
 <img src="{obj.thumbnail.url}" width="150" loading="lazy">
 </a>
             """
+        else:
+            html = f"""
+<a href="{obj.get_absolute_url()}">View on site</a>
+            """
+
         return mark_safe(html)
 
     _thumbnail_image.short_description = "Thumbnail"
