@@ -113,6 +113,7 @@ class AssetAdmin(admin.ModelAdmin):
         "visibility",
         "curated",
         "imported",
+        "is_viewer_compatible",
         ("thumbnail", admin.EmptyFieldListFilter),
     )
 
