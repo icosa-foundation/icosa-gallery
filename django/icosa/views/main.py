@@ -330,3 +330,32 @@ def terms(request):
         request,
         template,
     )
+
+
+def search(request):
+    query = request.GET.get("s")
+    template = "main/search.html"
+
+    q = Q(
+        visibility=PUBLIC,
+        is_viewer_compatible=True,
+    )
+
+    if query is not None:
+        q &= Q(search_text__icontains=query)
+
+    asset_objs = Asset.objects.filter(q)
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
+    context = {
+        "assets": assets,
+        "page_number": page_number,
+        "result_count": asset_objs.count(),
+        "query": query,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )

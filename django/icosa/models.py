@@ -289,7 +289,9 @@ class Asset(models.Model):
     def update_search_text(self):
         tag_str = " ".join([t.name for t in self.tags.all()])
         description = self.description if self.description is not None else ""
-        self.search_text = f"{self.name} {description} {tag_str}"
+        self.search_text = (
+            f"{self.name} {description} {tag_str} {self.owner.displayname}"
+        )
 
     def validate(self):
         is_blocks = bool(

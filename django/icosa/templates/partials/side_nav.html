@@ -173,10 +173,12 @@
                         <h3>SEARCH</h3>
                         <li class="pro-menu-item">
                             <div class="pro-inner-item" tabindex="0" role="button">
-                                <span class="pro-item-content">
-                                    <input type="text" class="searchbar" value="">
-                                    <button class="searchbutton">Search</button>
-                                </span>
+                                <form action="{% url 'search' %}" method="get">
+                                    <span class="pro-item-content">
+                                        <input type="search" class="searchbar" name="s" value="">
+                                        <button class="searchbutton">Search</button>
+                                    </span>
+                                </form>
                             </div>
                         </li>
                     </ul>

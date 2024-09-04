@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>Search results</h1>
+                <p>{{ result_count }} result{{ result_count|pluralize }}{% if query %} for &ldquo;{{ query }}&rdquo;{% endif %}</p>
+            </div>
+        </div>
+        <div class="sketch-list">
+            {% for asset in assets %}
+                {% include "partials/sketch_list_item.html" %}
+            {% endfor %}
+        </div>
+        {% include "partials/pagination.html" %}
+    </div>
+</div>
+{% endblock content %}

@@ -75,6 +75,7 @@ urlpatterns = [
         main_views.publish_asset,
         name="publish_asset",
     ),
+    path("search", main_views.search, name="search"),
     path("settings", main_views.user_settings, name="settings"),
     path("terms", main_views.terms, name="terms"),
 ]
