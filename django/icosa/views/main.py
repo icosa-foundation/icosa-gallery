@@ -344,7 +344,7 @@ def search(request):
     if query is not None:
         q &= Q(search_text__icontains=query)
 
-    asset_objs = Asset.objects.filter(q)
+    asset_objs = Asset.objects.filter(q).order_by("-id")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
