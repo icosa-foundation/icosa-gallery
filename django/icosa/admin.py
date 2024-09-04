@@ -36,6 +36,7 @@ class PolyResourceAdmin(admin.ModelAdmin):
         "role",
     )
     search_fields = ("file",)
+    raw_id_fields = ["asset"]
 
 
 class PolyFormatInline(admin.TabularInline):
