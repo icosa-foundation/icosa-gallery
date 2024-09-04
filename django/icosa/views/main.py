@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User as DjangoUser
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import Http404, HttpResponseNotAllowed, HttpResponseRedirect
@@ -80,6 +81,7 @@ def landing_page(
 
 
 def home(request):
+    print(get_current_site(request))
     return landing_page(request)
 
 
