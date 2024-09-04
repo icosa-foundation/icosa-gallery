@@ -184,22 +184,22 @@ def create_formats(directory, gltf2_data, formats_json, asset):
                     format.format_type = "GLTF"
                 format.save()
 
-            if format_json.get("resources", None) is not None:
-                for resource_json in format_json["resources"]:
+        if format_json.get("resources", None) is not None:
+            for resource_json in format_json["resources"]:
 
-                    file_path = resource_json["relativePath"]
-                    extension = os.path.splitext(file_path)[-1].lower()
-                    role = EXTENSION_ROLE_MAP.get(extension)
+                file_path = resource_json["relativePath"]
+                extension = os.path.splitext(file_path)[-1].lower()
+                role = EXTENSION_ROLE_MAP.get(extension)
 
-                    resource_data = {
-                        "file": f"poly/{directory}/{file_path}",
-                        "is_root": False,
-                        "format": format,
-                        "asset": asset,
-                        "contenttype": resource_json["contentType"],
-                        "role": role,
-                    }
-                    PolyResource.objects.create(**resource_data)
+                resource_data = {
+                    "file": f"poly/{directory}/{file_path}",
+                    "is_root": False,
+                    "format": format,
+                    "asset": asset,
+                    "contenttype": resource_json["contentType"],
+                    "role": role,
+                }
+                PolyResource.objects.create(**resource_data)
 
 
 class Command(BaseCommand):
