@@ -137,6 +137,7 @@ class AssetAdmin(admin.ModelAdmin):
 
     filter_horizontal = ("tags",)
     inlines = (PolyFormatInline,)
+    raw_id_fields = ["owner"]
 
 
 @admin.register(DeviceCode)
