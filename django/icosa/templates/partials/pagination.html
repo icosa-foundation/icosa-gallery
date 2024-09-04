@@ -11,8 +11,8 @@
             </span>
 
             {% if assets.has_next %}
-                <a href="?page={{ assets.next_page_number }}">next</a>
-                <a href="?page={{ assets.paginator.num_pages }}">last &raquo;</a>
+                <a href="?page={{ assets.next_page_number }}{% if search_query %}&s={{ search_query }}{% endif %}">next</a>
+                <a href="?page={{ assets.paginator.num_pages }}{% if search_query %}&s={{ search_query }}{% endif %}">last &raquo;</a>
             {% endif %}
         </span>
     </div>

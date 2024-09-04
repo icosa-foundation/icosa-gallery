@@ -352,7 +352,7 @@ def search(request):
         "assets": assets,
         "page_number": page_number,
         "result_count": asset_objs.count(),
-        "query": query,
+        "search_query": query,
     }
     return render(
         request,
