@@ -67,10 +67,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         with open("./all_data.jsonl", "r") as json_file:
-            json_list = list(json_file)
-
-            for item in json_list:
-                data = json.loads(item)
+            for line in json_file:
+                data = json.loads(line)
                 blocks_resource = get_blocks_resource(data)
                 if blocks_resource is not None:
                     asset_id = data["assetId"]
