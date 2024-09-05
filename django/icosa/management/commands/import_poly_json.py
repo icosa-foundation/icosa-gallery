@@ -23,15 +23,12 @@ POLY_JSON_DIR = "polygone_data"
 ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
 
 EXTENSION_ROLE_MAP = {
-    ".obj": 1,
-    ".tilt": 2,
-    ".fbx": 6,
-    ".blocks": 7,
-    ".usd": 8,
-    ".html": 11,
-    ".json": 15,
-    ".glb": 36,
-    ".gltf": 39,
+    ".tilt": 1000,
+    ".blocks": 1001,
+    ".glb": 1002,
+    ".gltf": 1003,
+    ".obj": 1004,
+    ".fbx": 1005,
 }
 
 # Only one of these should be enabled at any given time, but other than b2
@@ -161,9 +158,10 @@ def create_formats(directory, gltf2_data, formats_json, asset):
             "format": format,
             "asset": asset,
             "contenttype": root_resource_json["contentType"],
-            "role": role,
         }
         root_resource = PolyResource.objects.create(**root_resource_data)
+        format.role = role
+        format.save()
 
         if PROCESS_VIA_JSON_OVERRIDES:
             # Retrospectively override the parent Format's type if we find a
@@ -175,8 +173,8 @@ def create_formats(directory, gltf2_data, formats_json, asset):
                 format.save()
 
         if PROCESS_VIA_GLTF_PARSING:
-            # Don't trust the format_type we got from the json. Instead, parse the
-            # gltf to work out if it's version 1 or 2.
+            # Don't trust the format_type we got from the json. Instead, parse
+            # the gltf to work out if it's version 1 or 2.
             if extension == ".gltf":
                 if is_gltf2(root_resource.file.file):
                     format.format_type = "GLTF2"
@@ -188,8 +186,6 @@ def create_formats(directory, gltf2_data, formats_json, asset):
             for resource_json in format_json["resources"]:
 
                 file_path = resource_json["relativePath"]
-                extension = os.path.splitext(file_path)[-1].lower()
-                role = EXTENSION_ROLE_MAP.get(extension)
 
                 resource_data = {
                     "file": f"poly/{directory}/{file_path}",
@@ -197,7 +193,6 @@ def create_formats(directory, gltf2_data, formats_json, asset):
                     "format": format,
                     "asset": asset,
                     "contenttype": resource_json["contentType"],
-                    "role": role,
                 }
                 PolyResource.objects.create(**resource_data)
 
@@ -225,7 +220,8 @@ class Command(BaseCommand):
         if options["download"]:
             get_json_from_b2(ASSETS_JSON_DIR)
             print(
-                "Finished downloading. Run this command again without --download to process the files"
+                "Finished downloading. Run this command again \
+                without --download to process the files"
             )
             return
 
@@ -260,7 +256,8 @@ class Command(BaseCommand):
                             if dup_types.get(relative_path):
                                 if relative_path != "model.gltf":
                                     print(
-                                        f"found duplicate for {directory} - {relative_path}"
+                                        f"found duplicate for {directory} - \
+                                        {relative_path}"
                                     )
                                 continue
                             new_formats.append(format)
@@ -284,7 +281,8 @@ class Command(BaseCommand):
                                     new_formats,
                                     asset,
                                 )
-                                # Re-save the asset to trigger model validation.
+                                # Re-save the asset to trigger model
+                                # validation.
                                 asset.save()
 
                         except Exception as e:

@@ -50,7 +50,12 @@ RESOURCE_ROLE_CHOICES = [
     (35, "Unknown GLTF File"),
     (36, "Unknown GLB File"),
     (38, "Unknown GLB File"),
-    (39, "Polygone GLTF File"),
+    (1000, "Polygone Tilt File"),
+    (1001, "Polygone Blocks File"),
+    (1002, "Polygone GLB File"),
+    (1003, "Polygone GLTF File"),
+    (1004, "Polygone OBJ File"),
+    (1005, "Polygone FBX File"),
 ]
 
 BLOCKS_VIEWABLE_TYPES = [
