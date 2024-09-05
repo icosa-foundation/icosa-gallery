@@ -5,9 +5,10 @@ from datetime import datetime
 from pathlib import Path
 
 from b2sdk.v2 import B2Api, InMemoryAccountInfo
-from icosa.helpers.file import is_gltf2
+from icosa.helpers.file import get_content_type, is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
+    RESOURCE_ROLE_CHOICES,
     Asset,
     FormatComplexity,
     PolyFormat,
@@ -21,6 +22,8 @@ from django.core.management.base import BaseCommand
 
 POLY_JSON_DIR = "polygone_data"
 ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
+
+RESOURCE_ROLE_MAP = {x[1]: x[0] for x in RESOURCE_ROLE_CHOICES}
 
 EXTENSION_ROLE_MAP = {
     ".tilt": 1000,
@@ -69,32 +72,29 @@ def get_json_from_b2(dir):
     print("Finished downloading files.")
 
 
-def get_or_create_asset(dir, data):
+def get_or_create_asset(directory, data):
     user, _ = User.objects.get_or_create(
         url=data["authorId"],
         defaults={
             "password": secrets.token_bytes(16),
-            "displayname": data.get("authorName", "(Anonymous User)"),
+            "displayname": data["authorName"],
             "imported": True,
         },
     )
-
+    presentation_params = data.get("presentationParams", {})
     # A couple of background colours are expressed as malformed
     # rgb() values. Let's make them the default if so.
-    background_color = data["presentationParams"].get("backgroundColor", None)
+    background_color = presentation_params.get("backgroundColor", None)
     if background_color is not None and len(background_color) > 7:
         background_color = "#000000"
-
-    orienting_rotation = data["presentationParams"].get(
-        "orientingRotation", None
-    )
+    orienting_rotation = presentation_params.get("orientingRotation", {})
     orienting_rotation_x = orienting_rotation.get("x", None)
     orienting_rotation_y = orienting_rotation.get("y", None)
     orienting_rotation_z = orienting_rotation.get("z", None)
     orienting_rotation_w = orienting_rotation.get("w", None)
 
     return Asset.objects.get_or_create(
-        url=dir,
+        url=directory,
         defaults=dict(
             name=data["name"],
             id=generate_snowflake(),
@@ -104,26 +104,31 @@ def get_or_create_asset(dir, data):
             description=data.get("description", None),
             visibility=data["visibility"],
             curated="curated" in data["tags"],
-            polyid=dir,
+            polyid=directory,
             polydata=data,
-            license=data["license"],
+            license=data.get("licence", ""),
             create_time=datetime.fromisoformat(
                 data["createTime"].replace("Z", "+00:00")
             ),
             update_time=datetime.fromisoformat(
                 data["updateTime"].replace("Z", "+00:00")
             ),
-            color_space=data["presentationParams"]["colorSpace"],
+            color_space=presentation_params.get("colorSpace", "LINEAR"),
             background_color=background_color,
             orienting_rotation_x=orienting_rotation_x,
             orienting_rotation_y=orienting_rotation_y,
             orienting_rotation_z=orienting_rotation_z,
             orienting_rotation_w=orienting_rotation_w,
+            historical_likes=data["likes"],
+            historical_views=data["views"],
+            category=data["category"],
         ),
     )
 
 
-def create_formats(directory, gltf2_data, formats_json, asset):
+def create_formats_from_scraped_data(
+    directory, gltf2_data, formats_json, asset
+):
     done_thumbnail = False
     for format_json in formats_json:
         format = PolyFormat.objects.create(
@@ -151,7 +156,6 @@ def create_formats(directory, gltf2_data, formats_json, asset):
 
         file_path = root_resource_json["relativePath"]
         extension = os.path.splitext(file_path)[-1].lower()
-        role = EXTENSION_ROLE_MAP.get(extension)
 
         root_resource_data = {
             "file": f"poly/{directory}/{file_path}",
@@ -161,6 +165,8 @@ def create_formats(directory, gltf2_data, formats_json, asset):
             "contenttype": root_resource_json["contentType"],
         }
         root_resource = PolyResource.objects.create(**root_resource_data)
+
+        role = EXTENSION_ROLE_MAP.get(extension)
         format.role = role
         format.save()
 
@@ -198,6 +204,88 @@ def create_formats(directory, gltf2_data, formats_json, asset):
                 PolyResource.objects.create(**resource_data)
 
 
+def create_formats_from_archive_data(formats_json, asset):
+    # done_thumbnail = False
+    for format_json in formats_json:
+        format = PolyFormat.objects.create(
+            asset=asset,
+            format_type=format_json["formatType"],
+        )
+        if format_json.get("formatComplexity", None) is not None:
+            format_complexity_json = format_json["formatComplexity"]
+            format_complexity_data = {
+                "triangle_count": format_complexity_json.get(
+                    "triangleCount", None
+                ),
+                "lod_hint": format_complexity_json.get("lodHint", None),
+                "format": format,
+            }
+            FormatComplexity.objects.create(**format_complexity_data)
+        # TODO(james): we need to either download the thumbnail from
+        # archive.org and store it ourselves or add another field for external
+        # thumbnail which references the external image.
+
+        # Manually create thumbnails from our assumptions about the data.
+        # if not done_thumbnail:
+        #     asset.thumbnail = f"poly/{directory}/thumbnail.png"
+        #     asset.thumbnail_contenttype = "image/png"
+        #     asset.save()
+        # done_thumbnail = True
+        root_resource_json = format_json["root"]
+        url = root_resource_json["url"]
+        root_resource_data = {
+            "external_url": f"https://web.archive.org/web/{url}",
+            "is_root": True,
+            "format": format,
+            "asset": asset,
+            "contenttype": get_content_type(url),
+        }
+
+        PolyResource.objects.create(**root_resource_data)
+
+        role = RESOURCE_ROLE_MAP[root_resource_json["role"]]
+        if role is not None:
+            format.role = role
+            format.save()
+
+        if format_json.get("resources", None) is not None:
+            for resource_json in format_json["resources"]:
+                url = resource_json["url"]
+                resource_data = {
+                    "external_url": f"https://web.archive.org/web/{url}",
+                    "is_root": False,
+                    "format": format,
+                    "asset": asset,
+                    "contenttype": get_content_type(url),
+                }
+                PolyResource.objects.create(**resource_data)
+            # If a format has many files associated with it (i.e. it has a
+            # `resources` key), then we want to grab the archive url if we have
+            # it so we can provide this in the download options for the user.
+            if format_json.get("archive", None):
+                format.archive_url = format_json["archive"]["url"]
+                format.save()
+
+
+def dedup_scrape_formats(formats, asset_id):
+    new_formats = []
+    dup_types = {}
+
+    # Check json for duplicate gltf entries
+    for format in formats:
+        relative_path = format["root"]["relativePath"]
+        if dup_types.get(relative_path):
+            if relative_path != "model.gltf":
+                print(
+                    f"found duplicate for {asset_id} - \
+                    {relative_path}"
+                )
+            continue
+        new_formats.append(format)
+        dup_types.update({relative_path: True})
+    return new_formats
+
+
 class Command(BaseCommand):
 
     help = "Imports poly json files from a local directory"
@@ -227,73 +315,73 @@ class Command(BaseCommand):
             return
 
         if options["ids"]:
-            directories = list(options["ids"])
+            directories = set(list(options["ids"]))
         else:
-            directories = os.listdir(ASSETS_JSON_DIR)
+            directories = set(os.listdir(ASSETS_JSON_DIR))
 
         print("Importing...")
         with open(os.path.join(POLY_JSON_DIR, "gltf2.json")) as g:
             gltf2_data = json.load(g)
-            # Loop through all directories in the poly json directory
-            # For each directory, load the data.json file
-            # Create a new Asset object with the data
-            for directory in directories:
-                if directory.startswith("."):
-                    continue
-                full_path = os.path.join(
-                    ASSETS_JSON_DIR, directory, "data.json"
-                )
-                try:
+            # Loop through all entries in the big jsonl.
+            #
+            # If we find a matching entry in the poly scrape directory, create
+            # an asset from the formats we find in there, then proceed to
+            # create formats from the jsonl data.
+
+            with open("./all_data.jsonl", "r") as json_file:
+                for line in json_file:
+                    archive_data = json.loads(line)
+                    asset_id = archive_data["assetId"]
+
+                    # Skip importing if the asset is not in the scraped json.
+                    if asset_id not in directories:
+                        continue
+
+                    #
+                    #
+                    # Create a new Asset object with the data
+                    full_path = os.path.join(
+                        ASSETS_JSON_DIR, asset_id, "data.json"
+                    )
                     with open(full_path) as f:
-                        data = json.load(f)
+                        scrape_data = json.load(f)
 
-                        formats = data["formats"]
-                        new_formats = []
-                        dup_types = {}
+                        scrape_formats = dedup_scrape_formats(
+                            scrape_data["formats"], asset_id
+                        )
 
-                        # Check json for duplicate gltf entries
-                        for format in formats:
-                            relative_path = format["root"]["relativePath"]
-                            if dup_types.get(relative_path):
-                                if relative_path != "model.gltf":
-                                    print(
-                                        f"found duplicate for {directory} - \
-                                        {relative_path}"
-                                    )
-                                continue
-                            new_formats.append(format)
-                            dup_types.update({relative_path: True})
-
-                        try:
-                            asset, asset_created = get_or_create_asset(
-                                directory, data
+                        asset, asset_created = get_or_create_asset(
+                            asset_id, archive_data
+                        )
+                        if asset_created:
+                            tag_set = set(
+                                archive_data["tags"] + scrape_data["tags"]
                             )
-                            if asset_created:
-                                icosa_tags = []
-                                for tag in data["tags"]:
-                                    obj, _ = Tag.objects.get_or_create(
-                                        name=tag
-                                    )
-                                    icosa_tags.append(obj)
-                                asset.tags.set(icosa_tags)
-                                create_formats(
-                                    directory,
-                                    gltf2_data,
-                                    new_formats,
-                                    asset,
-                                )
-                                # Re-save the asset to trigger model
-                                # validation.
-                                asset.save()
+                            icosa_tags = []
+                            for tag in tag_set:
+                                obj, _ = Tag.objects.get_or_create(name=tag)
+                                icosa_tags.append(obj)
+                            asset.tags.set(list(icosa_tags))
 
-                        except Exception as e:
-                            _ = e
-                            # from pprint import pprint
-                            # print(e)
-                            # pprint(data)
-                            # continue
-                            raise
-                except FileNotFoundError as e:
-                    print(e)
-                    continue
+                            # Create formats from the scraped data. These will
+                            # be our primary formats to use for the viewer,
+                            # initially.
+                            create_formats_from_scraped_data(
+                                asset_id,
+                                gltf2_data,
+                                scrape_formats,
+                                asset,
+                            )
+
+                            # Create formats from the archive data, for
+                            # posterity.
+                            create_formats_from_archive_data(
+                                archive_data["formats"],
+                                asset,
+                            )
+
+                            # Re-save the asset to trigger model
+                            # validation.
+                            asset.save()
+
         print("Finished")
