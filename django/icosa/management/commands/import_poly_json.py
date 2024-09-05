@@ -319,7 +319,7 @@ class Command(BaseCommand):
         else:
             directories = set(os.listdir(ASSETS_JSON_DIR))
 
-        print("Importing...")
+        print("Importing...", end="\r")
         with open(os.path.join(POLY_JSON_DIR, "gltf2.json")) as g:
             gltf2_data = json.load(g)
             # Loop through all entries in the big jsonl.
@@ -332,6 +332,10 @@ class Command(BaseCommand):
                 for line in json_file:
                     archive_data = json.loads(line)
                     asset_id = archive_data["assetId"]
+                    print(
+                        f"Importing {asset_id}                 ",
+                        end="\r",
+                    )
 
                     # Skip importing if the asset is not in the scraped json.
                     if asset_id not in directories:
@@ -384,4 +388,4 @@ class Command(BaseCommand):
                             # validation.
                             asset.save()
 
-        print("Finished")
+        print("Finished                                  ")
