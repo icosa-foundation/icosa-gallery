@@ -115,6 +115,7 @@ class AssetAdmin(admin.ModelAdmin):
         "imported",
         "is_viewer_compatible",
         ("thumbnail", admin.EmptyFieldListFilter),
+        "license",
     )
 
     def _thumbnail_image(self, obj):
