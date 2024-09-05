@@ -33,7 +33,6 @@ class PolyResourceAdmin(admin.ModelAdmin):
     list_filter = (
         "is_root",
         "contenttype",
-        "role",
     )
     search_fields = ("file",)
     raw_id_fields = [
@@ -61,7 +60,6 @@ class PolyResourceInline(admin.TabularInline):
         "is_root",
         "file",
         "external_url",
-        "role",
     )
 
 
@@ -87,6 +85,7 @@ class PolyFormatAdmin(admin.ModelAdmin):
         PolyResourceInline,
         FormatComplexityInline,
     )
+    list_filter = ("role",)
     raw_id_fields = ["asset"]
 
 

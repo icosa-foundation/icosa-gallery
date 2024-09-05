@@ -51,20 +51,14 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
 
     non_tri_roles = [1, 7]  # Original OBJ, BLOCKS
 
-    non_triangulated_resources = asset.polyresource_set.filter(
+    non_triangulated_formats = asset.polyformat_set.filter(
         role__in=non_tri_roles
     )
-    format_pks = list(set([x.format.pk for x in non_triangulated_resources]))
-    formats = PolyFormat.objects.filter(pk__in=format_pks)
-    for format in formats:
+    for format in non_triangulated_formats:
         format.update_or_create_format_complexity(data.objPolyCount)
 
-    triangulated_resources = asset.polyresource_set.exclude(
-        role__in=non_tri_roles
-    )
-    format_pks = list(set([x.format.pk for x in triangulated_resources]))
-    formats = PolyFormat.objects.filter(pk__in=format_pks)
-    for format in formats:
+    triangulated_formats = asset.polyformat_set.exclude(role__in=non_tri_roles)
+    for format in triangulated_formats:
         format.update_or_create_format_complexity(
             data.triangulatedObjPolyCount
         )

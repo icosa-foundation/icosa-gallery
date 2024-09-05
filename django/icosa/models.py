@@ -212,7 +212,7 @@ class Asset(models.Model):
     def preferred_format(self):
         # Return early with either of the role-based formats we care about.
         updated_gltf = self.polyresource_set.filter(
-            is_root=True, role=30
+            is_root=True, format__role=30
         ).first()
         original_gltf = None
         if updated_gltf:
@@ -222,7 +222,7 @@ class Asset(models.Model):
             }
         else:
             original_gltf = self.polyresource_set.filter(
-                is_root=True, role=12
+                is_root=True, format__role=12
             ).first()
             if original_gltf:
                 return {
@@ -334,7 +334,7 @@ def format_upload_path(instance, filename):
     ext = filename.split(".")[-1]
     if instance.is_root:
         name = f"model.{ext}"
-    if ext == "obj" and instance.role == 24:
+    if ext == "obj" and instance.format.role == 24:
         name = f"model-triangulated.{ext}"
     else:
         name = filename
@@ -355,6 +355,12 @@ class PolyFormat(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
     archive_url = models.CharField(max_length=1024, null=True, blank=True)
+    role = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=RESOURCE_ROLE_CHOICES,
+    )
 
     @property
     def root_resource(self):
@@ -390,12 +396,6 @@ class PolyResource(models.Model):
         upload_to=format_upload_path,
     )
     external_url = models.CharField(max_length=1024, null=True, blank=True)
-    role = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=RESOURCE_ROLE_CHOICES,
-    )
 
     @property
     def url(self):
