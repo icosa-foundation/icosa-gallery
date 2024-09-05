@@ -8,6 +8,7 @@ from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from icosa.helpers.file import get_content_type, is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
+    CATEGORY_CHOICES,
     RESOURCE_ROLE_CHOICES,
     Asset,
     FormatComplexity,
@@ -33,6 +34,8 @@ EXTENSION_ROLE_MAP = {
     ".obj": 1004,
     ".fbx": 1005,
 }
+
+CATEGORY_REVERSE_MAP = dict([(x[1], x[0]) for x in CATEGORY_CHOICES])
 
 # Only one of these should be enabled at any given time, but other than b2
 # access and slowdown, there is no harm to the data by enabling them both.
@@ -121,7 +124,7 @@ def get_or_create_asset(directory, data):
             orienting_rotation_w=orienting_rotation_w,
             historical_likes=data["likes"],
             historical_views=data["views"],
-            category=data["category"],
+            category=CATEGORY_REVERSE_MAP.get(data["category"], None),
         ),
     )
 

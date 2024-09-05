@@ -100,6 +100,7 @@ class AssetAdmin(admin.ModelAdmin):
         "visibility",
         "curated",
         "is_viewer_compatible",
+        "category",
     )
     search_fields = (
         "name",
@@ -115,6 +116,7 @@ class AssetAdmin(admin.ModelAdmin):
         "is_viewer_compatible",
         ("thumbnail", admin.EmptyFieldListFilter),
         "license",
+        "category",
     )
 
     def _thumbnail_image(self, obj):
