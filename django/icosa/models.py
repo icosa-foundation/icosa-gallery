@@ -10,18 +10,30 @@ PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
 UNLISTED = "UNLISTED"
 ASSET_VISIBILITY_CHOICES = [
-    (
-        PUBLIC,
-        "Public",
-    ),
-    (
-        PRIVATE,
-        "Private",
-    ),
-    (
-        UNLISTED,
-        "Unlisted",
-    ),
+    (PUBLIC, "Public"),
+    (PRIVATE, "Private"),
+    (UNLISTED, "Unlisted"),
+]
+
+CATEGORY_CHOICES = [
+    ("MISCELLANEOUS", "Miscellaneous"),
+    ("ANIMALS", "Animals & Pets"),
+    ("ARCHITECTURE", "Architecture"),
+    ("ART", "Art"),
+    ("CULTURE", "Culture & Humanity"),
+    ("EVENTS", "Current Events"),
+    ("FOOD", "Food & Drink"),
+    ("HISTORY", "History"),
+    ("HOME", "Furniture & Home"),
+    ("NATURE", "Nature"),
+    ("OBJECTS", "Objects"),
+    ("PEOPLE", "People & Characters"),
+    ("PLACES", "Places & Scenes"),
+    ("SCIENCE", "Science"),
+    ("SPORTS", "Sports & Fitness"),
+    ("TECH", "Tools & Technology"),
+    ("TRANSPORT", "Transport"),
+    ("TRAVEL", "Travel & Leisure"),
 ]
 
 RESOURCE_ROLE_CHOICES = [
@@ -188,6 +200,12 @@ class Asset(models.Model):
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(max_length=50, null=True, blank=True)
     tags = models.ManyToManyField("Tag", blank=True)
+    category = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=CATEGORY_CHOICES,
+    )
     color_space = models.CharField(
         max_length=50, choices=COLOR_SPACES, default="GAMMA"
     )
@@ -205,6 +223,11 @@ class Asset(models.Model):
     search_text = models.TextField(null=True, blank=True)
     remix_ids = models.JSONField(null=True, blank=True)
     is_viewer_compatible = models.BooleanField(default=False)
+    historical_likes = models.PositiveIntegerField(default=0)
+    historical_views = models.PositiveIntegerField(default=0)
+    likes = models.PositiveIntegerField(default=0)
+    views = models.PositiveIntegerField(default=0)
+    downloads = models.PositiveIntegerField(default=0)
 
     @property
     def timestamp(self):
