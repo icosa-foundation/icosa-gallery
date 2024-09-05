@@ -250,25 +250,35 @@ def get_keyword_q(filters):
 
 
 class _DBAsset(ModelSchema):
+    authorId: str = Field(None, alias=("owner.url"))
+    authorName: str
+    # authorUrl: str # TODO create API endpoints for user
     name: str
     description: Optional[str]
-    authorId: str
     createTime: datetime = Field(..., alias=("create_time"))
     updateTime: datetime = Field(..., alias=("update_time"))
     url: Optional[str]
+    assetId: str
     formats: List[AssetFormat]
     displayName: str = Field(..., alias=("name"))
     visibility: str
     tags: List[str] = []
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     thumbnail: Optional[Thumbnail]
-    ownerurl: str = Field(None, alias=("owner.url"))
-    authorName: str
     presentationParams: Optional[PolyPresentationParams] = None
 
     class Config:
         model = Asset
         model_fields = ["url"]
+
+    @staticmethod
+    def resolve_url(obj, context):
+        request = context["request"]
+        return f"{request.build_absolute_uri()}/{obj.url}"
+
+    @staticmethod
+    def resolve_assetId(obj, context):
+        return obj.url
 
     @staticmethod
     def resolve_formats(obj, context):
@@ -288,13 +298,6 @@ class _DBAsset(ModelSchema):
                 "url": obj.thumbnail.url,
             }
         return data
-
-    @staticmethod
-    def resolve_authorId(obj):
-        if not obj.owner:
-            return ""
-        else:
-            return str(obj.owner.id)
 
     @staticmethod
     def resolve_authorName(obj):
