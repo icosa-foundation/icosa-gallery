@@ -183,7 +183,10 @@ class UserAdmin(admin.ModelAdmin):
         "url",
         "id",
     )
-    list_filter = (("email", admin.EmptyFieldListFilter),)
+    list_filter = (
+        "imported",
+        ("email", admin.EmptyFieldListFilter),
+    )
     inlines = (UserAssetLikeInline,)
 
 

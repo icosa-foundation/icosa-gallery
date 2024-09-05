@@ -75,6 +75,7 @@ def get_or_create_asset(dir, data):
         defaults={
             "password": secrets.token_bytes(16),
             "displayname": data.get("authorName", "(Anonymous User)"),
+            "imported": True,
         },
     )
 
