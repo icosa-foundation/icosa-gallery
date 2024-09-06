@@ -376,20 +376,12 @@ def format_upload_path(instance, filename):
     return f"{root}/{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
 
 
-class FormatComplexity(models.Model):
-    format = models.ForeignKey("PolyFormat", on_delete=models.CASCADE)
-    triangle_count = models.PositiveIntegerField(null=True, blank=True)
-    lod_hint = models.PositiveIntegerField(null=True, blank=True)
-
-    class Meta:
-        verbose_name = "Format Complexity Object"
-        verbose_name_plural = "Format Complexity Objects"
-
-
 class PolyFormat(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
     archive_url = models.CharField(max_length=1024, null=True, blank=True)
+    triangle_count = models.PositiveIntegerField(null=True, blank=True)
+    lod_hint = models.PositiveIntegerField(null=True, blank=True)
     role = models.CharField(
         max_length=255,
         null=True,
@@ -400,21 +392,6 @@ class PolyFormat(models.Model):
     @property
     def root_resource(self):
         return self.polyresource_set.filter(is_root=True).first()
-
-    def update_or_create_format_complexity(
-        self, triangle_count=None, lod_hint=None
-    ) -> FormatComplexity:
-        defaults = {
-            "triangle_count": triangle_count,
-            "lod_hint": lod_hint,
-        }
-        format_complexity, _ = FormatComplexity.objects.update_or_create(
-            format=self,
-            defaults=defaults,
-            create_defaults=defaults,
-        )
-
-        return format_complexity
 
 
 class PolyResource(models.Model):

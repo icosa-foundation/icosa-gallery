@@ -55,13 +55,13 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
         role__in=non_tri_roles
     )
     for format in non_triangulated_formats:
-        format.update_or_create_format_complexity(data.objPolyCount)
+        format.triangle_count = data.objPolyCount
+        format.save()
 
     triangulated_formats = asset.polyformat_set.exclude(role__in=non_tri_roles)
     for format in triangulated_formats:
-        format.update_or_create_format_complexity(
-            data.triangulatedObjPolyCount
-        )
+        format.triangle_count = data.triangulatedObjPolyCount
+        format.save()
 
     asset.remix_ids = getattr(data, "remixIds", None)
     asset.save()

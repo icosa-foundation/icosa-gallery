@@ -180,14 +180,6 @@ class FormatComplexity(Schema):
     triangleCount: Optional[int] = None
     lodHint: Optional[int] = None
 
-    @staticmethod
-    def resolve_triangleCount(obj):
-        return obj.triangle_count
-
-    @staticmethod
-    def resolve_lodHint(obj):
-        return obj.lod_hint
-
 
 class AssetFormat(Schema):
     root: Optional[AssetResource]
@@ -210,7 +202,11 @@ class AssetFormat(Schema):
 
     @staticmethod
     def resolve_formatComplexity(obj):
-        return obj.formatcomplexity_set.first()
+        format_complexity = {
+            "triangleCount": obj.triangle_count,
+            "lodHint": obj.lod_hint,
+        }
+        return format_complexity
 
 
 class FilterBase(Schema):

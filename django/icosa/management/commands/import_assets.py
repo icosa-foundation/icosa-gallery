@@ -11,7 +11,6 @@ from icosa.models import (
     CATEGORY_CHOICES,
     RESOURCE_ROLE_CHOICES,
     Asset,
-    FormatComplexity,
     PolyFormat,
     PolyResource,
     Tag,
@@ -140,14 +139,11 @@ def create_formats_from_scraped_data(
         )
         if format_json.get("formatComplexity", None) is not None:
             format_complexity_json = format_json["formatComplexity"]
-            format_complexity_data = {
-                "triangle_count": format_complexity_json.get(
-                    "triangleCount", None
-                ),
-                "lod_hint": format_complexity_json.get("lodHint", None),
-                "format": format,
-            }
-            FormatComplexity.objects.create(**format_complexity_data)
+            format.triangle_count = format_complexity_json.get(
+                "triangleCount", None
+            )
+            format.lod_hint = format_complexity_json.get("lodHint", None)
+            format.save()
 
         # Manually create thumbnails from our assumptions about the data.
         if not done_thumbnail:
@@ -214,16 +210,15 @@ def create_formats_from_archive_data(formats_json, asset):
             asset=asset,
             format_type=format_json["formatType"],
         )
+
         if format_json.get("formatComplexity", None) is not None:
             format_complexity_json = format_json["formatComplexity"]
-            format_complexity_data = {
-                "triangle_count": format_complexity_json.get(
-                    "triangleCount", None
-                ),
-                "lod_hint": format_complexity_json.get("lodHint", None),
-                "format": format,
-            }
-            FormatComplexity.objects.create(**format_complexity_data)
+            format.triangle_count = format_complexity_json.get(
+                "triangleCount", None
+            )
+            format.lod_hint = format_complexity_json.get("lodHint", None)
+            format.save()
+
         # TODO(james): we need to either download the thumbnail from
         # archive.org and store it ourselves or add another field for external
         # thumbnail which references the external image.
