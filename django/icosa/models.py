@@ -74,8 +74,15 @@ BLOCKS_VIEWABLE_TYPES = [
     "GLB",
     "GLTF2",
 ]
+
 VIEWABLE_TYPES = BLOCKS_VIEWABLE_TYPES + [
     "GLTF",
+]
+
+# This only returns roles that are associated with the poly scrape for now
+VIEWABLE_ROLES = [
+    1002,
+    1003,
 ]
 
 
@@ -238,7 +245,7 @@ class Asset(models.Model):
     def preferred_viewer_format(self):
         # Return early if we can grab a Polygone resource first
         polygone_gltf = self.polyresource_set.filter(
-            is_root=True, format__role=1003
+            is_root=True, format__role__in=[1002, 1003]
         ).first()
         if polygone_gltf:
             return {
@@ -335,13 +342,15 @@ class Asset(models.Model):
         if is_blocks:
             return bool(
                 self.polyformat_set.filter(
-                    format_type__in=BLOCKS_VIEWABLE_TYPES
+                    format_type__in=BLOCKS_VIEWABLE_TYPES,
+                    role__in=VIEWABLE_ROLES,
                 ).count()
             )
         else:
             return bool(
                 self.polyformat_set.filter(
-                    format_type__in=VIEWABLE_TYPES
+                    format_type__in=VIEWABLE_TYPES,
+                    role__in=VIEWABLE_ROLES,
                 ).count()
             )
 
