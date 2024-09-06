@@ -235,26 +235,35 @@ class Asset(models.Model):
         return get_snowflake_timestamp(self.id)
 
     @property
-    def preferred_format(self):
+    def preferred_viewer_format(self):
+        # Return early if we can grab a Polygone resource first
+        polygone_gltf = self.polyresource_set.filter(
+            is_root=True, format__role=1003
+        ).first()
+        if polygone_gltf:
+            return {
+                "format": polygone_gltf.format.format_type,
+                "url": polygone_gltf.url,
+            }
+
         # Return early with either of the role-based formats we care about.
         updated_gltf = self.polyresource_set.filter(
             is_root=True, format__role=30
         ).first()
-        original_gltf = None
         if updated_gltf:
             return {
                 "format": updated_gltf.format.format_type,
                 "url": updated_gltf.url,
             }
-        else:
-            original_gltf = self.polyresource_set.filter(
-                is_root=True, format__role=12
-            ).first()
-            if original_gltf:
-                return {
-                    "format": original_gltf.format.format_type,
-                    "url": original_gltf.url,
-                }
+
+        original_gltf = self.polyresource_set.filter(
+            is_root=True, format__role=12
+        ).first()
+        if original_gltf:
+            return {
+                "format": original_gltf.format.format_type,
+                "url": original_gltf.url,
+            }
 
         # If we didn't get any role-based formats, find the remaining formats
         # we care about and choose the "best" one of those.
