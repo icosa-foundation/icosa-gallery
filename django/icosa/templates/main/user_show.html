@@ -5,7 +5,9 @@
             <div class="col">
                 <div>
                     <h1>{{ user.displayname }}</h1>
-                    <p>{{ user.description|linebreaksbr }}</p>
+                    {% if user.description %}
+                        <p>{{ user.description|linebreaksbr }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
