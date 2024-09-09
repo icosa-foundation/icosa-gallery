@@ -1,6 +1,10 @@
 from typing import List
 
-from icosa.api import COMMON_ROUTER_SETTINGS, AssetPagination
+from icosa.api import (
+    COMMON_ROUTER_SETTINGS,
+    POLY_CATEGORY_MAP,
+    AssetPagination,
+)
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, Tag
 from icosa.models import User as IcosaUser
 from ninja import Query, Router
