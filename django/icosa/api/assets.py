@@ -359,7 +359,7 @@ def get_assets(
         q &= Q(owner__displayname__icontains=author_name)
     # TODO: orderBy
     if filters.format:
-        q &= Q(polyresource__format__format_type=filters.format)
+        q &= Q(polyformat__format_type=filters.format)
     try:
         keyword_q = get_keyword_q(filters)
     except HttpError:

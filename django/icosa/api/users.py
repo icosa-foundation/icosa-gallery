@@ -94,7 +94,7 @@ def get_me_assets(
             )
 
     if filters.format:
-        q &= Q(polyresource__format__format_type=filters.format)
+        q &= Q(polyformat__format_type=filters.format)
 
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
@@ -143,7 +143,7 @@ def get_me_likedassets(
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
     ex_q = Q()
     if filters.format:
-        q &= Q(polyresource__format__format_type=filters.format)
+        q &= Q(polyformat__format_type=filters.format)
 
     if filters.orderBy and filters.orderBy == "LIKED_TIME":
         liked_assets = liked_assets.order_by("-date_liked")
