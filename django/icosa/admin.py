@@ -48,6 +48,7 @@ class PolyFormatInline(admin.TabularInline):
     fields = (
         "format_type",
         "archive_url",
+        "role",
     )
 
 
