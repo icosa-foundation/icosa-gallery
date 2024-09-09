@@ -11,20 +11,6 @@ COMMON_ROUTER_SETTINGS = {
     "exclude_defaults": True,
 }
 
-POLY_CATEGORY_MAP = {
-    "ANIMALS": "animals",
-    "ARCHITECTURE": "architecture",
-    "ART": "art",
-    "FOOD": "food",
-    "NATURE": "nature",
-    "OBJECTS": "objects",
-    "PEOPLE": "people",
-    "PLACES": "scenes",
-    "TECH": "tech",
-    "TECHNOLOGY": "tech",
-    "TRANSPORT": "transport",
-}
-
 DEFAULT_PAGE_SIZE = 20
 DEFAULT_PAGE_TOKEN = 1
 MAX_PAGE_SIZE = 100

@@ -2,11 +2,7 @@ import re
 import secrets
 from typing import List, NoReturn, Optional
 
-from icosa.api import (
-    COMMON_ROUTER_SETTINGS,
-    POLY_CATEGORY_MAP,
-    AssetPagination,
-)
+from icosa.api import COMMON_ROUTER_SETTINGS, AssetPagination
 from icosa.api.authentication import AuthBearer
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import PUBLIC, Asset, Tag
