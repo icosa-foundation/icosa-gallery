@@ -100,7 +100,9 @@ def get_me_assets(
         tags = Tag.objects.filter(name__in=filters.tag)
         q &= Q(tags__in=tags)
     if filters.category:
-        q &= Q(category__iexact=filters.category.upper())
+        category_str = filters.category.upper()
+        category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
+        q &= Q(category__iexact=category_str)
     if filters.curated:
         q &= Q(curated=True)
     if filters.name:
@@ -150,7 +152,9 @@ def get_me_likedassets(
         tags = Tag.objects.filter(name__in=filters.tag)
         q &= Q(tags__in=tags)
     if filters.category:
-        q &= Q(category__iexact=filters.category.upper())
+        category_str = filters.category.upper()
+        category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
+        q &= Q(category__iexact=category_str)
     if filters.curated:
         q &= Q(curated=True)
     if filters.name:

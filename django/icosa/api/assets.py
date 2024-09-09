@@ -339,7 +339,9 @@ def get_assets(
     if filters.tag:
         q &= Q(tags__name__in=filters.tag)
     if filters.category:
-        q &= Q(category__iexact=filters.category.upper())
+        category_str = filters.category.upper()
+        category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
+        q &= Q(category__iexact=category_str)
     if filters.curated:
         q &= Q(curated=True)
     if filters.name:

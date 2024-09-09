@@ -12,17 +12,7 @@ COMMON_ROUTER_SETTINGS = {
 }
 
 POLY_CATEGORY_MAP = {
-    "ANIMALS": "animals",
-    "ARCHITECTURE": "architecture",
-    "ART": "art",
-    "FOOD": "food",
-    "NATURE": "nature",
-    "OBJECTS": "objects",
-    "PEOPLE": "people",
-    "PLACES": "scenes",
-    "TECH": "tech",
-    "TECHNOLOGY": "tech",
-    "TRANSPORT": "transport",
+    "TECHNOLOGY": "TECH",
 }
 
 DEFAULT_PAGE_SIZE = 20
