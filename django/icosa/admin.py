@@ -104,6 +104,7 @@ class AssetAdmin(admin.ModelAdmin):
         ("thumbnail", admin.EmptyFieldListFilter),
         "license",
         "category",
+        "tags",
     )
 
     def _thumbnail_image(self, obj):

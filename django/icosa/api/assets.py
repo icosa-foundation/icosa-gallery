@@ -333,8 +333,7 @@ def get_assets(
     ex_q = Q()
 
     if filters.tag:
-        tags = Tag.objects.filter(name__in=filters.tag)
-        q &= Q(tags__in=tags)
+        q &= Q(tags__name__in=filters.tag)
     if filters.category:
         q &= Q(category__iexact=filters.category.upper())
     if filters.curated:

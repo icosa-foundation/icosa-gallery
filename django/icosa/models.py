@@ -161,6 +161,11 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = [
+            "name",
+        ]
+
 
 def default_orienting_rotation():
     return "[0, 0, 0, 0]"
