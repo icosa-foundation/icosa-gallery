@@ -75,10 +75,6 @@ BLOCKS_VIEWABLE_TYPES = [
     "GLTF2",
 ]
 
-VIEWABLE_TYPES = BLOCKS_VIEWABLE_TYPES + [
-    "GLTF",
-]
-
 # This only returns roles that are associated with the poly scrape for now
 VIEWABLE_ROLES = [
     1002,
@@ -347,12 +343,7 @@ class Asset(models.Model):
                 ).count()
             )
         else:
-            return bool(
-                self.polyformat_set.filter(
-                    format_type__in=VIEWABLE_TYPES,
-                    role__in=VIEWABLE_ROLES,
-                ).count()
-            )
+            return True
 
     def save(self, *args, **kwargs):
         self.update_search_text()
