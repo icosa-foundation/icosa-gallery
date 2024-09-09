@@ -391,7 +391,7 @@ class PolyFormat(models.Model):
     archive_url = models.CharField(max_length=1024, null=True, blank=True)
     triangle_count = models.PositiveIntegerField(null=True, blank=True)
     lod_hint = models.PositiveIntegerField(null=True, blank=True)
-    role = models.CharField(
+    role = models.IntegerField(
         max_length=255,
         null=True,
         blank=True,
