@@ -25,13 +25,17 @@ POLY_CATEGORY_MAP = {
     "TRANSPORT": "transport",
 }
 
+DEFAULT_PAGE_SIZE = 20
+DEFAULT_PAGE_TOKEN = 1
+MAX_PAGE_SIZE = 100
+
 
 class AssetPagination(PaginationBase):
     class Input(Schema):
-        pageToken: int = None
-        page_token: int = None
-        pageSize: int = None
-        page_size: int = None
+        pageToken: str = None
+        page_token: str = None
+        pageSize: str = None
+        page_size: str = None
 
     class Output(Schema):
         assets: List[Any]
@@ -43,10 +47,27 @@ class AssetPagination(PaginationBase):
     def paginate_queryset(
         self, queryset, pagination: Input, request, **params
     ):
-        page_size = pagination.pageSize or pagination.page_size or 20
-        if page_size > 100:
-            page_size = 100
-        page_token = pagination.pageToken or pagination.page_token or 1
+        try:
+            page_size = (
+                int(pagination.pageSize)
+                or int(pagination.page_size)
+                or DEFAULT_PAGE_SIZE
+            )
+        except (ValueError, TypeError):
+            # pageSize could still be defined, but empty: `?pageSize=`).
+            page_size = DEFAULT_PAGE_SIZE
+        page_size = min(page_size, MAX_PAGE_SIZE)
+
+        try:
+            page_token = (
+                int(pagination.pageToken)
+                or int(pagination.page_token)
+                or DEFAULT_PAGE_TOKEN
+            )
+        except (ValueError, TypeError):
+            # pageToken could still be defined, but empty: `?pageToken=`).
+            page_token = DEFAULT_PAGE_TOKEN
+
         offset = (page_token - 1) * page_size
         count = self._items_count(queryset)
         if type(queryset) == list:
