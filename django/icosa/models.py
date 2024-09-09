@@ -392,7 +392,6 @@ class PolyFormat(models.Model):
     triangle_count = models.PositiveIntegerField(null=True, blank=True)
     lod_hint = models.PositiveIntegerField(null=True, blank=True)
     role = models.IntegerField(
-        max_length=255,
         null=True,
         blank=True,
         choices=RESOURCE_ROLE_CHOICES,
