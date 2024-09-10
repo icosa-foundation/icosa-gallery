@@ -9,16 +9,25 @@
     window.THREE = viewer.three;
 
     let url = "{{ asset.preferred_viewer_format.url }}";
-    let formatType = "{{ asset.preferred_viewer_format.format_type }}".toLowerCase();
+    let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
 
-    if (formatType === 'gltf' || formatType === 'glb') {
+    if (formatType === 'gltf2' || formatType === 'glb') {
         try {
-            console.log("Trying to load gltf2");
+            console.log("Trying to load as GLTF2");
             await viewer.loadGltf(url, true, defaultBgColor);
         } catch (error) {
             console.log(error);
-            console.log("GLTF2 failed. Trying to load gltf1");
+            console.log("GLTF2 failed. Trying to load as GLTF1");
             await viewer.loadGltf1(url, true, defaultBgColor);
+        }
+    } else if (formatType === 'gltf') {
+        try {
+            console.log("Trying to load as GLTF1");
+            await viewer.loadGltf1(url, true, defaultBgColor);
+        } catch (error) {
+            console.log(error);
+            console.log("GLTF1 failed. Trying to load as GLTF2");
+            await viewer.loadGltf(url, true, defaultBgColor);
         }
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
