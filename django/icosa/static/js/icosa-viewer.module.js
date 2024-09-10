@@ -49492,12 +49492,17 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.scene.fog = new $ea01ff4a5048cd08$exports.FogExp2(this.sketchMetadata.FogColor, this.sketchMetadata.FogDensity);
     }
     initSceneBackground() {
-        if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
+        // OBJ and FBX models don't have metadata
+        if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
+            this.scene.background = this.defaultBackgroundColor;
+            return;
+        }
         let sky = null;
         if (this.sketchMetadata.UseGradient) sky = this.generateGradientSky(this.sketchMetadata.SkyColorA, this.sketchMetadata.SkyColorB, this.sketchMetadata.SkyGradientDirection);
         else if (this.sketchMetadata.SkyTexture) sky = this.generateTextureSky(this.sketchMetadata.SkyTexture);
         if (sky !== null) this.loadedModel?.add(sky);
-        else this.scene.background = this.defaultBackgroundColor;
+        else // Use the default background color if there's no sky
+        this.scene.background = this.defaultBackgroundColor;
     }
 }
 
