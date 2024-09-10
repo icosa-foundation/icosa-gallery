@@ -23,7 +23,6 @@ RUN set -x \
     && apt-get install -y --no-install-recommends $BUILD_DEPS
 
 # npm packages setup
-
 COPY package.json .
 RUN npm install
 
@@ -31,7 +30,6 @@ RUN npm install
 RUN python -m venv /venv
 COPY requirements.in .
 RUN pip install --no-cache-dir -r requirements.in
-
 
 ####
 # Slim app container
@@ -58,7 +56,7 @@ WORKDIR /opt
 EXPOSE 8001
 
 COPY --from=builder /venv /venv
-COPY --from=builder /opt/node_modules /opt/node_modules
+COPY --from=builder /opt/node_modules /node_modules
 COPY . .
 
 RUN mkdir -p /opt/logs
