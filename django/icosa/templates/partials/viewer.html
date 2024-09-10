@@ -30,8 +30,8 @@
             await viewer.loadGltf(url, true, defaultBgColor);
         }
     } else if (formatType === 'obj') {
+        let url = "{{ asset.preferred_viewer_format.materialUrl }}";
         console.log("Trying to load obj");
-        let mtlUrl = url.replace(".obj", ".mtl");
         await viewer.loadObjWithMtl(url, mtlUrl, false, defaultBgColor);
     } else if (formatType === 'fbx') {
         console.log("Trying to load fbx");
