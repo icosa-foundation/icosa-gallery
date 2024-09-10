@@ -8,7 +8,7 @@
     window.viewer = viewer;
     window.THREE = viewer.three;
 
-    let url = {{ asset.preferred_viewer_format.url }};
+    let url = "{{ asset.preferred_viewer_format.url }}";
     let ext = url.split('.').pop().toLowerCase();
     if (ext === 'gltf' || ext === 'glb') {
         try {
