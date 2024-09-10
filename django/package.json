@@ -1,0 +1,8 @@
+{
+  "name": "icosa-gallery",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "gltf-pipeline": "^4.1.0"
+  }
+}
