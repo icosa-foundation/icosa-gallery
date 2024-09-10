@@ -49374,25 +49374,33 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.loadedModel = tiltData;
         this.initializeScene();
     }
-    // Currently assumes all materials are vertex colored
-    async loadObj(url) {
+    setAllVertexColors(model) {
+        model.traverse((node)=>{
+            if (node.material) {
+                if (Array.isArray(node.material)) node.material.forEach((material)=>material.vertexColors = true);
+                else node.material.vertexColors = true;
+            }
+        });
+    }
+    // Defaults to assuming materials are vertex colored
+    async loadObj(url, withVertexColors, defaultBackground) {
         this.objLoader.loadAsync(url).then((objData)=>{
             this.loadedModel = objData;
-            this.loadedModel.traverse((node)=>{
-                if (node.material) {
-                    if (Array.isArray(node.material)) node.material.forEach((material)=>material.vertexColors = true);
-                    else node.material.vertexColors = true;
-                }
-            });
+            if (!defaultBackground) defaultBackground = "#000000";
+            this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(defaultBackground);
+            if (withVertexColors) this.setAllVertexColors(this.loadedModel);
             this.initializeScene();
         });
     }
-    async loadObjWithMtl(objUrl, mtlUrl) {
+    async loadObjWithMtl(objUrl, mtlUrl, withVertexColors, defaultBackground) {
         this.mtlLoader.loadAsync(mtlUrl).then((materials)=>{
             materials.preload();
             this.objLoader.setMaterials(materials);
             this.objLoader.loadAsync(objUrl).then((objData)=>{
                 this.loadedModel = objData;
+                if (!defaultBackground) defaultBackground = "#000000";
+                this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(defaultBackground);
+                if (withVertexColors) this.setAllVertexColors(this.loadedModel);
                 this.initializeScene();
             });
         });

@@ -31,7 +31,8 @@
         }
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
-        await viewer.loadObj(url, true, defaultBgColor);
+        let mtlUrl = url.replace(".obj", ".mtl");
+        await viewer.loadObjWithMtl(url, mtlUrl, false, defaultBgColor);
     } else if (formatType === 'fbx') {
         console.log("Trying to load fbx");
         await viewer.loadFbx(url, true, defaultBgColor);
