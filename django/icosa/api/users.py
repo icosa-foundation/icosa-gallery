@@ -135,7 +135,7 @@ def get_me_likedassets(
         visibility__in=[PUBLIC, UNLISTED],
     )
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
-    ex_q = Q()
+
     if filters.format:
         q &= Q(polyformat__format_type=filters.format)
 
@@ -165,12 +165,14 @@ def get_me_likedassets(
     if author_name is not None:
         q &= Q(owner__displayname__icontains=author_name)
     # TODO: orderBy
-
     try:
         keyword_q = get_keyword_q(filters)
+        q &= keyword_q
     except HttpError:
         raise
-    assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+
+    assets = Asset.objects.filter(q)
+
     if filters.orderBy and filters.orderBy == "LIKED_TIME":
         # Sort the assets by order of liked ID. Slow, but database-agnostic.
         # Postgres and MySql have different ways to do this, and we'd need to
