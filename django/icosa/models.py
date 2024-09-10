@@ -247,13 +247,16 @@ class Asset(models.Model):
         # Return early if we know the asset is not viewer compatible, with an
         # obj file.
         if not self.is_viewer_compatible:
-            obj_resource = self.polyresource_set.filter(
-                is_root=True, format__format_type="FBX"
-            ).first()
+            # TODO Prefer some roles over others
+            # TODO error handling
+            obj_format = self.polyformat_set.filter(format_type="OBJ").first()
+            obj_resource = obj_format.polyresource_set.filter(is_root=True).first()
+            mtl_resource = obj_format.polyresource_set.filter(is_root=False).first()
             if obj_resource:
                 return {
                     "format": obj_resource.format.format_type,
                     "url": obj_resource.url,
+                    "materialUrl": mtl_resource.url
                 }
 
         # Return early if we can grab a Polygone resource first
