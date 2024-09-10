@@ -153,6 +153,10 @@ django/huey.db-wal
 django/huey.db-shm
 
 
+# node stuff
+
+django/node_modules
+
 # Data for import
 django/polygone_data*
 django/*.tsv
