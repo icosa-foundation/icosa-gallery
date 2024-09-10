@@ -244,6 +244,18 @@ class Asset(models.Model):
 
     @property
     def preferred_viewer_format(self):
+        # Return early if we know the asset is not viewer compatible, with an
+        # obj file.
+        if not self.is_viewer_compatible:
+            obj_resource = self.polyresource_set.filter(
+                is_root=True, format__format_type="OBJ"
+            ).first()
+            if obj_resource:
+                return {
+                    "format": obj_resource.format.format_type,
+                    "url": obj_resource.url,
+                }
+
         # Return early if we can grab a Polygone resource first
         polygone_gltf = self.polyresource_set.filter(
             is_root=True, format__role__in=[1002, 1003]
