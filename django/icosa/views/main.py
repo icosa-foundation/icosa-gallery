@@ -1,6 +1,7 @@
 import secrets
 
 from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
+from icosa.helpers.file import upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset

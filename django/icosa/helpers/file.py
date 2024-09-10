@@ -1,6 +1,8 @@
 import io
 import os
+import pathlib
 import re
+import subprocess
 import zipfile
 from dataclasses import dataclass
 from typing import List, Optional
@@ -14,6 +16,9 @@ from ninja.files import UploadedFile
 from django.core.files.storage import get_storage_class
 
 default_storage = get_storage_class()()
+
+CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
+
 
 ASSET_NOT_FOUND = HttpError(404, "Asset not found.")
 
@@ -140,22 +145,42 @@ def validate_file(
     )
 
 
-def process_main_file(mainfile, sub_files, asset):
+def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
     is_first_format = True
     # Main files determine folder
+    format_type = mainfile.filetype
+    file = mainfile.file
+    name = mainfile.file.name
+
+    # if this is a gltf1 and we have a converted file on disk, swap out the
+    # uploaded file with the one we have on disk and change the format_type
+    # to gltf2.
+    if (
+        format_type == "GLTF"
+        and gltf_to_convert is not None
+        and os.path.exists(gltf_to_convert)
+    ):
+        format_type = "GLTF2"
+        with open(gltf_to_convert, "rb") as f:
+            file = UploadedFile(
+                name=name,
+                file=io.BytesIO(f.read()),
+            )
+
     format_data = {
-        "format_type": mainfile.filetype,
+        "format_type": format_type,
         "asset": asset,
     }
     format = PolyFormat.objects.create(**format_data)
     if is_first_format:
         is_first_format = False
+
     resource_data = {
-        "file": mainfile.file,
+        "file": file,
         "is_root": True,
         "asset": asset,
         "format": format,
-        "contenttype": get_content_type(mainfile.file.name),
+        "contenttype": get_content_type(name),
     }
     PolyResource.objects.create(**resource_data)
 
@@ -442,20 +467,63 @@ def upload_asset(
         else:
             unzipped_files.append(file)
 
+    gltf_to_convert = None
+    bin_for_conversion = None
+    asset_dir = os.path.join("/tmp/", f"{asset.id}")
     for file in unzipped_files:
-        splitnames = file.name.split(
-            "."
-        )  # TODO(james): better handled by the `os` module?
-        extension = splitnames[-1].lower()
+
+        splitext = os.path.splitext(file.name)
+        extension = splitext[1].lower().replace(".", "")
         upload_details = validate_file(file, extension)
         if upload_details is not None:
+            if upload_details.filetype in ["GLTF", "BIN"]:
+                # Save the file for later conversion.
+                file = upload_details.file
+                pathlib.Path(asset_dir).mkdir(parents=True, exist_ok=True)
+                path = os.path.join(asset_dir, file.name)
+                with open(path, "wb") as f_out:
+                    for chunk in file.chunks():
+                        f_out.write(chunk)
+                    upload_details.file.seek(0)
+                    if upload_details.filetype == "BIN":
+                        bin_for_conversion = (
+                            path,
+                            file.name,
+                        )
+                    if upload_details.filetype == "GLTF":
+                        gltf_to_convert = (
+                            path,
+                            file.name,
+                        )
+
             if upload_details.mainfile is True:
                 main_files.append(upload_details)
-                name = splitnames[0]
+                name = splitext[0]
             else:
                 sub_files.append(upload_details)
 
-    # begin upload process
+    converted_gltf_path = None
+    if gltf_to_convert is not None and bin_for_conversion is not None:
+        pathlib.Path(os.path.join(asset_dir, "converted")).mkdir(
+            parents=True, exist_ok=True
+        )
+        out_path = os.path.join(asset_dir, "converted", gltf_to_convert[1])
+        os.rename(
+            gltf_to_convert[0], out_path
+        )  # TODO in place of a real conversion
+        # subprocess.run(
+        #     [
+        #         "node",
+        #         CONVERTER_EXE,
+        #         "-i",
+        #         gltf_to_convert[0],
+        #         "-o",
+        #         out_path,
+        #     ]
+        # )
+        converted_gltf_path = out_path
+
+    # Begin upload process.
 
     asset.name = name
     asset.save()
@@ -465,7 +533,17 @@ def upload_asset(
             mainfile,
             sub_files,
             asset,
+            converted_gltf_path,
         )
+
+    # Clean up temp files.
+    if gltf_to_convert is not None:
+        try:
+            os.unlink(gltf_to_convert[0])
+        except FileNotFoundError:
+            pass
+    if bin_for_conversion is not None:
+        os.unlink(bin_for_conversion[0])
 
     if thumbnail:
         add_thumbnail_to_asset(thumbnail, asset)
