@@ -8,14 +8,37 @@
     window.viewer = viewer;
     window.THREE = viewer.three;
 
-    try {
-        console.log("Trying to load gltf2");
-        await viewer.loadGltf("{{ asset.preferred_viewer_format.url }}", true, defaultBgColor);
-    } catch (error) {
-        console.log(error);
-        console.log("GLTF2 failed. Trying to load gltf1");
-        await viewer.loadGltf1("{{ asset.preferred_viewer_format.url }}", true, defaultBgColor);
+    let url = "{{ asset.preferred_viewer_format.url }}";
+    let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+
+    if (formatType === 'gltf2' || formatType === 'glb') {
+        try {
+            console.log("Trying to load as GLTF2");
+            await viewer.loadGltf(url, true, defaultBgColor);
+        } catch (error) {
+            console.log(error);
+            console.log("GLTF2 failed. Trying to load as GLTF1");
+            await viewer.loadGltf1(url, true, defaultBgColor);
+        }
+    } else if (formatType === 'gltf') {
+        try {
+            console.log("Trying to load as GLTF1");
+            await viewer.loadGltf1(url, true, defaultBgColor);
+        } catch (error) {
+            console.log(error);
+            console.log("GLTF1 failed. Trying to load as GLTF2");
+            await viewer.loadGltf(url, true, defaultBgColor);
+        }
+    } else if (formatType === 'obj') {
+        console.log("Trying to load obj");
+        await viewer.loadObj(url, true, defaultBgColor);
+    } else if (formatType === 'fbx') {
+        console.log("Trying to load fbx");
+        await viewer.loadFbx(url, true, defaultBgColor);
+    } else {
+        console.error("Unsupported file format: " + formatType);
     }
+
 
     // For debugging
     window.viewer = viewer;
