@@ -248,13 +248,10 @@ class Asset(models.Model):
         # obj file.
         if not self.is_viewer_compatible:
             # TODO Prefer some roles over others
+            # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
-            obj_resource = obj_format.polyresource_set.filter(
-                is_root=True, format__format_type="OBJ"
-            ).first()
-            mtl_resource = obj_format.polyresource_set.filter(
-                format__format_type="MTL"
-            ).first()
+            obj_resource = obj_format.polyresource_set.filter(is_root=True).first()
+            mtl_resource = obj_format.polyresource_set.filter(is_root=False).first()
             if obj_resource:
                 return {
                     "format": obj_resource.format.format_type,
