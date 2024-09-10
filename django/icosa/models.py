@@ -295,6 +295,9 @@ class Asset(models.Model):
         # GLTF1, if we must.
         if "GLTF" in formats.keys():
             return formats["GLTF"]
+        # Last chance, OBJ
+        if "OBJ" in formats.keys():
+            return formats["OBJ"]
         return None
 
     def get_absolute_url(self):
