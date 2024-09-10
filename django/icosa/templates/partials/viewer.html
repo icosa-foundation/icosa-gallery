@@ -9,8 +9,9 @@
     window.THREE = viewer.three;
 
     let url = "{{ asset.preferred_viewer_format.url }}";
-    let ext = url.split('.').pop().toLowerCase();
-    if (ext === 'gltf' || ext === 'glb') {
+    let formatType = "{{ asset.preferred_viewer_format.format_type }}".toLowerCase();
+
+    if (formatType === 'gltf' || formatType === 'glb') {
         try {
             console.log("Trying to load gltf2");
             await viewer.loadGltf(url, true, defaultBgColor);
@@ -19,10 +20,10 @@
             console.log("GLTF2 failed. Trying to load gltf1");
             await viewer.loadGltf1(url, true, defaultBgColor);
         }
-    } else if (ext === 'obj') {
+    } else if (formatType === 'obj') {
         console.log("Trying to load obj");
         await viewer.loadObj(url, true, defaultBgColor);
-    } else if (ext === 'fbx') {
+    } else if (formatType === 'fbx') {
         console.log("Trying to load fbx");
         await viewer.loadFbx(url, true, defaultBgColor);
     } else {
