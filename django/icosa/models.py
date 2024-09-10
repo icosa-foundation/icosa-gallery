@@ -248,7 +248,7 @@ class Asset(models.Model):
         # obj file.
         if not self.is_viewer_compatible:
             obj_resource = self.polyresource_set.filter(
-                is_root=True, format__format_type="FBX"
+                is_root=True, format__format_type="OBJ"
             ).first()
             if obj_resource:
                 return {
