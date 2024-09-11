@@ -9,7 +9,7 @@ from icosa.api import (
 )
 from icosa.api.authentication import AuthBearer
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import PUBLIC, Asset, Tag
+from icosa.models import PUBLIC, Asset
 from icosa.models import User as IcosaUser
 from icosa.tasks import (
     queue_finalize_asset,
