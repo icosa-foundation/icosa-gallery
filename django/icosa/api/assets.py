@@ -42,6 +42,8 @@ router = Router()
 
 default_storage = get_storage_class()()
 
+DEFAULT_CACHE_SECONDS = 10
+
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
 
@@ -151,6 +153,7 @@ def get_my_id_asset(
     response=AssetSchemaOut,
     **COMMON_ROUTER_SETTINGS,
 )
+@decorate_view(cache_page(DEFAULT_CACHE_SECONDS))
 def get_asset(
     request,
     asset: str,
@@ -265,6 +268,7 @@ def unpublish_asset(
     "/{str:userurl}/{str:asseturl}",
     response=AssetSchemaOut,
 )
+@decorate_view(cache_page(DEFAULT_CACHE_SECONDS))
 def get_user_asset(
     request,
     userurl: str,
@@ -327,7 +331,7 @@ def upload_new_assets(
     **COMMON_ROUTER_SETTINGS,
 )
 @paginate(AssetPagination)
-@decorate_view(cache_page(10))
+@decorate_view(cache_page(DEFAULT_CACHE_SECONDS))
 def get_assets(
     request,
     filters: AssetFilters = Query(...),
