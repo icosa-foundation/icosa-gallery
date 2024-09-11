@@ -243,20 +243,25 @@ class Asset(models.Model):
         return get_snowflake_timestamp(self.id)
 
     @property
-    def preferred_viewer_format(self):
+    def _preferred_viewer_format(self):
         # Return early if we know the asset is not viewer compatible, with an
         # obj file.
         if not self.is_viewer_compatible:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
-            obj_resource = obj_format.polyresource_set.filter(is_root=True).first()
-            mtl_resource = obj_format.polyresource_set.filter(is_root=False).first()
+            obj_resource = obj_format.polyresource_set.filter(
+                is_root=True
+            ).first()
+            mtl_resource = obj_format.polyresource_set.filter(
+                is_root=False
+            ).first()
+
             if obj_resource:
                 return {
                     "format": obj_resource.format.format_type,
-                    "url": obj_resource.url,
-                    "materialUrl": mtl_resource.url
+                    "url": obj_resource.internal_url_or_none,
+                    "materialUrl": mtl_resource.internal_url_or_none,
                 }
 
         # Return early if we can grab a Polygone resource first
@@ -266,7 +271,7 @@ class Asset(models.Model):
         if polygone_gltf:
             return {
                 "format": polygone_gltf.format.format_type,
-                "url": polygone_gltf.url,
+                "url": polygone_gltf.internal_url_or_none,
             }
 
         # Return early with either of the role-based formats we care about.
@@ -276,7 +281,7 @@ class Asset(models.Model):
         if updated_gltf:
             return {
                 "format": updated_gltf.format.format_type,
-                "url": updated_gltf.url,
+                "url": updated_gltf.internal_url_or_none,
             }
 
         original_gltf = self.polyresource_set.filter(
@@ -285,7 +290,7 @@ class Asset(models.Model):
         if original_gltf:
             return {
                 "format": original_gltf.format.format_type,
-                "url": original_gltf.url,
+                "url": original_gltf.internal_url_or_none,
             }
 
         # If we didn't get any role-based formats, find the remaining formats
@@ -295,11 +300,7 @@ class Asset(models.Model):
             root = format.root_resource
             formats[format.format_type] = {
                 "format": format.format_type,
-                "url": (
-                    root.file.url
-                    if getattr(root, "file")
-                    else root.external_url
-                ),
+                "url": root.internal_url_or_none,
             }
         # GLB is our primary preferred format;
         if "GLB" in formats.keys():
@@ -314,6 +315,18 @@ class Asset(models.Model):
         if "OBJ" in formats.keys():
             return formats["OBJ"]
         return None
+
+    @property
+    def preferred_viewer_format(self):
+        format = self._preferred_viewer_format
+        if format is None:
+            return None
+        if format["url"] is None:
+            return None
+        if "materialUrl" in format.keys():
+            if format["materialUrl"] is None:
+                return None
+        return format
 
     def get_absolute_url(self):
         if self.polydata:
@@ -439,6 +452,12 @@ class PolyResource(models.Model):
         elif self.external_url:
             url_str = self.external_url
         return url_str
+
+    @property
+    def internal_url_or_none(self):
+        if self.file:
+            return self.file.url
+        return None
 
     @property
     def relative_path(self):
