@@ -28,6 +28,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest
 from django.urls import reverse
+from django.views.decorators.cache import cache_page
 
 from .schema import (
     AssetFilters,
@@ -326,6 +327,7 @@ def upload_new_assets(
     **COMMON_ROUTER_SETTINGS,
 )
 @paginate(AssetPagination)
+@decorate_view(cache_page(10))
 def get_assets(
     request,
     filters: AssetFilters = Query(...),
