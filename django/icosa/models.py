@@ -374,6 +374,7 @@ class Asset(models.Model):
     def is_blocks(self):
         return bool(self.polyformat_set.filter(format_type="BLOCKS").count())
 
+    @property
     def is_blocks_viewable(self):
         return bool(
             self.polyformat_set.filter(
