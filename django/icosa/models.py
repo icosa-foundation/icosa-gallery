@@ -244,9 +244,9 @@ class Asset(models.Model):
 
     @property
     def _preferred_viewer_format(self):
-        # Return early if we know the asset is not viewer compatible, with an
-        # obj file.
-        if not self.is_viewer_compatible:
+        # Return early with an obj if we know the asset is a blocks file
+        # and doesn't have a gltf2.
+        if self.is_blocks and not self.is_blocks_viewable:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
@@ -261,7 +261,7 @@ class Asset(models.Model):
                 return {
                     "format": obj_resource.format.format_type,
                     "url": obj_resource.internal_url_or_none,
-                    "materialUrl": mtl_resource.internal_url_or_none,
+                    "materialUrl": mtl_resource.url,
                 }
 
         # Return early if we can grab a Polygone resource first
@@ -323,9 +323,6 @@ class Asset(models.Model):
             return None
         if format["url"] is None:
             return None
-        if "materialUrl" in format.keys():
-            if format["materialUrl"] is None:
-                return None
         return format
 
     def get_absolute_url(self):
@@ -368,18 +365,22 @@ class Asset(models.Model):
         )
 
     def validate(self):
-        is_blocks = bool(
-            self.polyformat_set.filter(format_type="BLOCKS").count()
-        )
-        if is_blocks:
-            return bool(
-                self.polyformat_set.filter(
-                    format_type__in=BLOCKS_VIEWABLE_TYPES,
-                    role__in=VIEWABLE_ROLES,
-                ).count()
-            )
+        if self.is_blocks:
+            return self.is_blocks_viewable
         else:
             return True
+
+    @property
+    def is_blocks(self):
+        return bool(self.polyformat_set.filter(format_type="BLOCKS").count())
+
+    def is_blocks_viewable(self):
+        return bool(
+            self.polyformat_set.filter(
+                format_type__in=BLOCKS_VIEWABLE_TYPES,
+                role__in=VIEWABLE_ROLES,
+            ).count()
+        )
 
     def save(self, *args, **kwargs):
         self.update_search_text()
