@@ -160,7 +160,8 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
         and gltf_to_convert is not None
         and os.path.exists(gltf_to_convert)
     ):
-        format_type = "GLTF2"
+        format_type = "GLB"
+        name = f"{os.path.splitext(name)[0]}.glb"
         with open(gltf_to_convert, "rb") as f:
             file = UploadedFile(
                 name=name,
@@ -507,20 +508,24 @@ def upload_asset(
         Path(os.path.join(asset_dir, "converted")).mkdir(
             parents=True, exist_ok=True
         )
-        out_path = os.path.join(asset_dir, "converted", gltf_to_convert[1])
-        os.rename(
-            gltf_to_convert[0], out_path
-        )  # TODO in place of a real conversion
-        # subprocess.run(
-        #     [
-        #         "node",
-        #         CONVERTER_EXE,
-        #         "-i",
-        #         gltf_to_convert[0],
-        #         "-o",
-        #         out_path,
-        #     ]
-        # )
+        name, extension = os.path.splitext(gltf_to_convert[1])
+        out_path = os.path.join(asset_dir, "converted", f"{name}.glb")
+        data = Path(gltf_to_convert[0]).read_text()
+        Path(gltf_to_convert[0]).write_text(
+            data.replace("https://vr.google.com/shaders/w/", asset_dir)
+        )
+        subprocess.run(
+            [
+                "node",
+                CONVERTER_EXE,
+                "-i",
+                gltf_to_convert[0],
+                "-o",
+                out_path,
+                "--keepUnusedElements",
+                "--binary",
+            ]
+        )
         converted_gltf_path = out_path
 
     # Begin upload process.
@@ -545,8 +550,14 @@ def upload_asset(
         Path.unlink(bin_for_conversion[0], missing_ok=True)
     if converted_gltf_path is not None:
         Path.unlink(converted_gltf_path, missing_ok=True)
-    Path.unlink(os.path.join(asset_dir, "converted"), missing_ok=True)
-    Path.unlink(os.path.join(asset_dir), missing_ok=True)
+    try:
+        Path.rmdir(os.path.join(asset_dir, "converted"))
+    except FileNotFoundError:
+        pass
+    try:
+        Path.rmdir(os.path.join(asset_dir))
+    except FileNotFoundError:
+        pass
 
     if thumbnail:
         add_thumbnail_to_asset(thumbnail, asset)
