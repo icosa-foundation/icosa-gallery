@@ -13,6 +13,7 @@ from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
+from django.conf import settings
 from django.core.files.storage import get_storage_class
 
 default_storage = get_storage_class()()
@@ -511,8 +512,9 @@ def upload_asset(
         name, extension = os.path.splitext(gltf_to_convert[1])
         out_path = os.path.join(asset_dir, "converted", f"{name}.glb")
         data = Path(gltf_to_convert[0]).read_text()
+        shader_dummy_path = os.path.join(settings.STATIC_ROOT, "shader_dummy")
         Path(gltf_to_convert[0]).write_text(
-            data.replace("https://vr.google.com/shaders/w/", asset_dir)
+            data.replace("https://vr.google.com/shaders/w/", shader_dummy_path)
         )
         subprocess.run(
             [
