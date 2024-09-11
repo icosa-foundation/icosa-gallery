@@ -1,10 +1,10 @@
 import io
 import os
-import pathlib
 import re
 import subprocess
 import zipfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional
 
 import ijson
@@ -479,7 +479,7 @@ def upload_asset(
             if upload_details.filetype in ["GLTF", "BIN"]:
                 # Save the file for later conversion.
                 file = upload_details.file
-                pathlib.Path(asset_dir).mkdir(parents=True, exist_ok=True)
+                Path(asset_dir).mkdir(parents=True, exist_ok=True)
                 path = os.path.join(asset_dir, file.name)
                 with open(path, "wb") as f_out:
                     for chunk in file.chunks():
@@ -504,7 +504,7 @@ def upload_asset(
 
     converted_gltf_path = None
     if gltf_to_convert is not None and bin_for_conversion is not None:
-        pathlib.Path(os.path.join(asset_dir, "converted")).mkdir(
+        Path(os.path.join(asset_dir, "converted")).mkdir(
             parents=True, exist_ok=True
         )
         out_path = os.path.join(asset_dir, "converted", gltf_to_convert[1])
@@ -537,13 +537,16 @@ def upload_asset(
         )
 
     # Clean up temp files.
+    # TODO(james) missing_ok might squash genuine errors where the file should
+    # exist.
     if gltf_to_convert is not None:
-        try:
-            os.unlink(gltf_to_convert[0])
-        except FileNotFoundError:
-            pass
+        Path.unlink(gltf_to_convert[0], missing_ok=True)
     if bin_for_conversion is not None:
-        os.unlink(bin_for_conversion[0])
+        Path.unlink(bin_for_conversion[0], missing_ok=True)
+    if converted_gltf_path is not None:
+        Path.unlink(converted_gltf_path, missing_ok=True)
+    Path.unlink(os.path.join(asset_dir, "converted"), missing_ok=True)
+    Path.unlink(os.path.join(asset_dir), missing_ok=True)
 
     if thumbnail:
         add_thumbnail_to_asset(thumbnail, asset)
