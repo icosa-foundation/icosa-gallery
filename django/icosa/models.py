@@ -71,6 +71,7 @@ RESOURCE_ROLE_CHOICES = [
 ]
 
 BLOCKS_VIEWABLE_TYPES = [
+    "OBJ",
     "GLB",
     "GLTF2",
 ]
@@ -79,6 +80,7 @@ BLOCKS_VIEWABLE_TYPES = [
 VIEWABLE_ROLES = [
     1002,
     1003,
+    1004,
 ]
 
 
@@ -244,9 +246,8 @@ class Asset(models.Model):
 
     @property
     def _preferred_viewer_format(self):
-        # Return early with an obj if we know the asset is a blocks file
-        # and doesn't have a gltf2.
-        if self.is_blocks and not self.is_blocks_viewable:
+        # Return early with an obj if we know the asset is a blocks file.
+        if self.is_blocks:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
