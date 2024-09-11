@@ -425,12 +425,12 @@ def upload_asset(
     current_user: User,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
-    thumbnail: UploadedFile = File(...),
 ):
     # We need to see one of: tilt, glb, gltf, obj, fbx
     main_files = []
     sub_files = []
     name = "Untitled Asset"
+    thumbnail = None
 
     unzipped_files = []
     if files is None:
