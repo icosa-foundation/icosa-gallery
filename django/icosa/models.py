@@ -393,6 +393,14 @@ class Asset(models.Model):
 
     class Meta:
         db_table = "assets"
+        indexes = [
+            models.Index(
+                fields=[
+                    "is_viewer_compatible",
+                    "visibility",
+                ]
+            )
+        ]
 
 
 class UserAssetLike(models.Model):
