@@ -117,6 +117,21 @@
                 </nav>
                 <nav class="pro-menu shaped square hide-when-collapsed">
                     <ul>
+                        <h3>Search</h3>
+                        <li class="pro-menu-item">
+                            <div class="pro-inner-item" tabindex="0" role="button">
+                                <form action="{% url 'search' %}" method="get">
+                                    <span class="pro-item-content">
+                                        <input type="search" class="searchbar" name="s" value="">
+                                        <button class="searchbutton">Search</button>
+                                    </span>
+                                </form>
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+                <nav class="pro-menu shaped square hide-when-collapsed">
+                    <ul>
                         <h3>Explore</h3>
                         <div>
                             <li class="pro-menu-item">
@@ -168,21 +183,6 @@
                                 </div>
                             </li>
                         </div>
-                    </ul>
-                </nav>
-                <nav class="pro-menu shaped square hide-when-collapsed">
-                    <ul>
-                        <h3>Search</h3>
-                        <li class="pro-menu-item">
-                            <div class="pro-inner-item" tabindex="0" role="button">
-                                <form action="{% url 'search' %}" method="get">
-                                    <span class="pro-item-content">
-                                        <input type="search" class="searchbar" name="s" value="">
-                                        <button class="searchbutton">Search</button>
-                                    </span>
-                                </form>
-                            </div>
-                        </li>
                     </ul>
                 </nav>
             </div>
