@@ -48,34 +48,28 @@ def check_user_can_view_asset(
 
 def landing_page(
     request,
-    inc_q=Q(visibility=PUBLIC),
-    exc_q=Q(),
+    assets=Asset.objects.filter(
+        visibility=PUBLIC,
+        is_viewer_compatible=True,
+    ),
     show_hero=True,
     heading=None,
 ):
     template = "main/home.html"
-    inc_q &= Q(is_viewer_compatible=True)
     if show_hero is True:
         hero = (
-            Asset.objects.filter(
+            assets.filter(
                 curated=True,
             )
-            .filter(inc_q)
-            .exclude(exc_q)
-            .distinct()
             .order_by("?")
             .first()
         )
     else:
         hero = None
     # TODO(james): filter out assets with no formats
-    asset_objs = (
-        Asset.objects.filter(inc_q)
-        .exclude(exc_q)
-        .distinct()
-        .order_by("-historical_likes")
+    paginator = Paginator(
+        assets.order_by("-historical_likes"), settings.PAGINATION_PER_PAGE
     )
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
@@ -96,24 +90,27 @@ def home(request):
 
 
 def home_openbrush(request):
+    assets = Asset.objects.filter(
+        visibility=PUBLIC,
+        polyformat__format_type="TILT",
+    ).distinct()
+
     return landing_page(
         request,
-        Q(
-            visibility=PUBLIC,
-            polyresource__format__format_type="TILT",
-        ),
+        assets,
         heading="Exploring OpenBrush",
         show_hero=False,
     )
 
 
 def home_blocks(request):
+    assets = Asset.objects.filter(
+        visibility=PUBLIC,
+        polyformat__format_type="BLOCKS",
+    ).distinct()
     return landing_page(
         request,
-        Q(
-            visibility=PUBLIC,
-            polyresource__format__format_type="BLOCKS",
-        ),
+        assets,
         show_hero=True,
         heading="Exploring Blocks",
     )
@@ -123,10 +120,13 @@ def category(request, category):
     category_label = category.upper()
     if category_label not in CATEGORY_LABELS:
         raise Http404()
-    q = Q(category=category_label)
+    assets = Asset.objects.filter(
+        visibility=PUBLIC,
+        category=category_label,
+    )
     return landing_page(
         request,
-        q,
+        assets,
         show_hero=False,
         heading=f"Exploring: {settings.ASSET_CATEGORY_LABEL_MAP.get(category)}",
     )
