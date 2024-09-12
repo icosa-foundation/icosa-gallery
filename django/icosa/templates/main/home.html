@@ -7,6 +7,9 @@
         {% endif %}
     {% endif %}
     <div class="container">
+        {% if heading %}
+            <h1>{{ heading }}</h1>
+        {% endif %}
         <div class="sketch-list">
             {% for asset in assets %}
                 {% include "partials/sketch_list_item.html" %}

@@ -51,6 +51,7 @@ def landing_page(
     inc_q=Q(visibility=PUBLIC),
     exc_q=Q(),
     show_hero=True,
+    heading=None,
 ):
     template = "main/home.html"
     inc_q &= Q(is_viewer_compatible=True)
@@ -78,6 +79,7 @@ def landing_page(
         "assets": assets,
         "hero": hero,
         "page_number": page_number,
+        "heading": heading,
     }
     return render(
         request,
@@ -98,6 +100,7 @@ def home_tiltbrush(request):
             polyresource__format__format_type="TILT",
         ),
         show_hero=True,
+        heading="Exploring OpenBrush",
     )
 
 
@@ -109,15 +112,18 @@ def home_blocks(request):
             polyresource__format__format_type="BLOCKS",
         ),
         show_hero=True,
+        heading="Exploring Blocks",
     )
 
 
 def category(request, category):
-    category = category.upper()
-    if category not in CATEGORY_LABELS:
+    category_label = category.upper()
+    if category_label not in CATEGORY_LABELS:
         raise Http404()
-    q = Q(category=category)
-    return landing_page(request, q, show_hero=False)
+    q = Q(category=category_label)
+    return landing_page(
+        request, q, show_hero=False, heading=f'Exploring: "{category.title()}"'
+    )
 
 
 @login_required
