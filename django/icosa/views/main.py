@@ -103,6 +103,7 @@ def home_openbrush(request):
             polyresource__format__format_type="TILT",
         ),
         heading="Exploring OpenBrush",
+        show_hero=False,
     )
 
 
