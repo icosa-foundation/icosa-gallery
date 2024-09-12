@@ -1,0 +1,29 @@
+.fa-icon {
+  width: 1em;
+  display: inline-block;
+
+  &.fa_lg {
+    width: 1.2em;
+  }
+
+  &.fa_2xs {
+    width: 0.625em;
+    vertical-align: 0.04em;
+  }
+
+  &.fa_2x {
+    width: 2em;
+    vertical-align: -0.405em;
+  }
+
+  &.fa_3x {
+    width: 3em;
+    vertical-align: -0.405em;
+  }
+
+  &>svg {
+    fill: currentColor;
+    width: 100%;
+    vertical-align: -0.125em;
+  }
+}

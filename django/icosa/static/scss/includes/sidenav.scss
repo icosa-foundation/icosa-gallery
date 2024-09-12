@@ -25,6 +25,10 @@
 
           .pro-icon-wrapper {
             margin-right: 0;
+
+            .pro-icon .fa-icon svg {
+              vertical-align: -0.25em; // Magic number fix for this context only
+            }
           }
         }
 
@@ -156,6 +160,14 @@
 
       a {
         padding: 0.5em;
+
+        &:hover {
+          text-decoration: none;
+        }
+
+        .fa-icon svg {
+          vertical-align: middle;
+        }
       }
 
       border-bottom: 1px solid #afafaf;

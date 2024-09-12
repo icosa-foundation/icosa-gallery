@@ -6,12 +6,14 @@
         </div>
     </a>
     <h4>
+        {% spaceless %}
         <a href="{% if edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}">
             {{ asset.name }}
         </a>
         {% if not edit_asset %}
             {% like_button request asset %}
         {% endif %}
+        {% endspaceless %}
     </h4>
     <a href="{% url 'user_show' user_url=asset.owner.url %}">{{ asset.owner.displayname }}</a>
     <div class="date">{{ asset.timestamp|date:"Y-m-d" }}</div>
