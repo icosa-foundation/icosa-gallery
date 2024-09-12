@@ -99,7 +99,6 @@ def home_openbrush(request):
             visibility=PUBLIC,
             polyresource__format__format_type="TILT",
         ),
-        show_hero=True,
         heading="Exploring OpenBrush",
     )
 
