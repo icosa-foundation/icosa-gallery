@@ -11,6 +11,7 @@ from django.conf import settings
 from django.conf.urls import include
 from django.contrib import admin
 from django.urls import path
+from django.views.generic import RedirectView
 
 api = NinjaAPI()
 api.add_router("assets", assets_router, tags=["Assets"])
@@ -50,7 +51,11 @@ urlpatterns = [
     path("device", auth_views.devicecode, name="devicecode"),
     # Other views
     path("", main_views.home, name="home"),
-    path("tiltbrush", main_views.home_tiltbrush, name="home_tiltbrush"),
+    path(
+        "tiltbrush",
+        RedirectView.as_view(pattern_name="home_openbrush", permanent=True),
+    ),
+    path("openbrush", main_views.home_openbrush, name="home_openbrush"),
     path("blocks", main_views.home_blocks, name="home_blocks"),
     path(
         "explore/<str:category>", main_views.category, name="explore_category"

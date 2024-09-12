@@ -92,7 +92,7 @@ def home(request):
     return landing_page(request)
 
 
-def home_tiltbrush(request):
+def home_openbrush(request):
     return landing_page(
         request,
         Q(
