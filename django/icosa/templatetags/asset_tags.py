@@ -9,7 +9,7 @@ register = template.Library()
 def like_button(request, asset):
     owner = IcosaUser.from_django_request(request)
     if owner is not None:
-        is_liked = asset.id in owner.likes.values_list("id", flat=True)
+        is_liked = owner.likes.filter(id=asset.id).exists()
     else:
         is_liked = False
 

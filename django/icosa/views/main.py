@@ -392,7 +392,6 @@ def toggle_like(request):
     if owner is None:
         return error_return
 
-    print(owner, request.POST)
     asset_url = request.POST.get("assetId", None)
     if asset_url is None:
         return error_return
