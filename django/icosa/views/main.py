@@ -69,9 +69,7 @@ def landing_page(
     else:
         hero = None
     # TODO(james): filter out assets with no formats
-    asset_objs = (
-        Asset.objects.filter(inc_q).exclude(exc_q).distinct().order_by("-id")
-    )
+    asset_objs = Asset.objects.filter(inc_q).exclude(exc_q).order_by("-id")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
