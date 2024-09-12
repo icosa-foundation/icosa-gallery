@@ -288,3 +288,6 @@ ASSET_CATEGORIES_MAP = {
 ASSET_CATEGORIES_REVERSE_MAP = {
     v[1]: k for k, v in ASSET_CATEGORIES_MAP.items()
 }
+ASSET_CATEGORY_LABEL_MAP = {
+    v[1]: v[0] for k, v in ASSET_CATEGORIES_MAP.items()
+}

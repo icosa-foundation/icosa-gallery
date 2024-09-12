@@ -122,7 +122,10 @@ def category(request, category):
         raise Http404()
     q = Q(category=category_label)
     return landing_page(
-        request, q, show_hero=False, heading=f'Exploring: "{category.title()}"'
+        request,
+        q,
+        show_hero=False,
+        heading=f"Exploring: {settings.ASSET_CATEGORY_LABEL_MAP.get(category)}",
     )
 
 
