@@ -68,6 +68,14 @@
       margin-top: 1em;
     }
 
+    .pro-menu-item {
+      .pro-icon-wrapper {
+        .pro-icon .fa-icon svg {
+          vertical-align: -0.25em; // Magic number fix for this context only
+        }
+      }
+    }
+
     .pro-menu-item.active {
       color: #00cb82;
     }
