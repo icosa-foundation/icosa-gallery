@@ -117,7 +117,26 @@
                 </nav>
                 <nav class="pro-menu shaped square hide-when-collapsed">
                     <ul>
-                        <h3>SEARCH</h3>
+                        <h3>Explore</h3>
+                        <div>
+                            <li class="pro-menu-item">
+                                <div class="pro-inner-item" tabindex="0" role="button">
+                                    <a href="/user/{{ owner.url }}">
+                                        <span class="pro-icon-wrapper">
+                                            <span class="pro-icon">
+                                                {% fa_icon "solid" "flask" %}
+                                            </span>
+                                        </span>
+                                        <span class="pro-item-content">My Profile</span>
+                                    </a>
+                                </div>
+                            </li>
+                        </div>
+                    </ul>
+                </nav>
+                <nav class="pro-menu shaped square hide-when-collapsed">
+                    <ul>
+                        <h3>Search</h3>
                         <li class="pro-menu-item">
                             <div class="pro-inner-item" tabindex="0" role="button">
                                 <form action="{% url 'search' %}" method="get">

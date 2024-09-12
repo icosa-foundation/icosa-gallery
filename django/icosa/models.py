@@ -36,6 +36,8 @@ CATEGORY_CHOICES = [
     ("TRAVEL", "Travel & Leisure"),
 ]
 
+CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
+
 RESOURCE_ROLE_CHOICES = [
     (1, "Original OBJ File"),
     (2, "Tilt File"),

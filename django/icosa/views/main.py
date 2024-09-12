@@ -4,10 +4,9 @@ from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
 from icosa.helpers.file import upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
-from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset
+from icosa.models import CATEGORY_LABELS, PRIVATE, PUBLIC, UNLISTED, Asset
 from icosa.models import User as IcosaUser
 from icosa.tasks import queue_upload_asset
-from icosa.templatetags.asset_tags import like_button
 
 from django.conf import settings
 from django.contrib import messages
@@ -111,6 +110,14 @@ def home_blocks(request):
         ),
         show_hero=True,
     )
+
+
+def category(request, category):
+    category = category.upper()
+    if category not in CATEGORY_LABELS:
+        raise Http404()
+    q = Q(category=category)
+    return landing_page(request, q, show_hero=False)
 
 
 @login_required
