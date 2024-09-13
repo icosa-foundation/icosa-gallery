@@ -23,6 +23,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.views.decorators.cache import never_cache
 
 
 def user_can_view_asset(
@@ -84,15 +85,17 @@ def landing_page(
     )
 
 
+@never_cache
 def home(request):
     return landing_page(request)
 
 
+@never_cache
 def home_openbrush(request):
     assets = Asset.objects.filter(
         visibility=PUBLIC,
-        polyformat__format_type="TILT",
-    ).distinct()
+        has_tilt=True,
+    )
 
     return landing_page(
         request,
@@ -102,11 +105,9 @@ def home_openbrush(request):
     )
 
 
+@never_cache
 def home_blocks(request):
-    assets = Asset.objects.filter(
-        visibility=PUBLIC,
-        polyformat__format_type="BLOCKS",
-    ).distinct()
+    assets = Asset.objects.filter(visibility=PUBLIC, has_blocks=True)
     return landing_page(
         request,
         assets,
