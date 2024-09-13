@@ -232,6 +232,7 @@ def view_asset(request, user_url, asset_url):
     template = "main/view_asset.html"
     icosa_user = get_object_or_404(IcosaUser, url=user_url)
     asset = get_object_or_404(Asset, owner=icosa_user.id, url=asset_url)
+    asset.inc_views_and_rank()
     check_user_can_view_asset(request.user, asset)
     context = {
         "request_user": IcosaUser.from_django_user(request.user),
