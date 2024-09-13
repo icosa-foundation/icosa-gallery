@@ -9,6 +9,10 @@ from django.utils import timezone
 
 from .helpers.snowflake import get_snowflake_timestamp
 
+LIKES_WEIGHT = 100
+VIEWS_WEIGHT = 0.1
+RECENCY_WEIGHT = 1
+
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
 UNLISTED = "UNLISTED"
@@ -423,12 +427,9 @@ class Asset(models.Model):
     # function doesn't evaluate it properly.
     def get_updated_rank(self):
         asset_qs = Asset.objects.filter(pk=self.pk)
-        likes_weight = 10
-        views_weight = 1
-        recency_weight = 1
         asset_qs.update(
-            rank=((F("likes") + F("historical_likes")) * likes_weight)
-            + ((F("views") + F("historical_views")) * views_weight)
+            rank=((F("likes") + F("historical_likes") + 1) * LIKES_WEIGHT)
+            + ((F("views") + F("historical_views")) * VIEWS_WEIGHT)
             + (
                 ExpressionWrapper(
                     1
@@ -438,20 +439,17 @@ class Asset(models.Model):
                     ),
                     output_field=FloatField(),
                 )
-                * recency_weight
+                * RECENCY_WEIGHT
             ),
         )
         return asset_qs.first().rank
 
     def inc_views_and_rank(self):
         asset_qs = Asset.objects.filter(pk=self.pk)
-        likes_weight = 10
-        views_weight = 1
-        recency_weight = 1
         asset_qs.update(
             views=F("views") + 1,
-            rank=((F("likes") + F("historical_likes")) * likes_weight)
-            + ((F("views") + 1 + F("historical_views")) * views_weight)
+            rank=((F("likes") + F("historical_likes") + 1) * LIKES_WEIGHT)
+            + ((F("views") + 1 + F("historical_views")) * VIEWS_WEIGHT)
             + (
                 ExpressionWrapper(
                     1
@@ -461,7 +459,7 @@ class Asset(models.Model):
                     ),
                     output_field=FloatField(),
                 )
-                * recency_weight
+                * RECENCY_WEIGHT
             ),
         )
 
