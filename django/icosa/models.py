@@ -418,11 +418,10 @@ class Asset(models.Model):
             ).count()
         )
 
-    # update_rank() and inc_views_and_rank() are very similar. TODO: Find a way
+    # get_updated_rank() and inc_views_and_rank() are very similar. TODO: Find a way
     # to abstract the rank expression. Currently dumping the whole thing into a
     # function doesn't evaluate it properly.
-    def update_rank(self):
-        print("called update_rank")
+    def get_updated_rank(self):
         asset_qs = Asset.objects.filter(pk=self.pk)
         likes_weight = 10
         views_weight = 1
@@ -442,9 +441,9 @@ class Asset(models.Model):
                 * recency_weight
             ),
         )
+        return asset_qs.first().rank
 
     def inc_views_and_rank(self):
-        print("called inc_views_and_rank")
         asset_qs = Asset.objects.filter(pk=self.pk)
         likes_weight = 10
         views_weight = 1
@@ -467,11 +466,10 @@ class Asset(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        print("called save")
         self.update_search_text()
         self.is_viewer_compatible = self.validate()
         self.denorm_format_types()
-        self.update_rank()
+        self.rank = self.get_updated_rank()
 
         super().save(*args, **kwargs)
 
