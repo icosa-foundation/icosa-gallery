@@ -248,6 +248,8 @@ class Asset(models.Model):
     has_gltf1 = models.BooleanField(default=False)
     has_gltf2 = models.BooleanField(default=False)
     has_gltf_any = models.BooleanField(default=False)
+    has_fbx = models.BooleanField(default=False)
+    has_obj = models.BooleanField(default=False)
 
     @property
     def timestamp(self):
@@ -394,6 +396,8 @@ class Asset(models.Model):
         self.has_gltf_any = self.polyformat_set.filter(
             format_type__in=["GLTF", "GLTF2"]
         ).exists()
+        self.has_fbx = self.polyformat_set.filter(format_type="FBX").exists()
+        self.has_obj = self.polyformat_set.filter(format_type="OBJ").exists()
 
     @property
     def is_blocks(self):

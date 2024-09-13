@@ -88,4 +88,8 @@ def build_format_q(formats: List) -> Q:
         q &= Q(has_gltf1=True)
     if "GLTF2" in formats:
         q &= Q(has_gltf2=True)
+    if "OBJ" in formats:
+        q &= Q(has_obj=True)
+    if "FBX" in formats:
+        q &= Q(has_fbx=True)
     return q
