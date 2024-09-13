@@ -212,7 +212,7 @@ class AssetFormat(Schema):
 class FilterBase(Schema):
     category: Optional[str] = None
     curated: bool = False
-    format: Optional[str] = None
+    format: List[str] = Field(None, alias="format")
     keywords: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None

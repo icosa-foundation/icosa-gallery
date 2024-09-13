@@ -6,6 +6,7 @@ from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     POLY_CATEGORY_MAP,
     AssetPagination,
+    build_format_q,
 )
 from icosa.api.authentication import AuthBearer
 from icosa.helpers.snowflake import generate_snowflake
@@ -359,7 +360,7 @@ def get_assets(
         q &= Q(owner__displayname__icontains=author_name)
     # TODO: orderBy
     if filters.format:
-        q &= Q(polyformat__format_type=filters.format)
+        q &= build_format_q(filters.format)
     try:
         keyword_q = get_keyword_q(filters)
     except HttpError:
