@@ -105,6 +105,15 @@ class AssetAdmin(admin.ModelAdmin):
         "license",
         "category",
     )
+    readonly_fields = (
+        "search_text",
+        "is_viewer_compatible",
+        "has_tilt",
+        "has_blocks",
+        "has_gltf1",
+        "has_gltf2",
+        "has_gltf_any",
+    )
 
     def _thumbnail_image(self, obj):
         html = ""

@@ -233,14 +233,21 @@ class Asset(models.Model):
     orienting_rotation_z = models.FloatField(null=True, blank=True)
     orienting_rotation_w = models.FloatField(null=True, blank=True)
     imported = models.BooleanField(default=False)
-    search_text = models.TextField(null=True, blank=True)
     remix_ids = models.JSONField(null=True, blank=True)
-    is_viewer_compatible = models.BooleanField(default=False)
     historical_likes = models.PositiveIntegerField(default=0)
     historical_views = models.PositiveIntegerField(default=0)
     likes = models.PositiveIntegerField(default=0)
     views = models.PositiveIntegerField(default=0)
     downloads = models.PositiveIntegerField(default=0)
+
+    # Denorm fields
+    search_text = models.TextField(null=True, blank=True)
+    is_viewer_compatible = models.BooleanField(default=False)
+    has_tilt = models.BooleanField(default=False)
+    has_blocks = models.BooleanField(default=False)
+    has_gltf1 = models.BooleanField(default=False)
+    has_gltf2 = models.BooleanField(default=False)
+    has_gltf_any = models.BooleanField(default=False)
 
     @property
     def timestamp(self):
@@ -373,6 +380,21 @@ class Asset(models.Model):
         else:
             return True
 
+    def denorm_format_types(self):
+        self.has_tilt = self.polyformat_set.filter(format_type="TILT").exists()
+        self.has_blocks = self.polyformat_set.filter(
+            format_type="BLOCKS"
+        ).exists()
+        self.has_gltf1 = self.polyformat_set.filter(
+            format_type="GLTF"
+        ).exists()
+        self.has_gltf2 = self.polyformat_set.filter(
+            format_type="GLTF2"
+        ).exists()
+        self.has_gltf_any = self.polyformat_set.filter(
+            format_type__in=["GLTF", "GLTF2"]
+        ).exists()
+
     @property
     def is_blocks(self):
         return bool(self.polyformat_set.filter(format_type="BLOCKS").count())
@@ -389,6 +411,8 @@ class Asset(models.Model):
     def save(self, *args, **kwargs):
         self.update_search_text()
         self.is_viewer_compatible = self.validate()
+        self.denorm_format_types()
+
         super().save(*args, **kwargs)
 
     class Meta:
