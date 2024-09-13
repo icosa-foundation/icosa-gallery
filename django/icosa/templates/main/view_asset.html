@@ -6,7 +6,11 @@
 <div class="container">
     <div class="row">
         <div class="col">
-            <div id="icosa-viewer"></div>
+            {% if asset.is_viewer_compatible %}
+                <div id="icosa-viewer"></div>
+            {% else %}
+                <p>Sorry, we are unable to display this asset in the viewer.</p>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -29,5 +33,7 @@
         </div>
     </div>
 </div>
-{% include "partials/viewer.html" %}
+{% if asset.is_viewer_compatible %}
+    {% include "partials/viewer.html" %}
+{% endif %}
 {% endblock content %}
