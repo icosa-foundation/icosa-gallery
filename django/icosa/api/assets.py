@@ -324,12 +324,14 @@ def upload_new_assets(
     "",
     response=List[AssetSchemaOut],
     **COMMON_ROUTER_SETTINGS,
+    url_name="asset_list",
 )
 @router.get(
     "/",
     response=List[AssetSchemaOut],
     include_in_schema=False,
     **COMMON_ROUTER_SETTINGS,
+    url_name="asset_list",
 )
 @paginate(AssetPagination)
 @decorate_view(cache_page(DEFAULT_CACHE_SECONDS))
