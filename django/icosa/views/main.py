@@ -68,7 +68,7 @@ def landing_page(
         hero = None
     # TODO(james): filter out assets with no formats
     paginator = Paginator(
-        assets.order_by("-historical_likes"), settings.PAGINATION_PER_PAGE
+        assets.order_by("-rank"), settings.PAGINATION_PER_PAGE
     )
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
