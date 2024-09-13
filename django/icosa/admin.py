@@ -101,14 +101,14 @@ class AssetAdmin(admin.ModelAdmin):
         "curated",
         "imported",
         "is_viewer_compatible",
-        ("thumbnail", admin.EmptyFieldListFilter),
-        "license",
-        "category",
         "has_tilt",
         "has_blocks",
         "has_gltf1",
         "has_gltf2",
         "has_gltf_any",
+        ("thumbnail", admin.EmptyFieldListFilter),
+        "license",
+        "category",
     )
     readonly_fields = (
         "search_text",
