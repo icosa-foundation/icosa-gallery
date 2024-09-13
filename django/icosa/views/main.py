@@ -228,6 +228,7 @@ def my_likes(request):
 
 
 # TODO(james): This is very similar to view_poly_asset. Do we need both?
+@never_cache
 def view_asset(request, user_url, asset_url):
     template = "main/view_asset.html"
     icosa_user = get_object_or_404(IcosaUser, url=user_url)
@@ -247,6 +248,7 @@ def view_asset(request, user_url, asset_url):
 
 
 # TODO(james): This is very similar to view_asset. Do we need both?
+@never_cache
 def view_poly_asset(request, asset_url):
     template = "main/view_asset.html"
 
