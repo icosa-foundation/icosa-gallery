@@ -468,6 +468,7 @@ class Asset(models.Model):
         self.update_search_text()
         self.is_viewer_compatible = self.validate()
         self.denorm_format_types()
+        self.update_rank()
 
         super().save(*args, **kwargs)
 
