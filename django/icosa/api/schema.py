@@ -7,6 +7,7 @@ from ninja.errors import HttpError
 from pydantic import EmailStr
 
 from django.db.models import Q
+from django.urls import reverse_lazy
 
 
 class LoginToken(Schema):
@@ -212,7 +213,7 @@ class AssetFormat(Schema):
 class FilterBase(Schema):
     category: Optional[str] = None
     curated: bool = False
-    format: Optional[str] = None
+    format: List[str] = Field(None, alias="format")
     keywords: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
@@ -270,7 +271,7 @@ class _DBAsset(ModelSchema):
     @staticmethod
     def resolve_url(obj, context):
         request = context["request"]
-        return f"{request.build_absolute_uri()}/{obj.url}"
+        return f"{request.build_absolute_uri('/')}{reverse_lazy('api-1.0.0:asset_list')}/{obj.url}"
 
     @staticmethod
     def resolve_assetId(obj, context):

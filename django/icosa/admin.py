@@ -86,6 +86,7 @@ class AssetAdmin(admin.ModelAdmin):
         "description",
         "visibility",
         "curated",
+        "rank",
         "is_viewer_compatible",
         "category",
     )
@@ -106,11 +107,14 @@ class AssetAdmin(admin.ModelAdmin):
         "has_gltf1",
         "has_gltf2",
         "has_gltf_any",
+        "has_obj",
+        "has_fbx",
         ("thumbnail", admin.EmptyFieldListFilter),
         "license",
         "category",
     )
     readonly_fields = (
+        "rank",
         "search_text",
         "is_viewer_compatible",
         "has_tilt",
@@ -118,6 +122,8 @@ class AssetAdmin(admin.ModelAdmin):
         "has_gltf1",
         "has_gltf2",
         "has_gltf_any",
+        "has_obj",
+        "has_fbx",
     )
 
     def _thumbnail_image(self, obj):

@@ -3,8 +3,15 @@ import bcrypt
 from django.conf import settings
 from django.contrib.auth.models import User as DjangoUser
 from django.db import models
+from django.db.models import ExpressionWrapper, F, FloatField
+from django.db.models.functions import Extract, Now
+from django.utils import timezone
 
 from .helpers.snowflake import get_snowflake_timestamp
+
+LIKES_WEIGHT = 100
+VIEWS_WEIGHT = 0.1
+RECENCY_WEIGHT = 1
 
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
@@ -243,11 +250,16 @@ class Asset(models.Model):
     # Denorm fields
     search_text = models.TextField(null=True, blank=True)
     is_viewer_compatible = models.BooleanField(default=False)
+
     has_tilt = models.BooleanField(default=False)
     has_blocks = models.BooleanField(default=False)
     has_gltf1 = models.BooleanField(default=False)
     has_gltf2 = models.BooleanField(default=False)
     has_gltf_any = models.BooleanField(default=False)
+    has_fbx = models.BooleanField(default=False)
+    has_obj = models.BooleanField(default=False)
+
+    rank = models.FloatField(default=0)
 
     @property
     def timestamp(self):
@@ -394,6 +406,8 @@ class Asset(models.Model):
         self.has_gltf_any = self.polyformat_set.filter(
             format_type__in=["GLTF", "GLTF2"]
         ).exists()
+        self.has_fbx = self.polyformat_set.filter(format_type="FBX").exists()
+        self.has_obj = self.polyformat_set.filter(format_type="OBJ").exists()
 
     @property
     def is_blocks(self):
@@ -408,10 +422,52 @@ class Asset(models.Model):
             ).count()
         )
 
+    # get_updated_rank() and inc_views_and_rank() are very similar. TODO: Find a way
+    # to abstract the rank expression. Currently dumping the whole thing into a
+    # function doesn't evaluate it properly.
+    def get_updated_rank(self):
+        asset_qs = Asset.objects.filter(pk=self.pk)
+        asset_qs.update(
+            rank=((F("likes") + F("historical_likes") + 1) * LIKES_WEIGHT)
+            + ((F("views") + F("historical_views")) * VIEWS_WEIGHT)
+            + (
+                ExpressionWrapper(
+                    1
+                    / (
+                        Extract(Now(), "epoch")
+                        - Extract(F("create_time"), "epoch")
+                    ),
+                    output_field=FloatField(),
+                )
+                * RECENCY_WEIGHT
+            ),
+        )
+        return asset_qs.first().rank
+
+    def inc_views_and_rank(self):
+        asset_qs = Asset.objects.filter(pk=self.pk)
+        asset_qs.update(
+            views=F("views") + 1,
+            rank=((F("likes") + F("historical_likes") + 1) * LIKES_WEIGHT)
+            + ((F("views") + 1 + F("historical_views")) * VIEWS_WEIGHT)
+            + (
+                ExpressionWrapper(
+                    1
+                    / (
+                        Extract(Now(), "epoch")
+                        - Extract(F("create_time"), "epoch")
+                    ),
+                    output_field=FloatField(),
+                )
+                * RECENCY_WEIGHT
+            ),
+        )
+
     def save(self, *args, **kwargs):
         self.update_search_text()
         self.is_viewer_compatible = self.validate()
         self.denorm_format_types()
+        self.rank = self.get_updated_rank()
 
         super().save(*args, **kwargs)
 

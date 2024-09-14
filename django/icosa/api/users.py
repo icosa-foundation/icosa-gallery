@@ -4,6 +4,7 @@ from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     POLY_CATEGORY_MAP,
     AssetPagination,
+    build_format_q,
 )
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, Tag
 from icosa.models import User as IcosaUser
@@ -90,11 +91,11 @@ def get_me_assets(
         else:
             raise HttpError(
                 400,
-                f"Unknown visibility specifier. Expected one of UNSPECIFIED, PUBLISHED, PRIVATE, UNLISTED.",  # TODO: brittle
+                "Unknown visibility specifier. Expected one of UNSPECIFIED, PUBLISHED, PRIVATE, UNLISTED.",  # TODO: brittle
             )
 
     if filters.format:
-        q &= Q(polyformat__format_type=filters.format)
+        q &= build_format_q(filters.format)
 
     if filters.tag:
         tags = Tag.objects.filter(name__in=filters.tag)
@@ -137,7 +138,7 @@ def get_me_likedassets(
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
 
     if filters.format:
-        q &= Q(polyformat__format_type=filters.format)
+        q &= build_format_q(filters.format)
 
     if filters.orderBy and filters.orderBy == "LIKED_TIME":
         liked_assets = liked_assets.order_by("-date_liked")

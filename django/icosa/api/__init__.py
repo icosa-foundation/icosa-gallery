@@ -1,10 +1,9 @@
 from typing import Any, List, Optional
 
-from ninja import NinjaAPI, Schema, Swagger
+from ninja import Schema
 from ninja.pagination import PaginationBase
-from ninja.types import DictStrAny
 
-from django.conf import settings
+from django.db.models import Q
 
 COMMON_ROUTER_SETTINGS = {
     "exclude_none": True,
@@ -75,3 +74,22 @@ class AssetPagination(PaginationBase):
                 }
             )
         return pagination_data
+
+
+def build_format_q(formats: List) -> Q:
+    q = Q()
+    if "TILT" in formats:
+        q &= Q(has_tilt=True)
+    if "BLOCKS" in formats:
+        q &= Q(has_blocks=True)
+    if "GLTF" in formats:
+        q &= Q(has_gltf_any=True)
+    if "GLTF1" in formats:
+        q &= Q(has_gltf1=True)
+    if "GLTF2" in formats:
+        q &= Q(has_gltf2=True)
+    if "OBJ" in formats:
+        q &= Q(has_obj=True)
+    if "FBX" in formats:
+        q &= Q(has_fbx=True)
+    return q
