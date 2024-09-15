@@ -360,7 +360,12 @@ def get_assets(
     author_name = filters.authorName or filters.author_name or None
     if author_name is not None:
         q &= Q(owner__displayname__icontains=author_name)
-    # TODO: orderBy
+    if filters.orderBy and filters.orderBy == "NEWEST":
+        q = q.order_by("-create_time")
+    elif filters.orderBy and filters.orderBy == "OLDEST":
+        q = q.order_by("create_time")
+    else:
+        q = q.order_by("-rank")
     if filters.format:
         q &= build_format_q(filters.format)
     try:
