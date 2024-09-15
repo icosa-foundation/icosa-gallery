@@ -360,12 +360,6 @@ def get_assets(
     author_name = filters.authorName or filters.author_name or None
     if author_name is not None:
         q &= Q(owner__displayname__icontains=author_name)
-    if filters.orderBy and filters.orderBy == "NEWEST":
-        q = q.order_by("-create_time")
-    elif filters.orderBy and filters.orderBy == "OLDEST":
-        q = q.order_by("create_time")
-    else:
-        q = q.order_by("-rank")
     if filters.format:
         q &= build_format_q(filters.format)
     try:
@@ -374,5 +368,12 @@ def get_assets(
         raise
 
     assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+
+    if filters.orderBy and filters.orderBy == "NEWEST":
+        assets = assets.order_by("-create_time")
+    elif filters.orderBy and filters.orderBy == "OLDEST":
+        assets = assets.order_by("create_time")
+    else:
+        assets = assets.order_by("-rank")
 
     return assets
