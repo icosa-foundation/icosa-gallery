@@ -14,7 +14,7 @@ class AuthBearer(HttpBearer):
     def authenticate(self, request, token):
         print("***************************")
         print("token: ", token)
-        authentication_error = HttpError(401, "Invalid Credentials")
+        authentication_error = HttpError(401, "Invalid Credentialsxxx")
         try:
             payload = jwt.decode(
                 token,
