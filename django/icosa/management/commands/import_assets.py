@@ -74,7 +74,7 @@ def get_json_from_b2(dir):
     print("Finished downloading files.")
 
 
-def get_or_create_asset(directory, data):
+def get_or_create_asset(directory, data, curated=False):
     user, _ = User.objects.get_or_create(
         url=data["authorId"],
         defaults={
@@ -105,7 +105,7 @@ def get_or_create_asset(directory, data):
             owner=user,
             description=data.get("description", None),
             visibility=data["visibility"],
-            curated="curated" in data["tags"],
+            curated=curated,
             polyid=directory,
             polydata=data,
             license=data.get("licence", ""),
@@ -353,7 +353,9 @@ class Command(BaseCommand):
                         )
 
                         asset, asset_created = get_or_create_asset(
-                            asset_id, archive_data
+                            asset_id,
+                            archive_data,
+                            "curated" in scrape_data.get("tags", []),
                         )
                         if asset_created:
                             tag_set = set(
