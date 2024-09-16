@@ -351,6 +351,9 @@ def get_assets(
         category_str = filters.category.upper()
         category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
         q &= Q(category__iexact=category_str)
+    if filters.licence:
+        licence_str = filters.licence.upper()
+        q &= Q(licence__iexact=licence_str)
     if filters.curated:
         q &= Q(curated=True)
     if filters.name:
