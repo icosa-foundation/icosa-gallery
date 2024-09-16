@@ -1,5 +1,6 @@
 from typing import Any, List, Optional
 
+from icosa.api.authentication import AuthBearer
 from ninja import Schema
 from ninja.pagination import PaginationBase
 
@@ -93,3 +94,13 @@ def build_format_q(formats: List) -> Q:
     if "FBX" in formats:
         q &= Q(has_fbx=True)
     return q
+
+
+def get_django_user_from_auth_bearer(request):
+    header = request.headers.get("Authorization")
+    if header is None:
+        return None
+    if not header.startswith("bearer "):
+        return None
+    token = header.replace("bearer ", "")
+    return AuthBearer().authenticate(request, token)

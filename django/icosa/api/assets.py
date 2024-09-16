@@ -7,6 +7,7 @@ from icosa.api import (
     POLY_CATEGORY_MAP,
     AssetPagination,
     build_format_q,
+    get_django_user_from_auth_bearer,
 )
 from icosa.api.authentication import AuthBearer
 from icosa.helpers.snowflake import generate_snowflake
@@ -17,6 +18,7 @@ from icosa.tasks import (
     queue_upload_asset,
     queue_upload_format,
 )
+from icosa.views.decorators import cache_per_user
 from ninja import File, Query, Router
 from ninja.decorators import decorate_view
 from ninja.errors import HttpError
@@ -29,7 +31,6 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpRequest
 from django.urls import reverse
-from django.views.decorators.cache import cache_page
 
 from .schema import (
     AssetFilters,
@@ -84,13 +85,7 @@ def user_owns_asset(
     # but putting requests stuff in models seemed wrong
     # so probably needs a refactor
     if not hasattr(request, "auth"):
-        header = request.headers.get("Authorization")
-        if header is None:
-            return False
-        if not header.startswith("Bearer "):
-            return False
-        token = header.replace("Bearer ", "")
-        user = AuthBearer().authenticate(request, token)
+        user = get_django_user_from_auth_bearer(request)
         return (
             user is not None
             and IcosaUser.from_django_user(user) == asset.owner
@@ -154,7 +149,7 @@ def get_my_id_asset(
     response=AssetSchemaOut,
     **COMMON_ROUTER_SETTINGS,
 )
-@decorate_view(cache_page(DEFAULT_CACHE_SECONDS))
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def get_asset(
     request,
     asset: str,
@@ -269,7 +264,7 @@ def unpublish_asset(
     "/{str:userurl}/{str:asseturl}",
     response=AssetSchemaOut,
 )
-@decorate_view(cache_page(DEFAULT_CACHE_SECONDS))
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def get_user_asset(
     request,
     userurl: str,
@@ -334,7 +329,7 @@ def upload_new_assets(
     url_name="asset_list",
 )
 @paginate(AssetPagination)
-@decorate_view(cache_page(DEFAULT_CACHE_SECONDS))
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def get_assets(
     request,
     filters: AssetFilters = Query(...),
