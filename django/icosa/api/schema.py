@@ -225,6 +225,7 @@ class FilterBase(Schema):
 class AssetFilters(FilterBase):
     authorName: Optional[str] = None
     author_name: Optional[str] = None
+    license: Optional[str] = None
 
 
 class UserAssetFilters(FilterBase):
