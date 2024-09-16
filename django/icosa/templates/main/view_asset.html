@@ -1,7 +1,10 @@
 {% extends "base.html" %}
+
+{% load asset_tags %}
 {% load static %}
-{% block extrahead %}
-{% endblock extrahead %}
+
+{% block extrahead %}{% endblock extrahead %}
+
 {% block content %}
 <div class="container">
     <div class="row">
@@ -18,7 +21,10 @@
     <div class="row">
         <div class="col">
             <div>
-                <h2>{{ asset.name }}{% if user == request_user %}{% if asset.visibility == "PRIVATE" %} <span style="color:red;">(PRIVATE)</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span style="color:orange;">(UNLISTED)</span>{% endif %}{% endif %}</h2>
+                <h2>
+                    {{ asset.name }}{% if user == request_user %}{% if asset.visibility == "PRIVATE" %} <span style="color:red;">(PRIVATE)</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span style="color:orange;">(UNLISTED)</span>{% endif %}{% endif %}
+                    {% like_button request asset %}
+                </h2>
                 {% if asset.owner %}
                     <h4>
                         By <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
@@ -28,7 +34,9 @@
                 {% if asset.description %}
                     <p>{{ asset.description|linebreaksbr }}</p>
                 {% endif %}
-                <h6>{{ asset.license|default_if_none:"All rights reserved" }}</h6>
+                <h6>
+                    {{ asset.license|default_if_none:"All rights reserved" }}
+                </h6>
             </div>
         </div>
     </div>
