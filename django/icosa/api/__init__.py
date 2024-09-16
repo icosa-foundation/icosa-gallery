@@ -100,7 +100,7 @@ def get_django_user_from_auth_bearer(request):
     header = request.headers.get("Authorization")
     if header is None:
         return None
-    if not header.startswith("bearer "):
+    if not header.startswith("Bearer "):
         return None
-    token = header.replace("bearer ", "")
+    token = header.replace("Bearer ", "")
     return AuthBearer().authenticate(request, token)
