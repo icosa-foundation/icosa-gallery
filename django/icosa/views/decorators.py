@@ -12,7 +12,6 @@ def cache_key(request):
         if user is None:
             user_id = "anonymous"
         else:
-            print(user)
             user_id = user.id
     else:
         user_id = request.user.id

@@ -12,16 +12,13 @@ ALGORITHM = "HS256"
 
 class AuthBearer(HttpBearer):
     def authenticate(self, request, token):
-        print("***************************")
-        print("token: ", token)
-        authentication_error = HttpError(401, "Invalid Credentialsxxx")
+        authentication_error = HttpError(401, "Invalid Credentials")
         try:
             payload = jwt.decode(
                 token,
                 settings.JWT_KEY,
                 algorithms=[ALGORITHM],
             )
-            print("payload :", payload)
             username: str = payload.get("sub")
             if username is None:
                 # headers={"WWW-Authenticate": "Bearer"},
