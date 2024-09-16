@@ -133,6 +133,7 @@ def category(request, category):
 
 
 @login_required
+@never_cache
 def uploads(request):
     template = "main/manage_uploads.html"
 
