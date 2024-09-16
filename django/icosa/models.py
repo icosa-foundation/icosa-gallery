@@ -467,8 +467,9 @@ class Asset(models.Model):
         self.update_search_text()
         self.is_viewer_compatible = self.validate()
         self.denorm_format_types()
-        self.rank = self.get_updated_rank()
-
+        if self._state.adding is False:
+            # Only update rank when updating an existing model
+            self.rank = self.get_updated_rank()
         super().save(*args, **kwargs)
 
     class Meta:
