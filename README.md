@@ -1,5 +1,7 @@
 # Icosa Gallery
 
+![Icosa Gallery](https://github.com/icosa-foundation/icosa-gallery/blob/main/icosa-gallery-screenshot.png?raw=true)
+
 ## Installation
 
 ### Prerequisites
