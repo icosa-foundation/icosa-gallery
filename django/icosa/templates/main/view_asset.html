@@ -35,7 +35,7 @@
                     <p>{{ asset.description|linebreaksbr }}</p>
                 {% endif %}
                 <h6>
-                    {{ asset.license|default_if_none:"All rights reserved" }}
+                    {{ asset.get_license_display|default_if_none:"All rights reserved" }}
                 </h6>
             </div>
         </div>

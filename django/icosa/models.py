@@ -22,6 +22,15 @@ ASSET_VISIBILITY_CHOICES = [
     (UNLISTED, "Unlisted"),
 ]
 
+LICENCE_CHOICES = [
+    ("CREATIVE_COMMONS_BY", "CC BY"),
+    ("CREATIVE_COMMONS_BY-SA", "CC BY-SA"),
+    ("CREATIVE_COMMONS_BY-NC", "CC BY-NC"),
+    ("CREATIVE_COMMONS_BY-NC-SA", "CC BY-NC-SA"),
+    ("CREATIVE_COMMONS_BY-ND", "CC BY-ND"),
+    ("CREATIVE_COMMONS_BY-NC-ND", "CC BY-NC-ND"),
+]
+
 CATEGORY_CHOICES = [
     ("MISCELLANEOUS", "Miscellaneous"),
     ("ANIMALS", "Animals & Pets"),
@@ -218,7 +227,9 @@ class Asset(models.Model):
     thumbnail_contenttype = models.CharField(blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
-    license = models.CharField(max_length=50, null=True, blank=True)
+    license = models.CharField(
+        max_length=50, null=True, blank=True, choices=LICENCE_CHOICES
+    )
     tags = models.ManyToManyField("Tag", blank=True)
     category = models.CharField(
         max_length=255,
