@@ -15,3 +15,4 @@ we should accept snake_case and camelCase url params and do the translation. The
 
 pagination for all front end listers
 
+Add licensing info to edit_asset form
