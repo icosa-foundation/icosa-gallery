@@ -56,6 +56,7 @@ def landing_page(
     heading=None,
 ):
     template = "main/home.html"
+    assets = assets.exclude(license__isnull=True)
     if show_hero is True:
         hero = (
             assets.filter(
@@ -376,7 +377,9 @@ def search(request):
     if query is not None:
         q &= Q(search_text__icontains=query)
 
-    asset_objs = Asset.objects.filter(q).order_by("-id")
+    asset_objs = (
+        Asset.objects.filter(q).exclude(license__isnull=True).order_by("-id")
+    )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
