@@ -272,7 +272,8 @@ class _DBAsset(ModelSchema):
     @staticmethod
     def resolve_url(obj, context):
         request = context["request"]
-        return f"{request.build_absolute_uri('/')}{reverse_lazy('api-1.0.0:asset_list')}/{obj.url}"
+        root_url = request.build_absolute_uri("/").rstrip("/")
+        return f"{root_url}{reverse_lazy('api-1.0.0:asset_list')}/{obj.url}"
 
     @staticmethod
     def resolve_assetId(obj, context):
