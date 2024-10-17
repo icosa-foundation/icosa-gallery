@@ -1,4 +1,4 @@
-from icosa.models import Asset, User
+from icosa.models import LICENSE_CHOICES, Asset, User
 
 from django import forms
 from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
@@ -14,6 +14,7 @@ class CustomImageInput(ClearableFileInput):
 
 class AssetUploadForm(forms.Form):
     file = forms.FileField()
+    license = forms.ChoiceField(choices=LICENSE_CHOICES)
 
 
 class AssetSettingsForm(forms.ModelForm):

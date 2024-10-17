@@ -23,6 +23,7 @@ ASSET_VISIBILITY_CHOICES = [
 ]
 
 LICENSE_CHOICES = [
+    ("", "Please choose"),
     ("CREATIVE_COMMONS_BY", "CC BY"),
     ("CREATIVE_COMMONS_BY-SA", "CC BY-SA"),
     ("CREATIVE_COMMONS_BY-NC", "CC BY-NC"),

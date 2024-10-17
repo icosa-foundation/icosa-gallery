@@ -43,6 +43,14 @@
             <form action="{% url 'uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 <input multiple type="file" class="form-control-file" name="file" required>
+                {{ form.license.label_tag }}
+                <p>Note, CC licenses are irrevocable, please choose the correct license before uploading.</p>
+                <p><a href="#">Find out why permissive licenses are important</a></p>
+                {% if form.license.errors %}
+                    {{ form.license.errors }}
+                {% endif %}
+                {{ form.license }}
+
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
         </div>

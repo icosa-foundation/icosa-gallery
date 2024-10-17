@@ -148,6 +148,7 @@ def uploads(request):
                 id=job_snowflake,
                 url=asset_token,
                 owner=user,
+                license=form.cleaned_data["license"],
             )
             queue_upload_asset(
                 user,
