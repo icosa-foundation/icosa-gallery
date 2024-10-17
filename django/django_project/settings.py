@@ -94,10 +94,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.messages",
     "compressor",
+    "corsheaders",
     "huey.contrib.djhuey",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.cache.UpdateCacheMiddleware",
@@ -213,6 +215,22 @@ MEDIA_ROOT = "icosa"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Cors settings
+
+
+CORS_ALLOW_ALL_ORIGINS = bool(
+    os.environ.get("DJANGO_CORS_ALLOW_ALL_ORIGINS", False)
+)
+
+if os.environ.get("DJANGO_CORS_ALLOWED_ORIGINS", None) is not None:
+    CORS_ALLOWED_ORIGINS = [
+        x
+        for x in os.environ.get(
+            "DJANGO_CORS_ALLOWED_ORIGINS",
+            "",
+        ).split(",")
+        if x
+    ]
 
 # Compressor settings
 
