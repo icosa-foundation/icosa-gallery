@@ -11,7 +11,27 @@
         <div class="sketcheditor container">
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                {{ form }}
+                {% for field in form %}
+                    <div>
+                        {{ field.label_tag }}
+                        {% if field.errors %}
+                            {{ field.errors }}
+                            {% if field.name == "license" %}
+                            <p><a href="#">Find out why permissive licenses are important</a></p>
+                            {% endif %}
+                        {% endif %}
+                        {% if field.name == "license" %}
+                            {% if field.value %}
+                                {{ asset.get_license_display }}
+                            {% else %}
+                                {{ field }}
+                                <p><a href="#">More info on creative commons licenses</a></p>
+                            {% endif %}
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                    </div>
+                {% endfor %}
                 <button type="submit" class="btn btn-primary">Update</button>
             </form>
         </div>

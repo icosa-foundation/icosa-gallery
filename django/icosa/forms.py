@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 class CustomImageInput(ClearableFileInput):
     clear_checkbox_label = _("Remove")
     initial_text = _("Currently")
-    input_text = _("Change")
+    input_text = _("New thumbnail")
     template_name = "widgets/custom_clearable_image_input.html"
 
 
@@ -21,6 +21,12 @@ class AssetSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
 
+    def clean(self):
+        cleaned_data = super().clean()
+        license = cleaned_data.get("license")
+        if not license:
+            self.add_error("license", "Please add a CC License.")
+
     thumbnail = forms.FileField(required=False, widget=CustomImageInput)
 
     class Meta:
@@ -30,6 +36,7 @@ class AssetSettingsForm(forms.ModelForm):
             "name",
             "description",
             "visibility",
+            "license",
             "thumbnail",
         ]
 
