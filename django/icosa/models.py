@@ -22,7 +22,7 @@ ASSET_VISIBILITY_CHOICES = [
     (UNLISTED, "Unlisted"),
 ]
 
-LICENCE_CHOICES = [
+LICENSE_CHOICES = [
     ("CREATIVE_COMMONS_BY", "CC BY"),
     ("CREATIVE_COMMONS_BY-SA", "CC BY-SA"),
     ("CREATIVE_COMMONS_BY-NC", "CC BY-NC"),
@@ -228,7 +228,7 @@ class Asset(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(
-        max_length=50, null=True, blank=True, choices=LICENCE_CHOICES
+        max_length=50, null=True, blank=True, choices=LICENSE_CHOICES
     )
     tags = models.ManyToManyField("Tag", blank=True)
     category = models.CharField(
