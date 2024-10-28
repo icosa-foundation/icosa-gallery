@@ -98,7 +98,7 @@ def get_or_create_asset(directory, data, curated=False):
     license = data.get("licence", "")
 
     if license in ["CREATIVE_COMMONS_BY", "CREATIVE_COMMONS_BY_ND"]:
-        license + f"{license}_3_0"
+        license = f"{license}_3_0"
 
     return Asset.objects.get_or_create(
         url=directory,
@@ -122,6 +122,8 @@ def get_or_create_asset(directory, data, curated=False):
             ),
             color_space=presentation_params.get("colorSpace", "LINEAR"),
             background_color=background_color,
+            transform=data.get("transform", None),
+            camera_transform=data.get("camera_transform", None),
             orienting_rotation_x=orienting_rotation_x,
             orienting_rotation_y=orienting_rotation_y,
             orienting_rotation_z=orienting_rotation_z,

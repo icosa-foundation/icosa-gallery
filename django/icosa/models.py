@@ -253,6 +253,8 @@ class Asset(models.Model):
         blank=True,
         help_text="A valid css colour, such as #00CC83",
     )
+    transform = models.JSONField(blank=True, null=True)
+    camera_transform = models.JSONField(blank=True, null=True)
     orienting_rotation_x = models.FloatField(null=True, blank=True)
     orienting_rotation_y = models.FloatField(null=True, blank=True)
     orienting_rotation_z = models.FloatField(null=True, blank=True)
