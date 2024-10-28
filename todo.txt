@@ -13,8 +13,5 @@ impl nicer full-text search
 
 we should accept snake_case and camelCase url params and do the translation. The openapi docs should list both as accepted styles. If we get both variants of the same param, just choose the value of whatever we got first.
 
-pagination for all front end listers
-
 Add licensing info to edit_asset form
 
-all_data.jsonl: need to add fields to Asset for transform and camera_transform
