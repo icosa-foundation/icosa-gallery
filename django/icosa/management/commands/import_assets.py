@@ -95,6 +95,11 @@ def get_or_create_asset(directory, data, curated=False):
     orienting_rotation_z = orienting_rotation.get("z", None)
     orienting_rotation_w = orienting_rotation.get("w", None)
 
+    license = data.get("licence", "")
+
+    if license in ["CREATIVE_COMMONS_BY", "CREATIVE_COMMONS_BY_ND"]:
+        license + f"{license}_3_0"
+
     return Asset.objects.get_or_create(
         url=directory,
         defaults=dict(

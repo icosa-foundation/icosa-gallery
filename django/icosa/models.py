@@ -35,6 +35,7 @@ LICENSE_CHOICES = [
         "CREATIVE_COMMONS_BY_ND_4_0",
         "CC BY-ND Attribution-NoDerivatives 4.0 International",
     ),
+    ("ALL_RIGHTS_RESERVED", "All rights reserved"),
 ]
 
 CATEGORY_CHOICES = [
