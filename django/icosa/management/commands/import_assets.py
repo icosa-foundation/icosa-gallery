@@ -113,7 +113,7 @@ def get_or_create_asset(directory, data, curated=False):
             curated=curated,
             polyid=directory,
             polydata=data,
-            license=data.get("licence", ""),
+            license=license,
             create_time=datetime.fromisoformat(
                 data["createTime"].replace("Z", "+00:00")
             ),
