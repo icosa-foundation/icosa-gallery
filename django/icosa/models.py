@@ -24,12 +24,17 @@ ASSET_VISIBILITY_CHOICES = [
 
 LICENSE_CHOICES = [
     ("", "Please choose"),
-    ("CREATIVE_COMMONS_BY", "CC BY"),
-    ("CREATIVE_COMMONS_BY-SA", "CC BY-SA"),
-    ("CREATIVE_COMMONS_BY-NC", "CC BY-NC"),
-    ("CREATIVE_COMMONS_BY-NC-SA", "CC BY-NC-SA"),
-    ("CREATIVE_COMMONS_BY-ND", "CC BY-ND"),
-    ("CREATIVE_COMMONS_BY-NC-ND", "CC BY-NC-ND"),
+    ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
+    ("CREATIVE_COMMONS_BY_3_0", "CC BY 3.0 Attribution 4.0 International"),
+    (
+        "CREATIVE_COMMONS_BY_ND_3_0",
+        "CC BY-ND Attribution-NoDerivatives 3.0 International",
+    ),
+    ("CREATIVE_COMMONS_BY_4_0", "CC BY 4.0 Attribution 4.0 International"),
+    (
+        "CREATIVE_COMMONS_BY_ND_4_0",
+        "CC BY-ND Attribution-NoDerivatives 4.0 International",
+    ),
 ]
 
 CATEGORY_CHOICES = [
