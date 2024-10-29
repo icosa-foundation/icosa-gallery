@@ -47,6 +47,7 @@ ALLOWED_HOSTS = [
     "localhost",
     f"{DEPLOYMENT_HOST_WEB}",
 ]
+
 if DEPLOYMENT_HOST_API:
     ALLOWED_HOSTS.append(f"{DEPLOYMENT_HOST_API}")
 
@@ -54,6 +55,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.127.0.0.1",
     f"https://{DEPLOYMENT_HOST_WEB}",
 ]
+
 if DEPLOYMENT_HOST_API:
     CSRF_TRUSTED_ORIGINS.append(f"https://{DEPLOYMENT_HOST_API}")
 
@@ -84,6 +86,7 @@ if (
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
+STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 
 # Application definition
 

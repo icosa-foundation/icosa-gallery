@@ -1,4 +1,5 @@
 from icosa.api.assets import router as assets_router
+from icosa.api.authentication import AuthBearer
 from icosa.api.login import router as login_router
 from icosa.api.oembed import router as oembed_router
 from icosa.api.poly import router as poly_router
@@ -13,7 +14,11 @@ from django.contrib import admin
 from django.urls import path
 from django.views.generic import RedirectView
 
-api = NinjaAPI()
+if getattr(settings, "STAFF_ONLY_ACCESS", False):
+    api = NinjaAPI(auth=AuthBearer())
+else:
+    api = NinjaAPI()
+
 api.add_router("assets", assets_router, tags=["Assets"])
 api.add_router("login", login_router, tags=["Login"])
 api.add_router("oembed", oembed_router, tags=["Oembed"])
