@@ -2,7 +2,9 @@
     import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
 
     var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
-    let defaultBgColor = '{{ asset.background_color|default:"#000000" }}';
+    let overrides = {
+        'defaultBgColor': '{{ asset.background_color|default:"#000000" }}'
+    };
 
     // For debugging
     window.viewer = viewer;
@@ -14,28 +16,28 @@
     if (formatType === 'gltf2' || formatType === 'glb') {
         try {
             console.log("Trying to load as GLTF2");
-            await viewer.loadGltf(url, true, defaultBgColor);
+            await viewer.loadGltf(url, true, overrides);
         } catch (error) {
             console.log(error);
             console.log("GLTF2 failed. Trying to load as GLTF1");
-            await viewer.loadGltf1(url, true, defaultBgColor);
+            await viewer.loadGltf1(url, true, overrides);
         }
     } else if (formatType === 'gltf') {
         try {
             console.log("Trying to load as GLTF1");
-            await viewer.loadGltf1(url, true, defaultBgColor);
+            await viewer.loadGltf1(url, true, overrides);
         } catch (error) {
             console.log(error);
             console.log("GLTF1 failed. Trying to load as GLTF2");
-            await viewer.loadGltf(url, true, defaultBgColor);
+            await viewer.loadGltf(url, true, overrides);
         }
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
         let mtlUrl = "{{ asset.preferred_viewer_format.materialUrl }}";
-        await viewer.loadObjWithMtl(url, mtlUrl, false, defaultBgColor);
+        await viewer.loadObjWithMtl(url, mtlUrl, false, overrides);
     } else if (formatType === 'fbx') {
         console.log("Trying to load fbx");
-        await viewer.loadFbx(url, true, defaultBgColor);
+        await viewer.loadFbx(url, true, overrides);
     } else {
         console.error("Unsupported file format: " + formatType);
     }
