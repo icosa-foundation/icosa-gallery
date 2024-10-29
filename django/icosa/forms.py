@@ -1,4 +1,10 @@
-from icosa.models import LICENSE_CHOICES, Asset, User
+from icosa.models import (
+    LICENSE_CHOICES,
+    V3_CC_LICENSE_CHOICES,
+    V4_CC_LICENSE_CHOICES,
+    Asset,
+    User,
+)
 
 from django import forms
 from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
@@ -21,11 +27,38 @@ class AssetSettingsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
+        license_value = self["license"].value()
+        V3_CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES]
+        V4_CC_LICENSES = [x[0] for x in V4_CC_LICENSE_CHOICES]
+        V3_CC_LICENSE_MAP = {x[0]: x[1] for x in V3_CC_LICENSE_CHOICES}
+        V4_CC_LICENSE_MAP = {x[0]: x[1] for x in V4_CC_LICENSE_CHOICES}
+        V3_TO_V4_UPGRADE_MAP = {
+            x[0]: x[1] for x in zip(V3_CC_LICENSES, V4_CC_LICENSES)
+        }
+
+        #  CC licenses are non-revokable, but are upgradeable. If the license
+        # is cc but not in our current menu of options, they can upgrade and so
+        # should be able to choose a different one.
+        self.fields["license"].disabled = (
+            self.instance.license in V4_CC_LICENSES
+        )
+
+        if (
+            self.instance.license in V3_CC_LICENSES
+            and license_value not in V4_CC_LICENSES
+        ):
+            upgrade_option = V3_TO_V4_UPGRADE_MAP[license_value]
+            self.fields["license"].choices = [
+                (upgrade_option, V4_CC_LICENSE_MAP[upgrade_option]),
+            ] + [
+                (license_value, V3_CC_LICENSE_MAP[license_value]),
+            ]
 
     def clean(self):
         cleaned_data = super().clean()
         license = cleaned_data.get("license")
-        if not license:
+        visibility = cleaned_data.get("visibility")
+        if visibility in ["PUBLIC", "UNLISTED"] and not license:
             self.add_error("license", "Please add a CC License.")
 
     thumbnail = forms.FileField(required=False, widget=CustomImageInput)

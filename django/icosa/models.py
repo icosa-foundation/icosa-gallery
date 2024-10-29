@@ -21,21 +21,32 @@ ASSET_VISIBILITY_CHOICES = [
     (UNLISTED, "Unlisted"),
 ]
 
-LICENSE_CHOICES = [
-    ("", "Please choose"),
-    ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
-    ("CREATIVE_COMMONS_BY_3_0", "CC BY 3.0 Attribution 4.0 International"),
-    (
-        "CREATIVE_COMMONS_BY_ND_3_0",
-        "CC BY-ND Attribution-NoDerivatives 3.0 International",
-    ),
-    ("CREATIVE_COMMONS_BY_4_0", "CC BY 4.0 Attribution 4.0 International"),
+V4_CC_LICENSE_CHOICES = [
+    ("CREATIVE_COMMONS_BY_4_0", "CC BY Attribution 4.0 International"),
     (
         "CREATIVE_COMMONS_BY_ND_4_0",
         "CC BY-ND Attribution-NoDerivatives 4.0 International",
     ),
-    ("ALL_RIGHTS_RESERVED", "All rights reserved"),
+    ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
 ]
+
+V3_CC_LICENSE_CHOICES = [
+    ("CREATIVE_COMMONS_BY_3_0", "CC BY Attribution 3.0 International"),
+    (
+        "CREATIVE_COMMONS_BY_ND_3_0",
+        "CC BY-ND Attribution-NoDerivatives 3.0 International",
+    ),
+]
+
+LICENSE_CHOICES = (
+    [
+        ("", "Please choose"),
+    ]
+    + V4_CC_LICENSE_CHOICES
+    + [
+        ("ALL_RIGHTS_RESERVED", "All rights reserved"),
+    ]
+)
 
 CATEGORY_CHOICES = [
     ("MISCELLANEOUS", "Miscellaneous"),

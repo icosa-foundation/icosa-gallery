@@ -21,15 +21,11 @@
                             {% endif %}
                         {% endif %}
                         {% if field.name == "license" %}
-                            {% if field.value %}
-                                {{ asset.get_license_display }}
-                            {% else %}
-                                {{ field }}
-                                <p><a href="#">More info on creative commons licenses</a></p>
+                            {% if not field.field.disabled %}
+                                <p>Please choose a permissive, Creative Commons (CC) license before publishing your work. If you choose "All Rights Reserved", your work will only be shown on your profile page and via direct links. Work with a CC license will also appear in public lists and search results. Please note, CC licenses are non-revokable once chosen.</p>
                             {% endif %}
-                        {% else %}
-                            {{ field }}
                         {% endif %}
+                        {{ field }}
                     </div>
                 {% endfor %}
                 <button type="submit" class="btn btn-primary">Update</button>
