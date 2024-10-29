@@ -1,7 +1,11 @@
 from icosa.models import (
     LICENSE_CHOICES,
-    V3_CC_LICENSE_CHOICES,
+    V3_CC_LICENSE_MAP,
+    V3_CC_LICENSES,
+    V3_TO_V4_UPGRADE_MAP,
     V4_CC_LICENSE_CHOICES,
+    V4_CC_LICENSE_MAP,
+    V4_CC_LICENSES,
     Asset,
     User,
 )
@@ -28,13 +32,6 @@ class AssetSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
         license_value = self["license"].value()
-        V3_CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES]
-        V4_CC_LICENSES = [x[0] for x in V4_CC_LICENSE_CHOICES]
-        V3_CC_LICENSE_MAP = {x[0]: x[1] for x in V3_CC_LICENSE_CHOICES}
-        V4_CC_LICENSE_MAP = {x[0]: x[1] for x in V4_CC_LICENSE_CHOICES}
-        V3_TO_V4_UPGRADE_MAP = {
-            x[0]: x[1] for x in zip(V3_CC_LICENSES, V4_CC_LICENSES)
-        }
 
         #  CC licenses are non-revokable, but are upgradeable. If the license
         # is cc but not in our current menu of options, they can upgrade and so
@@ -53,6 +50,16 @@ class AssetSettingsForm(forms.ModelForm):
             ] + [
                 (license_value, V3_CC_LICENSE_MAP[license_value]),
             ]
+        else:
+            self.fields["license"].choices = (
+                [
+                    ("", "Please choose"),
+                ]
+                + V4_CC_LICENSE_CHOICES
+                + [
+                    ("ALL_RIGHTS_RESERVED", "All rights reserved"),
+                ]
+            )
 
     def clean(self):
         cleaned_data = super().clean()

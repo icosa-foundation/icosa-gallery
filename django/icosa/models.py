@@ -37,11 +37,19 @@ V3_CC_LICENSE_CHOICES = [
         "CC BY-ND Attribution-NoDerivatives 3.0 International",
     ),
 ]
+V3_CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES]
+V4_CC_LICENSES = [x[0] for x in V4_CC_LICENSE_CHOICES]
+V3_CC_LICENSE_MAP = {x[0]: x[1] for x in V3_CC_LICENSE_CHOICES}
+V4_CC_LICENSE_MAP = {x[0]: x[1] for x in V4_CC_LICENSE_CHOICES}
+V3_TO_V4_UPGRADE_MAP = {
+    x[0]: x[1] for x in zip(V3_CC_LICENSES, V4_CC_LICENSES)
+}
 
 LICENSE_CHOICES = (
     [
         ("", "Please choose"),
     ]
+    + V3_CC_LICENSE_CHOICES
     + V4_CC_LICENSE_CHOICES
     + [
         ("ALL_RIGHTS_RESERVED", "All rights reserved"),
