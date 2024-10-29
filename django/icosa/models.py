@@ -5,7 +5,6 @@ from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 from django.db.models import ExpressionWrapper, F, FloatField
 from django.db.models.functions import Extract, Now
-from django.utils import timezone
 
 from .helpers.snowflake import get_snowflake_timestamp
 
@@ -442,9 +441,9 @@ class Asset(models.Model):
             ).count()
         )
 
-    # get_updated_rank() and inc_views_and_rank() are very similar. TODO: Find a way
-    # to abstract the rank expression. Currently dumping the whole thing into a
-    # function doesn't evaluate it properly.
+    # get_updated_rank() and inc_views_and_rank() are very similar. TODO: Find
+    # a way to abstract the rank expression. Currently dumping the whole thing
+    # into a function doesn't evaluate it properly.
     def get_updated_rank(self):
         asset_qs = Asset.objects.filter(pk=self.pk)
         asset_qs.update(
