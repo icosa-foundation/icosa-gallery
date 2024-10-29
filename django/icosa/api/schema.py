@@ -82,8 +82,6 @@ class PolyPresentationParams(Schema):
     orientingRotation: Optional[PolyQuaternion]
     colorSpace: Optional[str] = None
     backgroundColor: Optional[str] = None
-    transform: Optional[List[float]] = None
-    camera: Optional[List[float]] = None
 
 
 class PolyRemixInfo(Schema):
@@ -318,8 +316,6 @@ class _DBAsset(ModelSchema):
             "w": getattr(obj, "orienting_rotation_w", None),
         }
         params["colorSpace"] = obj.color_space
-        params["transform"] = obj.transform
-        params["camera"] = obj.camera
         return params
 
 
