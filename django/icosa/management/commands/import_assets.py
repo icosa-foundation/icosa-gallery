@@ -161,10 +161,11 @@ def create_formats_from_scraped_data(
         root_resource_json = format_json["root"]
 
         file_path = root_resource_json["relativePath"]
+        file_path_updated = file_path.replace(".gltf", "_(GLTFupdated).gltf")
         extension = os.path.splitext(file_path)[-1].lower()
 
         root_resource_data = {
-            "file": f"poly/{directory}/{file_path}",
+            "file": f"poly/{directory}/{file_path_updated}",
             "is_root": True,
             "format": format,
             "asset": asset,
@@ -199,9 +200,12 @@ def create_formats_from_scraped_data(
             for resource_json in format_json["resources"]:
 
                 file_path = resource_json["relativePath"]
+                file_path_updated = file_path.replace(
+                    ".gltf", "_(GLTFupdated).gltf"
+                )
 
                 resource_data = {
-                    "file": f"poly/{directory}/{file_path}",
+                    "file": f"poly/{directory}/{file_path_updated}",
                     "is_root": False,
                     "format": format,
                     "asset": asset,

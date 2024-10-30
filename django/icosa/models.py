@@ -82,7 +82,7 @@ CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
 RESOURCE_ROLE_CHOICES = [
     (1, "Original OBJ File"),
     (2, "Tilt File"),
-    (4, "Unknown GLTF File  A"),
+    (4, "Unknown GLTF File A"),
     (6, "Original FBX File"),
     (7, "Blocks File"),
     (8, "USD File"),
