@@ -322,6 +322,7 @@ class Asset(models.Model):
                     "format": obj_resource.format.format_type,
                     "url": obj_resource.internal_url_or_none,
                     "materialUrl": mtl_resource.url,
+                    "resource": obj_resource,
                 }
 
         # Return early if we can grab a Polygone resource first
@@ -332,6 +333,7 @@ class Asset(models.Model):
             return {
                 "format": polygone_gltf.format.format_type,
                 "url": polygone_gltf.internal_url_or_none,
+                "resource": polygone_gltf,
             }
 
         # Return early with either of the role-based formats we care about.
@@ -342,6 +344,7 @@ class Asset(models.Model):
             return {
                 "format": updated_gltf.format.format_type,
                 "url": updated_gltf.internal_url_or_none,
+                "resource": updated_gltf,
             }
 
         original_gltf = self.polyresource_set.filter(
@@ -351,6 +354,7 @@ class Asset(models.Model):
             return {
                 "format": original_gltf.format.format_type,
                 "url": original_gltf.internal_url_or_none,
+                "resource": original_gltf,
             }
 
         # If we didn't get any role-based formats, find the remaining formats
@@ -361,6 +365,7 @@ class Asset(models.Model):
             formats[format.format_type] = {
                 "format": format.format_type,
                 "url": root.internal_url_or_none,
+                "resource": root,
             }
         # GLB is our primary preferred format;
         if "GLB" in formats.keys():
@@ -384,6 +389,14 @@ class Asset(models.Model):
         if format["url"] is None:
             return None
         return format
+
+    @property
+    def download_url(self):
+        preferred_format = self.preferred_viewer_format
+        url = None
+        if preferred_format is not None:
+            url = preferred_format["resource"].download_url
+        return url
 
     def get_absolute_url(self):
         if self.polydata:
@@ -575,6 +588,16 @@ class PolyResource(models.Model):
         upload_to=format_upload_path,
     )
     external_url = models.CharField(max_length=1024, null=True, blank=True)
+
+    @property
+    def download_url(self):
+        url = None
+        if self.external_url:
+            url = self.external_url
+        elif self.file:
+            base_url = "/".join(self.file.url.split("/")[:-1])
+            url = f"{base_url}/archive.zip"
+        return url
 
     @property
     def url(self):

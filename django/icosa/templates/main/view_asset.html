@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% load asset_tags %}
+{% load fontawesome_tags %}
 {% load static %}
 
 {% block extrahead %}{% endblock extrahead %}
@@ -37,6 +38,13 @@
                 <h6>
                     {{ asset.get_license_display|default_if_none:"All rights reserved" }}
                 </h6>
+                {% if asset.download_url %}
+                    <p>
+                        <a href="{{ asset.download_url }}" class="btn btn-primary btn-sm">
+                            {% fa_icon "solid" "download" %} Download
+                        </a>
+                    </p>
+                {% endif %}
             </div>
         </div>
     </div>
