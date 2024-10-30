@@ -392,7 +392,6 @@ class Asset(models.Model):
 
     @property
     def download_url(self):
-        url = None
         updated_gltf = self.polyresource_set.filter(
             is_root=True, format__role=30
         ).first()
@@ -401,15 +400,13 @@ class Asset(models.Model):
 
         if updated_gltf is not None:
             if updated_gltf.format.archive_url:
-                url = f"https://web.archive.org/web/{updated_gltf.format.archive_url}"
-        elif preferred_format is not None:
+                return f"https://web.archive.org/web/{updated_gltf.format.archive_url}"
+        if preferred_format is not None:
             if preferred_format["resource"].format.archive_url:
-                url = f"{https://web.archive.org/web/}preferred_format['resource'].format.archive_url"
-        else:
+                return f"{https://web.archive.org/web/}preferred_format['resource'].format.archive_url"
             # TODO: "poly" is hardcoded here and will not necessarily be used
             # for 3rd party installs.
-            url = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/poly/{self.url}/archive.zip"
-        return url
+        return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/poly/{self.url}/archive.zip"
 
     def get_absolute_url(self):
         if self.polydata:
