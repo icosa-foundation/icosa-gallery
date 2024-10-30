@@ -392,10 +392,23 @@ class Asset(models.Model):
 
     @property
     def download_url(self):
-        preferred_format = self.preferred_viewer_format
         url = None
-        if preferred_format is not None:
-            url = preferred_format["resource"].download_url
+        updated_gltf = self.polyresource_set.filter(
+            is_root=True, format__role=30
+        ).first()
+
+        preferred_format = self.preferred_viewer_format
+
+        if updated_gltf is not None:
+            if updated_gltf.format.archive_url:
+                url = f"https://web.archive.org/web/{updated_gltf.format.archive_url}"
+        elif preferred_format is not None:
+            if preferred_format["resource"].format.archive_url:
+                url = f"{https://web.archive.org/web/}preferred_format['resource'].format.archive_url"
+        else:
+            # TODO: "poly" is hardcoded here and will not necessarily be used
+            # for 3rd party installs.
+            url = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/poly/{self.url}/archive.zip"
         return url
 
     def get_absolute_url(self):
@@ -588,16 +601,6 @@ class PolyResource(models.Model):
         upload_to=format_upload_path,
     )
     external_url = models.CharField(max_length=1024, null=True, blank=True)
-
-    @property
-    def download_url(self):
-        url = None
-        if self.external_url:
-            url = self.external_url
-        elif self.file:
-            base_url = "/".join(self.file.url.split("/")[:-1])
-            url = f"{base_url}/archive.zip"
-        return url
 
     @property
     def url(self):
