@@ -305,7 +305,10 @@ class Asset(models.Model):
 
     @property
     def _preferred_viewer_format(self):
+
         # Return early with an obj if we know the asset is a blocks file.
+        # There are some issues with displaying GLTF files from Blocks so we
+        # have to return an OBJ and its associated MTL.
         if self.is_blocks:
             # TODO Prefer some roles over others
             # TODO error handling
