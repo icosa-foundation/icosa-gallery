@@ -264,10 +264,11 @@ class _DBAsset(ModelSchema):
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     thumbnail: Optional[Thumbnail]
     presentationParams: Optional[PolyPresentationParams] = None
+    license: Optional[str] = None
 
     class Config:
         model = Asset
-        model_fields = ["url"]
+        model_fields = ["url", "license"]
 
     @staticmethod
     def resolve_url(obj, context):
