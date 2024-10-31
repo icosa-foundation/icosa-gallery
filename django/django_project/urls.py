@@ -7,6 +7,7 @@ from icosa.api.users import router as users_router
 from icosa.views import auth as auth_views
 from icosa.views import main as main_views
 from ninja import NinjaAPI
+from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 from django.conf import settings
 from django.conf.urls import include
@@ -14,10 +15,26 @@ from django.contrib import admin
 from django.urls import path
 from django.views.generic import RedirectView
 
+throttle_rules = [
+    AnonRateThrottle("60/h"),
+    AuthRateThrottle("1000/h"),
+]
+
 if getattr(settings, "STAFF_ONLY_ACCESS", False):
-    api = NinjaAPI(auth=AuthBearer())
+    api = NinjaAPI(
+        auth=AuthBearer(),
+        throttle=[
+            AnonRateThrottle("10/h"),
+            AuthRateThrottle("100/h"),
+        ],
+    )
 else:
-    api = NinjaAPI()
+    api = NinjaAPI(
+        throttle=[
+            AnonRateThrottle("10/h"),
+            AuthRateThrottle("100/h"),
+        ],
+    )
 
 api.add_router("assets", assets_router, tags=["Assets"])
 api.add_router("login", login_router, tags=["Login"])
