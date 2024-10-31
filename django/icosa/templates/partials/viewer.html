@@ -10,7 +10,11 @@
     window.viewer = viewer;
     window.THREE = viewer.three;
 
-    let url = "{{ asset.preferred_viewer_format.url }}";
+    {% if override_suffix %}
+        let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
+    {% else %}
+        let url = "{{ asset.preferred_viewer_format.url }}";
+    {% endif %}
     let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
 
     if (formatType === 'gltf2' || formatType === 'glb') {
