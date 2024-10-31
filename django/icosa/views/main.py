@@ -4,7 +4,14 @@ from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
 from icosa.helpers.file import upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
-from icosa.models import CATEGORY_LABELS, PRIVATE, PUBLIC, UNLISTED, Asset
+from icosa.models import (
+    ALL_RIGHTS_RESERVED,
+    CATEGORY_LABELS,
+    PRIVATE,
+    PUBLIC,
+    UNLISTED,
+    Asset,
+)
 from icosa.models import User as IcosaUser
 from icosa.tasks import queue_upload_asset
 
@@ -56,7 +63,9 @@ def landing_page(
     heading=None,
 ):
     template = "main/home.html"
-    assets = assets.exclude(license__isnull=True)
+    assets = assets.exclude(license__isnull=True).exclude(
+        license=ALL_RIGHTS_RESERVED
+    )
     if show_hero is True:
         hero = (
             assets.filter(
@@ -385,7 +394,10 @@ def search(request):
         q &= Q(search_text__icontains=query)
 
     asset_objs = (
-        Asset.objects.filter(q).exclude(license__isnull=True).order_by("-id")
+        Asset.objects.filter(q)
+        .exclude(license__isnull=True)
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .order_by("-id")
     )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")

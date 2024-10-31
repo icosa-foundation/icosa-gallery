@@ -11,7 +11,7 @@ from icosa.api import (
 )
 from icosa.api.authentication import AuthBearer
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import PUBLIC, Asset
+from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset
 from icosa.models import User as IcosaUser
 from icosa.tasks import (
     queue_finalize_asset,
@@ -338,7 +338,7 @@ def get_assets(
         visibility=PUBLIC,
         # imported=True,
     )
-    ex_q = Q(license__isnull=True)
+    ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
 
     if filters.tag:
         q &= Q(tags__name__in=filters.tag)

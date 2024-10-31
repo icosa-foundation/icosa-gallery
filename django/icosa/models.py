@@ -45,15 +45,16 @@ V3_TO_V4_UPGRADE_MAP = {
     x[0]: x[1] for x in zip(V3_CC_LICENSES, V4_CC_LICENSES)
 }
 
+ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED"
+RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
+
 LICENSE_CHOICES = (
     [
         ("", "Please choose"),
     ]
     + V3_CC_LICENSE_CHOICES
     + V4_CC_LICENSE_CHOICES
-    + [
-        ("ALL_RIGHTS_RESERVED", "All rights reserved"),
-    ]
+    + [RESERVED_LICENSE]
 )
 
 CATEGORY_CHOICES = [
