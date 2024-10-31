@@ -268,12 +268,14 @@ def view_poly_asset(request, asset_url):
     check_user_can_view_asset(request.user, asset)
     asset.inc_views_and_rank()
     override_suffix = request.GET.get("nosuffix", "")
+    format_override = request.GET.get("forceformat", "")
 
     context = {
         "request_user": IcosaUser.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
         "override_suffix": override_suffix,
+        "format_override": format_override,
     }
     return render(
         request,

@@ -15,7 +15,11 @@
     {% else %}
         let url = "{{ asset.preferred_viewer_format.url }}";
     {% endif %}
-    let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+    {% if format_override %}
+        let formatType = "{{ format_override }}".toLowerCase();
+    {% else %}
+        let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+    {% endif %}
 
     if (formatType === 'gltf2' || formatType === 'glb') {
         try {
