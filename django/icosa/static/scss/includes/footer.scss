@@ -1,6 +1,39 @@
 footer {
-    background: #00CC83;
-    color: #383838;
-    margin-top: 1em;
-    padding: 1em 0;
+  background: #00CC83;
+  color: #383838;
+  margin-top: 1em;
+  padding: 1em 0;
+
+  nav {
+    text-align: right;
+
+    ul {
+      margin: 0;
+      list-style-type: none;
+      padding: 0;
+
+      li {
+
+        display: inline-block;
+        padding-inline: 1em;
+        border-right: 1px solid #383838;
+
+        &:first-child {
+          padding-left: 0;
+        }
+
+        &:last-child {
+          padding-right: 0;
+          border-right: none;
+        }
+
+        a {
+          color: #383838;
+          text-decoration: underline;
+
+        }
+
+      }
+    }
+  }
 }

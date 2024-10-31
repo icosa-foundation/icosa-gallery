@@ -357,13 +357,19 @@ def user_settings(request):
     return render(request, template, context)
 
 
-def terms(request):
-    template = "main/terms.html"
-
+def template_view(request, template):
     return render(
         request,
         template,
     )
+
+
+def terms(request):
+    return template_view(request, "main/terms.html")
+
+
+def privacy_policy(request):
+    return template_view(request, "main/privacy_policy.html")
 
 
 def search(request):

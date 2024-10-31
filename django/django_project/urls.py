@@ -91,6 +91,7 @@ urlpatterns = [
     path("search", main_views.search, name="search"),
     path("settings", main_views.user_settings, name="settings"),
     path("terms", main_views.terms, name="terms"),
+    path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
 ]
 

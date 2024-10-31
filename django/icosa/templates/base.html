@@ -54,7 +54,21 @@
             <footer>
                 <div class="container">
                     <div class="row">
-                        <div class="col">© 2020-2024 Icosa Gallery</div>
+                        <div class="col-md-6">© 2020-{% now "Y" %} Icosa Gallery</div>
+                        <div class="col-md-6">
+                        {% spaceless %}
+                            <nav>
+                                <ul>
+                                    <li>
+                                        <a href="/privacy-policy">Privacy Policy</a>
+                                    </li>
+                                    <li>
+                                        <a href="terms">Terms and Conditions</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        {% endspaceless %}
+                        </div>
                     </div>
                 </div>
             </footer>
