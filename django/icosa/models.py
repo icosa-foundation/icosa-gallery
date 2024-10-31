@@ -417,12 +417,7 @@ class Asset(models.Model):
         return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/poly/{self.url}/archive.zip"
 
     def get_absolute_url(self):
-        if self.polydata:
-            # TODO(james): hack for not knowing author/user/situation for poly
-            # data right now.
-            return f"/view/{self.url}"
-        else:
-            return f"/view/{self.owner.url}/{self.url}"
+        return f"/view/{self.url}"
 
     def get_edit_url(self):
         return f"/edit/{self.owner.url}/{self.url}"
