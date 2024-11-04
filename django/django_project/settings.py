@@ -135,6 +135,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "icosa.context_processors.settings_processor",
                 "icosa.context_processors.owner_processor",
             ],
             "loaders": [
@@ -325,3 +326,5 @@ ASSET_CATEGORIES_REVERSE_MAP = {
 ASSET_CATEGORY_LABEL_MAP = {
     v[1]: v[0] for k, v in ASSET_CATEGORIES_MAP.items()
 }
+
+BETA_MODE = True
