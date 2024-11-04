@@ -100,7 +100,7 @@ class AssetAdmin(admin.ModelAdmin):
     list_filter = (
         "visibility",
         "curated",
-        "imported",
+        "imported_from",
         "is_viewer_compatible",
         "has_tilt",
         "has_blocks",

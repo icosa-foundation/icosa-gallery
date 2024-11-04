@@ -20,6 +20,8 @@ from icosa.models import (
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+IMPORT_SOURCE = "google_poly"
+
 POLY_JSON_DIR = "polygone_data"
 ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
 
@@ -80,7 +82,7 @@ def get_or_create_asset(directory, data, curated=False):
         defaults={
             "password": secrets.token_bytes(16),
             "displayname": data["authorName"],
-            "imported": True,
+            "imported_from": IMPORT_SOURCE,
         },
     )
     presentation_params = data.get("presentationParams", {})
@@ -100,7 +102,7 @@ def get_or_create_asset(directory, data, curated=False):
         defaults=dict(
             name=data["name"],
             id=generate_snowflake(),
-            imported=True,
+            imported_from=IMPORT_SOURCE,
             formats="",
             owner=user,
             description=data.get("description", None),

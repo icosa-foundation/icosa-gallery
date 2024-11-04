@@ -266,7 +266,7 @@ class Asset(models.Model):
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)
     presentation_params = models.JSONField(null=True, blank=True)
-    imported = models.BooleanField(default=False)
+    imported_from = models.CharField(null=True, blank=True)
     remix_ids = models.JSONField(null=True, blank=True)
     historical_likes = models.PositiveIntegerField(default=0)
     historical_views = models.PositiveIntegerField(default=0)
