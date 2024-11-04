@@ -88,12 +88,7 @@ def get_or_create_asset(directory, data, curated=False):
     # rgb() values. Let's make them the default if so.
     background_color = presentation_params.get("backgroundColor", None)
     if background_color is not None and len(background_color) > 7:
-        background_color = "#000000"
-    orienting_rotation = presentation_params.get("orientingRotation", {})
-    orienting_rotation_x = orienting_rotation.get("x", None)
-    orienting_rotation_y = orienting_rotation.get("y", None)
-    orienting_rotation_z = orienting_rotation.get("z", None)
-    orienting_rotation_w = orienting_rotation.get("w", None)
+        presentation_params["backgroundColor"] = "#000000"
 
     license = data.get("licence", "")
 
@@ -120,14 +115,9 @@ def get_or_create_asset(directory, data, curated=False):
             update_time=datetime.fromisoformat(
                 data["updateTime"].replace("Z", "+00:00")
             ),
-            color_space=presentation_params.get("colorSpace", "LINEAR"),
-            background_color=background_color,
             transform=data.get("transform", None),
             camera=data.get("camera", None),
-            orienting_rotation_x=orienting_rotation_x,
-            orienting_rotation_y=orienting_rotation_y,
-            orienting_rotation_z=orienting_rotation_z,
-            orienting_rotation_w=orienting_rotation_w,
+            presentation_params=presentation_params,
             historical_likes=data["likes"],
             historical_views=data["views"],
             category=CATEGORY_REVERSE_MAP.get(data["category"], None),

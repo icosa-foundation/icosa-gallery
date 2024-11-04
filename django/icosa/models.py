@@ -263,21 +263,9 @@ class Asset(models.Model):
         blank=True,
         choices=CATEGORY_CHOICES,
     )
-    color_space = models.CharField(
-        max_length=50, choices=COLOR_SPACES, default="GAMMA"
-    )
-    background_color = models.CharField(
-        max_length=7,
-        null=True,
-        blank=True,
-        help_text="A valid css colour, such as #00CC83",
-    )
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)
-    orienting_rotation_x = models.FloatField(null=True, blank=True)
-    orienting_rotation_y = models.FloatField(null=True, blank=True)
-    orienting_rotation_z = models.FloatField(null=True, blank=True)
-    orienting_rotation_w = models.FloatField(null=True, blank=True)
+    presentation_params = models.JSONField(null=True, blank=True)
     imported = models.BooleanField(default=False)
     remix_ids = models.JSONField(null=True, blank=True)
     historical_likes = models.PositiveIntegerField(default=0)
