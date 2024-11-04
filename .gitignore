@@ -146,6 +146,9 @@ cython_debug/
 .helix/
 .DS_Store
 
+# maintenance-mode specifics
+django/django_project/maintenance_mode_state.txt
+
 # huey specifics
 
 django/huey.db
