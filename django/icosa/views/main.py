@@ -157,7 +157,6 @@ def uploads(request):
                 id=job_snowflake,
                 url=asset_token,
                 owner=user,
-                license=form.cleaned_data["license"],
             )
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
                 queue_upload_asset(

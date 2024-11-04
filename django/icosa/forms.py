@@ -24,7 +24,6 @@ class CustomImageInput(ClearableFileInput):
 
 class AssetUploadForm(forms.Form):
     file = forms.FileField()
-    license = forms.ChoiceField(choices=LICENSE_CHOICES)
 
 
 class AssetSettingsForm(forms.ModelForm):

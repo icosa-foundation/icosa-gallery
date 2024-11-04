@@ -1,7 +1,5 @@
 this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
 
-log somewhere when we catch an exception falling back to gltf1: view_asset.html
-
 Add max complexity as a search filter
 
 orderBy is currently:
@@ -9,9 +7,4 @@ BEST, NEWEST, OLDEST. Defaults to BEST, which ranks assets
 based on a combination of popularity and other features. 
 We should improve this, but probably keep the existing variants working. BEST could possibly be "number of likes" or something for now.
 
-impl nicer full-text search
-
 we should accept snake_case and camelCase url params and do the translation. The openapi docs should list both as accepted styles. If we get both variants of the same param, just choose the value of whatever we got first.
-
-Add licensing info to edit_asset form
-
