@@ -159,11 +159,18 @@ def uploads(request):
                 owner=user,
                 license=form.cleaned_data["license"],
             )
-            queue_upload_asset(
-                user,
-                asset,
-                [request.FILES["file"]],
-            )
+            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                queue_upload_asset(
+                    user,
+                    asset,
+                    [request.FILES["file"]],
+                )
+            else:
+                upload_asset(
+                    user,
+                    asset,
+                    [request.FILES["file"]],
+                )
             messages.add_message(
                 request,
                 messages.INFO,

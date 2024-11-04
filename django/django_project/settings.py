@@ -267,6 +267,12 @@ HUEY = {
     },
 }
 
+# Note: Huey has its own setting to disable the task queue, but this still
+# calls the same code in userland. ENABLE_TASK_QUEUE is useful for excluding
+# huey from the code path entirely.
+
+ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", True)
+
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
