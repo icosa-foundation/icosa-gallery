@@ -58,6 +58,7 @@ def landing_page(
     assets=Asset.objects.filter(
         visibility=PUBLIC,
         is_viewer_compatible=True,
+        curated=True,
     ),
     show_hero=True,
     heading=None,
@@ -133,6 +134,7 @@ def category(request, category):
     assets = Asset.objects.filter(
         visibility=PUBLIC,
         category=category_label,
+        curated=True,
     )
     return landing_page(
         request,
