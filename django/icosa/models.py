@@ -392,10 +392,6 @@ class Asset(models.Model):
             return None
         if format["url"] is None:
             return None
-        # This is a temporary fix for adding new suffixed versions of poly
-        # GLTF files.
-        if "_%28GLTFupdated%29" in format["url"]:
-            format["type"] = "GLTF2"
         return format
 
     @property
