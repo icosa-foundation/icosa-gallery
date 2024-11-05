@@ -50,7 +50,7 @@ RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
 
 LICENSE_CHOICES = (
     [
-        ("", "Please choose"),
+        ("", "No license chosen"),
     ]
     + V3_CC_LICENSE_CHOICES
     + V4_CC_LICENSE_CHOICES

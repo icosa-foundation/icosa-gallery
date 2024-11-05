@@ -66,7 +66,7 @@ class AssetSettingsForm(forms.ModelForm):
         else:
             self.fields["license"].choices = (
                 [
-                    ("", "Please choose"),
+                    ("", "No license chosen"),
                 ]
                 + V4_CC_LICENSE_CHOICES
                 + [
