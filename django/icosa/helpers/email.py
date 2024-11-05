@@ -12,6 +12,7 @@ class EmailThread(threading.Thread):
 
     def run(self):
         msg = EmailMessage(self.subject, self.message, to=self.recipient_list)
+        msg.content_subtype = "html"
         msg.send()
 
 
