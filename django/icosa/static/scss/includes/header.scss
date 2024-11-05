@@ -1,16 +1,28 @@
 header {
-    margin: 1em 0;
+  margin: 1em 0;
 
 
-    .row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-        .logo {
-            img {
-                height: 5em;
-            }
-        }
+    .logo {
+      position: relative;
+
+      img {
+        height: 5em;
+      }
+
+      .beta {
+        display: block;
+        position: absolute;
+        width: 4em;
+        height: 1.5em;
+        top: -1em;
+        right: -2.1em;
+        transform: rotate(25deg);
+      }
     }
+  }
 }
