@@ -101,6 +101,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.staticfiles",
     "django.contrib.messages",
+    "honeypot",
     "maintenance_mode",
     "compressor",
     "corsheaders",
@@ -151,6 +152,7 @@ EMAIL_HOST_PASSWORD = os.environ.get("DJANGO_EMAIL_HOST_PASSWORD", "")
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = os.environ.get("DJANGO_DEFAULT_FROM_EMAIL", "")
+ADMIN_EMAIL = os.environ.get("DJANGO_ADMIN_EMAIL", None)
 
 WSGI_APPLICATION = "django_project.wsgi.application"
 
@@ -246,6 +248,10 @@ if os.environ.get("DJANGO_CORS_ALLOWED_ORIGINS", None) is not None:
 # Compressor settings
 
 COMPRESS_PRECOMPILERS = (("text/x-scss", "django_libsass.SassCompiler"),)
+
+# Honeypot settings
+
+HONEYPOT_FIELD_NAME = "asset_ref"
 
 # Huey settings
 

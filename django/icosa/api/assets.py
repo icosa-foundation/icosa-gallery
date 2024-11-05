@@ -338,7 +338,11 @@ def get_assets(
         visibility=PUBLIC,
         # imported=True,
     )
-    ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
+    ex_q = (
+        Q(license__isnull=True)
+        | Q(license=ALL_RIGHTS_RESERVED)
+        | Q(last_reported_time__isnull=False)
+    )
 
     if filters.tag:
         q &= Q(tags__name__in=filters.tag)

@@ -1,6 +1,13 @@
 import secrets
 
-from icosa.forms import AssetSettingsForm, AssetUploadForm, UserSettingsForm
+from honeypot.decorators import check_honeypot
+from icosa.forms import (
+    AssetReportForm,
+    AssetSettingsForm,
+    AssetUploadForm,
+    UserSettingsForm,
+)
+from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
@@ -20,6 +27,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User as DjangoUser
+from django.contrib.sites.shortcuts import get_current_site
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import (
@@ -29,7 +37,9 @@ from django.http import (
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
 
@@ -59,6 +69,7 @@ def landing_page(
         visibility=PUBLIC,
         is_viewer_compatible=True,
         curated=True,
+        last_reported_time__isnull=True,
     ),
     show_hero=True,
     heading=None,
@@ -347,6 +358,56 @@ def publish_asset(request, asset_url):
     )
 
 
+@check_honeypot
+def report_asset(request, asset_url):
+    template = "main/report_asset.html"
+    asset = get_object_or_404(Asset, url=asset_url)
+    if request.method == "GET":
+        form = AssetReportForm(initial={"asset_url": asset.url})
+    elif request.method == "POST":
+        form = AssetReportForm(request.POST)
+        if form.is_valid():
+            asset.last_reported_time = timezone.now()
+            reporter = request.user if not request.user.is_anonymous else None
+            if reporter is None:
+                reporter_email = None
+            else:
+                reporter = IcosaUser.from_django_user(reporter)
+                reporter_email = reporter.email
+                asset.last_reported_by = reporter
+            asset.save()
+            current_site = get_current_site(request)
+            mail_subject = "An Icosa asset has been reported"
+            to_email = getattr(settings, "ADMIN_EMAIL", None)
+            if to_email is not None:
+                message = render_to_string(
+                    "emails/report_asset_email.html",
+                    {
+                        "request": request,
+                        "reporter": reporter_email,
+                        "reason": form.cleaned_data["reason_for_reporting"],
+                        "domain": current_site.domain,
+                    },
+                )
+                spawn_send_html_mail(mail_subject, message, [to_email])
+            return HttpResponseRedirect(reverse("report_success"))
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "asset": asset,
+        "form": form,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+def report_success(request):
+    return template_view(request, "main/report_success.html")
+
+
 @login_required
 def user_settings(request):
     need_login = False
@@ -401,6 +462,7 @@ def search(request):
     q = Q(
         visibility=PUBLIC,
         is_viewer_compatible=True,
+        last_reported_time__isnull=True,
     )
 
     if query is not None:

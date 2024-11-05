@@ -96,6 +96,16 @@ urlpatterns = [
         name="view_poly_asset",
     ),
     path(
+        "report/<str:asset_url>",
+        main_views.report_asset,
+        name="report_asset",
+    ),
+    path(
+        "report-success",
+        main_views.report_success,
+        name="report_success",
+    ),
+    path(
         "edit/<str:user_url>/<str:asset_url>",
         main_views.edit_asset,
         name="edit_asset",

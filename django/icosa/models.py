@@ -242,6 +242,14 @@ class Asset(models.Model):
         db_default=PRIVATE,
     )
     curated = models.BooleanField(default=False)
+    last_reported_by = models.ForeignKey(
+        "User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reported_assets",
+    )
+    last_reported_time = models.DateTimeField(null=True, blank=True)
     polyid = models.CharField(max_length=255, blank=True, null=True)
     polydata = models.JSONField(blank=True, null=True)
     thumbnail = models.ImageField(
