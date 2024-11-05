@@ -93,7 +93,6 @@ STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 APPEND_SLASH = False
 
 INSTALLED_APPS = [
-    "icosa",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -101,6 +100,8 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.staticfiles",
     "django.contrib.messages",
+    "constance",
+    "icosa",
     "honeypot",
     "maintenance_mode",
     "compressor",
@@ -249,6 +250,17 @@ if os.environ.get("DJANGO_CORS_ALLOWED_ORIGINS", None) is not None:
 
 COMPRESS_PRECOMPILERS = (("text/x-scss", "django_libsass.SassCompiler"),)
 
+# Constance settings
+
+CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
+CONSTANCE_CONFIG = {
+    "BETA_MODE": (
+        True,
+        "Sets various text around the site, inc. the logo in the header",
+        bool,
+    ),
+}
+
 # Honeypot settings
 
 HONEYPOT_FIELD_NAME = "asset_ref"
@@ -332,5 +344,3 @@ ASSET_CATEGORIES_REVERSE_MAP = {
 ASSET_CATEGORY_LABEL_MAP = {
     v[1]: v[0] for k, v in ASSET_CATEGORIES_MAP.items()
 }
-
-BETA_MODE = True

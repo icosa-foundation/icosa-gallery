@@ -39,7 +39,7 @@
                                 <a class="logo" href="/">
                                     <img alt="logo"
                                         src="{% static 'images/logo.png' %}">
-                                        <span class="beta">Beta</span>
+                                        {% if config.BETA_MODE %}<span class="beta">Beta</span>{% endif %}
                                 </a>
                             </div>
                             <div class="text-right col">
