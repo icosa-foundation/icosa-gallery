@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% load asset_tags %}
+{% load honeypot %}
+{% load fontawesome_tags %}
+{% load static %}
+
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div>
+                <h2>
+                    Report &ldquo;{{ asset.name }}&rdquo; by {{ asset.owner.displayname }}
+                </h2>
+                <p>Use the form below to tell us why you are reporting this work.</p>
+                <p>Note that we cannot guarantee we will personally respond to reports.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    {% render_honeypot_field %}
+                    {{ form.asset_url }}
+                    {% if form.reason_for_reporting.errors %}
+                        {{form.reason_for_reporting.errors}}
+                    {% endif %}
+                    {{ form.reason_for_reporting.label_tag }}
+                    {{ form.reason_for_reporting }}
+                    {% if request.user.is_anonymous %}
+                        {% if form.contact_email.errors %}
+                            {{form.contact_email.errors}}
+                        {% endif %}
+                        {{ form.contact_email.label_tag }}
+                        {{ form.contact_email }}
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
