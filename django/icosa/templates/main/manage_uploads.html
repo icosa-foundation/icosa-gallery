@@ -36,6 +36,9 @@
                 also selected!)
                 <br>
             </p>
+            {% if settings.BETA_MODE %}
+                <p><strong>This site is currently in Beta mode. While we will do our best to keep things stable, your data may be removed at any time. Please bear this in mind when uploading your work.</p>
+            {% endif %}
         </div>
     </div>
     <div class="row">
@@ -43,14 +46,6 @@
             <form action="{% url 'uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 <input multiple type="file" class="form-control-file" name="file" required>
-                {{ form.license.label_tag }}
-                <p>Note, CC licenses are irrevocable, please choose the correct license before uploading.</p>
-                <p><a href="#">Find out why permissive licenses are important</a></p>
-                {% if form.license.errors %}
-                    {{ form.license.errors }}
-                {% endif %}
-                {{ form.license }}
-
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
         </div>

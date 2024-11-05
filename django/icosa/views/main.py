@@ -58,6 +58,7 @@ def landing_page(
     assets=Asset.objects.filter(
         visibility=PUBLIC,
         is_viewer_compatible=True,
+        curated=True,
     ),
     show_hero=True,
     heading=None,
@@ -133,6 +134,7 @@ def category(request, category):
     assets = Asset.objects.filter(
         visibility=PUBLIC,
         category=category_label,
+        curated=True,
     )
     return landing_page(
         request,
@@ -157,13 +159,19 @@ def uploads(request):
                 id=job_snowflake,
                 url=asset_token,
                 owner=user,
-                license=form.cleaned_data["license"],
             )
-            queue_upload_asset(
-                user,
-                asset,
-                [request.FILES["file"]],
-            )
+            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                queue_upload_asset(
+                    user,
+                    asset,
+                    [request.FILES["file"]],
+                )
+            else:
+                upload_asset(
+                    user,
+                    asset,
+                    [request.FILES["file"]],
+                )
             messages.add_message(
                 request,
                 messages.INFO,

@@ -135,6 +135,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "icosa.context_processors.settings_processor",
                 "icosa.context_processors.owner_processor",
             ],
             "loaders": [
@@ -267,6 +268,12 @@ HUEY = {
     },
 }
 
+# Note: Huey has its own setting to disable the task queue, but this still
+# calls the same code in userland. ENABLE_TASK_QUEUE is useful for excluding
+# huey from the code path entirely.
+
+ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", True)
+
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
@@ -319,3 +326,5 @@ ASSET_CATEGORIES_REVERSE_MAP = {
 ASSET_CATEGORY_LABEL_MAP = {
     v[1]: v[0] for k, v in ASSET_CATEGORIES_MAP.items()
 }
+
+BETA_MODE = True

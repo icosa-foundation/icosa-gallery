@@ -263,22 +263,10 @@ class Asset(models.Model):
         blank=True,
         choices=CATEGORY_CHOICES,
     )
-    color_space = models.CharField(
-        max_length=50, choices=COLOR_SPACES, default="GAMMA"
-    )
-    background_color = models.CharField(
-        max_length=7,
-        null=True,
-        blank=True,
-        help_text="A valid css colour, such as #00CC83",
-    )
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)
-    orienting_rotation_x = models.FloatField(null=True, blank=True)
-    orienting_rotation_y = models.FloatField(null=True, blank=True)
-    orienting_rotation_z = models.FloatField(null=True, blank=True)
-    orienting_rotation_w = models.FloatField(null=True, blank=True)
-    imported = models.BooleanField(default=False)
+    presentation_params = models.JSONField(null=True, blank=True)
+    imported_from = models.CharField(null=True, blank=True)
     remix_ids = models.JSONField(null=True, blank=True)
     historical_likes = models.PositiveIntegerField(default=0)
     historical_views = models.PositiveIntegerField(default=0)
@@ -392,14 +380,12 @@ class Asset(models.Model):
             return None
         if format["url"] is None:
             return None
-        # This is a temporary fix for adding new suffixed versions of poly
-        # GLTF files.
-        if "_%28GLTFupdated%29" in format["url"]:
-            format["type"] = "GLTF2"
         return format
 
     @property
     def download_url(self):
+        if self.license == ALL_RIGHTS_RESERVED:
+            return None
         updated_gltf = self.polyresource_set.filter(
             is_root=True, format__role=30
         ).first()

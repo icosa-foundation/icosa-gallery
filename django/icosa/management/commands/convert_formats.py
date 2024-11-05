@@ -13,9 +13,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         assets = Asset.objects.filter(
-            imported=False,
+            imported_from__isnull=True,
             formats__isnull=False,
-        ).exclude(formats="")
+        ).exclude(formats="", imported_from="")
         for idx, asset in enumerate(assets):
             # print(f"Processing {asset.id} ({idx} of {assets.count()})...")
             done_thumbnail = False
