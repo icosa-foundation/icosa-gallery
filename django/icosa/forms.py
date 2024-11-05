@@ -10,6 +10,7 @@ from icosa.models import (
 )
 
 from django import forms
+from django.conf import settings
 from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
 from django.utils.translation import gettext_lazy as _
 
@@ -168,6 +169,14 @@ class NewUserForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+
+        email = self.cleaned_data.get("email")
+        if (
+            settings.ALLOWED_REGISTRATION_EMAILS
+            and email not in settings.ALLOWED_REGISTRATION_EMAILS
+        ):
+            msg = "New registrations are currently by invitation only. It looks like that email is not on the invitation list."
+            self.add_error("email", msg)
 
         password_new = cleaned_data.get("password_new")
         password_confirm = cleaned_data.get("password_confirm")

@@ -144,12 +144,6 @@ def register(request):
         form = NewUserForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data["email"]
-            if (
-                settings.ALLOWED_REGISTRATION_EMAILS
-                and email not in settings.ALLOWED_REGISTRATION_EMAILS
-            ):
-                return HttpResponse("Registration is currently closed.")
-
             url = form.cleaned_data["url"]
             password = form.cleaned_data["password_new"]
             displayname = form.cleaned_data["displayname"]
