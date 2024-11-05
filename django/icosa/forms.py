@@ -92,6 +92,7 @@ class AssetSettingsForm(forms.ModelForm):
             "visibility",
             "license",
             "thumbnail",
+            "category",
         ]
 
 
