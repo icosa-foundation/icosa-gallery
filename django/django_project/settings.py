@@ -101,6 +101,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.messages",
     "constance",
+    "constance.backends.database",
     "icosa",
     "honeypot",
     "maintenance_mode",
@@ -138,6 +139,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "icosa.context_processors.settings_processor",
+                "constance.context_processors.config",
                 "icosa.context_processors.owner_processor",
             ],
             "loaders": [
@@ -259,6 +261,11 @@ CONSTANCE_CONFIG = {
         "Sets various text around the site, inc. the logo in the header",
         bool,
     ),
+    "REGISTRATION_ALLOW_LIST": (
+        "",
+        "Comma-separated list of email addresses. When populated, will only allow these email addresses to register new accounts.",
+        str,
+    ),
 }
 
 # Honeypot settings
@@ -295,18 +302,6 @@ ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", True)
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
-
-# Registration settings
-
-ALLOWED_REGISTRATION_EMAILS = [
-    x
-    for x in os.environ.get(
-        "DJANGO_ALLOWED_REGISTRATION_EMAILS",
-        "",
-    ).split(",")
-    if x
-]
-
 
 # Category settings
 #

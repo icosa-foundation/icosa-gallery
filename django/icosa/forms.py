@@ -1,3 +1,4 @@
+from constance import config
 from icosa.models import (
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
@@ -171,11 +172,10 @@ class NewUserForm(forms.ModelForm):
         cleaned_data = super().clean()
 
         email = self.cleaned_data.get("email")
-        if (
-            settings.ALLOWED_REGISTRATION_EMAILS
-            and email not in settings.ALLOWED_REGISTRATION_EMAILS
-        ):
-            msg = "New registrations are currently by invitation only. It looks like that email is not on the invitation list."
+        if config.REGISTRATION_ALLOW_LIST and email not in [
+            x.strip() for x in config.REGISTRATION_ALLOW_LIST.split(",")
+        ]:
+            msg = "New registrations are currently by invitation only. It looks like that email address is not on the invitation list."
             self.add_error("email", msg)
 
         password_new = cleaned_data.get("password_new")
