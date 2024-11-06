@@ -405,7 +405,7 @@ class Asset(models.Model):
                 return f"https://web.archive.org/web/{updated_gltf.format.archive_url}"
         if preferred_format is not None:
             if preferred_format["resource"].format.archive_url:
-                return f"{https://web.archive.org/web/}preferred_format['resource'].format.archive_url"
+                return f"https://web.archive.org/web/{preferred_format['resource'].format.archive_url}"
             # TODO: "poly" is hardcoded here and will not necessarily be used
             # for 3rd party installs.
         return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/poly/{self.url}/archive.zip"
@@ -520,6 +520,15 @@ class Asset(models.Model):
                 * RECENCY_WEIGHT
             ),
         )
+
+    def all_files(self):
+        file_list = []
+        if self.thumbnail:
+            file_list.append(self.thumbnail.file.name)
+        for resource in self.polyresource_set.all():
+            if resource.file:
+                file_list.append(resource.file.name)
+        return file_list
 
     def save(self, *args, **kwargs):
         self.update_search_text()
