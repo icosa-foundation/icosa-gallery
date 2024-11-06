@@ -396,7 +396,7 @@ class Asset(models.Model):
 
     @property
     def download_url(self):
-        if self.license == ALL_RIGHTS_RESERVED:
+        if self.license == ALL_RIGHTS_RESERVED or not self.license:
             return None
         updated_gltf = self.polyresource_set.filter(
             is_root=True, format__role=30
