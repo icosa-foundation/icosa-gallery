@@ -333,12 +333,17 @@ def delete_asset(request, asset_url):
     if request.method == "POST":
         owner = IcosaUser.from_django_user(request.user)
         asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+        if asset.name:
+            asset_name = asset.name
+        else:
+            asset_name = "Unnamed asset"
+
         asset.hide_media()
         asset.delete()
         messages.add_message(
             request,
             messages.INFO,
-            f"Deleted '{asset.name}'.",
+            f"Deleted '{asset_name}'.",
         )
         return HttpResponseRedirect(reverse("uploads"))
     else:
