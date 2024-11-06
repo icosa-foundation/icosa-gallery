@@ -412,7 +412,7 @@ class Asset(models.Model):
                 return f"https://web.archive.org/web/{preferred_format['resource'].format.archive_url}"
             # TODO: "poly" is hardcoded here and will not necessarily be used
             # for 3rd party installs.
-        return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/poly/{self.url}/archive.zip"
+        return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/icosa/{self.url}/archive.zip"
 
     def get_absolute_url(self):
         return f"/view/{self.url}"
