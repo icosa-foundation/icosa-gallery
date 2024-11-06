@@ -111,6 +111,11 @@ urlpatterns = [
         name="edit_asset",
     ),
     path(
+        "delete/<str:asset_url>",
+        main_views.delete_asset,
+        name="delete_asset",
+    ),
+    path(
         "publish/<str:asset_url>",
         main_views.publish_asset,
         name="publish_asset",

@@ -1,6 +1,7 @@
 from icosa.models import (
     Asset,
     DeviceCode,
+    HiddenMediaFileLog,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -197,6 +198,18 @@ class UserAdmin(admin.ModelAdmin):
         ("email", admin.EmptyFieldListFilter),
     )
     inlines = (UserAssetLikeInline,)
+
+
+@admin.register(HiddenMediaFileLog)
+class HiddenMediaFileLogAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        "original_asset_id",
+        "file_name",
+    )
+
+    def has_delete_permission(self, request, obj=None):
+        # Disable delete from admin UI, but not the shell or other code.
+        return False
 
 
 @admin.register(Oauth2Client)

@@ -7,6 +7,9 @@ from django.db.models import ExpressionWrapper, F, FloatField
 from django.db.models.functions import Extract, Now
 
 from .helpers.snowflake import get_snowflake_timestamp
+from .helpers.storage import get_b2_bucket
+
+FILENAME_MAX_LENGTH = 1024
 
 LIKES_WEIGHT = 100
 VIEWS_WEIGHT = 0.1
@@ -253,7 +256,7 @@ class Asset(models.Model):
     polyid = models.CharField(max_length=255, blank=True, null=True)
     polydata = models.JSONField(blank=True, null=True)
     thumbnail = models.ImageField(
-        max_length=255,
+        max_length=FILENAME_MAX_LENGTH,
         blank=True,
         null=True,
         upload_to=thumbnail_upload_path,
@@ -521,7 +524,7 @@ class Asset(models.Model):
             ),
         )
 
-    def all_files(self):
+    def get_all_file_names(self):
         file_list = []
         if self.thumbnail:
             file_list.append(self.thumbnail.file.name)
@@ -529,6 +532,34 @@ class Asset(models.Model):
             if resource.file:
                 file_list.append(resource.file.name)
         return file_list
+
+    def delete_and_hide_media(self):
+        """For B2, at least, call `hide` on each item from
+        self.get_all_files() then delete the model instance and all its related
+        models. For the moment, this should not be part of Asset's delete
+        method, for safety."""
+
+        deleted_files = []
+        file_names = self.get_all_file_names()
+        if len(file_names) == 0:
+            return deleted_files
+
+        bucket = get_b2_bucket()
+        for file_name in file_names:
+            if file_name.startswith("poly/"):
+                # This is a poly file and we might not want to delete/hide it.
+                pass  # TODO
+            elif file_name.startswith("icosa/"):
+                # This is a user file, so we are ok to delete/hide it.
+                bucket.hide_file(file_name)
+                print(file_name)
+                HiddenMediaFileLog.objects.create(
+                    original_asset_id=self.pk,
+                    file_name=file_name,
+                )
+            else:
+                # This is not a file we care to mess with.
+                pass
 
     def save(self, *args, **kwargs):
         self.update_search_text()
@@ -576,7 +607,9 @@ def format_upload_path(instance, filename):
 class PolyFormat(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
-    archive_url = models.CharField(max_length=1024, null=True, blank=True)
+    archive_url = models.CharField(
+        max_length=FILENAME_MAX_LENGTH, null=True, blank=True
+    )
     triangle_count = models.PositiveIntegerField(null=True, blank=True)
     lod_hint = models.PositiveIntegerField(null=True, blank=True)
     role = models.IntegerField(
@@ -600,10 +633,12 @@ class PolyResource(models.Model):
     file = models.FileField(
         null=True,
         blank=True,
-        max_length=1024,
+        max_length=FILENAME_MAX_LENGTH,
         upload_to=format_upload_path,
     )
-    external_url = models.CharField(max_length=1024, null=True, blank=True)
+    external_url = models.CharField(
+        max_length=FILENAME_MAX_LENGTH, null=True, blank=True
+    )
 
     @property
     def url(self):
@@ -693,3 +728,11 @@ class Oauth2Token(models.Model):
 
     class Meta:
         db_table = "oauth2_token"
+
+
+class HiddenMediaFileLog(models.Model):
+    original_asset_id = models.BigIntegerField()
+    file_name = models.CharField(max_length=FILENAME_MAX_LENGTH)
+
+    def __str__(self):
+        return f"{self.original_asset_id}: {self.file_name}"

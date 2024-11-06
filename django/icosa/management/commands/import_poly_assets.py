@@ -4,9 +4,9 @@ import secrets
 from datetime import datetime
 from pathlib import Path
 
-from b2sdk.v2 import B2Api, InMemoryAccountInfo
 from icosa.helpers.file import get_content_type, is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.storage import get_b2_bucket
 from icosa.models import (
     CATEGORY_CHOICES,
     RESOURCE_ROLE_CHOICES,
@@ -17,7 +17,6 @@ from icosa.models import (
     User,
 )
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
 IMPORT_SOURCE = "google_poly"
@@ -45,14 +44,7 @@ PROCESS_VIA_GLTF_PARSING = False
 
 
 def get_json_from_b2(dir):
-    info = InMemoryAccountInfo()
-    b2_api = B2Api(info)
-    b2_api.authorize_account(
-        "production",
-        settings.DJANGO_STORAGE_ACCESS_KEY,
-        settings.DJANGO_STORAGE_SECRET_KEY,
-    )
-    bucket = b2_api.get_bucket_by_name("icosa-gallery")
+    bucket = get_b2_bucket()
     json_files = bucket.ls(
         folder_to_list="poly/*/data.json",
         latest_only=True,

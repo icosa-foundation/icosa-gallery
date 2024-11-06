@@ -332,6 +332,15 @@ def edit_asset(request, user_url, asset_url):
 
 
 @login_required
+def delete_asset(request, asset_url):
+    if request.method == "POST":
+        owner = IcosaUser.from_django_user(request.user)
+        asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+    else:
+        return HttpResponseNotAllowed(["POST"])
+
+
+@login_required
 def publish_asset(request, asset_url):
     template = "main/edit_asset.html"
     asset = get_object_or_404(Asset, url=asset_url)
