@@ -534,16 +534,16 @@ class Asset(models.Model):
                 file_list.append(resource.file.name)
         return file_list
 
-    def delete_and_hide_media(self):
+    def hide_media(self):
         """For B2, at least, call `hide` on each item from
         self.get_all_files() then delete the model instance and all its related
         models. For the moment, this should not be part of Asset's delete
         method, for safety."""
 
-        deleted_files = []
+        hidden_files = []
         file_names = self.get_all_file_names()
         if len(file_names) == 0:
-            return deleted_files
+            return hidden_files
 
         bucket = get_b2_bucket()
         for file_name in file_names:

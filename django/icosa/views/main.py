@@ -336,6 +336,8 @@ def delete_asset(request, asset_url):
     if request.method == "POST":
         owner = IcosaUser.from_django_user(request.user)
         asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+        asset.hide_media()
+        asset.delete()
     else:
         return HttpResponseNotAllowed(["POST"])
 
