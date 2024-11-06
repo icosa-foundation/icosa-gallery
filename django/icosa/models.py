@@ -1,4 +1,5 @@
 import bcrypt
+from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 
 from django.conf import settings
 from django.contrib.auth.models import User as DjangoUser
@@ -733,6 +734,18 @@ class Oauth2Token(models.Model):
 class HiddenMediaFileLog(models.Model):
     original_asset_id = models.BigIntegerField()
     file_name = models.CharField(max_length=FILENAME_MAX_LENGTH)
+    deleted_from_source = models.BooleanField(default=False)
+
+    def unhide(self):
+        bucket = get_b2_bucket()
+        try:
+            bucket.unhide_file(self.file_name)
+        except FileNotPresent:
+            print("File not present in storage, marking as deleted")
+            self.deleted_from_source = True
+            self.save()
+        except FileNotHidden:
+            print("File already not hidden, nothing to do.")
 
     def __str__(self):
         return f"{self.original_asset_id}: {self.file_name}"

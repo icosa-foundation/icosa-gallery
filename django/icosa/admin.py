@@ -202,10 +202,22 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(HiddenMediaFileLog)
 class HiddenMediaFileLogAdmin(admin.ModelAdmin):
-    readonly_fields = (
+    list_display = (
+        "original_asset_id",
+        "file_name",
+        "deleted_from_source",
+    )
+    search_fields = (
         "original_asset_id",
         "file_name",
     )
+    readonly_fields = (
+        "original_asset_id",
+        "file_name",
+        "deleted_from_source",
+    )
+
+    list_filter = ("deleted_from_source",)
 
     def has_delete_permission(self, request, obj=None):
         # Disable delete from admin UI, but not the shell or other code.
