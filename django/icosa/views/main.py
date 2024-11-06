@@ -304,12 +304,10 @@ def view_poly_asset(request, asset_url):
 
 
 @login_required
-def edit_asset(request, user_url, asset_url):
+def edit_asset(request, asset_url):
     template = "main/edit_asset.html"
-    user = get_object_or_404(IcosaUser, url=user_url)
-    asset = get_object_or_404(Asset, owner=user.id, url=asset_url)
-    if IcosaUser.from_django_user(user) != user:
-        raise Http404()
+    owner = IcosaUser.from_django_user(request.user)
+    asset = get_object_or_404(Asset, owner=owner, url=asset_url)
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
     elif request.method == "POST":
@@ -320,7 +318,6 @@ def edit_asset(request, user_url, asset_url):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
-        "user": user,
         "asset": asset,
         "form": form,
     }

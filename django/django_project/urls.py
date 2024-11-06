@@ -106,7 +106,7 @@ urlpatterns = [
         name="report_success",
     ),
     path(
-        "edit/<str:user_url>/<str:asset_url>",
+        "edit/<str:asset_url>",
         main_views.edit_asset,
         name="edit_asset",
     ),
