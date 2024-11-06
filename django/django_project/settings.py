@@ -278,7 +278,7 @@ HUEY = {
     "huey_class": "huey.SqliteHuey",  # Huey implementation to use.
     "results": True,  # Store return values of tasks.
     "store_none": False,  # If a task returns None, do not save to results.
-    "immediate": False,  # If DEBUG=True, run synchronously.
+    "immediate": False,
     "utc": True,  # Use UTC for all times internally.
     "consumer": {
         "workers": 1,

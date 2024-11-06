@@ -173,9 +173,9 @@ def uploads(request):
             )
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
                 queue_upload_asset(
-                    user,
-                    asset,
-                    [request.FILES["file"]],
+                    current_user=user,
+                    asset=asset,
+                    files=[request.FILES["file"]],
                 )
             else:
                 upload_asset(
