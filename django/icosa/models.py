@@ -418,7 +418,7 @@ class Asset(models.Model):
         return f"/view/{self.url}"
 
     def get_edit_url(self):
-        return f"/edit/{self.owner.url}/{self.url}"
+        return f"/edit/{self.url}"
 
     def get_thumbnail_url(self):
         thumbnail_url = "/static/images/nothumbnail.png?v=1"
