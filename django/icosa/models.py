@@ -420,6 +420,9 @@ class Asset(models.Model):
     def get_edit_url(self):
         return f"/edit/{self.url}"
 
+    def get_delete_url(self):
+        return f"/delete/{self.url}"
+
     def get_thumbnail_url(self):
         thumbnail_url = "/static/images/nothumbnail.png?v=1"
         if self.thumbnail:
@@ -553,7 +556,6 @@ class Asset(models.Model):
             elif file_name.startswith("icosa/"):
                 # This is a user file, so we are ok to delete/hide it.
                 bucket.hide_file(file_name)
-                print(file_name)
                 HiddenMediaFileLog.objects.create(
                     original_asset_id=self.pk,
                     file_name=file_name,

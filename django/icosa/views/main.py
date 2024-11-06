@@ -335,6 +335,12 @@ def delete_asset(request, asset_url):
         asset = get_object_or_404(Asset, owner=owner, url=asset_url)
         asset.hide_media()
         asset.delete()
+        messages.add_message(
+            request,
+            messages.INFO,
+            f"Deleted '{asset.name}'.",
+        )
+        return HttpResponseRedirect(reverse("uploads"))
     else:
         return HttpResponseNotAllowed(["POST"])
 

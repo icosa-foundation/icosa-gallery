@@ -39,7 +39,8 @@ a {
 }
 
 .btn {
-  padding: 1em 2em;
+  padding: 1em 2em 0.8em 2em;
+  margin-block: 1em;
   text-transform: uppercase;
   font-weight: bold;
   color: #ffffff;
@@ -111,8 +112,6 @@ textarea {
 }
 
 form {
-  padding: 0.5em;
-
   select {
     cursor: pointer;
   }

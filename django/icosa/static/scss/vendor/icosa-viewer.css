@@ -2,6 +2,8 @@
   margin: 0;
   width: 100%;
   height: 100%;
+  /* Magic number for header height */
+  max-height: calc(100vh - 112px);
   position: relative;
   overflow: hidden;
   display: block;
