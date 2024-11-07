@@ -1,10 +1,14 @@
 {% load asset_tags %}
 {% load fontawesome_tags %}
 
-<article class="sketchbox">
+{% if asset.state == "UPLOADING" %}
+    <article class="sketchbox" hx-trigger="every 3000ms" hx-get="{% url 'asset_status' asset_url=asset.url %}" hx-swap="outerHTML" hx-target="this">
+{% else %}
+    <article class="sketchbox">
+{% endif %}
     {% if asset.state != "COMPLETE" %}
         <div class="sketchimage {{ asset.state }}"
-            style="background-image: url('{{ asset.get_thumbnail_url }}');">
+            style="background-image: url('/static/images/nothumbnail.png?v=1');">
         </div>
     {% else %}
         <a href="{% if can_edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}" role="presentation">
@@ -24,10 +28,10 @@
                     <p>{% fa_icon "solid" "arrows-rotate" "fa-spin" %} Upload in progress&hellip;</p>
                 {% endif %}
             {% endif %}
-            {{ asset.name }}
+            {{ asset.name|default_if_none:"" }}
         {% else %}
             <a href="{% if can_edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}">
-                {{ asset.name }}
+                {{ asset.name|default_if_none:"Untitled asset" }}
             </a>
         {% endif %}
         {% if not can_edit_asset %}

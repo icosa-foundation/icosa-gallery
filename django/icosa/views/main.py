@@ -309,6 +309,22 @@ def view_poly_asset(request, asset_url):
 
 
 @login_required
+@never_cache
+def asset_status(request, asset_url):
+    template = "partials/asset_status.html"
+    owner = IcosaUser.from_django_user(request.user)
+    asset = get_object_or_404(Asset, url=asset_url, owner=owner)
+    context = {
+        "asset": asset,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@login_required
 def edit_asset(request, asset_url):
     template = "main/edit_asset.html"
     owner = IcosaUser.from_django_user(request.user)
