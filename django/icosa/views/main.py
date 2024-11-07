@@ -316,6 +316,7 @@ def asset_status(request, asset_url):
     asset = get_object_or_404(Asset, url=asset_url, owner=owner)
     context = {
         "asset": asset,
+        "is_polling": True,
     }
     return render(
         request,
