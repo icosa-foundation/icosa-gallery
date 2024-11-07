@@ -2,7 +2,7 @@
 {% load fontawesome_tags %}
 
 {% if asset.state == "UPLOADING" %}
-    <article class="sketchbox" hx-trigger="every 3000ms" hx-get="{% url 'asset_status' asset_url=asset.url %}" hx-swap="outerHTML" hx-target="this">
+    <article class="sketchbox" hx-trigger="every 2000ms" hx-get="{% url 'asset_status' asset_url=asset.url %}" hx-swap="outerHTML" hx-target="this">
 {% else %}
     <article class="sketchbox">
 {% endif %}
