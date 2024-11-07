@@ -275,6 +275,7 @@ def view_asset(request, user_url, asset_url):
         "request_user": IcosaUser.from_django_user(request.user),
         "user": icosa_user,
         "asset": asset,
+        "asset_files": asset.get_all_absolute_file_names(),
     }
     return render(
         request,
@@ -298,6 +299,7 @@ def view_poly_asset(request, asset_url):
         "request_user": IcosaUser.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
+        "asset_files": asset.get_all_absolute_file_names(),
         "override_suffix": override_suffix,
         "format_override": format_override,
     }

@@ -554,6 +554,14 @@ class Asset(models.Model):
                 file_list.append(resource.file.name)
         return file_list
 
+    def get_all_absolute_file_names(self):
+        file_list = []
+        for name in self.get_all_file_names():
+            file_list.append(
+                f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{name}"
+            )
+        return file_list
+
     def hide_media(self):
         """For B2, at least, call `hide` on each item from
         self.get_all_files() then delete the model instance and all its related
