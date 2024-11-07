@@ -74,7 +74,7 @@
     let downloadButton = document.querySelector("#download-client-zip");
     let downloadSpinner = document.querySelector("#download-spinner");
     async function fetchAndZipFiles(urls) {
-        const zipFolder = zip.folder("{{ asset.url }}");
+        const zipFolder = zip.folder("{{ asset.slug }}");
 
         for (const url of urls) {
             const response = await fetch(url);
@@ -86,7 +86,7 @@
         zip.generateAsync({ type: "blob" }).then((content) => {
             const downloadLink = document.createElement("a");
             downloadLink.href = URL.createObjectURL(content);
-            downloadLink.download = "files.zip";
+            downloadLink.download = "{{ asset.slug }}.zip";
             downloadLink.click();
         });
         if (downloadSpinner !== null) {

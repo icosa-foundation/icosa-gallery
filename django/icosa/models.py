@@ -6,6 +6,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 from django.db.models import ExpressionWrapper, F, FloatField
 from django.db.models.functions import Extract, Now
+from django.utils.text import slugify
 
 from .helpers.snowflake import get_snowflake_timestamp
 from .helpers.storage import get_b2_bucket
@@ -316,6 +317,10 @@ class Asset(models.Model):
     has_obj = models.BooleanField(default=False)
 
     rank = models.FloatField(default=0)
+
+    @property
+    def slug(self):
+        return slugify(self.name)
 
     @property
     def timestamp(self):
