@@ -157,30 +157,21 @@ def get_asset(
     return get_asset_by_url(request, asset)
 
 
-# @router.delete(
-#     "/{asset}",
-#     auth=AuthBearer(),
-#     response=AssetSchemaOut,
-# )
-# def delete_asset(
-#     request,
-#     asset: int,
-# ):
-#     asset = get_my_id_asset(request, asset)
-#     # TODO(james): do we wait until storages is implemented for this?
-#     # Asset removal from storage
-#     owner = IcosaUser.from_ninja_request(request)
-#     asset_folder = f"{settings.MEDIA_ROOT}/{owner.id}/{asset.id}/"
-#     # path = str(Path(asset.thumbnail.name).parent)
+@router.delete(
+    "/{str:asset}",
+    auth=AuthBearer(),
+    response={204: int},
+)
+def delete_asset(
+    request,
+    asset: str,
+):
+    asset = get_asset_by_url(request, asset)
+    check_user_owns_asset(request, asset)
 
-#     try:
-#         default_storage.delete(asset_folder)
-#     except Exception:
-#         raise HttpError(
-#             status_code=500, detail=f"Failed to remove asset {asset.id}"
-#         )
-#     asset.delete()
-#     return asset
+    asset.hide_media()
+    asset.delete()
+    return 204
 
 
 # This endpoint is for internal OpenBrush use for now. It's more complex than
