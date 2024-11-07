@@ -90,6 +90,7 @@ class AssetAdmin(admin.ModelAdmin):
         "rank",
         "is_viewer_compatible",
         "category",
+        "state",
     )
     search_fields = (
         "name",
@@ -113,6 +114,7 @@ class AssetAdmin(admin.ModelAdmin):
         ("thumbnail", admin.EmptyFieldListFilter),
         "license",
         "category",
+        "state",
     )
     readonly_fields = (
         "rank",

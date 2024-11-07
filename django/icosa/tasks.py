@@ -4,7 +4,7 @@ from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
 from icosa.api.schema import AssetFinalizeData
 from icosa.helpers.file import upload_asset, upload_format
-from icosa.models import Asset, PolyFormat, User
+from icosa.models import ASSET_STATE_FAILED, Asset, PolyFormat, User
 from ninja import File
 from ninja.files import UploadedFile
 
@@ -14,15 +14,18 @@ from django.utils import timezone
 @signal(signals.SIGNAL_ERROR)
 def task_error(signal, task, exc):
     if task.name == "queue_upload_asset":
-        handle_upload_error(task)
+        handle_upload_error(task, exc)
 
 
-def handle_upload_error(task):
+def handle_upload_error(task, exc):
     asset = task.kwargs.pop("asset")
     user = task.kwargs.pop("current_user")
 
+    asset.state = ASSET_STATE_FAILED
+    asset.save()
+
     # TODO, instead of writing to a log file, we need to write to some kind of
-    # user-facing error log. The design for this needs to be decided? E.g. how
+    # user-facing error log. The design for this needs to be decided. E.g. how
     # will the user dismiss the error, or will we dismiss it after it has been
     # viewed? How do we know it's been read?
     with open("huey_task_error.log", "a") as logfile:

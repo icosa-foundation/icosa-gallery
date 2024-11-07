@@ -8,7 +8,13 @@ from pathlib import Path
 from typing import List, Optional
 
 import ijson
-from icosa.models import Asset, PolyFormat, PolyResource, User
+from icosa.models import (
+    ASSET_STATE_COMPLETE,
+    Asset,
+    PolyFormat,
+    PolyResource,
+    User,
+)
 from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
@@ -564,6 +570,8 @@ def upload_asset(
     if thumbnail:
         add_thumbnail_to_asset(thumbnail, asset)
 
+    asset.state = ASSET_STATE_COMPLETE
+    asset.save()
     return asset
 
 

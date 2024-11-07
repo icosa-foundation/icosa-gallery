@@ -13,6 +13,8 @@ from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
+    ASSET_STATE_BARE,
+    ASSET_STATE_UPLOADING,
     CATEGORY_LABELS,
     PRIVATE,
     PUBLIC,
@@ -147,11 +149,12 @@ def category(request, category):
         category=category_label,
         curated=True,
     )
+    category_name = settings.ASSET_CATEGORY_LABEL_MAP.get(category)
     return landing_page(
         request,
         assets,
         show_hero=False,
-        heading=f"Exploring: {settings.ASSET_CATEGORY_LABEL_MAP.get(category)}",
+        heading=f"Exploring: {category_name}",
     )
 
 
@@ -170,6 +173,7 @@ def uploads(request):
                 id=job_snowflake,
                 url=asset_token,
                 owner=user,
+                state=ASSET_STATE_UPLOADING,
             )
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
                 queue_upload_asset(
@@ -184,10 +188,7 @@ def uploads(request):
                     [request.FILES["file"]],
                 )
             messages.add_message(
-                request,
-                messages.INFO,
-                """Your upload has started.
-Plese check back here shortly to see it""",
+                request, messages.INFO, "Your upload has started."
             )
             return HttpResponseRedirect(reverse("uploads"))
     elif request.method == "GET":
@@ -195,7 +196,11 @@ Plese check back here shortly to see it""",
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    asset_objs = Asset.objects.filter(owner=user).order_by("-create_time")
+    asset_objs = (
+        Asset.objects.filter(owner=user)
+        .exclude(state=ASSET_STATE_BARE)
+        .order_by("-create_time")
+    )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)

@@ -19,9 +19,19 @@
         </div>
     </div>
     <div class="row">
-        <div class="col">
+        <div class="col-lg-6">
             <h1>Upload New File</h1>
-            <hr>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <form action="{% url 'uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <input multiple type="file" class="form-control-file" name="file" required>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+        </div>
+        <div class="col-lg-6">
             <p>
                 Note: We only support GLTF (+bin) and GLB files at the moment.
                 <br>
@@ -38,17 +48,8 @@
             </p>
             <p>Include an image file named <code>thumbnail.png</code> in the root of your zip file to use this as your asset's thumbnail for display on this site.</p>
             {% if config.BETA_MODE %}
-                <p><strong>This site is currently in Beta mode. While we will do our best to keep things stable, your data may be removed at any time. Please bear this in mind when uploading your work.</p>
+                <p><strong>This site is currently in Beta mode. While we will do our best to keep things stable, your data may be removed at any time. Please bear this in mind when uploading your work.</strong></p>
             {% endif %}
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-6">
-            <form action="{% url 'uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
-                {% csrf_token %}
-                <input multiple type="file" class="form-control-file" name="file" required>
-                <button type="submit" class="btn btn-primary">Upload</button>
-            </form>
         </div>
     </div>
 </div>
@@ -60,7 +61,7 @@
     </div>
     <div class="sketch-list">
         {% if assets %}
-            {% with edit_asset=True %}
+            {% with can_edit_asset=True %}
                 {% for asset in assets %}
                     {% include "partials/sketch_list_item.html" %}
                 {% endfor %}

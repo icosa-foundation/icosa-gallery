@@ -131,6 +131,17 @@ VIEWABLE_ROLES = [
     1004,
 ]
 
+ASSET_STATE_BARE = "BARE"
+ASSET_STATE_UPLOADING = "UPLOADING"
+ASSET_STATE_COMPLETE = "COMPLETE"
+ASSET_STATE_FAILED = "FAILED"
+ASSET_STATE_CHOICES = [
+    (ASSET_STATE_BARE, "Bare"),
+    (ASSET_STATE_UPLOADING, "Uploading"),
+    (ASSET_STATE_COMPLETE, "Complete"),
+    (ASSET_STATE_FAILED, "Failed"),
+]
+
 
 class User(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -285,6 +296,12 @@ class Asset(models.Model):
     likes = models.PositiveIntegerField(default=0)
     views = models.PositiveIntegerField(default=0)
     downloads = models.PositiveIntegerField(default=0)
+    state = models.CharField(
+        max_length=255,
+        choices=ASSET_STATE_CHOICES,
+        default="BARE",
+        db_default="BARE",
+    )
 
     # Denorm fields
     search_text = models.TextField(null=True, blank=True)
