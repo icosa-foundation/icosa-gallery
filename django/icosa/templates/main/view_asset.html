@@ -68,7 +68,7 @@
     {% include "partials/viewer.html" %}
 {% endif %}
 {% if asset_files %}
-<script src="{% static 'js/jszip.min.js' %}"></script>
+<script src="{% static 'js/jszip.min.js' %}?v=0"></script>
 <script>
     var zip = new JSZip();
     let downloadButton = document.querySelector("#download-client-zip");
