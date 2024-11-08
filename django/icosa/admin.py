@@ -127,6 +127,8 @@ class AssetAdmin(admin.ModelAdmin):
         "has_gltf_any",
         "has_obj",
         "has_fbx",
+        "last_reported_by",
+        "last_reported_time",
     )
 
     def _thumbnail_image(self, obj):
