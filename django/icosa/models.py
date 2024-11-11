@@ -467,6 +467,8 @@ class Asset(models.Model):
         return self.name if self.name else "(Un-named asset)"
 
     def update_search_text(self):
+        if not self.pk:
+            return
         tag_str = " ".join([t.name for t in self.tags.all()])
         description = self.description if self.description is not None else ""
         self.search_text = (
@@ -474,12 +476,16 @@ class Asset(models.Model):
         )
 
     def validate(self):
+        if not self.pk:
+            return
         if self.is_blocks:
             return self.is_blocks_viewable
         else:
             return True
 
     def denorm_format_types(self):
+        if not self.pk:
+            return
         self.has_tilt = self.polyformat_set.filter(format_type="TILT").exists()
         self.has_blocks = self.polyformat_set.filter(
             format_type="BLOCKS"
@@ -595,12 +601,12 @@ class Asset(models.Model):
                 pass
 
     def save(self, *args, **kwargs):
-        self.update_search_text()
-        self.is_viewer_compatible = self.validate()
-        self.denorm_format_types()
         if self._state.adding is False:
-            # Only update rank when updating an existing model
+            # Only denorm fields when updating an existing model
             self.rank = self.get_updated_rank()
+            self.update_search_text()
+            self.is_viewer_compatible = self.validate()
+            self.denorm_format_types()
         super().save(*args, **kwargs)
 
     class Meta:
