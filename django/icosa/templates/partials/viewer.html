@@ -1,10 +1,13 @@
+{{ asset.presentation_params|json_script:"presentation-params" }}
 <script type="module">
     import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
 
     var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
+
+    let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);
     let overrides = {
         'defaultBgColor': '{{ asset.background_color|default:"#000000" }}',
-        'camera': {{ asset.presentation_params.camera|default:"{}"|safe }},
+        'camera': presentationParams.camera 
     };
 
     // For debugging
