@@ -310,7 +310,6 @@ class _DBAsset(ModelSchema):
     def resolve_presentationParams(obj):
         params = {}
         presentationParams = obj.presentation_params
-        print(presentationParams.get("backgroundColor", False))
         params["backgroundColor"] = presentationParams.get(
             "backgroundColor", None
         )
@@ -323,7 +322,6 @@ class _DBAsset(ModelSchema):
                 "w": orientingRotation.get("w", None),
             }
         params["colorSpace"] = presentationParams.get("colorSpace", None)
-        print(params)
         return params
 
 
