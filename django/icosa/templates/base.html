@@ -60,13 +60,26 @@
             <footer>
                 <div class="container">
                     <div class="row">
-                        <div class="col-md-6">© 2020-{% now "Y" %} Icosa Gallery</div>
                         <div class="col-md-6">
                         {% spaceless %}
                             <nav>
                                 <ul>
                                     <li>
-                                        <a href="/privacy-policy">Privacy Policy</a>
+                                        © 2020-{% now "Y" %} Icosa Gallery
+                                    </li>
+                                    <li>
+                                        <a href="https://{{ settings.DEPLOYMENT_HOST_API }}{% url "api-1.0.0:openapi-view" %}">API Docs</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        {% endspaceless %}
+                        </div>
+                        <div class="col-md-6">
+                        {% spaceless %}
+                            <nav class="text-right">
+                                <ul>
+                                    <li>
+                                        <a href="/privacy-policy">Privacy Policy foo</a>
                                     </li>
                                     <li>
                                         <a href="terms">Terms and Conditions</a>
