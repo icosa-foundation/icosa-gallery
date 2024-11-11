@@ -8,6 +8,7 @@ from icosa.helpers.file import get_content_type, is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.storage import get_b2_bucket
 from icosa.models import (
+    ASSET_STATE_COMPLETE,
     CATEGORY_CHOICES,
     RESOURCE_ROLE_CHOICES,
     Asset,
@@ -92,6 +93,7 @@ def get_or_create_asset(directory, data, curated=False):
     return Asset.objects.get_or_create(
         url=directory,
         defaults=dict(
+            state=ASSET_STATE_COMPLETE,
             name=data["name"],
             id=generate_snowflake(),
             imported_from=IMPORT_SOURCE,
