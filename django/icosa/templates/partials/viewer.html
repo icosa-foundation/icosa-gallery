@@ -4,7 +4,7 @@
     var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
     let overrides = {
         'defaultBgColor': '{{ asset.background_color|default:"#000000" }}',
-        'camera': {{ asset.presentation_params.camera|default|mark_safe:"{}" }},
+        'camera': {{ asset.presentation_params.camera|default:"{}"|mark_safe }},
     };
 
     // For debugging
