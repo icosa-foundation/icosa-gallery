@@ -370,11 +370,14 @@ def get_assets(
 
     assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
 
-    if filters.orderBy and filters.orderBy == "NEWEST":
-        assets = assets.order_by("-create_time")
-    elif filters.orderBy and filters.orderBy == "OLDEST":
-        assets = assets.order_by("create_time")
-    else:
-        assets = assets.order_by("-rank")
+    if filters.orderBy:
+        if filters.orderBy == "NEWEST":
+            assets = assets.order_by("-create_time")
+        elif filters.orderBy == "OLDEST":
+            assets = assets.order_by("create_time")
+        elif filters.orderBy == "BEST":
+            assets = assets.order_by("-rank")
+        else:
+            pass
 
     return assets

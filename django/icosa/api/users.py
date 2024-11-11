@@ -174,9 +174,19 @@ def get_me_likedassets(
 
     assets = Asset.objects.filter(q)
 
-    if filters.orderBy and filters.orderBy == "LIKED_TIME":
-        # Sort the assets by order of liked ID. Slow, but database-agnostic.
-        # Postgres and MySql have different ways to do this, and we'd need to
-        # use the `extra` params in our query, which are database-specific.
-        assets = sorted(assets, key=lambda i: liked_ids.index(i.pk))
+    if filters.orderBy:
+        if filters.orderBy == "LIKED_TIME":
+            # Sort the assets by order of liked ID. Slow, but
+            # database-agnostic. Postgres and MySql have different ways to do
+            # this, and we'd need to use the `extra` params in our query, which
+            # are database-specific.
+            assets = sorted(assets, key=lambda i: liked_ids.index(i.pk))
+        elif filters.orderBy == "NEWEST":
+            assets = assets.order_by("-create_time")
+        elif filters.orderBy == "OLDEST":
+            assets = assets.order_by("create_time")
+        elif filters.orderBy == "BEST":
+            assets = assets.order_by("-rank")
+        else:
+            pass
     return assets
