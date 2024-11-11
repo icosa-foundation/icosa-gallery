@@ -174,6 +174,8 @@ class DeviceCodeAdmin(admin.ModelAdmin):
         "expiry",
     )
 
+    raw_id_fields = ["user"]
+
     date_hierarchy = "expiry"
 
 
