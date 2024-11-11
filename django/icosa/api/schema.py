@@ -263,9 +263,7 @@ class _DBAsset(ModelSchema):
     tags: List[str] = []
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     thumbnail: Optional[Thumbnail]
-    presentationParams: Optional[dict] = Field(
-        ..., alias=("presentation_params")
-    )
+    presentationParams: Optional[PolyPresentationParams] = None
     license: Optional[str] = None
 
     class Config:
@@ -307,6 +305,26 @@ class _DBAsset(ModelSchema):
             return f"{obj.owner}"
         else:
             return ""
+
+    @staticmethod
+    def resolve_presentationParams(obj):
+        params = {}
+        presentationParams = obj.presentation_params
+        print(presentationParams.get("backgroundColor", False))
+        params["backgroundColor"] = presentationParams.get(
+            "backgroundColor", None
+        )
+        orientingRotation = presentationParams.get("orientingRotation", None)
+        if orientingRotation:
+            params["orientingRotation"] = {
+                "x": orientingRotation.get("x", None),
+                "y": orientingRotation.get("y", None),
+                "z": orientingRotation.get("z", None),
+                "w": orientingRotation.get("w", None),
+            }
+        params["colorSpace"] = presentationParams.get("colorSpace", None)
+        print(params)
+        return params
 
 
 class AssetSchemaIn(_DBAsset):
