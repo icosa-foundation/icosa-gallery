@@ -247,7 +247,7 @@ class Asset(models.Model):
     url = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
     owner = models.ForeignKey(
-        "User", null=True, blank=True, on_delete=models.SET_NULL
+        "User", null=True, blank=True, on_delete=models.CASCADE
     )
     description = models.TextField(blank=True, null=True)
     formats = models.JSONField(null=True, blank=True)
