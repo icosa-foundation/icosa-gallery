@@ -27,7 +27,7 @@ from icosa.tasks import queue_upload_asset
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.paginator import Paginator
@@ -43,6 +43,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
+
+POLY_USER_URL = "4aEd8rQgKu2"
 
 
 def user_can_view_asset(
@@ -132,8 +134,6 @@ def home_openbrush(request):
 
 @never_cache
 def home_blocks(request):
-
-    POLY_USER_URL = "4aEd8rQgKu2"
     poly_by_google_q = Q(visibility=PUBLIC, owner__url=POLY_USER_URL)
     blocks_q = Q(visibility=PUBLIC, has_blocks=True, curated=True)
     q = poly_by_google_q | blocks_q
@@ -145,6 +145,33 @@ def home_blocks(request):
         assets,
         show_hero=True,
         heading="Exploring Blocks",
+    )
+
+
+@user_passes_test(lambda u: u.is_superuser)
+@never_cache
+def home_other(request):
+    home_q = Q(
+        is_viewer_compatible=True,
+        curated=True,
+        last_reported_time__isnull=True,
+    )
+    poly_by_google_q = Q(owner__url=POLY_USER_URL)
+    only_blocks_q = Q(has_blocks=True, curated=True)
+    blocks_q = poly_by_google_q | only_blocks_q
+    tilt_q = Q(
+        has_tilt=True,
+        curated=True,
+    )
+    exclude_q = home_q | blocks_q | tilt_q
+    assets = Asset.objects.filter(visibility=PUBLIC).exclude(exclude_q)
+
+    return landing_page(
+        request,
+        assets,
+        show_hero=True,
+        heading="""Exploring assets which are not blocks,
+tilt, or on the home page""",
     )
 
 
