@@ -6,8 +6,8 @@
 
     let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);
     let overrides = {
-        'defaultBgColor': '{{ asset.background_color|default:"#000000" }}',
-        'camera': presentationParams.camera 
+        'defaultBackgroundColor': presentationParams?.backgroundColor || "#000000",
+        'camera': presentationParams.camera
     };
 
     // For debugging
@@ -46,10 +46,10 @@
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
         let mtlUrl = "{{ asset.preferred_viewer_format.materialUrl }}";
-        await viewer.loadObjWithMtl(url, mtlUrl, false, overrides);
+        await viewer.loadObjWithMtl(url, mtlUrl, overrides);
     } else if (formatType === 'fbx') {
         console.log("Trying to load fbx");
-        await viewer.loadFbx(url, true, overrides);
+        await viewer.loadFbx(url, overrides);
     } else {
         console.error("Unsupported file format: " + formatType);
     }

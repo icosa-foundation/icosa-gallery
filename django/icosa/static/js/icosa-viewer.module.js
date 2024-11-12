@@ -52756,10 +52756,10 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.sceneGltf = sceneGltf;
         this.initializeScene(overrides);
     }
-    async loadTilt(url) {
+    async loadTilt(url, overrides) {
         const tiltData = await this.tiltLoader.loadAsync(url);
         this.loadedModel = tiltData;
-        this.initializeScene();
+        this.initializeScene(overrides);
     }
     setAllVertexColors(model) {
         model.traverse((node)=>{
@@ -52778,7 +52778,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(defaultBackgroundColor);
             let withVertexColors = overrides?.["withVertexColors"];
             if (withVertexColors) this.setAllVertexColors(this.loadedModel);
-            this.initializeScene();
+            this.initializeScene(overrides);
         });
     }
     async loadObjWithMtl(objUrl, mtlUrl, overrides) {
@@ -52792,14 +52792,14 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
                 this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(defaultBackgroundColor);
                 let withVertexColors = overrides?.["withVertexColors"];
                 if (withVertexColors) this.setAllVertexColors(this.loadedModel);
-                this.initializeScene();
+                this.initializeScene(overrides);
             });
         });
     }
-    async loadFbx(url) {
+    async loadFbx(url, overrides) {
         const fbxData = await this.fbxLoader.loadAsync(url);
         this.loadedModel = fbxData;
-        this.initializeScene();
+        this.initializeScene(overrides);
     }
     async assignEnvironment(scene) {
         const guid = this.sketchMetadata?.EnvironmentGuid;
@@ -52855,7 +52855,13 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.sketchMetadata = sketchMetaData;
     }
     initCameras(cameraOverrides) {
-        let hasCameraMetadata = cameraOverrides && Object.keys(cameraOverrides).length > 0;
+        let hasCameraMetadata = cameraOverrides?.GOOGLE_camera_settings?.pivot;
+        let cameraTarget = hasCameraMetadata || [
+            0,
+            0,
+            0
+        ];
+        // let hasCameraMetadata = (cameraOverrides && Object.keys(cameraOverrides).length > 0);
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
         const near = cameraOverrides?.perspective?.znear || 0.1;
@@ -52873,12 +52879,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.cameraControls = new (0, $21a563bed1f3e202$export$2e2bcd8739ae039)(this.flatCamera, viewer.canvas);
         this.cameraControls.dampingFactor = 0.1;
         this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 0.5;
-        let target = cameraOverrides?.GOOGLE_camera_settings?.pivot || [
-            0,
-            0,
-            0
-        ];
-        this.cameraControls.setTarget(target[0], target[1], target[2]);
+        this.cameraControls.setTarget(cameraTarget[0], cameraTarget[1], cameraTarget[2]);
         this.flatCamera.updateProjectionMatrix();
         this.activeCamera = this.flatCamera;
         this.xrCamera = new $ea01ff4a5048cd08$exports.PerspectiveCamera(fov, aspect, near, far);
@@ -52935,9 +52936,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
     initSceneBackground() {
         // OBJ and FBX models don't have metadata
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
-            // Not sure if we need to convertSRGBToLinear
-            // It helped with the gradient sky but not sure if it's necessary here
-            this.scene.background = this.defaultBackgroundColor.convertSRGBToLinear();
+            this.scene.background = this.defaultBackgroundColor;
             return;
         }
         let sky = null;
