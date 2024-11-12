@@ -75,7 +75,7 @@ def get_or_create_asset(directory, data, curated=False):
         defaults={
             "password": secrets.token_bytes(16),
             "displayname": data["authorName"],
-            "imported_from": IMPORT_SOURCE,
+            "imported": True,
         },
     )
     presentation_params = data.get("presentationParams", {})
