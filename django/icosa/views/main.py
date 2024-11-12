@@ -119,6 +119,7 @@ def home_openbrush(request):
     assets = Asset.objects.filter(
         visibility=PUBLIC,
         has_tilt=True,
+        curated=True,
     )
 
     return landing_page(
@@ -131,7 +132,14 @@ def home_openbrush(request):
 
 @never_cache
 def home_blocks(request):
-    assets = Asset.objects.filter(visibility=PUBLIC, has_blocks=True)
+
+    POLY_USER_URL = "4aEd8rQgKu2"
+    poly_by_google_q = Q(visibility=PUBLIC, owner__url=POLY_USER_URL)
+    blocks_q = Q(visibility=PUBLIC, has_blocks=True, curated=True)
+    q = poly_by_google_q | blocks_q
+
+    assets = Asset.objects.filter(q)
+
     return landing_page(
         request,
         assets,
