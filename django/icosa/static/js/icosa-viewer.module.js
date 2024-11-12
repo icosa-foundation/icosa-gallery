@@ -52756,10 +52756,10 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.sceneGltf = sceneGltf;
         this.initializeScene(overrides);
     }
-    async loadTilt(url) {
+    async loadTilt(url, overrides) {
         const tiltData = await this.tiltLoader.loadAsync(url);
         this.loadedModel = tiltData;
-        this.initializeScene();
+        this.initializeScene(overrides);
     }
     setAllVertexColors(model) {
         model.traverse((node)=>{
@@ -52778,7 +52778,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(defaultBackgroundColor);
             let withVertexColors = overrides?.["withVertexColors"];
             if (withVertexColors) this.setAllVertexColors(this.loadedModel);
-            this.initializeScene();
+            this.initializeScene(overrides);
         });
     }
     async loadObjWithMtl(objUrl, mtlUrl, overrides) {
@@ -52792,14 +52792,14 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
                 this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(defaultBackgroundColor);
                 let withVertexColors = overrides?.["withVertexColors"];
                 if (withVertexColors) this.setAllVertexColors(this.loadedModel);
-                this.initializeScene();
+                this.initializeScene(overrides);
             });
         });
     }
-    async loadFbx(url) {
+    async loadFbx(url, overrides) {
         const fbxData = await this.fbxLoader.loadAsync(url);
         this.loadedModel = fbxData;
-        this.initializeScene();
+        this.initializeScene(overrides);
     }
     async assignEnvironment(scene) {
         const guid = this.sketchMetadata?.EnvironmentGuid;
