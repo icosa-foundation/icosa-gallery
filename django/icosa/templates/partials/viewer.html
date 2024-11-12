@@ -6,8 +6,8 @@
 
     let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);
     let overrides = {
-        'defaultBgColor': '{{ asset.background_color|default:"#000000" }}',
-        'camera': presentationParams.camera 
+        'defaultBgColor': '{{ presentationParams.backgroundColor|default:"#000000" }}',
+        'camera': presentationParams.camera
     };
 
     // For debugging
