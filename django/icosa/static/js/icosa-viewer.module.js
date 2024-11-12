@@ -52935,9 +52935,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
     initSceneBackground() {
         // OBJ and FBX models don't have metadata
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
-            // Not sure if we need to convertSRGBToLinear
-            // It helped with the gradient sky but not sure if it's necessary here
-            this.scene.background = this.defaultBackgroundColor.convertSRGBToLinear();
+            this.scene.background = this.defaultBackgroundColor;
             return;
         }
         let sky = null;
