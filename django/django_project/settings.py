@@ -299,6 +299,12 @@ HUEY = {
 
 ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", True)
 
+# Maintenance Mode settings
+
+MAINTENANCE_MODE = os.environ.get("DJANGO_MAINTENANCE_MODE", False)
+MAINTENANCE_MODE_IGNORE_STAFF = True
+MAINTENANCE_MODE_IGNORE_URLS = ["/admin/", "/device/", "/v1/"]
+
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
