@@ -20,7 +20,8 @@ from icosa.models import (
 
 from django.core.management.base import BaseCommand
 
-IMPORT_SOURCE = "google_poly"
+# IMPORT_SOURCE = "google_poly"
+IMPORT_SOURCE = "internet_archive"
 
 POLY_JSON_DIR = "polygone_data"
 ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
@@ -42,6 +43,8 @@ CATEGORY_REVERSE_MAP = dict([(x[1], x[0]) for x in CATEGORY_CHOICES])
 # access and slowdown, there is no harm to the data by enabling them both.
 PROCESS_VIA_JSON_OVERRIDES = True
 PROCESS_VIA_GLTF_PARSING = False
+
+IGNORE_SCRAPED_DATA = True
 
 
 def get_json_from_b2(dir):
@@ -328,57 +331,88 @@ class Command(BaseCommand):
                         end="\r",
                     )
 
-                    # Skip importing if the asset is not in the scraped json.
-                    if asset_id not in directories:
-                        continue
+                    if IGNORE_SCRAPED_DATA:
+                        if asset_id in directories:
+                            continue
+                    else:
+                        # Skip importing if the asset is not in the scraped
+                        # json.
+                        if asset_id not in directories:
+                            continue
 
-                    #
-                    #
-                    # Create a new Asset object with the data
-                    full_path = os.path.join(
-                        ASSETS_JSON_DIR, asset_id, "data.json"
-                    )
-                    with open(full_path) as f:
-                        scrape_data = json.load(f)
-
-                        scrape_formats = dedup_scrape_formats(
-                            scrape_data["formats"], asset_id
-                        )
-
-                        asset, asset_created = get_or_create_asset(
+                    if IGNORE_SCRAPED_DATA:
+                        # Create empty, dummy scrape data.
+                        scrape_data = {
+                            "tags": [],
+                        }
+                        scrape_formats = []
+                        handle_asset(
                             asset_id,
                             archive_data,
-                            "curated" in scrape_data.get("tags", []),
+                            scrape_data,
+                            scrape_formats,
+                            gltf2_data,
                         )
-                        if asset_created:
-                            tag_set = set(
-                                archive_data["tags"] + scrape_data["tags"]
-                            )
-                            icosa_tags = []
-                            for tag in tag_set:
-                                obj, _ = Tag.objects.get_or_create(name=tag)
-                                icosa_tags.append(obj)
-                            asset.tags.set(list(icosa_tags))
 
-                            # Create formats from the scraped data. These will
-                            # be our primary formats to use for the viewer,
-                            # initially.
-                            create_formats_from_scraped_data(
-                                asset_id,
-                                gltf2_data,
-                                scrape_formats,
-                                asset,
+                    else:
+                        # Create a new Asset object with the data.
+                        full_path = os.path.join(
+                            ASSETS_JSON_DIR, asset_id, "data.json"
+                        )
+                        with open(full_path) as f:
+                            scrape_data = json.load(f)
+                            scrape_formats = dedup_scrape_formats(
+                                scrape_data["formats"], asset_id
                             )
-
-                            # Create formats from the archive data, for
-                            # posterity.
-                            create_formats_from_archive_data(
-                                archive_data["formats"],
-                                asset,
-                            )
-
-                            # Re-save the asset to trigger model
-                            # validation.
-                            asset.save()
+                        handle_asset(
+                            asset_id,
+                            archive_data,
+                            scrape_data,
+                            scrape_formats,
+                            gltf2_data,
+                        )
 
         print("Finished                                  ")
+
+
+def handle_asset(
+    asset_id,
+    archive_data,
+    scrape_data,
+    scrape_formats,
+    gltf2_data,
+):
+    asset, asset_created = get_or_create_asset(
+        asset_id,
+        archive_data,
+        "curated" in scrape_data.get("tags", []),
+    )
+    if asset_created:
+        tag_set = set(archive_data["tags"] + scrape_data["tags"])
+        icosa_tags = []
+        for tag in tag_set:
+            obj, _ = Tag.objects.get_or_create(name=tag)
+            icosa_tags.append(obj)
+        asset.tags.set(list(icosa_tags))
+
+        if not IGNORE_SCRAPED_DATA:
+            # Create formats from the scraped data. These will
+            # be our primary formats to use for the viewer,
+            # initially.
+            create_formats_from_scraped_data(
+                asset_id,
+                gltf2_data,
+                scrape_formats,
+                asset,
+            )
+
+        # Create formats from the archive data, for
+        # posterity.
+        create_formats_from_archive_data(
+            archive_data["formats"],
+            asset,
+        )
+
+        # Re-save the asset to trigger model
+        # validation.
+        asset.save()
