@@ -37,6 +37,8 @@ EXTENSION_ROLE_MAP = {
     ".fbx": 1005,
 }
 
+VALID_TYPES = [x.replace(".", "").upper() for x in EXTENSION_ROLE_MAP.keys()]
+
 CATEGORY_REVERSE_MAP = dict([(x[1], x[0]) for x in CATEGORY_CHOICES])
 
 # Only one of these should be enabled at any given time, but other than b2
@@ -382,37 +384,46 @@ def handle_asset(
     scrape_formats,
     gltf2_data,
 ):
-    asset, asset_created = get_or_create_asset(
-        asset_id,
-        archive_data,
-        "curated" in scrape_data.get("tags", []),
-    )
-    if asset_created:
-        tag_set = set(archive_data["tags"] + scrape_data["tags"])
-        icosa_tags = []
-        for tag in tag_set:
-            obj, _ = Tag.objects.get_or_create(name=tag)
-            icosa_tags.append(obj)
-        asset.tags.set(list(icosa_tags))
+    is_valid = False
+    for format in archive_data["formats"]:
+        if format["formatType"] in VALID_TYPES:
+            is_valid = True
+            break
+    if is_valid:
+        asset, asset_created = get_or_create_asset(
+            asset_id,
+            archive_data,
+            "curated" in scrape_data.get("tags", []),
+        )
+        if asset_created:
+            tag_set = set(archive_data["tags"] + scrape_data["tags"])
+            icosa_tags = []
+            for tag in tag_set:
+                obj, _ = Tag.objects.get_or_create(name=tag)
+                icosa_tags.append(obj)
+            asset.tags.set(list(icosa_tags))
 
-        if not IGNORE_SCRAPED_DATA:
-            # Create formats from the scraped data. These will
-            # be our primary formats to use for the viewer,
-            # initially.
-            create_formats_from_scraped_data(
-                asset_id,
-                gltf2_data,
-                scrape_formats,
+            if not IGNORE_SCRAPED_DATA:
+                # Create formats from the scraped data. These will
+                # be our primary formats to use for the viewer,
+                # initially.
+                create_formats_from_scraped_data(
+                    asset_id,
+                    gltf2_data,
+                    scrape_formats,
+                    asset,
+                )
+
+            # Create formats from the archive data, for
+            # posterity.
+            create_formats_from_archive_data(
+                archive_data["formats"],
                 asset,
             )
 
-        # Create formats from the archive data, for
-        # posterity.
-        create_formats_from_archive_data(
-            archive_data["formats"],
-            asset,
-        )
-
-        # Re-save the asset to trigger model
-        # validation.
-        asset.save()
+            # Re-save the asset to trigger model
+            # validation.
+            asset.save()
+    else:
+        with open("./invalid_assets.log", "a") as log:
+            log.write(f"{asset_id}\n")
