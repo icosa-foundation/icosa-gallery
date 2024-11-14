@@ -129,6 +129,12 @@ urlpatterns = [
     path("search", main_views.search, name="search"),
     path("settings", main_views.user_settings, name="settings"),
     path("terms", main_views.terms, name="terms"),
+    path(
+        "information-for-artists-and-creators",
+        main_views.artist_info,
+        name="artist_info",
+    ),
+    path("licenses", main_views.licenses, name="licenses"),
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
 ]

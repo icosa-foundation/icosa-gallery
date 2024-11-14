@@ -79,10 +79,13 @@
                             <nav class="text-right">
                                 <ul>
                                     <li>
-                                        <a href="/privacy-policy">Privacy Policy</a>
+                                        <a href="{% url 'artist_info' %}">Why is my work here?</a>
                                     </li>
                                     <li>
-                                        <a href="terms">Terms and Conditions</a>
+                                        <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'terms' %}">Terms and Conditions</a>
                                     </li>
                                 </ul>
                             </nav>
