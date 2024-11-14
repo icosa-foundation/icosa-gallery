@@ -143,7 +143,8 @@ def create_formats_from_scraped_data(
             format.lod_hint = format_complexity_json.get("lodHint", None)
             format.save()
 
-        # Manually create thumbnails from our assumptions about the data.
+        # Manually create thumbnails and assume that the files exist on B2 in
+        # the right place.
         if not done_thumbnail:
             asset.thumbnail = f"poly/{directory}/thumbnail.png"
             asset.thumbnail_contenttype = "image/png"
@@ -170,6 +171,11 @@ def create_formats_from_scraped_data(
         if PROCESS_VIA_JSON_OVERRIDES:
             # Retrospectively override the parent Format's type if we find a
             # special case.
+            # Note: This code will over-match and set all GLTFs to GLTF2 given
+            # the right pathological data. However in the case of the polygone
+            # scrape, we know that for each root resource, there is only one
+            # file with the name {file_path} and so this is ok to blindly set
+            # it to GLTF2.
             gltf_override_key = f"{directory}\\{file_path}"
             if gltf2_data.get(gltf_override_key, False):
                 # print(f"Overwriting format_type for {gltf_override_key}")
