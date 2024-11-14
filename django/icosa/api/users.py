@@ -86,10 +86,12 @@ def get_me_assets(
             q &= Q(visibility=filters.visibility)
         elif filters.visibility == "PUBLISHED":
             q &= Q(visibility=PUBLIC)
+        elif filters.visibility == "UNSPECIFIED":
+            pass
         else:
             raise HttpError(
                 400,
-                "Unknown visibility specifier. Expected one of PUBLISHED, PRIVATE, UNLISTED.",  # TODO: brittle
+                "Unknown visibility specifier. Expected one of UNSPECIFIED, PUBLISHED, PRIVATE, UNLISTED.",  # TODO: brittle
             )
 
     if filters.format:
