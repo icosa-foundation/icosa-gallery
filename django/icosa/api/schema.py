@@ -258,7 +258,7 @@ class _DBAsset(ModelSchema):
     url: Optional[str]
     assetId: str
     formats: List[AssetFormat]
-    displayName: str = Field(..., alias=("name"))
+    displayName: Optional[str]
     visibility: str
     tags: List[str] = []
     isCurated: Optional[bool] = Field(None, alias=("curated"))
@@ -269,6 +269,18 @@ class _DBAsset(ModelSchema):
     class Config:
         model = Asset
         model_fields = ["url", "license"]
+
+    @staticmethod
+    def resolve_name(obj, context):
+        return f"assets/{obj.url}"
+
+    @staticmethod
+    def resolve_displayName(obj, context):
+        return obj.name
+
+    @staticmethod
+    def resolve_license(obj, context):
+        return obj.get_license_display
 
     @staticmethod
     def resolve_url(obj, context):
