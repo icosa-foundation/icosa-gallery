@@ -50329,7 +50329,8 @@ async function $fcb47f08b3ea937b$export$d51cb1093e099859(brushPath, model) {
         if (object.type === "Mesh") {
             const mesh = object;
             var shader;
-            const targetFilter = "brush_" + mesh.name.split("_")[1];
+            let targetFilter = mesh.name.split("_")[1];
+            targetFilter = "brush_" + targetFilter.split("-")[0];
             switch(targetFilter){
                 case "brush_BlocksBasic":
                     mesh.geometry.name = "geometry_BlocksBasic";
@@ -52747,7 +52748,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         let sceneGltf;
         if (isV1) {
             sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
-            await (0, $fcb47f08b3ea937b$export$d51cb1093e099859)(this.brushPath.toString(), sceneGltf.scene);
+            (0, $fcb47f08b3ea937b$export$d51cb1093e099859)(this.brushPath.toString(), sceneGltf.scene);
         } else sceneGltf = await this.gltfLoader.loadAsync(url);
         this.setupSketchMetaData(sceneGltf.scene);
         if (loadEnvironment) await this.assignEnvironment(sceneGltf.scene);
