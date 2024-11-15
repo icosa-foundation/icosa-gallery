@@ -173,3 +173,14 @@ label {
   height: 1em;
   line-height: 1em;
 }
+
+.text-page {
+  font-size: 1.2rem;
+
+  h2,
+  h3,
+  h4 {
+    margin-block-start: 2rem;
+    margin-block-end: 1.2rem;
+  }
+}

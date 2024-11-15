@@ -529,6 +529,14 @@ def terms(request):
     return template_view(request, "main/terms.html")
 
 
+def artist_info(request):
+    return template_view(request, "main/info_for_artists.html")
+
+
+def licenses(request):
+    return template_view(request, "main/licenses.html")
+
+
 def privacy_policy(request):
     return template_view(request, "main/privacy_policy.html")
 
