@@ -51366,7 +51366,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.initSceneBackground();
         this.initFog();
         this.initLights();
-        this.initCameras(overrides?.camera);
+        this.initCameras(overrides?.camera, overrides?.GOOGLE_geometry_data?.visualCenterPoint);
         this.scene.add(this.loadedModel);
     }
     static lookupEnvironment(guid) {
@@ -52855,17 +52855,18 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.sketchBoundingBox = new $ea01ff4a5048cd08$exports.Box3().setFromObject(model);
         this.sketchMetadata = sketchMetaData;
     }
-    initCameras(cameraOverrides) {
+    initCameras(cameraOverrides, visualCenterpoint) {
         let cameraPos = cameraOverrides?.translation || [
             0,
             1,
             -1
         ];
-        let cameraTarget = cameraOverrides?.GOOGLE_camera_settings?.pivot || [
+        let cameraTarget = cameraOverrides?.GOOGLE_camera_settings?.pivot || visualCenterpoint || [
             cameraPos[0],
             cameraPos[1],
             cameraPos[2] - 1
         ];
+        // TODO Use geometry center if no pivot
         let cameraRot = cameraOverrides?.rotation || [
             1,
             0,
