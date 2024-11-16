@@ -49152,7 +49152,11 @@ class $a970d3af3e0e453f$export$9559c3115faeb0b0 extends (0, $ea01ff4a5048cd08$ex
         loader.setPath(this.path);
         loader.setResponseType("arraybuffer");
         loader.load(url, function(data) {
-            scope.parse(data, resourcePath, onLoad);
+            try {
+                scope.parse(data, resourcePath, onLoad);
+            } catch (e) {
+                onError();
+            }
         }, onProgress, onError);
     }
     parse(data, path, callback) {
@@ -49170,6 +49174,7 @@ class $a970d3af3e0e453f$export$9559c3115faeb0b0 extends (0, $ea01ff4a5048cd08$ex
             manager: this.manager,
             path: path || this.resourcePath || ""
         });
+        console.log(parser);
         parser.parse(function(scene, scenes, cameras, animations) {
             var glTF = {
                 "scene": scene,
@@ -49177,6 +49182,7 @@ class $a970d3af3e0e453f$export$9559c3115faeb0b0 extends (0, $ea01ff4a5048cd08$ex
                 "cameras": cameras,
                 "animations": animations
             };
+            console.log("do we get here?");
             callback(glTF);
         });
     }
@@ -49593,6 +49599,11 @@ class $a970d3af3e0e453f$var$GLTFParser {
         var _dependencies = {};
         for(var i = 0; i < dependencies.length; i++){
             var dependency = dependencies[i];
+            if (dependency === "cameras") {
+                _dependencies[dependency] = [];
+                continue;
+            }
+            console.log("dependency: " + dependency);
             var fnName = "load" + dependency.charAt(0).toUpperCase() + dependency.slice(1);
             var cached = this.cache.get(dependency);
             if (cached !== undefined) _dependencies[dependency] = cached;
@@ -49600,22 +49611,24 @@ class $a970d3af3e0e453f$var$GLTFParser {
                 var fn = this[fnName]();
                 this.cache.add(dependency, fn);
                 _dependencies[dependency] = fn;
-            }
+            } else console.log("no fucking clue " + fnName);
         }
         return $a970d3af3e0e453f$var$_each(_dependencies, function(dependency) {
             return dependency;
         });
     }
     parse(callback) {
+        console.log("inside parse");
         var json = this.json;
         // Clear the loader cache
         this.cache.removeAll();
         // Fire the callback on complete
+        console.log("before with dependencies");
         this._withDependencies([
-            "scenes",
-            "cameras",
-            "animations"
+            "scenes"
         ]).then(function(dependencies) {
+            console.log(dependencies);
+            console.log("THEN!");
             var scenes = [];
             for(var name in dependencies.scenes)scenes.push(dependencies.scenes[name]);
             var scene = json.scene !== undefined ? dependencies.scenes[json.scene] : scenes[0];
@@ -49652,6 +49665,7 @@ class $a970d3af3e0e453f$var$GLTFParser {
                     let url = shader.uri.replace("https://vr.google.com/shaders/w/", shaderPath);
                     url = url.replace(/https:\/\/web\.archive\.org\/web\/\d+\/https:\/\/www\.tiltbrush\.com\/shaders\//, shaderPath);
                     url = url.replace("https://www.tiltbrush.com/shaders/", shaderPath);
+                    console.log("loading shader: " + url);
                     loader.load($a970d3af3e0e453f$var$resolveURL(url, options.path), function(shaderText) {
                         resolve(shaderText);
                     });
@@ -50060,6 +50074,10 @@ class $a970d3af3e0e453f$var$GLTFParser {
     }
     loadCameras() {
         var json = this.json;
+        if (json.cameras === undefined) {
+            console.log("no cameras");
+            return [];
+        }
         return $a970d3af3e0e453f$var$_each(json.cameras, function(camera) {
             if (camera.type == "perspective" && camera.perspective) {
                 var yfov = camera.perspective.yfov;
@@ -50076,7 +50094,7 @@ class $a970d3af3e0e453f$var$GLTFParser {
                 if (camera.name !== undefined) _camera.name = camera.name;
                 if (camera.extras) _camera.userData = camera.extras;
                 return _camera;
-            }
+            } else console.log("unknown camera " + camera.type);
         });
     }
     loadSkins() {
@@ -50161,8 +50179,7 @@ class $a970d3af3e0e453f$var$GLTFParser {
         }).then(function(__nodes) {
             return scope._withDependencies([
                 "meshes",
-                "skins",
-                "cameras"
+                "skins"
             ]).then(function(dependencies) {
                 return $a970d3af3e0e453f$var$_each(__nodes, function(_node, nodeId) {
                     var node = json.nodes[nodeId];
@@ -52748,6 +52765,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         let sceneGltf;
         if (isV1) {
             sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
+            console.log("we made it through ffs");
             (0, $fcb47f08b3ea937b$export$d51cb1093e099859)(this.brushPath.toString(), sceneGltf.scene);
         } else sceneGltf = await this.gltfLoader.loadAsync(url);
         this.setupSketchMetaData(sceneGltf.scene);
@@ -52856,13 +52874,12 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.sketchMetadata = sketchMetaData;
     }
     initCameras(cameraOverrides) {
-        let hasCameraMetadata = cameraOverrides?.GOOGLE_camera_settings?.pivot;
-        let cameraTarget = hasCameraMetadata || [
+        let cameraTarget = cameraOverrides?.GOOGLE_camera_settings?.pivot;
+        cameraTarget = cameraTarget || [
             0,
             0,
             0
         ];
-        // let hasCameraMetadata = (cameraOverrides && Object.keys(cameraOverrides).length > 0);
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
         const near = cameraOverrides?.perspective?.znear || 0.1;
@@ -52886,7 +52903,8 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.xrCamera = new $ea01ff4a5048cd08$exports.PerspectiveCamera(fov, aspect, near, far);
         this.xrCamera.updateProjectionMatrix();
         (0, $7a53d4f4e33d695e$export$fc22e28a11679cb8)(this.cameraControls);
-        if (!hasCameraMetadata) {
+        let noOverrides = !cameraOverrides || !cameraOverrides?.perspective;
+        if (noOverrides) {
             // Setup camera to center model
             const box = this.sketchBoundingBox;
             if (box != undefined && box != null) {
