@@ -51366,7 +51366,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.initSceneBackground();
         this.initFog();
         this.initLights();
-        this.initCameras(overrides?.camera, overrides?.GOOGLE_geometry_data?.visualCenterPoint);
+        this.initCameras(overrides?.camera, overrides?.geometryData?.visualCenterPoint);
         this.scene.add(this.loadedModel);
     }
     static lookupEnvironment(guid) {
@@ -52866,14 +52866,12 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             cameraPos[1],
             cameraPos[2] - 1
         ];
-        // TODO Use geometry center if no pivot
         let cameraRot = cameraOverrides?.rotation || [
             1,
             0,
             0,
             0
         ];
-        console.log(cameraOverrides?.rotation);
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
         const near = cameraOverrides?.perspective?.znear || 0.1;
