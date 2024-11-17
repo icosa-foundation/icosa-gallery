@@ -16,19 +16,25 @@
     window.viewer = viewer;
     window.THREE = viewer.three;
 
-    {% if format_override %}
-        let formatType = "{{ format_override }}".toLowerCase();
-    {% else %}
-        let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
-    {% endif %}
-
     {% if not asset.has_tilt and not override_suffix and not format_override %}
+
         let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
         let formatType = "gltf2";
-    {% elif override_suffix %}
-        let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
+
     {% else %}
-        let url = "{{ asset.preferred_viewer_format.url }}";
+
+        {% if format_override %}
+            let formatType = "{{ format_override }}".toLowerCase();
+        {% else %}
+            let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+        {% endif %}
+
+        {% if override_suffix %}
+            let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
+        {% else %}
+            let url = "{{ asset.preferred_viewer_format.url }}";
+        {% endif %}
+
     {% endif %}
 
     if (formatType === 'gltf2' || formatType === 'glb') {
