@@ -50329,7 +50329,8 @@ async function $fcb47f08b3ea937b$export$d51cb1093e099859(brushPath, model) {
         if (object.type === "Mesh") {
             const mesh = object;
             var shader;
-            const targetFilter = "brush_" + mesh.name.split("_")[1];
+            let targetFilter = mesh.name.split("_")[1];
+            targetFilter = "brush_" + targetFilter.split("-")[0];
             switch(targetFilter){
                 case "brush_BlocksBasic":
                     mesh.geometry.name = "geometry_BlocksBasic";
@@ -51365,7 +51366,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.initSceneBackground();
         this.initFog();
         this.initLights();
-        this.initCameras(overrides?.camera);
+        this.initCameras(overrides?.camera, overrides?.geometryData?.visualCenterPoint);
         this.scene.add(this.loadedModel);
     }
     static lookupEnvironment(guid) {
@@ -52747,7 +52748,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         let sceneGltf;
         if (isV1) {
             sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
-            await (0, $fcb47f08b3ea937b$export$d51cb1093e099859)(this.brushPath.toString(), sceneGltf.scene);
+            (0, $fcb47f08b3ea937b$export$d51cb1093e099859)(this.brushPath.toString(), sceneGltf.scene);
         } else sceneGltf = await this.gltfLoader.loadAsync(url);
         this.setupSketchMetaData(sceneGltf.scene);
         if (loadEnvironment) await this.assignEnvironment(sceneGltf.scene);
@@ -52854,38 +52855,47 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.sketchBoundingBox = new $ea01ff4a5048cd08$exports.Box3().setFromObject(model);
         this.sketchMetadata = sketchMetaData;
     }
-    initCameras(cameraOverrides) {
-        let hasCameraMetadata = cameraOverrides?.GOOGLE_camera_settings?.pivot;
-        let cameraTarget = hasCameraMetadata || [
+    initCameras(cameraOverrides, visualCenterPoint) {
+        let cameraPos = cameraOverrides?.translation || [
+            0,
+            1,
+            -1
+        ];
+        console.log(visualCenterPoint);
+        let cameraTarget = cameraOverrides?.GOOGLE_camera_settings?.pivot || visualCenterPoint || [
+            cameraPos[0],
+            cameraPos[1],
+            cameraPos[2] - 1
+        ];
+        console.log(cameraTarget);
+        let cameraRot = cameraOverrides?.rotation || [
+            1,
             0,
             0,
             0
         ];
-        // let hasCameraMetadata = (cameraOverrides && Object.keys(cameraOverrides).length > 0);
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
         const near = cameraOverrides?.perspective?.znear || 0.1;
         const far = 1000;
         this.flatCamera = new $ea01ff4a5048cd08$exports.PerspectiveCamera(fov, aspect, near, far);
-        let pos = cameraOverrides?.translation || [
-            1,
-            1,
-            1
-        ];
-        this.flatCamera.position.set(pos[0], pos[1], pos[2]);
+        this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
+        this.flatCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
+        this.flatCamera.updateProjectionMatrix();
+        this.activeCamera = this.flatCamera;
+        this.xrCamera = new $ea01ff4a5048cd08$exports.PerspectiveCamera(fov, aspect, near, far);
+        this.xrCamera.updateProjectionMatrix();
         (0, $21a563bed1f3e202$export$2e2bcd8739ae039).install({
             THREE: $ea01ff4a5048cd08$exports
         });
         this.cameraControls = new (0, $21a563bed1f3e202$export$2e2bcd8739ae039)(this.flatCamera, viewer.canvas);
         this.cameraControls.dampingFactor = 0.1;
         this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 0.5;
-        this.cameraControls.setTarget(cameraTarget[0], cameraTarget[1], cameraTarget[2]);
-        this.flatCamera.updateProjectionMatrix();
-        this.activeCamera = this.flatCamera;
-        this.xrCamera = new $ea01ff4a5048cd08$exports.PerspectiveCamera(fov, aspect, near, far);
-        this.xrCamera.updateProjectionMatrix();
+        this.cameraControls.setPosition(cameraPos[0], cameraPos[1], cameraPos[2], false);
+        if (cameraTarget) this.cameraControls.setTarget(cameraTarget[0], cameraTarget[1], cameraTarget[2], false);
         (0, $7a53d4f4e33d695e$export$fc22e28a11679cb8)(this.cameraControls);
-        if (!hasCameraMetadata) {
+        let noOverrides = !cameraOverrides || !cameraOverrides?.perspective;
+        if (noOverrides) {
             // Setup camera to center model
             const box = this.sketchBoundingBox;
             if (box != undefined && box != null) {

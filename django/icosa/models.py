@@ -332,7 +332,7 @@ class Asset(models.Model):
         # Return early with an obj if we know the asset is a blocks file.
         # There are some issues with displaying GLTF files from Blocks so we
         # have to return an OBJ and its associated MTL.
-        if self.is_blocks and not self.has_gltf2:
+        if False:  # TODO we now force updated gltf in the template instead of obj here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()

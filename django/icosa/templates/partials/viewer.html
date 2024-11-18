@@ -7,22 +7,35 @@
     let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);
     let overrides = {
         'defaultBackgroundColor': presentationParams?.backgroundColor || "#000000",
-        'camera': presentationParams.camera
+        'camera': presentationParams.camera,
+        'geometryData': presentationParams.GOOGLE_geometry_data,
+        'colorSpace': presentationParams.colorSpace,
     };
 
     // For debugging
     window.viewer = viewer;
     window.THREE = viewer.three;
 
-    {% if override_suffix %}
-        let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
+    {% if not asset.has_tilt and not override_suffix and not format_override %}
+
+        let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", ""); // Remove suffix to avoid duplicating it
+        url = url.replace(".gltf", "_%28GLTFupdated%29.gltf"); // Add suffix
+        let formatType = "gltf2";
+
     {% else %}
-        let url = "{{ asset.preferred_viewer_format.url }}";
-    {% endif %}
-    {% if format_override %}
-        let formatType = "{{ format_override }}".toLowerCase();
-    {% else %}
-        let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+
+        {% if format_override %}
+            let formatType = "{{ format_override }}".toLowerCase();
+        {% else %}
+            let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+        {% endif %}
+
+        {% if override_suffix %}
+            let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
+        {% else %}
+            let url = "{{ asset.preferred_viewer_format.url }}";
+        {% endif %}
+
     {% endif %}
 
     if (formatType === 'gltf2' || formatType === 'glb') {
