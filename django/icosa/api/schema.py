@@ -399,3 +399,25 @@ class OembedOut(Schema):
     html: str
     width: int
     height: int
+
+
+# TODO(james): use more of these abstractions
+def filter_license(query_string: str) -> Q:
+    license_str = query_string.upper()
+    if license_str == "CREATIVE_COMMONS_BY":
+        variants = [
+            "CREATIVE_COMMONS_BY_3_0",
+            "CREATIVE_COMMONS_BY_4_0",
+        ]
+    elif license_str == "CREATIVE_COMMONS_BY_ND":
+        variants = [
+            "CREATIVE_COMMONS_BY_ND_3_0",
+            "CREATIVE_COMMONS_BY_ND_4_0",
+        ]
+    else:
+        variants = None
+    if variants is not None:
+        q = Q(license__in=variants)
+    else:
+        q = Q(license__iexact=license_str)
+    return q

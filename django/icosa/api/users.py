@@ -21,6 +21,7 @@ from .schema import (
     FullUserSchema,
     PatchUserSchema,
     UserAssetFilters,
+    filter_license,
     get_keyword_q,
 )
 
@@ -156,6 +157,8 @@ def get_me_likedassets(
         category_str = filters.category.upper()
         category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
         q &= Q(category__iexact=category_str)
+    if filters.license:
+        q &= filter_license(filters.license)
     if filters.curated:
         q &= Q(curated=True)
     if filters.name:
