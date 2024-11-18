@@ -170,8 +170,7 @@ def home_other(request):
         request,
         assets,
         show_hero=True,
-        heading="""Exploring assets which are not blocks,
-tilt, or on the home page""",
+        heading="""stuff not on /blocks or /openbrush""",
     )
 
 
