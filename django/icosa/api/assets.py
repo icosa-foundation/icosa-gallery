@@ -343,13 +343,20 @@ def get_assets(
         q &= Q(category__iexact=category_str)
     if filters.license:
         license_str = filters.license.upper()
-        if license_str in [
-            "CREATIVE_COMMONS_BY",
-            "CREATIVE_COMMONS_BY_ND",
-            "CREATIVE_COMMONS_0",
-            "ALL_RIGHTS_RESERVED",
-        ]:
-            q &= Q(license__icontains=license_str)
+        if license_str == "CREATIVE_COMMONS_BY":
+            variants = [
+                "CREATIVE_COMMONS_BY_3_0",
+                "CREATIVE_COMMONS_BY_4_0",
+            ]
+        elif license_str == "CREATIVE_COMMONS_BY_ND":
+            variants = [
+                "CREATIVE_COMMONS_BY_ND_3_0",
+                "CREATIVE_COMMONS_BY_ND_4_0",
+            ]
+        else:
+            variants = None
+        if variants is not None:
+            q &= Q(license__in=variants)
         else:
             q &= Q(license__iexact=license_str)
     if filters.curated:
