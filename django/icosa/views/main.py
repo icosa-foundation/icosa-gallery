@@ -87,7 +87,7 @@ def landing_page(
             assets.filter(
                 curated=True,
             )
-            .order_by("?")
+            .order_by("-rank")
             .first()
         )
     else:
