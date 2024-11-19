@@ -269,6 +269,43 @@ CONSTANCE_CONFIG = {
     ),
 }
 
+# Debug Toolbar settings
+
+USE_DEBUG_TOOLBAR = True
+
+if USE_DEBUG_TOOLBAR:
+    INSTALLED_APPS = INSTALLED_APPS + [
+        "debug_toolbar",
+    ]
+
+    MIDDLEWARE.remove(
+        "django.middleware.gzip.GZipMiddleware",
+    )
+    MIDDLEWARE.remove(
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+    )
+    MIDDLEWARE.remove(
+        "django.contrib.sessions.middleware.SessionMiddleware",
+    )
+
+    MIDDLEWARE = [
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "django.middleware.gzip.GZipMiddleware",
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+    ] + MIDDLEWARE
+
+    INTERNAL_IPS = ["127.0.0.1"]
+
+    def show_toolbar(request):
+        return request.user.is_superuser and bool(
+            request.GET.get("debug_toolbar")
+        )
+
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": show_toolbar,
+    }
+
 # Honeypot settings
 
 HONEYPOT_FIELD_NAME = "asset_ref"

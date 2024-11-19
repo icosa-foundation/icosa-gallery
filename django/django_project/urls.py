@@ -1,3 +1,4 @@
+from debug_toolbar.toolbar import debug_toolbar_urls
 from icosa.api.assets import router as assets_router
 from icosa.api.authentication import AuthBearer
 from icosa.api.login import router as login_router
@@ -147,3 +148,7 @@ else:
     urlpatterns.append(
         path("api/v1/", api.urls),
     )
+if (
+    getattr(settings, "USE_DEBUG_TOOLBAR", False)
+) and "debug_toolbar" in settings.INSTALLED_APPS:
+    urlpatterns = urlpatterns + debug_toolbar_urls()
