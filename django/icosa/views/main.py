@@ -70,7 +70,7 @@ def check_user_can_view_asset(
 
 
 def not_found(request, exception):
-    return render(request, "main/404.html")
+    return render(request, "main/404.html", status=404)
 
 
 def landing_page(
