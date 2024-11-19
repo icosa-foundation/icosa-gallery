@@ -16,6 +16,7 @@ from django.urls import path
 from django.views.generic import RedirectView
 
 handler404 = main_views.handler404
+handler500 = main_views.handler500
 
 throttle_rules = [
     AnonRateThrottle("60/h"),
@@ -45,6 +46,7 @@ api.add_router("poly", poly_router, tags=["Poly"])
 api.add_router("users", users_router, tags=["Users"])
 
 urlpatterns = [
+    path("div_by_zero", main_views.div_by_zero, name="div_by_zero"),
     path("admin_tools/", include("admin_tools.urls")),
     path("admin/", admin.site.urls),
     # Auth views
