@@ -151,4 +151,6 @@ else:
 if (
     getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)
 ) and "debug_toolbar" in settings.INSTALLED_APPS:
-    urlpatterns = urlpatterns + debug_toolbar_urls()
+    urlpatterns = [
+        path("__debug__/", include("debug_toolbar.urls")),
+    ] + urlpatterns
