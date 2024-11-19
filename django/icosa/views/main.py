@@ -69,6 +69,10 @@ def check_user_can_view_asset(
         raise Http404()
 
 
+def not_found(request, exception):
+    return render(request, "main/404.html")
+
+
 def landing_page(
     request,
     assets=Asset.objects.filter(

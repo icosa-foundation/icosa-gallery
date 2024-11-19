@@ -15,6 +15,8 @@ from django.contrib import admin
 from django.urls import path
 from django.views.generic import RedirectView
 
+handler404 = main_views.not_found
+
 throttle_rules = [
     AnonRateThrottle("60/h"),
     AuthRateThrottle("1000/h"),
