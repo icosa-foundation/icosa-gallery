@@ -37,5 +37,6 @@ services:
         - "80:80"
     volumes:
         - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template
+        - static:/static
     env_file: .env
 
