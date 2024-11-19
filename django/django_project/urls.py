@@ -149,6 +149,6 @@ else:
         path("api/v1/", api.urls),
     )
 if (
-    getattr(settings, "USE_DEBUG_TOOLBAR", False)
+    getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)
 ) and "debug_toolbar" in settings.INSTALLED_APPS:
     urlpatterns = urlpatterns + debug_toolbar_urls()

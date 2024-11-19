@@ -271,9 +271,9 @@ CONSTANCE_CONFIG = {
 
 # Debug Toolbar settings
 
-USE_DEBUG_TOOLBAR = True
+DEBUG_TOOLBAR_ENABLED = True
 
-if USE_DEBUG_TOOLBAR:
+if DEBUG_TOOLBAR_ENABLED:
     INSTALLED_APPS = INSTALLED_APPS + [
         "debug_toolbar",
     ]
