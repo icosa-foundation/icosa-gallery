@@ -57,13 +57,9 @@ If you do not already have an account you can claim this work and sign up at the
 
         function handleEnquiry(){
             let subjectField = document.querySelector("#enquiry-form #id_subject");
-            let messageField = document.querySelector("#enquiry-form #id_message");
-            let emailField = document.querySelector("#enquiry-form #id_contact_email");
             let modalTitle = document.querySelector("#enquiry-modal-title");
             let subject = this.getAttribute("data-enquiry-subject");
             subjectField.value = subject;
-            messageField.value = "";
-            emailField.value = "";
             modalTitle.textContent = subjectChoices[subject];
         }
 
