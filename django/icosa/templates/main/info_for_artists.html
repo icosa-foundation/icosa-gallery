@@ -20,23 +20,22 @@
 <p>We can only remove content from our own website. The Internet Archive will retain their copy and there are likely to be other websites that also have content from the same sources. You can contact those organizations individually and in most cases they will be happy to accommodate your wishes.</p>
 
 <p>If you are the creator and you no longer want your work displayed, get in touch via the buttons below and we’ll respond as quickly as possible.</p>
-
-<p><a class="btn btn-primary" href="mailto:info@icosa.gallery?subject=I want my work removed from this website">I want my work removed from this website</a></p>
+<p><button class="btn btn-primary btn-enquiry" data-bs-toggle="modal" data-bs-target="#enquiry-modal" data-enquiry-subject="WORK_REMOVED">I want my work removed from this website</button></p>
 
 <h3>My work is on this site. How do I take control of it?</h3>
 
 <p>If you already have an account with us, please sign in and click the button below. We will associate the work with your account after some manual sanity checks.</p>
 
-<p><a class="btn btn-primary" href="mailto:info@icosa.gallery?subject=I want to tie my work to my existing account">I want to tie my work to my existing account</a></p>
+<p><button class="btn btn-primary btn-enquiry" data-bs-toggle="modal" data-bs-target="#enquiry-modal" data-enquiry-subject="EXISTING_ACCOUNT">I want to tie my work to my existing account</button></p>
 If you do not already have an account you can claim this work and sign up at the same time. You can change your account name at any time after signing up.
 
-<p><a class="btn btn-primary" href="mailto:info@icosa.gallery?subject=I want to create an account based on my work">I want to create an account based on my work</a></p>
+<p><button class="btn btn-primary btn-enquiry" data-bs-toggle="modal" data-bs-target="#enquiry-modal" data-enquiry-subject="NEW_ACCOUNT">I want to create an account based on my work</button></p>
 
 <h3>Someone else has already claimed my work. What can I do?</h3>
 
 <p>If you find your work under somebody else’s name then click the button below. We’ll investigate. Please don’t use this link if you’ve forgotten your password. Instead, <a href="{% url 'password_reset' %}">reset your password</a>.</p>
 
-<p><a class="btn btn-primary" href="mailto:info@icosa.gallery?subject=My work is credited to someone else">My work is credited to someone else</a></p>
+<p><button class="btn btn-primary btn-enquiry" data-bs-toggle="modal" data-bs-target="#enquiry-modal" data-enquiry-subject="CREDITED_TO_SOMEONE_ELSE">My work is credited to someone else</button></p>
 
 <h3>What types of licenses are available?</h3>
 <p>Find out <a href="{% url 'licenses' %}">more information on what kind of licenses Icosa Gallery offers</a>.</p>
@@ -44,4 +43,32 @@ If you do not already have an account you can claim this work and sign up at the
             </div>
         </div>
     </div>
+    <div class="modal fade" tabindex="-1" id="enquiry-modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                {% include "partials/enquiry_modal_content.html" %}
+            </div>
+        </div>
+    </div>
+    <script>
+        let subjectChoices = {{% for choice in subject_choices %}
+            "{{ choice.0 }}": "{{ choice.1 }}"{% if not forloop.last %},{% endif %}{% endfor %}
+        };
+
+        function handleEnquiry(){
+            let subjectField = document.querySelector("#enquiry-form #id_subject");
+            let messageField = document.querySelector("#enquiry-form #id_message");
+            let emailField = document.querySelector("#enquiry-form #id_contact_email");
+            let modalTitle = document.querySelector("#enquiry-modal-title");
+            let subject = this.getAttribute("data-enquiry-subject");
+            subjectField.value = subject;
+            messageField.value = "";
+            emailField.value = "";
+            modalTitle.textContent = subjectChoices[subject];
+        }
+
+        for (const button of document.querySelectorAll(".btn-enquiry")) {
+            button.addEventListener("click", handleEnquiry, false);
+        };
+    </script>
 {% endblock content %}

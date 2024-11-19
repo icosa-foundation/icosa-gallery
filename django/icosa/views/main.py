@@ -2,6 +2,8 @@ import secrets
 
 from honeypot.decorators import check_honeypot
 from icosa.forms import (
+    ARTIST_QUERY_SUBJECT_CHOICES,
+    ArtistQueryForm,
     AssetReportForm,
     AssetSettingsForm,
     AssetUploadForm,
@@ -529,7 +531,42 @@ def terms(request):
 
 
 def artist_info(request):
-    return template_view(request, "main/info_for_artists.html")
+    template = "main/info_for_artists.html"
+    subject = ""
+    if request.method == "GET":
+        form = ArtistQueryForm()
+    elif request.method == "POST":
+        # Assuming that the form is posted via htmx, so we are returning
+        # a partial.
+        form = ArtistQueryForm(request.POST)
+        subject = dict(form.fields["subject"].choices).get(
+            request.POST.get("subject")
+        )
+        if form.is_valid():
+            current_site = get_current_site(request)
+            mail_subject = f"Enquiry from {current_site.name}: {subject}"
+            contact_email = form.cleaned_data.get("contact_email")
+            message = form.cleaned_data.get("message")
+            message = render_to_string(
+                "emails/artist_enquiry_email.html",
+                {
+                    "contact_email": contact_email,
+                    "message": message,
+                },
+            )
+            spawn_send_html_mail(mail_subject, message, [settings.ADMIN_EMAIL])
+            template = "partials/enquiry_modal_content_success.html"
+        else:
+            # get_subject_display() only works for modelforms, unbelievably.
+            template = "partials/enquiry_modal_content.html"
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "form": form,
+        "subject_choices": ARTIST_QUERY_SUBJECT_CHOICES,
+        "subject": subject,
+    }
+    return render(request, template, context)
 
 
 def licenses(request):
