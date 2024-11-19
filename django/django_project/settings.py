@@ -274,9 +274,9 @@ CONSTANCE_CONFIG = {
 DEBUG_TOOLBAR_ENABLED = True
 
 if DEBUG_TOOLBAR_ENABLED:
-    INSTALLED_APPS = INSTALLED_APPS + [
+    INSTALLED_APPS = [
         "debug_toolbar",
-    ]
+    ] + INSTALLED_APPS
 
     MIDDLEWARE.remove(
         "django.middleware.gzip.GZipMiddleware",

@@ -1,4 +1,3 @@
-from debug_toolbar.toolbar import debug_toolbar_urls
 from icosa.api.assets import router as assets_router
 from icosa.api.authentication import AuthBearer
 from icosa.api.login import router as login_router
