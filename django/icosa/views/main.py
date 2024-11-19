@@ -69,7 +69,7 @@ def check_user_can_view_asset(
         raise Http404()
 
 
-def not_found(request, exception):
+def handler404(request, exception):
     return render(request, "main/404.html", status=404)
 
 
