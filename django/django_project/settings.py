@@ -298,9 +298,11 @@ if DEBUG_TOOLBAR_ENABLED:
     INTERNAL_IPS = ["127.0.0.1"]
 
     def show_toolbar(request):
-        return request.user.is_superuser and bool(
+        if request.user.is_superuser and bool(
             request.GET.get("debug_toolbar")
-        )
+        ):
+            return True
+        return False
 
     DEBUG_TOOLBAR_CONFIG = {
         "SHOW_TOOLBAR_CALLBACK": show_toolbar,
