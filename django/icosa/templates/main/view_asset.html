@@ -47,9 +47,6 @@
                             {% fa_icon "solid" "download" %} Downloads
                         </a>
                     </p>
-                    {% for item in downloadable_files %}
-                        <p><a href="{{ item.0 }}">{{ item.1 }}</a></p>
-                    {% endfor %}
                 {% elif asset.download_url %}
                     <p>
                         <a href="{{ asset.download_url }}" class="btn btn-primary btn-sm">
