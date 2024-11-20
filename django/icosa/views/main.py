@@ -1,3 +1,4 @@
+import inspect
 import secrets
 
 from honeypot.decorators import check_honeypot
@@ -32,6 +33,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import (
@@ -47,6 +49,10 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
 POLY_USER_URL = "4aEd8rQgKu2"
+
+# TODO(james): not sure how to decide on a decent rank.
+HERO_TOP_RANK = 10000
+HERO_CACHE_SECONDS = 300
 
 
 def user_can_view_asset(
@@ -94,7 +100,15 @@ def landing_page(
     show_hero=True,
     heading=None,
 ):
+    # Inspects the caller's name so we don't have to worry about passing in
+    # unique values for each  landing page's cache key.
+    curframe = inspect.currentframe()
+    calframe = inspect.getouterframes(curframe, 2)
+    landing_page_fn_name = calframe[1][3]
+
     template = "main/home.html"
+
+    # TODO(james): filter out assets with no formats
     assets = (
         assets.exclude(license__isnull=True)
         .exclude(license=ALL_RIGHTS_RESERVED)
@@ -106,20 +120,33 @@ def landing_page(
     except ValueError:
         page_number = 0
 
-    # Only show the hero if we're on page 1 of a lister. If show_hero is false,
-    # keep it that way.
+    # Only show the hero if we're on page 1 of a lister.
+    # If show_hero is false, keep it that way.
     show_hero = show_hero is True and (page_number is None or page_number < 2)
     if show_hero is True:
-        hero = (
-            assets.filter(
-                curated=True,
+        cache_key = f"page_hero - {landing_page_fn_name}"
+        if cache.get(cache_key):
+            hero = cache.get(cache_key)
+        else:
+            hero = (
+                assets.filter(
+                    curated=True,
+                    rank__gt=HERO_TOP_RANK,
+                )
+                .order_by("?")
+                .first()
             )
-            .order_by("-rank")
-            .first()
-        )
+            # NOTE(james): I'm not convinced that a time-based cache is the
+            # best here. I'd prefer a cached list of the ids of the top ranking
+            # assets which we can query at random.
+            cache.set(
+                f"page_hero - {landing_page_fn_name}",
+                hero,
+                HERO_CACHE_SECONDS,
+            )
     else:
         hero = None
-    # TODO(james): filter out assets with no formats
+
     paginator = Paginator(
         assets.order_by("-rank"), settings.PAGINATION_PER_PAGE
     )
