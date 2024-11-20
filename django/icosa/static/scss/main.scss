@@ -51,6 +51,10 @@ code {
   text-shadow: 1px 1px black;
   border: none;
 
+  &:hover {
+    color: darken(#ffffff, 12%);
+  }
+
   &.btn-primary {
     background: darken(#00cc83, 10%);
 

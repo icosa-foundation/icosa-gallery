@@ -41,7 +41,13 @@
                     {{ asset.get_license_display|default_if_none:"All rights reserved" }}
                 </h6>
                 <p><a href="{% url 'artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a></p>
-                {% if asset.download_url %}
+                {% if downloadable_files %}
+                    <p>
+                        <a href="{% url 'asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
+                            {% fa_icon "solid" "download" %} Downloads
+                        </a>
+                    </p>
+                {% elif asset.download_url %}
                     <p>
                         <a href="{{ asset.download_url }}" class="btn btn-primary btn-sm">
                             {% fa_icon "solid" "download" %} Download

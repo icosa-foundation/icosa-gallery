@@ -11,9 +11,15 @@ from icosa.models import (
 )
 
 from django import forms
-from django.conf import settings
 from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
 from django.utils.translation import gettext_lazy as _
+
+ARTIST_QUERY_SUBJECT_CHOICES = [
+    ("WORK_REMOVED", "I want my work removed from this website"),
+    ("EXISTING_ACCOUNT", "I want to tie my work to an existing account"),
+    ("NEW_ACCOUNT", "I want to create an account based on my work"),
+    ("CREDITED_TO_SOMEONE_ELSE", "My work is credited to someone else"),
+]
 
 
 class CustomImageInput(ClearableFileInput):
@@ -234,3 +240,19 @@ class PasswordResetConfirmForm(forms.ModelForm):
     class Meta:
         model = User
         fields = []
+
+
+class ArtistQueryForm(forms.Form):
+    subject = forms.ChoiceField(
+        choices=ARTIST_QUERY_SUBJECT_CHOICES,
+        widget=forms.widgets.HiddenInput(),
+        required=True,
+    )
+    message = forms.CharField(
+        widget=forms.widgets.Textarea(),
+        required=True,
+    )
+    contact_email = forms.EmailField(
+        widget=forms.TextInput(),
+        required=True,
+    )

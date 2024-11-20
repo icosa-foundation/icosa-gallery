@@ -1,7 +1,11 @@
+import inspect
+import random
 import secrets
 
 from honeypot.decorators import check_honeypot
 from icosa.forms import (
+    ARTIST_QUERY_SUBJECT_CHOICES,
+    ArtistQueryForm,
     AssetReportForm,
     AssetSettingsForm,
     AssetUploadForm,
@@ -30,6 +34,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import (
@@ -45,6 +50,12 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 
 POLY_USER_URL = "4aEd8rQgKu2"
+
+# TODO(james): not sure how to decide on a decent rank. As of writing, our
+# top-ranked asset is at 80459.
+HERO_TOP_RANK = 10000
+HERO_CACHE_SECONDS = 3600
+HERO_CACHE_PREFIX = "heroes"
 
 
 def user_can_view_asset(
@@ -67,6 +78,20 @@ def check_user_can_view_asset(
         raise Http404()
 
 
+def handler404(request, exception):
+    return render(request, "main/404.html", status=404)
+
+
+def handler500(request):
+    return render(request, "main/500.html", status=500)
+
+
+@user_passes_test(lambda u: u.is_superuser)
+@never_cache
+def div_by_zero(request):
+    1 / 0
+
+
 def landing_page(
     request,
     assets=Asset.objects.filter(
@@ -78,25 +103,63 @@ def landing_page(
     show_hero=True,
     heading=None,
 ):
+    # Inspects this landing page function's caller's name so we don't have
+    # to worry about passing in unique values for each landing page's cache
+    # key. Neglecting to use - or repeating another - cache key has the subtle
+    # effect of showing unrelated heroes.
+    curframe = inspect.currentframe()
+    calframe = inspect.getouterframes(curframe, 2)
+    landing_page_fn_name = calframe[1][3]
+
     template = "main/home.html"
-    assets = assets.exclude(license__isnull=True).exclude(
-        license=ALL_RIGHTS_RESERVED
-    )
-    if show_hero is True:
-        hero = (
-            assets.filter(
-                curated=True,
-            )
-            .order_by("?")
-            .first()
-        )
-    else:
-        hero = None
+
     # TODO(james): filter out assets with no formats
+    assets = (
+        assets.exclude(license__isnull=True)
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .select_related("owner")
+    )
+
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 0
+
+    # Only show the hero if we're on page 1 of a lister.
+    # If show_hero is false, keep it that way.
+    show_hero = show_hero is True and (page_number is None or page_number < 2)
+    if show_hero is True:
+        # The heroes query is slow, but we still want a rotating list on every
+        # page load. Cache a list of heroes and choose one at random each time.
+        cache_key = f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}"
+        if cache.get(cache_key):
+            heroes = cache.get(cache_key)
+        else:
+            heroes = list(
+                assets.filter(
+                    curated=True,
+                    rank__gt=HERO_TOP_RANK,
+                )
+            )
+
+            cache.set(
+                f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}",
+                heroes,
+                HERO_CACHE_SECONDS,
+            )
+    else:
+        heroes = []
+    hero = random.choice(heroes) if heroes else None
+
+    # Our cached hero might have been made private since caching it. This query
+    # is still quicker than filtering all possible heroes by visibility and
+    # should only result in a missing hero on rare occasions.
+    if hero is not None and not hero.visibility == PUBLIC:
+        hero = None
+
     paginator = Paginator(
         assets.order_by("-rank"), settings.PAGINATION_PER_PAGE
     )
-    page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
         "assets": assets,
@@ -170,8 +233,7 @@ def home_other(request):
         request,
         assets,
         show_hero=True,
-        heading="""Exploring assets which are not blocks,
-tilt, or on the home page""",
+        heading="""stuff not on /blocks or /openbrush""",
     )
 
 
@@ -337,6 +399,27 @@ def view_poly_asset(request, asset_url):
         "asset_files": asset.get_all_absolute_file_names(),
         "override_suffix": override_suffix,
         "format_override": format_override,
+        "downloadable_files": asset.get_all_downloadable_files(),
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@never_cache
+def asset_downloads(request, asset_url):
+    template = "main/asset_downloads.html"
+
+    asset = get_object_or_404(Asset, url=asset_url)
+    check_user_can_view_asset(request.user, asset)
+
+    context = {
+        "request_user": IcosaUser.from_django_user(request.user),
+        "user": asset.owner,
+        "asset": asset,
+        "downloadable_files": asset.get_all_downloadable_files(),
     }
     return render(
         request,
@@ -530,7 +613,42 @@ def terms(request):
 
 
 def artist_info(request):
-    return template_view(request, "main/info_for_artists.html")
+    template = "main/info_for_artists.html"
+    subject = ""
+    if request.method == "GET":
+        form = ArtistQueryForm()
+    elif request.method == "POST":
+        # Assuming that the form is posted via htmx, so we are returning
+        # a partial.
+        form = ArtistQueryForm(request.POST)
+        subject = dict(form.fields["subject"].choices).get(
+            request.POST.get("subject")
+        )
+        if form.is_valid():
+            current_site = get_current_site(request)
+            mail_subject = f"Enquiry from {current_site.name}: {subject}"
+            contact_email = form.cleaned_data.get("contact_email")
+            message = form.cleaned_data.get("message")
+            message = render_to_string(
+                "emails/artist_enquiry_email.html",
+                {
+                    "contact_email": contact_email,
+                    "message": message,
+                },
+            )
+            spawn_send_html_mail(mail_subject, message, [settings.ADMIN_EMAIL])
+            template = "partials/enquiry_modal_content_success.html"
+        else:
+            # get_subject_display() only works for modelforms, unbelievably.
+            template = "partials/enquiry_modal_content.html"
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "form": form,
+        "subject_choices": ARTIST_QUERY_SUBJECT_CHOICES,
+        "subject": subject,
+    }
+    return render(request, template, context)
 
 
 def licenses(request):

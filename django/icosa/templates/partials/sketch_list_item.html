@@ -41,6 +41,9 @@
     </h4>
     <a href="{% url 'user_show' user_url=asset.owner.url %}">{{ asset.owner.displayname }}</a>
     <div class="date">{{ asset.timestamp|date:"Y-m-d" }}</div>
+    <p>
+        <small>{{ asset.get_license_display|default_if_none:"All rights reserved" }}</small>
+    </p>
 </article>
 {% if asset.state == "COMPLETE" and is_polling %}
     <script>

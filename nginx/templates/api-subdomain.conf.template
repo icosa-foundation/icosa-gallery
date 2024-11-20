@@ -6,6 +6,16 @@ upstream web {
 server {
     client_max_body_size 500M;
 
+    location /static/ {
+        autoindex off;
+        alias /static/;
+    }
+
+    location /media/ {
+        autoindex off;
+        alias /media/;
+    }
+
     location / {
         proxy_pass http://web;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -25,6 +35,16 @@ server {
 }
 server {
     client_max_body_size 500M;
+
+    location /static/ {
+        autoindex off;
+        alias /static/;
+    }
+
+    location /media/ {
+        autoindex off;
+        alias /media/;
+    }
 
     location /v1/ {
         proxy_pass http://web;

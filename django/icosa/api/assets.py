@@ -37,6 +37,7 @@ from .schema import (
     AssetFinalizeData,
     AssetSchemaOut,
     UploadJobSchemaOut,
+    filter_license,
     get_keyword_q,
 )
 
@@ -342,16 +343,7 @@ def get_assets(
         category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
         q &= Q(category__iexact=category_str)
     if filters.license:
-        license_str = filters.license.upper()
-        if license_str in [
-            "CREATIVE_COMMONS_BY",
-            "CREATIVE_COMMONS_BY_ND",
-            "CREATIVE_COMMONS_0",
-            "ALL_RIGHTS_RESERVED",
-        ]:
-            q &= Q(license__icontains=license_str)
-        else:
-            q &= Q(license__iexact=license_str)
+        q &= filter_license(filters.license)
     if filters.curated:
         q &= Q(curated=True)
     if filters.name:

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% load asset_tags %}
+{% load fontawesome_tags %}
+{% load static %}
+
+{% block content %}
+<div class="sketch-info container">
+    <div class="row">
+        <div class="col">
+            <div>
+                <h2>
+                    Downloads for: {{ asset.name }}
+                </h2>
+                {% for item in downloadable_files %}
+                    <p>
+                        <a href="{{ item.0 }}" class="btn btn-primary btn-sm">
+                            {% fa_icon "solid" "download" %} {{ item.1 }}
+                        </a>
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

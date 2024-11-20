@@ -15,6 +15,9 @@ from django.contrib import admin
 from django.urls import path
 from django.views.generic import RedirectView
 
+handler404 = main_views.handler404
+handler500 = main_views.handler500
+
 throttle_rules = [
     AnonRateThrottle("60/h"),
     AuthRateThrottle("1000/h"),
@@ -43,6 +46,7 @@ api.add_router("poly", poly_router, tags=["Poly"])
 api.add_router("users", users_router, tags=["Users"])
 
 urlpatterns = [
+    path("div_by_zero", main_views.div_by_zero, name="div_by_zero"),
     path("admin_tools/", include("admin_tools.urls")),
     path("admin/", admin.site.urls),
     # Auth views
@@ -91,10 +95,16 @@ urlpatterns = [
         main_views.view_asset,
         name="view_asset",
     ),
+    # TODO(james): view_asset should probably be replaced by view_poly_asset.
     path(
         "view/<str:asset_url>",
         main_views.view_poly_asset,
         name="view_poly_asset",
+    ),
+    path(
+        "download/<str:asset_url>",
+        main_views.asset_downloads,
+        name="asset_downloads",
     ),
     path(
         "status/<str:asset_url>",
@@ -147,3 +157,9 @@ else:
     urlpatterns.append(
         path("api/v1/", api.urls),
     )
+if (
+    getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)
+) and "debug_toolbar" in settings.INSTALLED_APPS:
+    urlpatterns = [
+        path("__debug__/", include("debug_toolbar.urls")),
+    ] + urlpatterns
