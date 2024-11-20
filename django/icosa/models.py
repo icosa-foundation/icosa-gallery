@@ -1,3 +1,5 @@
+import os
+
 import bcrypt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 
@@ -119,6 +121,19 @@ RESOURCE_ROLE_CHOICES = [
     (1005, "Polygone FBX File"),
 ]
 
+DOWNLOADABLE_ROLES = [
+    12,
+    30,
+    1,
+    6,
+    26,
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+]
+
 BLOCKS_VIEWABLE_TYPES = [
     "OBJ",
     "GLB",
@@ -131,6 +146,7 @@ VIEWABLE_ROLES = [
     1003,
     1004,
 ]
+
 
 ASSET_STATE_BARE = "BARE"
 ASSET_STATE_UPLOADING = "UPLOADING"
@@ -332,7 +348,9 @@ class Asset(models.Model):
         # Return early with an obj if we know the asset is a blocks file.
         # There are some issues with displaying GLTF files from Blocks so we
         # have to return an OBJ and its associated MTL.
-        if False:  # TODO we now force updated gltf in the template instead of obj here: self.is_blocks and not self.has_gltf2:
+        if (
+            False
+        ):  # TODO we now force updated gltf in the template instead of obj here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
@@ -571,6 +589,27 @@ class Asset(models.Model):
             file_list.append(
                 f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{name}"
             )
+        return file_list
+
+    def get_all_downloadable_files(self):
+        file_list = []
+
+        for format in self.polyformat_set.all():
+            collected_roles = []
+            for resource in format.polyresource_set.all():
+                if (
+                    resource.file
+                    and format.role in DOWNLOADABLE_ROLES
+                    and format.role not in collected_roles
+                ):
+                    name = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{resource.file.name}"
+                    file_list.append(
+                        (
+                            name,
+                            resource.format.get_role_display(),
+                        )
+                    )
+                    collected_roles.append(format.role)
         return file_list
 
     def hide_media(self):

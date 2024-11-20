@@ -102,6 +102,11 @@ urlpatterns = [
         name="view_poly_asset",
     ),
     path(
+        "download/<str:asset_url>",
+        main_views.asset_downloads,
+        name="asset_downloads",
+    ),
+    path(
         "status/<str:asset_url>",
         main_views.asset_status,
         name="asset_status",
