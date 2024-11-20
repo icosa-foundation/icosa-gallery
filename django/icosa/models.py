@@ -595,14 +595,14 @@ class Asset(models.Model):
             collected_roles = []
             for resource in format.polyresource_set.all():
                 if (
-                    resource.file
+                    resource.external_url
                     and format.role in DOWNLOADABLE_ROLES
                     and format.role not in collected_roles
                 ):
-                    name = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{resource.file.name}"
+                    # name = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{resource.file.name}"
                     file_list.append(
                         (
-                            name,
+                            resource.external_url,
                             resource.format.get_role_display(),
                         )
                     )
