@@ -2,9 +2,7 @@
 {% block content %}
 <div>
     {% if hero %}
-        {% if page_number == None or page_number == "1" %}
-            {% include "partials/hero.html" %}
-        {% endif %}
+        {% include "partials/hero.html" %}
     {% endif %}
     <div class="container">
         {% if heading %}

@@ -100,6 +100,8 @@ def landing_page(
         .exclude(license=ALL_RIGHTS_RESERVED)
         .select_related("owner")
     )
+    page_number = request.GET.get("page")
+    show_hero = show_hero is True and (page_number is None or page_number == 0)
     if show_hero is True:
         hero = (
             assets.filter(
@@ -114,7 +116,6 @@ def landing_page(
     paginator = Paginator(
         assets.order_by("-rank"), settings.PAGINATION_PER_PAGE
     )
-    page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
         "assets": assets,
