@@ -122,16 +122,13 @@ RESOURCE_ROLE_CHOICES = [
 ]
 
 DOWNLOADABLE_ROLES = [
-    12,
-    30,
     1,
+    2,
     6,
+    7,
+    12,
     26,
-    1000,
-    1001,
-    1002,
-    1003,
-    1004,
+    30,
 ]
 
 BLOCKS_VIEWABLE_TYPES = [
