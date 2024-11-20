@@ -1,4 +1,5 @@
 import inspect
+import random
 import secrets
 
 from honeypot.decorators import check_honeypot
@@ -134,9 +135,11 @@ def landing_page(
         if cache.get(cache_key):
             heroes = cache.get(cache_key)
         else:
-            heroes = assets.filter(
-                curated=True,
-                rank__gt=HERO_TOP_RANK,
+            heroes = list(
+                assets.filter(
+                    curated=True,
+                    rank__gt=HERO_TOP_RANK,
+                )
             )
 
             cache.set(
@@ -145,13 +148,13 @@ def landing_page(
                 HERO_CACHE_SECONDS,
             )
     else:
-        heroes = Asset.objects.none()
-    hero = heroes.order_by("?").first()
+        heroes = []
+    hero = random.choice(heroes) if heroes else None
 
     # Our cached hero might have been made private since caching it. This query
     # is still quicker than filtering all possible heroes by visibility and
     # should only result in a missing hero on rare occasions.
-    if not hero.visibility == PUBLIC:
+    if hero is not None and not hero.visibility == PUBLIC:
         hero = None
 
     paginator = Paginator(
