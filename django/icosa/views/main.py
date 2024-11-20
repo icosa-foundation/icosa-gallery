@@ -50,9 +50,11 @@ from django.views.decorators.cache import never_cache
 
 POLY_USER_URL = "4aEd8rQgKu2"
 
-# TODO(james): not sure how to decide on a decent rank.
+# TODO(james): not sure how to decide on a decent rank. As of writing, our
+# top-ranked asset is at 80459.
 HERO_TOP_RANK = 10000
-HERO_CACHE_SECONDS = 300
+HERO_CACHE_SECONDS = 3600
+HERO_CACHE_PREFIX = "heroes"
 
 
 def user_can_view_asset(
@@ -100,8 +102,10 @@ def landing_page(
     show_hero=True,
     heading=None,
 ):
-    # Inspects the caller's name so we don't have to worry about passing in
-    # unique values for each  landing page's cache key.
+    # Inspects this landing page function's caller's name so we don't have
+    # to worry about passing in unique values for each landing page's cache
+    # key. Neglecting to use - or repeating another - cache key has the subtle
+    # effect of showing unrelated heroes.
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
     landing_page_fn_name = calframe[1][3]
@@ -124,27 +128,30 @@ def landing_page(
     # If show_hero is false, keep it that way.
     show_hero = show_hero is True and (page_number is None or page_number < 2)
     if show_hero is True:
-        cache_key = f"page_hero - {landing_page_fn_name}"
+        # The heroes query is slow, but we still want a rotating list on every
+        # page load. Cache a list of heroes and choose one at random each time.
+        cache_key = f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}"
         if cache.get(cache_key):
-            hero = cache.get(cache_key)
+            heroes = cache.get(cache_key)
         else:
-            hero = (
-                assets.filter(
-                    curated=True,
-                    rank__gt=HERO_TOP_RANK,
-                )
-                .order_by("?")
-                .first()
+            heroes = assets.filter(
+                curated=True,
+                rank__gt=HERO_TOP_RANK,
             )
-            # NOTE(james): I'm not convinced that a time-based cache is the
-            # best here. I'd prefer a cached list of the ids of the top ranking
-            # assets which we can query at random.
+
             cache.set(
-                f"page_hero - {landing_page_fn_name}",
-                hero,
+                f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}",
+                heroes,
                 HERO_CACHE_SECONDS,
             )
     else:
+        heroes = Asset.objects.none()
+    hero = heroes.order_by("?").first()
+
+    # Our cached hero might have been made private since caching it. This query
+    # is still quicker than filtering all possible heroes by visibility and
+    # should only result in a missing hero on rare occasions.
+    if not hero.visibility == PUBLIC:
         hero = None
 
     paginator = Paginator(
