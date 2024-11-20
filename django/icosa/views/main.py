@@ -56,6 +56,8 @@ POLY_USER_URL = "4aEd8rQgKu2"
 HERO_TOP_RANK = 10000
 HERO_CACHE_SECONDS = 3600
 HERO_CACHE_PREFIX = "heroes"
+ASSET_CACHE_SECONDS = 10
+ASSET_CACHE_PREFIX = "assets"
 
 
 def user_can_view_asset(
@@ -113,17 +115,30 @@ def landing_page(
 
     template = "main/home.html"
 
-    # TODO(james): filter out assets with no formats
-    assets = (
-        assets.exclude(license__isnull=True)
-        .exclude(license=ALL_RIGHTS_RESERVED)
-        .select_related("owner")
-    )
-
     try:
         page_number = int(request.GET.get("page", 1))
     except ValueError:
-        page_number = 0
+        page_number = 1
+
+    # TODO(james): filter out assets with no formats
+    asset_cache_key = (
+        f"{ASSET_CACHE_PREFIX} - {landing_page_fn_name} - {page_number}"
+    )
+    # TODO(james): This  doesn't seem to be reducing the db queries. Probably
+    # because pagination is not cached either.
+    if cache.get(asset_cache_key):
+        assets = cache.get(asset_cache_key)
+    else:
+        assets = (
+            assets.exclude(license__isnull=True)
+            .exclude(license=ALL_RIGHTS_RESERVED)
+            .select_related("owner")
+        )
+        cache.set(
+            f"{ASSET_CACHE_PREFIX} - {landing_page_fn_name} - {page_number}",
+            assets,
+            ASSET_CACHE_SECONDS,
+        )
 
     # Only show the hero if we're on page 1 of a lister.
     # If show_hero is false, keep it that way.
