@@ -95,6 +95,7 @@ urlpatterns = [
         main_views.view_asset,
         name="view_asset",
     ),
+    # TODO(james): view_asset should probably be replaced by view_poly_asset.
     path(
         "view/<str:asset_url>",
         main_views.view_poly_asset,
