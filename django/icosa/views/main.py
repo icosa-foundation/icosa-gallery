@@ -121,7 +121,7 @@ def landing_page(
     )
 
     try:
-        page_number = int(request.GET.get("page", 0))
+        page_number = int(request.GET.get("page", 1))
     except ValueError:
         page_number = 0
 
