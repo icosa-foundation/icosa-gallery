@@ -260,6 +260,8 @@ CONSTANCE_CONFIG = {
 
 DEBUG_TOOLBAR_ENABLED = True
 
+DEBUG_TOOLBAR_URL_EXCLUDE: tuple[str] = ()
+
 if DEBUG_TOOLBAR_ENABLED:
     INSTALLED_APPS = [
         "debug_toolbar",
@@ -285,7 +287,19 @@ if DEBUG_TOOLBAR_ENABLED:
     INTERNAL_IPS = ["127.0.0.1"]
 
     def show_toolbar(request):
-        if request.user.is_superuser:
+        """Put 'debug=on' or 'debug=1' in a query string to enable debugging for
+        your current session. 'debug=off' will turn it off again.
+        """
+        if request.path in DEBUG_TOOLBAR_URL_EXCLUDE:
+            # No point going any further if it's an excluded Url
+            return False
+        debug_flag = request.GET.get("debug")
+        if debug_flag == "on" or debug_flag == "1":
+            request.session["show_debug_toolbar"] = True
+        elif debug_flag == "off" or debug_flag == "0":
+            request.session["show_debug_toolbar"] = False
+        session_debug = request.session.get("show_debug_toolbar", False)
+        if request.user.is_superuser and session_debug:
             return True
         return False
 
