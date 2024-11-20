@@ -51034,13 +51034,15 @@ class $3c43f222267ed54b$var$SketchMetadata {
         this.EnvironmentGuid = userData["TB_EnvironmentGuid"] ?? "";
         this.Environment = userData["TB_Environment"] ?? "(None)";
         this.EnvironmentPreset = new $3c43f222267ed54b$var$EnvironmentPreset($3c43f222267ed54b$export$2ec4afd9b3c16a85.lookupEnvironment(this.EnvironmentGuid));
-        if (typeof userData["TB_UseGradient"] === "undefined") this.UseGradient = this.EnvironmentPreset.SkyTexture != null;
+        console.log(userData["TB_UseGradient"]);
+        console.log(this.EnvironmentPreset.SkyTexture);
+        if (userData && userData["TB_UseGradient"] === undefined) this.UseGradient = this.EnvironmentPreset.SkyTexture == null;
         else this.UseGradient = JSON.parse(userData["TB_UseGradient"].toLowerCase());
-        this.SkyColorA = this.parseTBColor(userData["TB_SkyColorA"], this.EnvironmentPreset.SkyColorA);
-        this.SkyColorB = this.parseTBColor(userData["TB_SkyColorB"], this.EnvironmentPreset.SkyColorB);
+        this.SkyColorA = this.parseTBColorString(userData["TB_SkyColorA"], this.EnvironmentPreset.SkyColorA);
+        this.SkyColorB = this.parseTBColorString(userData["TB_SkyColorB"], this.EnvironmentPreset.SkyColorB);
         this.SkyGradientDirection = this.parseTBVector3(userData["TB_SkyGradientDirection"], new $ea01ff4a5048cd08$exports.Vector3(0, 1, 0));
-        this.AmbientLightColor = this.parseTBColor(userData["TB_AmbientLightColor"], this.EnvironmentPreset.AmbientLightColor);
-        this.FogColor = this.parseTBColor(userData["TB_FogColor"], this.EnvironmentPreset.FogColor);
+        this.AmbientLightColor = this.parseTBColorString(userData["TB_AmbientLightColor"], this.EnvironmentPreset.AmbientLightColor);
+        this.FogColor = this.parseTBColorString(userData["TB_FogColor"], this.EnvironmentPreset.FogColor);
         this.FogDensity = userData["TB_FogDensity"] ?? this.EnvironmentPreset.FogDensity;
         this.SkyTexture = userData["TB_SkyTexture"] ?? this.EnvironmentPreset.SkyTexture;
         this.ReflectionTexture = userData["TB_ReflectionTexture"] ?? this.EnvironmentPreset.ReflectionTexture;
@@ -51054,10 +51056,12 @@ class $3c43f222267ed54b$var$SketchMetadata {
         }
         let light0rot = sceneLights.length == 1 ? radToDeg3(sceneLights[0].rotation) : null;
         let light1rot = sceneLights.length == 2 ? radToDeg3(sceneLights[1].rotation) : null;
-        this.SceneLight0Color = userData["TB_SceneLight0Color"] ?? this.EnvironmentPreset.SceneLight0Color;
         this.SceneLight0Rotation = userData["TB_SceneLight0Rotation"] ?? light0rot ?? this.EnvironmentPreset.SceneLight0Rotation;
-        this.SceneLight1Color = userData["TB_SceneLight1Color"] ?? this.EnvironmentPreset.SceneLight1Color;
         this.SceneLight1Rotation = userData["TB_SceneLight1Rotation"] ?? light1rot ?? this.EnvironmentPreset.SceneLight1Rotation;
+        let light0col = userData["TB_SceneLight0Color"] ?? this.EnvironmentPreset.SceneLight0Color;
+        let light1col = userData["TB_SceneLight1Color"] ?? this.EnvironmentPreset.SceneLight1Color;
+        this.SceneLight0Color = new $ea01ff4a5048cd08$exports.Color(light0col.r, light0col.g, light0col.b);
+        this.SceneLight1Color = new $ea01ff4a5048cd08$exports.Color(light1col.r, light1col.g, light1col.b);
         this.PoseTranslation = this.parseTBVector3(userData["TB_PoseTranslation"]);
         this.PoseRotation = this.parseTBRotation(userData["TB_PoseRotation"]);
         this.PoseScale = userData["TB_PoseScale"] ?? 1;
@@ -51072,7 +51076,7 @@ class $3c43f222267ed54b$var$SketchMetadata {
         let [x, y, z] = vectorString.split(",").map(parseFloat);
         return new $ea01ff4a5048cd08$exports.Vector3(x, y, z);
     }
-    parseTBColor(colorString, defaultValue) {
+    parseTBColorString(colorString, defaultValue) {
         let r, g, b;
         if (colorString) {
             [r, g, b] = colorString.split(",").map(parseFloat);
@@ -52861,13 +52865,11 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             1,
             -1
         ];
-        console.log(visualCenterPoint);
         let cameraTarget = cameraOverrides?.GOOGLE_camera_settings?.pivot || visualCenterPoint || [
             cameraPos[0],
             cameraPos[1],
             cameraPos[2] - 1
         ];
-        console.log(cameraTarget);
         let cameraRot = cameraOverrides?.rotation || [
             1,
             0,
