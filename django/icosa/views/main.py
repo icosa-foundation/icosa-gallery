@@ -95,8 +95,10 @@ def landing_page(
     heading=None,
 ):
     template = "main/home.html"
-    assets = assets.exclude(license__isnull=True).exclude(
-        license=ALL_RIGHTS_RESERVED
+    assets = (
+        assets.exclude(license__isnull=True)
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .select_related("owner")
     )
     if show_hero is True:
         hero = (
