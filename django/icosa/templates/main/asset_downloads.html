@@ -30,7 +30,7 @@
                         {% if resources.files_to_zip %}
                         <p>
                             <a
-                                href="#javascript:void(0);"
+                                href="javascript:void(0);"
                                 class="btn btn-primary btn-sm zip-btn"
                                 data-file="{% for file in resources.files_to_zip %}{{ file }}{% if not forloop.last %},{% endif %}{% endfor %}"
                             >
@@ -41,7 +41,7 @@
                         {% if resources.files_to_zip_with_suffix %}
                         <p>
                             <a
-                                href="#javascript:void(0);"
+                                href="javascript:void(0);"
                                 class="btn btn-primary btn-sm zip-btn"
                                 data-file="{% for file in resources.files_to_zip_with_suffix %}{{ file }}{% if not forloop.last %},{% endif %}{% endfor %}"
                             >
