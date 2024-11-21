@@ -639,7 +639,7 @@ class Asset(models.Model):
                     # At time of writing, we can't create  a zip on the client
                     # from the archive.org urls because of CORS. Skip this
                     # format until we can resolve this.
-                    pass
+                    continue
                 else:
                     resource = resources.first()
                     if resource.file:
