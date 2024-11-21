@@ -12,15 +12,90 @@
                 <h2>
                     Downloads for: {{ asset.name }}
                 </h2>
-                {% for item in downloadable_files %}
-                    <p>
-                        <a href="{{ item.0 }}" class="btn btn-primary btn-sm">
-                            {% fa_icon "solid" "download" %} {{ item.1 }}
-                        </a>
-                    </p>
+                {% for format, resources in downloadable_formats.items %}
+                    <h3>{{ format }}</h3>
+                    {% if resources.archive_url  %}
+                        <p>
+                            <a href="{{ resources.archive_url }}" class="btn btn-primary btn-sm">
+                                {% fa_icon "solid" "download" %} Download
+                            </a>
+                        </p>
+                    {% elif resources.file %}
+                        <p>
+                            <a href="{{ resources.file }}" class="btn btn-primary btn-sm">
+                                {% fa_icon "solid" "download" %} Download
+                            </a>
+                        </p>
+                    {% else %}
+                        {% if resources.files_to_zip %}
+                        <p>
+                            <a
+                                href="javascript:void(0);"
+                                class="btn btn-primary btn-sm zip-btn"
+                                data-file="{% for file in resources.files_to_zip %}{{ file }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                            >
+                                {% fa_icon "solid" "download" %} Download
+                            </a><span class="download-spinner" style="display:none;margin-inline-start:1em;">{% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Processing files</span>
+                        </p>
+                        {% endif %}
+                        {% if resources.files_to_zip_with_suffix %}
+                        <p>
+                            <a
+                                href="javascript:void(0);"
+                                class="btn btn-primary btn-sm zip-btn"
+                                data-file="{% for file in resources.files_to_zip_with_suffix %}{{ file }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                            >
+
+                                {% fa_icon "solid" "download" %} Download alternative
+                            </a><span class="download-spinner" style="display:none;margin-inline-start:1em;">{% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Processing files</span>
+                        </p>
+                        {% endif %}
+                    {% endif %}
+                    {% if resources.supporting_text %}
+                        <p>{{ resources.supporting_text }}
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
     </div>
+<script src="{% static 'js/jszip.min.js' %}?v=0"></script>
+<script>
+    var zip = new JSZip();
+    async function fetchAndZipFiles(urls) {
+        const zipFolder = zip.folder("{{ asset.slug }}");
+
+        for (const url of urls) {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const fileName = url.split("/").pop();
+            zipFolder.file(fileName, blob);
+        }
+
+        zip.generateAsync({ type: "blob" }).then((content) => {
+            const downloadLink = document.createElement("a");
+            downloadLink.href = URL.createObjectURL(content);
+            downloadLink.download = "{{ asset.slug }}.zip";
+            downloadLink.click();
+        });
+        for (const spinner of document.querySelectorAll(".download-spinner")) {
+            spinner.style.display = "none";
+        };
+    }
+    let fileNames = [
+    {% for name in asset_files %}
+        "{{settings.DJANGO_STORAGE_URL}}/{{settings.DJANGO_STORAGE_BUCKET_NAME}}/{{name}}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+    ];
+
+    function handleDownload() {
+        let fileNames = this.dataset.file.split(',');
+        fetchAndZipFiles(fileNames);
+        this.nextSibling.style.display = "inline";
+    }
+    
+    for (const button of document.querySelectorAll(".zip-btn")) {
+        button.addEventListener("click", handleDownload, false);
+    };
+</script>
 </div>
 {% endblock content %}

@@ -55,7 +55,7 @@ If you do not already have an account you can claim this work and sign up at the
             "{{ choice.0 }}": "{{ choice.1 }}"{% if not forloop.last %},{% endif %}{% endfor %}
         };
 
-        function handleEnquiry(){
+        function handleEnquiry() {
             let subjectField = document.querySelector("#enquiry-form #id_subject");
             let modalTitle = document.querySelector("#enquiry-modal-title");
             let subject = this.getAttribute("data-enquiry-subject");

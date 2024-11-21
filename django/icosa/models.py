@@ -6,7 +6,7 @@ from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 from django.conf import settings
 from django.contrib.auth.models import User as DjangoUser
 from django.db import models
-from django.db.models import ExpressionWrapper, F, FloatField
+from django.db.models import ExpressionWrapper, F, FloatField, Q
 from django.db.models.functions import Extract, Now
 from django.utils.text import slugify
 
@@ -126,9 +126,18 @@ DOWNLOADABLE_ROLES = [
     2,
     6,
     7,
+    8,
     12,
+    18,
+    24,
     26,
     30,
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005,
 ]
 
 BLOCKS_VIEWABLE_TYPES = [
@@ -347,7 +356,8 @@ class Asset(models.Model):
         # have to return an OBJ and its associated MTL.
         if (
             False
-        ):  # TODO we now force updated gltf in the template instead of obj here: self.is_blocks and not self.has_gltf2:
+        ):  # TODO we now force updated gltf in the template instead of obj
+            # here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
@@ -588,26 +598,61 @@ class Asset(models.Model):
             )
         return file_list
 
-    def get_all_downloadable_files(self):
-        file_list = []
+    def get_all_downloadable_formats(self):
+        def suffix(name):
+            if name.endswith(".gltf"):
+                return "".join(
+                    [
+                        f"{p[0]}_(GLTFupdated){p[1]}"
+                        for p in [os.path.splitext(name)]
+                    ]
+                )
+            return name
 
-        for format in self.polyformat_set.all():
-            collected_roles = []
-            for resource in format.polyresource_set.all():
-                if (
-                    resource.external_url
-                    and format.role in DOWNLOADABLE_ROLES
-                    and format.role not in collected_roles
-                ):
-                    # name = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{resource.file.name}"
-                    file_list.append(
-                        (
-                            resource.external_url,
-                            resource.format.get_role_display(),
-                        )
-                    )
-                    collected_roles.append(format.role)
-        return file_list
+        ARCHIVE_PREFIX = "https://web.archive.org/web/"
+        formats = {}
+
+        for format in self.polyformat_set.filter(role__in=DOWNLOADABLE_ROLES):
+            if format.archive_url:
+                resource_data = {
+                    "archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"
+                }
+            else:
+                # Query all resources which have either an external url or a
+                # file.
+                query = Q(external_url__isnull=False) & ~Q(external_url="")
+                query |= Q(file__isnull=False)
+                resources = format.polyresource_set.filter(query)
+                if format.role == 1003:
+                    resource_data = {
+                        "files_to_zip": [
+                            x.file.name for x in resources if x.file
+                        ],
+                        "files_to_zip_with_suffix": [
+                            suffix(x.file.name) for x in resources if x.file
+                        ],
+                        "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
+                    }
+                elif format.role in [12, 30]:
+                    # If we hit this branch, we have a format which doesn't
+                    # have an archive url, but also doesn't have local files.
+                    # At time of writing, we can't create a zip on the client
+                    # from the archive.org urls because of CORS. Skip this
+                    # format until we can resolve this.
+                    continue
+                else:
+                    resource = resources.first()
+                    if resource.file:
+                        resource_data = {
+                            "file": f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{resource.file.name}"
+                        }
+                    elif resource.external_url:
+                        resource_data = {"file": resource.external_url}
+                    else:
+                        resource_data = {}
+
+            formats.setdefault(format.get_role_display(), resource_data)
+        return formats
 
     def hide_media(self):
         """For B2, at least, call `hide` on each item from
