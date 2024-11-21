@@ -1,5 +1,3 @@
-import os
-
 import bcrypt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 
