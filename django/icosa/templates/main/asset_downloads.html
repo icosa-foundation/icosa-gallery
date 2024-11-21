@@ -28,9 +28,6 @@
                         </p>
                     {% else %}
                         {% if resources.files_to_zip %}
-                        {% for file in resources.files_to_zip %}
-                        {{ file }}
-                        {% endfor %}
                         <p>
                             <a
                                 href="#javascript:void(0);"
@@ -42,7 +39,6 @@
                         </p>
                         {% endif %}
                         {% if resources.files_to_zip_with_suffix %}
-                        zippit real good
                         <p>
                             <a
                                 href="#javascript:void(0);"
