@@ -399,7 +399,7 @@ def view_poly_asset(request, asset_url):
         "asset_files": asset.get_all_absolute_file_names(),
         "override_suffix": override_suffix,
         "format_override": format_override,
-        "downloadable_files": asset.get_all_downloadable_files(),
+        "downloadable_formats": asset.get_all_downloadable_formats(),
     }
     return render(
         request,
@@ -419,7 +419,7 @@ def asset_downloads(request, asset_url):
         "request_user": IcosaUser.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
-        "downloadable_files": asset.get_all_downloadable_files(),
+        "downloadable_formats": asset.get_all_downloadable_formats(),
     }
     return render(
         request,

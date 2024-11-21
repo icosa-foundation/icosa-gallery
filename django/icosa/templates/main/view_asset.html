@@ -41,26 +41,12 @@
                     {{ asset.get_license_display|default_if_none:"All rights reserved" }}
                 </h6>
                 <p><a href="{% url 'artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a></p>
-                {% if downloadable_files %}
+                {% if downloadable_formats %}
                     <p>
                         <a href="{% url 'asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
                             {% fa_icon "solid" "download" %} Downloads
                         </a>
                     </p>
-                {% elif asset.download_url %}
-                    <p>
-                        <a href="{{ asset.download_url }}" class="btn btn-primary btn-sm">
-                            {% fa_icon "solid" "download" %} Download
-                        </a>
-                    </p>
-                {% else %}
-                    {% if asset_files %}
-                    <p>
-                        <a href="#javascript:void(0);" id="download-client-zip" class="btn btn-primary btn-sm">
-                            {% fa_icon "solid" "download" %} Download
-                        </a><span id="download-spinner" style="display:none;margin-inline-start:1em;">{% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Processing files</span>
-                    </p>
-                    {% endif %}
                 {% endif %}
                 <p class="text-right"><small>
                 <a href="{% url "report_asset" asset_url=asset.url %}">
@@ -73,45 +59,5 @@
 </div>
 {% if asset.is_viewer_compatible %}
     {% include "partials/viewer.html" %}
-{% endif %}
-{% if asset_files %}
-<script src="{% static 'js/jszip.min.js' %}?v=0"></script>
-<script>
-    var zip = new JSZip();
-    let downloadButton = document.querySelector("#download-client-zip");
-    let downloadSpinner = document.querySelector("#download-spinner");
-    async function fetchAndZipFiles(urls) {
-        const zipFolder = zip.folder("{{ asset.slug }}");
-
-        for (const url of urls) {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const fileName = url.split("/").pop();
-            zipFolder.file(fileName, blob);
-        }
-
-        zip.generateAsync({ type: "blob" }).then((content) => {
-            const downloadLink = document.createElement("a");
-            downloadLink.href = URL.createObjectURL(content);
-            downloadLink.download = "{{ asset.slug }}.zip";
-            downloadLink.click();
-        });
-        if (downloadSpinner !== null) {
-            downloadSpinner.style.display = "none";
-        }
-    }
-    let fileNames = [
-    {% for name in asset_files %}
-        "{{settings.DJANGO_STORAGE_URL}}/{{settings.DJANGO_STORAGE_BUCKET_NAME}}/{{name}}"{% if not forloop.last %},{% endif %}
-    {% endfor %}
-    ];
-    
-    if (downloadButton !== null) {
-        downloadButton.addEventListener("click", function(){
-            downloadSpinner.style.display = "inline";
-            fetchAndZipFiles(fileNames);
-        });
-    }
-</script>
 {% endif %}
 {% endblock content %}
