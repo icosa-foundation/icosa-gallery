@@ -263,7 +263,9 @@ class _DBAsset(ModelSchema):
     tags: List[str] = []
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     thumbnail: Optional[Thumbnail]
-    presentationParams: Optional[PolyPresentationParams] = None
+    presentationParams: Optional[dict] = Field(
+        None, alias=("presentation_params")
+    )
     license: Optional[str] = None
 
     class Config:
@@ -318,23 +320,23 @@ class _DBAsset(ModelSchema):
         else:
             return ""
 
-    @staticmethod
-    def resolve_presentationParams(obj):
-        params = {}
-        presentationParams = obj.presentation_params
-        params["backgroundColor"] = presentationParams.get(
-            "backgroundColor", None
-        )
-        orientingRotation = presentationParams.get("orientingRotation", None)
-        if orientingRotation:
-            params["orientingRotation"] = {
-                "x": orientingRotation.get("x", None),
-                "y": orientingRotation.get("y", None),
-                "z": orientingRotation.get("z", None),
-                "w": orientingRotation.get("w", None),
-            }
-        params["colorSpace"] = presentationParams.get("colorSpace", None)
-        return params
+    # @staticmethod
+    # def resolve_presentationParams(obj):
+    #     params = {}
+    #     presentationParams = obj.presentation_params
+    #     params["backgroundColor"] = presentationParams.get(
+    #         "backgroundColor", None
+    #     )
+    #     orientingRotation = presentationParams.get("orientingRotation", None)
+    #     if orientingRotation:
+    #         params["orientingRotation"] = {
+    #             "x": orientingRotation.get("x", None),
+    #             "y": orientingRotation.get("y", None),
+    #             "z": orientingRotation.get("z", None),
+    #             "w": orientingRotation.get("w", None),
+    #         }
+    #     params["colorSpace"] = presentationParams.get("colorSpace", None)
+    #     return params
 
 
 class AssetSchemaIn(_DBAsset):
