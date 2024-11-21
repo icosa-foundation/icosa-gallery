@@ -51034,10 +51034,12 @@ class $3c43f222267ed54b$var$SketchMetadata {
         this.EnvironmentGuid = userData["TB_EnvironmentGuid"] ?? "";
         this.Environment = userData["TB_Environment"] ?? "(None)";
         this.EnvironmentPreset = new $3c43f222267ed54b$var$EnvironmentPreset($3c43f222267ed54b$export$2ec4afd9b3c16a85.lookupEnvironment(this.EnvironmentGuid));
-        console.log(userData["TB_UseGradient"]);
-        console.log(this.EnvironmentPreset.SkyTexture);
-        if (userData && userData["TB_UseGradient"] === undefined) this.UseGradient = this.EnvironmentPreset.SkyTexture == null;
-        else this.UseGradient = JSON.parse(userData["TB_UseGradient"].toLowerCase());
+        if (userData && userData["TB_UseGradient"] === undefined) {
+            // The sketch metadata doesn't specify whether to use a gradient or not,
+            // so we'll use the environment preset value (assuming it's not a null preset)
+            let isValidEnvironmentPreset = this.EnvironmentPreset.Guid !== null;
+            this.UseGradient = isValidEnvironmentPreset && this.EnvironmentPreset.UseGradient;
+        } else this.UseGradient = JSON.parse(userData["TB_UseGradient"].toLowerCase());
         this.SkyColorA = this.parseTBColorString(userData["TB_SkyColorA"], this.EnvironmentPreset.SkyColorA);
         this.SkyColorB = this.parseTBColorString(userData["TB_SkyColorB"], this.EnvironmentPreset.SkyColorB);
         this.SkyGradientDirection = this.parseTBVector3(userData["TB_SkyGradientDirection"], new $ea01ff4a5048cd08$exports.Vector3(0, 1, 0));
@@ -52868,7 +52870,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         let cameraTarget = cameraOverrides?.GOOGLE_camera_settings?.pivot || visualCenterPoint || [
             cameraPos[0],
             cameraPos[1],
-            cameraPos[2] - 1
+            cameraPos[2] + 1
         ];
         let cameraRot = cameraOverrides?.rotation || [
             1,
@@ -52897,20 +52899,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         if (cameraTarget) this.cameraControls.setTarget(cameraTarget[0], cameraTarget[1], cameraTarget[2], false);
         (0, $7a53d4f4e33d695e$export$fc22e28a11679cb8)(this.cameraControls);
         let noOverrides = !cameraOverrides || !cameraOverrides?.perspective;
-        if (noOverrides) {
-            // Setup camera to center model
-            const box = this.sketchBoundingBox;
-            if (box != undefined && box != null) {
-                const boxSize = box.getSize(new $ea01ff4a5048cd08$exports.Vector3()).length();
-                const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
-                this.cameraControls.minDistance = boxSize * 0.01;
-                this.cameraControls.maxDistance = boxSize * 10;
-                const midDistance = this.cameraControls.minDistance + (boxSize - this.cameraControls.minDistance) / 2;
-                this.cameraControls.setTarget(boxCenter.x, boxCenter.y, boxCenter.z);
-                this.cameraControls.dollyTo(midDistance, true);
-                this.cameraControls.saveState();
-            }
-        }
+        if (noOverrides) this.centerCamera();
     }
     initLights() {
         // Logic for scene light creation:
@@ -52947,7 +52936,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
     }
     initSceneBackground() {
         // OBJ and FBX models don't have metadata
-        if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
+        if (!this.sketchMetadata == undefined) {
             this.scene.background = this.defaultBackgroundColor;
             return;
         }
@@ -52955,10 +52944,24 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         if (this.sketchMetadata.UseGradient) sky = this.generateGradientSky(this.sketchMetadata.SkyColorA, this.sketchMetadata.SkyColorB, this.sketchMetadata.SkyGradientDirection);
         else if (this.sketchMetadata.SkyTexture) sky = this.generateTextureSky(this.sketchMetadata.SkyTexture);
         if (sky !== null) {
-            this.loadedModel?.add(sky);
+            this.scene?.add(sky);
             this.skyObject = sky;
         } else // Use the default background color if there's no sky
         this.scene.background = this.defaultBackgroundColor;
+    }
+    centerCamera() {
+        // Setup camera to center model
+        const box = this.sketchBoundingBox;
+        if (box != undefined) {
+            const boxSize = box.getSize(new $ea01ff4a5048cd08$exports.Vector3()).length();
+            const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
+            this.cameraControls.minDistance = boxSize * 0.01;
+            this.cameraControls.maxDistance = boxSize * 10;
+            const midDistance = this.cameraControls.minDistance + (boxSize - this.cameraControls.minDistance) / 2;
+            this.cameraControls.setTarget(boxCenter.x, boxCenter.y, boxCenter.z);
+            this.cameraControls.dollyTo(midDistance, true);
+            this.cameraControls.saveState();
+        }
     }
 }
 
