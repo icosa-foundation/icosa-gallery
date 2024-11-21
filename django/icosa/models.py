@@ -636,15 +636,15 @@ class Asset(models.Model):
                 elif format.role in [12, 30]:
                     resource_data = {
                         "files_to_zip": [
-                            f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{x.file.name}"
-                            for x in resources
-                            if x.file
+                            x.file.name for x in resources if x.file
                         ],
                     }
                 else:
                     resource = resources.first()
                     if resource.file:
-                        resource_data = {"file": resource.file.name}
+                        resource_data = {
+                            "file": f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{resource.file.name}"
+                        }
                     elif resource.external_url:
                         resource_data = {"file": resource.external_url}
                     else:
