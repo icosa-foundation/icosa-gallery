@@ -634,11 +634,12 @@ class Asset(models.Model):
                         "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
                     }
                 elif format.role in [12, 30]:
-                    resource_data = {
-                        "files_to_zip": [
-                            x.file.name for x in resources if x.file
-                        ],
-                    }
+                    # If we hit this branch, we have a format which doesn't
+                    # have an archive url, but also doesn't have local files.
+                    # At time of writing, we can't create  a zip on the client
+                    # from the archive.org urls because of CORS. Skip this
+                    # format until we can resolve this.
+                    pass
                 else:
                     resource = resources.first()
                     if resource.file:
