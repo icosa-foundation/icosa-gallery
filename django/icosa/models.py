@@ -636,7 +636,7 @@ class Asset(models.Model):
                 elif format.role in [12, 30]:
                     # If we hit this branch, we have a format which doesn't
                     # have an archive url, but also doesn't have local files.
-                    # At time of writing, we can't create  a zip on the client
+                    # At time of writing, we can't create a zip on the client
                     # from the archive.org urls because of CORS. Skip this
                     # format until we can resolve this.
                     continue
