@@ -52974,7 +52974,10 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             this.cameraControls.maxDistance = boxSize * 10;
             const midDistance = this.cameraControls.minDistance + (boxSize - this.cameraControls.minDistance) / 2;
             this.cameraControls.setTarget(boxCenter.x, boxCenter.y, boxCenter.z);
-            this.cameraControls.dollyTo(midDistance, true);
+            let sphere = new $ea01ff4a5048cd08$exports.Sphere();
+            box.getBoundingSphere(sphere);
+            let fullDistance = sphere.radius * 1.75;
+            this.cameraControls.dollyTo(fullDistance, true);
             this.cameraControls.saveState();
         }
     }
