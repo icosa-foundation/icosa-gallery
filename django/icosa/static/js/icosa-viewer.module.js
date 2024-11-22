@@ -52892,7 +52892,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
         const near = cameraOverrides?.perspective?.znear || 0.1;
-        const far = 1000;
+        const far = 5000;
         this.flatCamera = new $ea01ff4a5048cd08$exports.PerspectiveCamera(fov, aspect, near, far);
         this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
         this.flatCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
