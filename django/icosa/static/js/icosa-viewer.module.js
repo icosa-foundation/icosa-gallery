@@ -52874,7 +52874,6 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         ];
         const box = this.sketchBoundingBox;
         if (box != undefined) {
-            const boxSize = box.getSize(new $ea01ff4a5048cd08$exports.Vector3()).length();
             const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
             fallbackTarget = [
                 boxCenter.x,
@@ -52882,7 +52881,12 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
                 boxCenter.z
             ];
         }
+        // If we rely on the visual center point, ignore the y coordinate so we don't tilt the camera
+        if (visualCenterPoint) visualCenterPoint[1] = cameraPos[1];
         let cameraTarget = cameraOverrides?.GOOGLE_camera_settings?.pivot || visualCenterPoint || fallbackTarget;
+        console.log(cameraOverrides?.GOOGLE_camera_settings);
+        console.log(visualCenterPoint);
+        console.log(cameraTarget);
         let cameraRot = cameraOverrides?.rotation || [
             1,
             0,
@@ -52910,7 +52914,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         if (cameraTarget) this.cameraControls.setTarget(cameraTarget[0], cameraTarget[1], cameraTarget[2], false);
         (0, $7a53d4f4e33d695e$export$fc22e28a11679cb8)(this.cameraControls);
         let noOverrides = !cameraOverrides || !cameraOverrides?.perspective;
-        if (noOverrides) this.centerCamera();
+        if (noOverrides) this.frameScene();
     }
     initLights() {
         // Logic for scene light creation:
@@ -52960,7 +52964,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } else // Use the default background color if there's no sky
         this.scene.background = this.defaultBackgroundColor;
     }
-    centerCamera() {
+    frameScene() {
         // Setup camera to center model
         const box = this.sketchBoundingBox;
         if (box != undefined) {
@@ -52973,6 +52977,17 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             this.cameraControls.dollyTo(midDistance, true);
             this.cameraControls.saveState();
         }
+    }
+    levelCamera() {
+        // Sets the camera target so that the camera is looking forward and level
+        let cameraPos = new $ea01ff4a5048cd08$exports.Vector3();
+        this.cameraControls.getPosition(cameraPos);
+        let cameraDir = new $ea01ff4a5048cd08$exports.Vector3();
+        this.cameraControls.camera.getWorldDirection(cameraDir);
+        cameraDir.y = 0; // Ensure the direction is level
+        cameraDir.normalize();
+        let newTarget = cameraPos.clone().add(cameraDir);
+        this.cameraControls.setTarget(newTarget.x, newTarget.y, newTarget.z, true);
     }
 }
 
