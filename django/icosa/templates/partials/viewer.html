@@ -97,44 +97,13 @@
     gui.close();
 
     const guiParams = {
-        backgroundColor: '#000000',
-        fogColor: '#000000',
-        fogDensity: 0,
         toggleEnvironment: () => viewer.environmentObject && (viewer.environmentObject.visible = !viewer.environmentObject.visible),
         toggleSky: () => viewer.skyObject && (viewer.skyObject.visible = !viewer.skyObject.visible),
-        fogBackground: () => {
-            if (viewer.skyObject && viewer.skyObject.visible) {
-                viewer.skyObject.material.color = new THREE.Color(guiParams.fogColor).multiplyScalar(guiParams.fogDensity);
-                viewer.skyObject.material.fog = true;
-            } else {
-                let bgCol = new THREE.Color(guiParams.backgroundColor);
-                let fogColor = new THREE.Color(guiParams.fogColor).multiplyScalar(guiParams.fogDensity);
-                let foggedBgCol = bgCol.add(fogColor); // Is this correct?
-                viewer.scene.background = foggedBgCol;
-            }
+        levelCamera: () => {
+            viewer.levelCamera();
         },
-        listCameras: () => {
-            let cameras = [];
-            viewer.scene.traverse((child) => {
-                if (child instanceof THREE.Camera) {
-                    cameras.push(child);
-                }
-            });
-            window.cameras = cameras;
-            doLogging(cameras);
-        },
-        listLights: () => {
-            let lights = [];
-            viewer.scene.traverse((child) => {
-                if (child instanceof THREE.Light) {
-                    lights.push(child);
-                }
-            });
-            window.lights = lights;
-            doLogging(lights);
-        },
-        centerCamera: () => {
-            viewer.centerCamera();
+        frameScene: () => {
+            viewer.frameScene();
         },
         wireframe: () => {
             viewer.scene.traverse((child) => {
@@ -145,26 +114,11 @@
         }
     };
 
-    const backgroundColorControl = gui.addColor(guiParams, 'backgroundColor').onChange(() => viewer.scene.background = new THREE.Color(guiParams.backgroundColor));
-    const fogColorControl = gui.addColor(guiParams, 'fogColor').onChange(() => viewer.scene.fog.color = new THREE.Color(guiParams.fogColor));
-    const fogDensityControl = gui.add(guiParams, 'fogDensity', 0, 1).onChange(() => viewer.scene.fog.density = guiParams.fogDensity);
-    const fogBackgroundControl = gui.add(guiParams, "fogBackground", ).name("Fog Background");
     const toggleEnvironmentControl = gui.add(guiParams, 'toggleEnvironment').name("Toggle Environment");
     const toggleSkyControl = gui.add(guiParams, 'toggleSky').name("Toggle Sky");
-    const listCamerasControl = gui.add(guiParams, 'listCameras').name("List Cameras");
-    const listLightsControl = gui.add(guiParams, 'listLights').name("List Lights");
-    const centerCameraControl = gui.add(guiParams, 'centerCamera').name("Center Camera");
+    const levelCameraControl = gui.add(guiParams, 'levelCamera').name("Level Camera");
+    const frameSceneControl = gui.add(guiParams, 'frameScene').name("Frame Scene");
     const wireframeControl = gui.add(guiParams, 'wireframe').name("Toggle Wireframe");
-    function doLogging(data) {
-        // Convert arbitrary data to readable text
-        // TODO
-        // logContainer.value = JSON.stringify(data, null, 2);
-        console.log(data);
-    }
-
-    guiParams.backgroundColor = "#" + (viewer.scene.background?.color?.getHexString() || "000000");
-    guiParams.fogColor = "#" + (viewer.scene.fog?.color?.getHexString() || "ffffff");
-    guiParams.fogDensity = viewer.scene.fog?.density;
 
     if (!viewer.environmentObject) toggleEnvironmentControl.disable();
     if (!viewer.skyObject) toggleSkyControl.disable();
