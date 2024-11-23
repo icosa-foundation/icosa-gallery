@@ -51017,8 +51017,6 @@ async function $fcb47f08b3ea937b$export$d51cb1093e099859(brushPath, model) {
 }
 
 
-// import { GlitchPass } from 'three/addons';
-// import { OutputPass } from 'three/addons';
 class $3c43f222267ed54b$var$SketchMetadata {
     constructor(scene){
         let userData = scene?.userData ?? {};
@@ -51307,6 +51305,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
                     viewer1.flatCamera.updateProjectionMatrix();
                 }
                 if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
+                if (viewer1?.trackballControls) viewer1.trackballControls.update();
             }
             if (viewer1?.activeCamera) renderer.render(viewer1.scene, viewer1.activeCamera);
         }
@@ -51372,7 +51371,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.initSceneBackground();
         this.initFog();
         this.initLights();
-        this.initCameras(overrides?.camera, overrides?.geometryData?.visualCenterPoint);
+        this.initCameras();
         this.scene.add(this.loadedModel);
     }
     static lookupEnvironment(guid) {
@@ -52752,6 +52751,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
     }
     async _loadGltf(url, loadEnvironment, overrides, isV1) {
         let sceneGltf;
+        this.overrides = overrides;
         if (isV1) {
             sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
             (0, $fcb47f08b3ea937b$export$d51cb1093e099859)(this.brushPath.toString(), sceneGltf.scene);
@@ -52858,35 +52858,16 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
     }
     setupSketchMetaData(model) {
         let sketchMetaData = new $3c43f222267ed54b$var$SketchMetadata(model);
-        this.sketchBoundingBox = new $ea01ff4a5048cd08$exports.Box3().setFromObject(model);
+        this.modelBoundingBox = new $ea01ff4a5048cd08$exports.Box3().setFromObject(model);
         this.sketchMetadata = sketchMetaData;
     }
-    initCameras(cameraOverrides, visualCenterPoint) {
+    initCameras() {
+        let cameraOverrides = this.overrides?.camera;
         let cameraPos = cameraOverrides?.translation || [
             0,
             1,
             -1
         ];
-        let fallbackTarget = [
-            0,
-            0,
-            0
-        ];
-        const box = this.sketchBoundingBox;
-        if (box != undefined) {
-            const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
-            fallbackTarget = [
-                boxCenter.x,
-                boxCenter.y,
-                boxCenter.z
-            ];
-        }
-        // If we rely on the visual center point, ignore the y coordinate so we don't tilt the camera
-        if (visualCenterPoint) visualCenterPoint[1] = cameraPos[1];
-        let cameraTarget = cameraOverrides?.GOOGLE_camera_settings?.pivot || visualCenterPoint || fallbackTarget;
-        console.log(cameraOverrides?.GOOGLE_camera_settings);
-        console.log(visualCenterPoint);
-        console.log(cameraTarget);
         let cameraRot = cameraOverrides?.rotation || [
             1,
             0,
@@ -52901,9 +52882,31 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
         this.flatCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
         this.flatCamera.updateProjectionMatrix();
-        this.activeCamera = this.flatCamera;
         this.xrCamera = new $ea01ff4a5048cd08$exports.PerspectiveCamera(fov, aspect, near, far);
+        this.xrCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
+        this.xrCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
         this.xrCamera.updateProjectionMatrix();
+        this.activeCamera = this.flatCamera;
+        let cameraTarget;
+        let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
+        if (pivot) cameraTarget = new $ea01ff4a5048cd08$exports.Vector3(pivot[0], pivot[1], pivot[2]);
+        else {
+            let vp = this.overrides?.geometryData?.visualCenterPoint;
+            if (!vp) {
+                const box = this.modelBoundingBox;
+                if (box != undefined) {
+                    const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
+                    vp = [
+                        boxCenter.x,
+                        boxCenter.y,
+                        boxCenter.z
+                    ];
+                }
+            }
+            let visualCenterPoint = new $ea01ff4a5048cd08$exports.Vector3(vp[0], vp[1], vp[2]);
+            cameraTarget = this.calculatePivot(this.flatCamera, visualCenterPoint);
+            cameraTarget = cameraTarget || visualCenterPoint;
+        }
         (0, $21a563bed1f3e202$export$2e2bcd8739ae039).install({
             THREE: $ea01ff4a5048cd08$exports
         });
@@ -52911,10 +52914,34 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.cameraControls.dampingFactor = 0.1;
         this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 0.5;
         this.cameraControls.setPosition(cameraPos[0], cameraPos[1], cameraPos[2], false);
-        if (cameraTarget) this.cameraControls.setTarget(cameraTarget[0], cameraTarget[1], cameraTarget[2], false);
+        this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
         (0, $7a53d4f4e33d695e$export$fc22e28a11679cb8)(this.cameraControls);
-        let noOverrides = !cameraOverrides || !cameraOverrides?.perspective;
-        if (noOverrides) this.frameScene();
+    // this.trackballControls = new TrackballControls(this.activeCamera, this.canvas);
+    // this.trackballControls.target = cameraTarget;
+    // this.trackballControls.rotateSpeed = 1.0;
+    // this.trackballControls.zoomSpeed = 1.2;
+    // this.trackballControls.panSpeed = 0.8;
+    // let noOverrides = !cameraOverrides || !cameraOverrides?.perspective;
+    // if (noOverrides) {
+    //     this.frameScene();
+    // }
+    }
+    calculatePivot(camera, centroid) {
+        // 1. Get the camera's forward vector
+        const forward = new $ea01ff4a5048cd08$exports.Vector3();
+        camera.getWorldDirection(forward); // This gives the forward vector in world space.
+        // 2. Define a plane based on the centroid and facing the camera
+        const planeNormal = forward.clone().negate(); // Plane facing the camera
+        const plane = new $ea01ff4a5048cd08$exports.Plane().setFromNormalAndCoplanarPoint(planeNormal, centroid);
+        // 3. Calculate the intersection point of the forward vector with the plane
+        const cameraPosition = camera.position.clone();
+        const ray = new $ea01ff4a5048cd08$exports.Ray(cameraPosition, forward);
+        const intersectionPoint = new $ea01ff4a5048cd08$exports.Vector3();
+        if (ray.intersectPlane(plane, intersectionPoint)) return intersectionPoint; // This is your calculated pivot point.
+        else {
+            console.error("No intersection between camera forward vector and plane.");
+            return null; // Handle the error case gracefully.
+        }
     }
     initLights() {
         // Logic for scene light creation:
@@ -52966,7 +52993,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
     }
     frameScene() {
         // Setup camera to center model
-        const box = this.sketchBoundingBox;
+        const box = this.modelBoundingBox;
         if (box != undefined) {
             const boxSize = box.getSize(new $ea01ff4a5048cd08$exports.Vector3()).length();
             const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
