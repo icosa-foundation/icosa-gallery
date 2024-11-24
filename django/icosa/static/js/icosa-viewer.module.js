@@ -51127,6 +51127,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             this.icosa_frame = document.createElement("div");
             this.icosa_frame.id = "icosa-viewer";
         }
+        initCustomUi(this.icosa_frame);
         const controlPanel = document.createElement("div");
         controlPanel.classList.add("control-panel");
         const fullscreenButton = document.createElement("button");
@@ -51299,6 +51300,27 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         // let arButton = ARButton.createButton( renderer );
         // this.icosa_frame.appendChild( arButton );
         // arButton.style.left = `${parseInt(window.getComputedStyle(arButton).left, 10) + 150}px`;
+        function initCustomUi(viewerContainer) {
+            const button = document.createElement("button");
+            // TODO try https://cdn3.iconfinder.com/data/icons/pyconic-icons-2-1/512/cube-1024.png
+            button.innerHTML = "\uD83C\uDD3E";
+            button.style.fontSize = "24px";
+            button.style.color = "white";
+            button.style.backgroundColor = "black";
+            button.style.position = "absolute";
+            button.style.bottom = "10px";
+            button.style.left = "10px";
+            button.style.padding = "0px 6px";
+            button.style.border = "none";
+            button.style.color = "white";
+            button.style.cursor = "pointer";
+            button.style.zIndex = "1000"; // Ensure it's above the canvas
+            viewerContainer.appendChild(button);
+            button.addEventListener("click", ()=>{
+                console.log("Button clicked!");
+                viewer1.frameScene();
+            });
+        }
         function animate() {
             renderer.setAnimationLoop(render);
         // requestAnimationFrame( animate );
