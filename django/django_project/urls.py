@@ -82,7 +82,7 @@ urlpatterns = [
         RedirectView.as_view(pattern_name="home_openbrush", permanent=True),
     ),
     path("openbrush", main_views.home_openbrush, name="home_openbrush"),
-    path("blocks", main_views.home_blocks, name="home_blocks"),
+    path("openblocks", main_views.home_blocks, name="home_blocks"),
     path("other", main_views.home_other, name="home_other"),
     path(
         "explore/<str:category>", main_views.category, name="explore_category"

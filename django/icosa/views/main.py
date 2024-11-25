@@ -102,6 +102,8 @@ def landing_page(
     ),
     show_hero=True,
     heading=None,
+    heading_link=None,
+    is_explore_heading=False,
 ):
     # Inspects this landing page function's caller's name so we don't have
     # to worry about passing in unique values for each landing page's cache
@@ -166,6 +168,8 @@ def landing_page(
         "hero": hero,
         "page_number": page_number,
         "heading": heading,
+        "heading_link": heading_link,
+        "is_explore_heading": is_explore_heading,
     }
     return render(
         request,
@@ -190,7 +194,9 @@ def home_openbrush(request):
     return landing_page(
         request,
         assets,
-        heading="Exploring OpenBrush",
+        heading="Open Brush",
+        heading_link="https://openbrush.app",
+        is_explore_heading=True,
         show_hero=False,
     )
 
@@ -206,8 +212,10 @@ def home_blocks(request):
     return landing_page(
         request,
         assets,
+        heading="Open Blocks",
+        heading_link="https://openblocks.app",
+        is_explore_heading=True,
         show_hero=True,
-        heading="Exploring Blocks",
     )
 
 

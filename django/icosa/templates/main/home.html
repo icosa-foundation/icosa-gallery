@@ -6,7 +6,7 @@
     {% endif %}
     <div class="container">
         {% if heading %}
-            <h1>{{ heading }}</h1>
+            <h1>{% if is_explore_heading %}Exploring {% endif %}{% if heading_link %}<a href="{{ heading_link }}">{% endif %}{{ heading }}{% if heading_link %}</a>{% endif %}</h1>
         {% endif %}
         <div class="sketch-list">
             {% for asset in assets %}

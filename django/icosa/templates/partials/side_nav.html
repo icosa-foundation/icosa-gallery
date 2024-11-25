@@ -189,20 +189,27 @@
             <div class="pro-sidebar-footer">
                 <div class="socials text-center hide-when-collapsed">
                     <h5>Join our Community!</h5>
-                    <a href="http://twitter.com/IcosaGallery" alt="twitter" rel="noreferrer" target="_blank">
+                    <a href="https://twitter.com/icosafoundation" alt="twitter" rel="noreferrer" target="_blank">
                         {% fa_icon "brands" "x-twitter" %}
                     </a>
-                    <a href="https://discord.gg/fS69VdFXpk" alt="discord" rel="noreferrer" target="_blank">
+                    <a href="https://discord.gg/W7NCEYnEfy" alt="discord" rel="noreferrer" target="_blank">
                         {% fa_icon "brands" "discord" %}
                     </a>
-                    <a href="https://github.com/icosa-gallery/" alt="github" rel="noreferrer" target="_blank">
+                    <a href="https://github.com/icosa-foundation" alt="github" rel="noreferrer" target="_blank">
                         {% fa_icon "brands" "github" %}
                     </a>
                 </div>
-                <div class="support text-center hide-when-collapsed">
-                    <a href="https://openbrush.app" rel="noreferrer" target="_blank" alt="OpenBrush">
-                        <img src="{% static "images/oblogo.png" %}" alt="OpenBrush Logo">
-                    </a>
+                <div class="support text-center hide-when-collapsed row">
+                    <div class="col-lg-6 col-sm-12">
+                        <a href="{% url 'home_openbrush' %}" rel="noreferrer" target="_blank" alt="OpenBrush">
+                            <img src="{% static "images/openbrushlogo_1200.png" %}" alt="Open Brush Logo">
+                        </a>
+                    </div>
+                    <div class="col-lg-6 col-sm-12">
+                        <a href="{% url 'home_blocks' %}" rel="noreferrer" target="_blank" alt="OpenBrush">
+                            <img src="{% static "images/openblockslogo_1200.png" %}" alt="Open Brush Logo">
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
