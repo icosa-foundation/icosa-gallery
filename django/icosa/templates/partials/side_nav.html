@@ -8,13 +8,6 @@
                     {% fa_icon "solid" "bars" "toggleicon hide-when-open" %}
                     {% fa_icon "solid" "xmark" "toggleicon hide-when-collapsed" %}
                 </div>
-                <div class="text-center title hide-when-collapsed">
-                    <div>
-                        <a target="_blank" href="https://opencollective.com/icosa">
-                            <h4>Support us!</h4>
-                        </a>
-                    </div>
-                </div>
             </div>
             <div class="pro-sidebar-content">
                 <nav class="pro-menu shaped square">
@@ -201,13 +194,20 @@
                 </div>
                 <div class="support text-center hide-when-collapsed row">
                     <div class="col-lg-6 col-sm-12">
-                        <a href="{% url 'home_openbrush' %}" rel="noreferrer" target="_blank" alt="OpenBrush">
+                        <a href="{% url 'home_openbrush' %}" rel="noreferrer" alt="OpenBrush">
                             <img src="{% static "images/openbrushlogo_1200.png" %}" alt="Open Brush Logo">
                         </a>
                     </div>
                     <div class="col-lg-6 col-sm-12">
-                        <a href="{% url 'home_blocks' %}" rel="noreferrer" target="_blank" alt="OpenBrush">
+                        <a href="{% url 'home_blocks' %}" rel="noreferrer" alt="OpenBrush">
                             <img src="{% static "images/openblockslogo_1200.png" %}" alt="Open Brush Logo">
+                        </a>
+                    </div>
+                </div>
+                <div class="text-center title hide-when-collapsed">
+                    <div>
+                        <a target="_blank" href="https://opencollective.com/icosa">
+                            <h5>Support us!</h5>
                         </a>
                     </div>
                 </div>
