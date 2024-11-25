@@ -7,6 +7,9 @@
                 {% if success %}
                     <p>Please click the link in the email we've sent you to complete your registration.</p>
                 {% else %}
+                    {% if config.BETA_MODE %}
+                        {% include 'partials/login_notice.html' %}
+                    {% endif %}
                     <form action="{% url 'register' %}" method="post" novalidate>
                         {% csrf_token %}
                         {{ form.as_p }}
