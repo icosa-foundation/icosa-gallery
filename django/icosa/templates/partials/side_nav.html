@@ -115,7 +115,7 @@
                             <div class="pro-inner-item" tabindex="0" role="button">
                                 <form action="{% url 'search' %}" method="get">
                                     <span class="pro-item-content">
-                                        <input type="search" class="searchbar" name="s" value="">
+                                        <input type="search" class="searchbar" name="s" value="{% if search_query %}{{ search_query }}{% endif %}">
                                         <button class="searchbutton">Search</button>
                                     </span>
                                 </form>
