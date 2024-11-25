@@ -2,8 +2,8 @@
     <div class="paginator text-center">
         <span class="step-links">
             {% if assets.has_previous %}
-                <a href="?page=1">&laquo; first</a>
-                <a href="?page={{ assets.previous_page_number }}">previous</a>
+                <a href="?page=1{% if search_query %}&s={{ search_query }}{% endif %}">&laquo; first</a>
+                <a href="?page={{ assets.previous_page_number }}{% if search_query %}&s={{ search_query }}{% endif %}">previous</a>
             {% endif %}
 
             <span class="current">
