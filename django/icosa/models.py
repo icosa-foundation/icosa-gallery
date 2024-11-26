@@ -1,4 +1,5 @@
 import os
+from collections import OrderedDict
 
 import bcrypt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
@@ -127,17 +128,10 @@ DOWNLOADABLE_ROLES = [
     6,
     7,
     8,
-    12,
     18,
     24,
     26,
     30,
-    1000,
-    1001,
-    1002,
-    1003,
-    1004,
-    1005,
 ]
 
 BLOCKS_VIEWABLE_TYPES = [
@@ -612,6 +606,12 @@ class Asset(models.Model):
         ARCHIVE_PREFIX = "https://web.archive.org/web/"
         formats = {}
 
+        format_name_override_map = {
+            "Original OBJ File": "OBJ File",
+            "Original Triangulated OBJ File": "Triangulated OBJ File",
+            "Updated glTF File": "GLTF File",
+        }
+
         for format in self.polyformat_set.filter(role__in=DOWNLOADABLE_ROLES):
             if format.archive_url:
                 resource_data = {
@@ -643,16 +643,21 @@ class Asset(models.Model):
                 else:
                     resource = resources.first()
                     if resource.file:
+                        storage = settings.DJANGO_STORAGE_URL
+                        bucket = settings.DJANGO_STORAGE_BUCKET_NAME
                         resource_data = {
-                            "file": f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{resource.file.name}"
+                            "file": f"{storage}/{bucket}/{resource.file.name}"
                         }
                     elif resource.external_url:
                         resource_data = {"file": resource.external_url}
                     else:
                         resource_data = {}
 
-            formats.setdefault(format.get_role_display(), resource_data)
-        return formats
+            format_name = format_name_override_map.get(
+                format.get_role_display(), format.get_role_display()
+            )
+            formats.setdefault(format_name, resource_data)
+        return OrderedDict(sorted(formats.items(), key=lambda x: x[0].lower()))
 
     def hide_media(self):
         """For B2, at least, call `hide` on each item from
