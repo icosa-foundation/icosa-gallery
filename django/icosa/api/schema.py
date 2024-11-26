@@ -15,10 +15,6 @@ class LoginToken(Schema):
     token_type: str
 
 
-class DeviceCodeSchema(Schema):
-    deviceCode: str
-
-
 class FullUserSchema(Schema):
     id: int
     url: str
@@ -31,123 +27,6 @@ class PatchUserSchema(Schema):
     url: Optional[str] = None
     displayName: str = Field(None, alias="displayname")
     description: Optional[str] = None
-
-
-class PasswordReset(Schema):
-    email: str
-
-
-class PasswordChangeToken(Schema):
-    token: str
-    newPassword: str
-
-
-class PasswordChangeAuthenticated(Schema):
-    oldPassword: str
-    newPassword: str
-
-
-class EmailChangeAuthenticated(Schema):
-    newEmail: str
-    currentPassword: str
-
-
-# Poly helpers
-class PolyResourceSchema(Schema):
-    relativePath: str
-    url: str
-    contentType: str
-
-
-class PolyFormatComplexity(Schema):
-    triangleCount: Optional[str] = None
-    lodHint: Optional[int] = None
-
-
-class PolyFormat(Schema):
-    root: PolyResourceSchema
-    resources: Optional[List[PolyResourceSchema]] = None
-    formatComplexity: Optional[PolyFormatComplexity] = None
-    formatType: str
-
-
-class PolyQuaternion(Schema):
-    x: Optional[float] = None
-    y: Optional[float] = None
-    z: Optional[float] = None
-    w: Optional[float] = None
-
-
-class PolyPresentationParams(Schema):
-    orientingRotation: Optional[PolyQuaternion]
-    colorSpace: Optional[str] = None
-    backgroundColor: Optional[str] = None
-
-
-class PolyRemixInfo(Schema):
-    sourceAsset: List[str]
-
-
-class PolyPizzaCreator(Schema):
-    Username: str
-    DPURL: str
-
-
-class PolyPizzaOrbit(Schema):
-    phi: str
-    radius: str
-    theta: str
-
-
-class PolyPizzaAsset(Schema):
-    ID: str
-    Title: str
-    Creator: Optional[PolyPizzaCreator]
-    Description: Optional[str]
-    Tags: List[str]
-    # Uploaded: Optional[str]
-    Thumbnail: Optional[str]
-    Licence: Optional[str]
-    Attribution: str
-    Download: str
-    # TriCount: int
-    Category: str
-    Animated: bool
-    Orbit: Optional[PolyPizzaOrbit]
-
-
-class PolyAsset(Schema):
-    name: str
-    displayName: str
-    authorName: str
-    description: Optional[str] = None
-    createTime: str
-    updateTime: str
-    formats: List[PolyFormat]
-    thumbnail: Optional[PolyResourceSchema] = None
-    licence: Optional[str] = None
-    visibility: str
-    isCurated: Optional[bool] = None
-    presentationParams: Optional[PolyPresentationParams]
-    metadata: Optional[str] = None
-    remixInfo: Optional[PolyRemixInfo] = None
-
-
-class PolyPizzaList(Schema):
-    results: List[PolyPizzaAsset]
-
-
-class PolyList(Schema):
-    assets: List[PolyAsset]
-    nextPageToken: str
-    totalSize: int
-
-
-# Asset data
-class SubAssetFormat(Schema):
-    id: int  # TODO(james) should output a str
-    url: str
-    format: str
 
 
 class AssetResource(Schema):
@@ -187,7 +66,6 @@ class AssetFormat(Schema):
     resources: Optional[List[AssetResource]]
     formatComplexity: FormatComplexity
     formatType: str
-    # remix info
 
     @staticmethod
     def resolve_root(obj):
@@ -208,43 +86,6 @@ class AssetFormat(Schema):
             "lodHint": obj.lod_hint,
         }
         return format_complexity
-
-
-class FilterBase(Schema):
-    category: Optional[str] = None
-    curated: bool = False
-    format: List[str] = Field(None, alias="format")
-    keywords: Optional[str] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    tag: List[str] = Field(None, alias="tag")
-    orderBy: Optional[str] = None
-    order_by: Optional[str] = None
-
-
-class AssetFilters(FilterBase):
-    authorName: Optional[str] = None
-    author_name: Optional[str] = None
-    license: Optional[str] = None
-
-
-class UserAssetFilters(FilterBase):
-    visibility: Optional[str] = None
-
-
-def get_keyword_q(filters):
-    keyword_q = Q()
-    if filters.keywords:
-        # The original API spec says "Multiple keywords should be separated
-        # by spaces.". I believe this could be implemented better to allow
-        # multi-word searches. Perhaps implemented in a different namespace,
-        # such as `search=` and have multiple queries as `search=a&search=b`.
-        keyword_list = filters.keywords.split(" ")
-        if len(keyword_list) > 16:
-            raise HttpError(400, "Exceeded 16 space-separated keywords.")
-        for keyword in keyword_list:
-            keyword_q &= Q(search_text__icontains=keyword)
-    return keyword_q
 
 
 class _DBAsset(ModelSchema):
@@ -322,6 +163,7 @@ class _DBAsset(ModelSchema):
         else:
             return ""
 
+    # TODO: Uncomment this method to have a Google Poly-compatible schema.
     # @staticmethod
     # def resolve_presentationParams(obj):
     #     params = {}
@@ -405,6 +247,28 @@ class OembedOut(Schema):
     height: int
 
 
+class FilterBase(Schema):
+    category: Optional[str] = None
+    curated: bool = False
+    format: List[str] = Field(None, alias="format")
+    keywords: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    tag: List[str] = Field(None, alias="tag")
+    orderBy: Optional[str] = None
+    order_by: Optional[str] = None
+
+
+class AssetFilters(FilterBase):
+    authorName: Optional[str] = None
+    author_name: Optional[str] = None
+    license: Optional[str] = None
+
+
+class UserAssetFilters(FilterBase):
+    visibility: Optional[str] = None
+
+
 # TODO(james): use more of these abstractions
 def filter_license(query_string: str) -> Q:
     license_str = query_string.upper()
@@ -425,3 +289,18 @@ def filter_license(query_string: str) -> Q:
     else:
         q = Q(license__iexact=license_str)
     return q
+
+
+def get_keyword_q(filters):
+    keyword_q = Q()
+    if filters.keywords:
+        # The original API spec says "Multiple keywords should be separated
+        # by spaces.". I believe this could be implemented better to allow
+        # multi-word searches. Perhaps implemented in a different namespace,
+        # such as `search=` and have multiple queries as `search=a&search=b`.
+        keyword_list = filters.keywords.split(" ")
+        if len(keyword_list) > 16:
+            raise HttpError(400, "Exceeded 16 space-separated keywords.")
+        for keyword in keyword_list:
+            keyword_q &= Q(search_text__icontains=keyword)
+    return keyword_q
