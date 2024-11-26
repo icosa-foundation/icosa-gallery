@@ -2,6 +2,7 @@ volumes:
   static:
   logs:
   gallery-data:
+  web-bash-history:
 
 services:
   web:
@@ -14,9 +15,13 @@ services:
       - static:/opt/static/
       - logs:/opt/logs/
       - ./django:/opt/
+      - web-bash-history:/root/hist
     depends_on:
       - db
     env_file: .env
+    environment:
+      HISTFILE: /root/hist/.bash_history
+      PROMPT_COMMAND: "history -a;history -r;"
 
   db:
     image: postgres:16.2
