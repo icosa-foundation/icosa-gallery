@@ -626,6 +626,10 @@ class Asset(models.Model):
         return file_list
 
     def get_all_downloadable_formats(self):
+        formats = {}
+        if self.license == ALL_RIGHTS_RESERVED:
+            return formats
+
         def suffix(name):
             if name.endswith(".gltf"):
                 return "".join(
@@ -638,7 +642,6 @@ class Asset(models.Model):
 
         ARCHIVE_PREFIX = "https://web.archive.org/web/"
         STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
-        formats = {}
 
         format_name_override_map = {
             "Original OBJ File": "OBJ File",

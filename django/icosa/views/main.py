@@ -426,9 +426,12 @@ def view_poly_asset(request, asset_url):
 
 @never_cache
 def asset_downloads(request, asset_url):
-    template = "main/asset_downloads.html"
 
     asset = get_object_or_404(Asset, url=asset_url)
+    if asset.license == ALL_RIGHTS_RESERVED:
+        raise Http404()
+
+    template = "main/asset_downloads.html"
     check_user_can_view_asset(request.user, asset)
 
     context = {

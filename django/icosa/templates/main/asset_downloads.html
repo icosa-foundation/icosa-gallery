@@ -81,11 +81,6 @@
             spinner.style.display = "none";
         };
     }
-    let fileNames = [
-    {% for name in asset_files %}
-        "{{settings.DJANGO_STORAGE_URL}}/{{settings.DJANGO_STORAGE_BUCKET_NAME}}/{{name}}"{% if not forloop.last %},{% endif %}
-    {% endfor %}
-    ];
 
     function handleDownload() {
         let fileNames = this.dataset.file.split(',');
