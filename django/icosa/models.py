@@ -175,9 +175,9 @@ BLOCKS_VIEWABLE_TYPES = [
 
 # This only returns roles that are associated with the poly scrape for now
 VIEWABLE_ROLES = [
-    1002,
-    1003,
-    1004,
+    POLYGONE_GLB_FORMAT,
+    POLYGONE_GLTF_FORMAT,
+    POLYGONE_OBJ_FORMAT,
 ]
 
 
@@ -784,7 +784,10 @@ def format_upload_path(instance, filename):
     ext = filename.split(".")[-1]
     if instance.is_root:
         name = f"model.{ext}"
-    if ext == "obj" and instance.format.role == 24:
+    if (
+        ext == "obj"
+        and instance.format.role == ORIGINAL_TRIANGULATED_OBJ_FORMAT
+    ):
         name = f"model-triangulated.{ext}"
     else:
         name = filename
