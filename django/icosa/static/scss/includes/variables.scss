@@ -1,0 +1,8 @@
+:root {
+  // colors
+  --color-card-surface: Rgb(0 0 0 / 20%); // Needs to be uppercase Rgb so as not to collide with the sass function. (sigh)
+
+  // other properties
+  --border-radius-small: 0.25rem;
+  --border-radius-large: 0.5rem;
+}

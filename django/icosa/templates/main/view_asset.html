@@ -9,7 +9,7 @@
 {% endblock extrahead %}
 
 {% block content %}
-<div class="container">
+<div class="sketch-info container">
     <div class="row">
         <div class="col">
             {% if asset.is_viewer_compatible %}
@@ -17,30 +17,23 @@
             {% else %}
                 <p>Sorry, we are unable to display this model in the viewer.</p>
             {% endif %}
-        </div>
-    </div>
-</div>
-<div class="sketch-info container">
-    <div class="row">
-        <div class="col">
-            <div>
+            <div class="sketch-info-details">
                 <h2>
                     {{ asset.name }}{% if user == request_user %}{% if asset.visibility == "PRIVATE" %} <span style="color:red;">(PRIVATE)</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span style="color:orange;">(UNLISTED)</span>{% endif %}{% endif %}
                     {% like_button request asset %}
                 </h2>
                 {% if asset.owner %}
-                    <h4>
-                        By <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a>
-                    </h4>
+                    <p>
+                        By <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a> &bull; {{ asset.timestamp|date:"d/m/Y" }}
+                    </p>
                 {% endif %}
-                <p>{{ asset.timestamp|date:"Y-m-d" }}</p>
                 {% if asset.description %}
                     <p>{{ asset.description|linebreaksbr }}</p>
                 {% endif %}
                 <h6>
                     {{ asset.get_license_display|default_if_none:"All rights reserved" }}
                 </h6>
-                <p><a href="{% url 'artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a></p>
+                <p></p>
                 {% if downloadable_formats %}
                     <p>
                         <a href="{% url 'asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
@@ -48,11 +41,14 @@
                         </a>
                     </p>
                 {% endif %}
-                <p class="text-right"><small>
-                <a href="{% url "report_asset" asset_url=asset.url %}">
-                    {% fa_icon "solid" "flag" %} Report
-                </a>
-                </small></p>
+                <p class="text-right actions">
+                    <small>
+                        <a href="{% url 'artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a>
+                        <a href="{% url "report_asset" asset_url=asset.url %}">
+                            {% fa_icon "solid" "flag" %} Report
+                        </a>
+                    </small>
+                </p>
             </div>
         </div>
     </div>

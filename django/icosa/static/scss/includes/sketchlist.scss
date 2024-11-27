@@ -12,8 +12,8 @@
   }
 
   .sketchbox {
-    margin: 1em;
-    border-radius: 1em;
+    border-radius: var(--border-radius-small);
+    background-color: var(--color-card-surface);
 
     >h4 {
       display: block;
@@ -22,17 +22,12 @@
     }
 
     .sketchimage {
-      height: 13em;
-
-      @media(max-width: 1024px) {
-        height: 16em;
-      }
-
-      border-radius: 0.25rem;
+      aspect-ratio: 8/5;
+      border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
       color: #ffffff;
       background-size: cover;
       background-position: 50% 50%;
-      margin-bottom: 1rem;
+      transition: opacity 300ms ease;
 
       &:hover {
         opacity: 0.8;
@@ -41,23 +36,41 @@
 
     }
 
-    h4 {
-      font-weight: bold;
-      font-size: 1rem;
-      margin-bottom: 0;
-    }
+    .sketch-meta {
+      padding: 0.8rem;
 
-    a {
-      color: #ffffff;
-
-      &:hover {
-        text-decoration-color: #008f5c;
+      h4 {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-block: 0;
       }
+
+      a {
+        color: #ffffff;
+
+
+        &:hover {
+          text-decoration-color: #008f5c;
+        }
+      }
+
+      p {
+        &:last-of-type {
+          margin-block: 0;
+        }
+      }
+
+
+      .like-widget {
+        button {
+          .likelabel {
+            display: none;
+          }
+        }
+      }
+
     }
 
-    .date {
-      color: #53E0DB;
-    }
 
   }
 }

@@ -17,33 +17,35 @@
             </div>
         </a>
     {% endif %}
-    <h4>
-        {% spaceless %}
-        {% if asset.state != "COMPLETE" %}
-            {% if can_edit_asset %}
-                {% if asset.state == "FAILED" %}
-                    <p>{% fa_icon "solid" "triangle-exclamation" %} Asset failed to upload. Please try again or contact support.</p>
+    <div class="sketch-meta">
+        <h4>
+            {% spaceless %}
+            {% if asset.state != "COMPLETE" %}
+                {% if can_edit_asset %}
+                    {% if asset.state == "FAILED" %}
+                        <p>{% fa_icon "solid" "triangle-exclamation" %} Asset failed to upload. Please try again or contact support.</p>
+                    {% endif %}
+                    {% if asset.state == "UPLOADING" %}
+                        <p>{% fa_icon "solid" "arrows-rotate" "fa-spin" %} Upload in progress&hellip;</p>
+                    {% endif %}
                 {% endif %}
-                {% if asset.state == "UPLOADING" %}
-                    <p>{% fa_icon "solid" "arrows-rotate" "fa-spin" %} Upload in progress&hellip;</p>
-                {% endif %}
+                {{ asset.name|default_if_none:"" }}
+            {% else %}
+                <a href="{% if can_edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}">
+                    {{ asset.name|default_if_none:"Untitled asset" }}
+                </a>
             {% endif %}
-            {{ asset.name|default_if_none:"" }}
-        {% else %}
-            <a href="{% if can_edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}">
-                {{ asset.name|default_if_none:"Untitled asset" }}
+            {% if not can_edit_asset %}
+                {% like_button request asset %}
+            {% endif %}
+            {% endspaceless %}
+        </h4>
+        <p>
+            <a href="{% url 'user_show' user_url=asset.owner.url %}">
+                {{ asset.owner.displayname }} &bull; {{ asset.timestamp|date:"d/m/Y" }}
             </a>
-        {% endif %}
-        {% if not can_edit_asset %}
-            {% like_button request asset %}
-        {% endif %}
-        {% endspaceless %}
-    </h4>
-    <a href="{% url 'user_show' user_url=asset.owner.url %}">{{ asset.owner.displayname }}</a>
-    <div class="date">{{ asset.timestamp|date:"Y-m-d" }}</div>
-    <p>
-        <small>{{ asset.get_license_display|default_if_none:"All rights reserved" }}</small>
-    </p>
+        </p>
+    </div>
 </article>
 {% if asset.state == "COMPLETE" and is_polling %}
     <script>

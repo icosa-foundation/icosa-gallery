@@ -1,0 +1,15 @@
+.like-widget {
+  float: right;
+
+  button {
+    padding: 0;
+    line-height: 1;
+    vertical-align: top;
+    margin-block-start: -0.2rem;
+    color: #fff;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

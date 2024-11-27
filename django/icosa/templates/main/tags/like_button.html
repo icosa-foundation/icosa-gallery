@@ -5,9 +5,9 @@
     <input type="hidden" name="assetId" value="{{ asset_url }}">
     <button>
     {% if is_liked %}
-        {% fa_icon "solid" "heart" %}
+        {% fa_icon "solid" "heart" %} <span class="likelabel">unlike</span>
     {% else %}
-        {% fa_icon "regular" "heart" %}
+        {% fa_icon "regular" "heart" %} <span class="likelabel">like</span>
     {% endif %}
     </button>
 </form>

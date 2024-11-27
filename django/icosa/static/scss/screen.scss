@@ -1,5 +1,6 @@
 // Component includes
 @import 'vendor/bootstrap/bootstrap.css';
+@import 'includes/variables';
 @import 'includes/devicelogin';
 @import 'includes/footer';
 @import 'includes/header';
@@ -29,8 +30,9 @@
 @import 'includes/userview';
 @import 'includes/viewall';
 @import 'includes/modal';
+@import 'includes/like-widget';
 @import 'includes/fontawesome';
 @import 'vendor/fontawesome.css';
-@import 'vendor/icosa-viewer.css';
+@import 'vendor/icosa-viewer.scss';
 // Overrides
 @import 'main';
