@@ -163,6 +163,7 @@ def landing_page(
         assets.order_by("-rank"), settings.PAGINATION_PER_PAGE
     )
     assets = paginator.get_page(page_number)
+    page_title = f"Exploring {heading}" if is_explore_heading else heading
     context = {
         "assets": assets,
         "hero": hero,
@@ -170,6 +171,7 @@ def landing_page(
         "heading": heading,
         "heading_link": heading_link,
         "is_explore_heading": is_explore_heading,
+        "page_title": page_title,
     }
     return render(
         request,
@@ -260,6 +262,7 @@ def category(request, category):
         assets,
         show_hero=False,
         heading=f"Exploring: {category_name}",
+        page_title=f"Exploring: {category_name}",
     )
 
 
@@ -313,6 +316,7 @@ def uploads(request):
     context = {
         "assets": assets,
         "form": form,
+        "page_title": "My Uploads",
     }
     return render(
         request,
@@ -336,6 +340,7 @@ def user_show(request, user_url):
     context = {
         "user": owner,
         "assets": assets,
+        "page_title": owner.displayname,
     }
     return render(
         request,
@@ -360,6 +365,7 @@ def my_likes(request):
     context = {
         "user": owner,
         "assets": assets,
+        "page_title": "My likes",
     }
     return render(
         request,
@@ -381,6 +387,7 @@ def view_asset(request, user_url, asset_url):
         "user": icosa_user,
         "asset": asset,
         "asset_files": asset.get_all_absolute_file_names(),
+        "page_title": asset.name,
     }
     return render(
         request,
@@ -408,6 +415,7 @@ def view_poly_asset(request, asset_url):
         "override_suffix": override_suffix,
         "format_override": format_override,
         "downloadable_formats": asset.get_all_downloadable_formats(),
+        "page_title": asset.name,
     }
     return render(
         request,
@@ -428,6 +436,7 @@ def asset_downloads(request, asset_url):
         "user": asset.owner,
         "asset": asset,
         "downloadable_formats": asset.get_all_downloadable_formats(),
+        "page_title": f"Download {asset.name}",
     }
     return render(
         request,
@@ -470,6 +479,7 @@ def edit_asset(request, asset_url):
     context = {
         "asset": asset,
         "form": form,
+        "page_title": f"Edit {asset.name}",
     }
     return render(
         request,
@@ -519,6 +529,7 @@ def publish_asset(request, asset_url):
         "user": asset.owner,
         "asset": asset,
         "form": form,
+        "page_title": f"Publish {asset.name}",
     }
     return render(
         request,
@@ -565,6 +576,7 @@ def report_asset(request, asset_url):
     context = {
         "asset": asset,
         "form": form,
+        "page_title": f"Report {asset.name}",
     }
     return render(
         request,
@@ -574,7 +586,11 @@ def report_asset(request, asset_url):
 
 
 def report_success(request):
-    return template_view(request, "main/report_success.html")
+    return template_view(
+        request,
+        "main/report_success.html",
+        "Reported work successfully",
+    )
 
 
 @login_required
@@ -605,19 +621,26 @@ def user_settings(request):
     context = {
         "form": form,
         "need_login": need_login,
+        "page_title": f"{icosa_user.displayname} User settings",
     }
     return render(request, template, context)
 
 
-def template_view(request, template):
+def template_view(request, template, page_title=None):
+    context = {"page_title": page_title}
     return render(
         request,
         template,
+        context,
     )
 
 
 def terms(request):
-    return template_view(request, "main/terms.html")
+    return template_view(
+        request,
+        "main/terms.html",
+        "Website usage terms and conditions",
+    )
 
 
 def artist_info(request):
@@ -655,16 +678,25 @@ def artist_info(request):
         "form": form,
         "subject_choices": ARTIST_QUERY_SUBJECT_CHOICES,
         "subject": subject,
+        "page_title": "Information for Artists and Creators",
     }
     return render(request, template, context)
 
 
 def licenses(request):
-    return template_view(request, "main/licenses.html")
+    return template_view(
+        request,
+        "main/licenses.html",
+        "What types of licenses are available?",
+    )
 
 
 def privacy_policy(request):
-    return template_view(request, "main/privacy_policy.html")
+    return template_view(
+        request,
+        "main/privacy_policy.html",
+        "Privacy Policy",
+    )
 
 
 def search(request):
@@ -694,6 +726,7 @@ def search(request):
         "page_number": page_number,
         "result_count": asset_objs.count(),
         "search_query": query,
+        "page_title": f"Search for {query}",
     }
     return render(
         request,
