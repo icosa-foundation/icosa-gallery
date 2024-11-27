@@ -637,6 +637,7 @@ class Asset(models.Model):
             return name
 
         ARCHIVE_PREFIX = "https://web.archive.org/web/"
+        STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
         formats = {}
 
         format_name_override_map = {
@@ -659,10 +660,14 @@ class Asset(models.Model):
                 if format.role == POLYGONE_GLTF_FORMAT:
                     resource_data = {
                         "files_to_zip": [
-                            x.file.name for x in resources if x.file
+                            f"{STORAGE_PREFIX}{x.file.name}"
+                            for x in resources
+                            if x.file
                         ],
                         "files_to_zip_with_suffix": [
-                            suffix(x.file.name) for x in resources if x.file
+                            f"{STORAGE_PREFIX}{suffix(x.file.name)}"
+                            for x in resources
+                            if x.file
                         ],
                         "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
                         "role": format.role,
@@ -683,7 +688,7 @@ class Asset(models.Model):
                         )
                         resource_data = {
                             "files_to_zip": [
-                                suffix(x.file.name)
+                                f"{STORAGE_PREFIX}{suffix(x.file.name)}"
                                 for x in override_resources
                                 if x.file
                             ],
