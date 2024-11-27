@@ -1,6 +1,14 @@
 :root {
   // colors
+  --color-base-dark: #343434;
+  --color-base-mid: #d7d7d7; // TODO(james): This could turn into too many greys. Need to land on a good one.
+  --color-base-light: #ffffff;
+  --color-primary: #009962;
+  --color-primary-dimmed: #008f5c;
   --color-card-surface: Rgb(0 0 0 / 20%); // Needs to be uppercase Rgb so as not to collide with the sass function. (sigh)
+
+  --color-alert-danger: #ce2121;
+  --color-alert-success: #00f101;
 
   // other properties
   --border-radius-small: 0.25rem;

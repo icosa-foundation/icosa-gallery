@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;400;600;700&family=Gabarito:wght@400;600;700&display=swap');
 
 body {
-  background: #343434;
-  color: #FFFFFF;
+  background: var(--color-base-dark);
+  color: var(--color-base-light);
   margin: 0;
   font-family: Gabarito;
   -webkit-font-smoothing: antialiased;
@@ -31,15 +31,15 @@ body {
 }
 
 a {
-  color: darken(#00cc83, 10%);
+  color: var(--color-primary);
 
   &:hover {
-    color: darken(#00cc83, 12%);
+    color: var(--color-primary-dimmed);
   }
 }
 
 code {
-  color: #ffffff;
+  color: var(--color-base-light);
 }
 
 .btn {
@@ -47,31 +47,32 @@ code {
   margin-block: 1em;
   text-transform: uppercase;
   font-weight: bold;
-  color: #ffffff;
+  color: var(--color-base-light);
   text-shadow: 1px 1px black;
   border: none;
 
   &:hover {
-    color: darken(#ffffff, 12%);
+    color: var(--color-light);
   }
 
   &.btn-primary {
-    background: darken(#00cc83, 10%);
+    background: var(--color-primary);
 
     &:hover {
-      background: darken(#00cc83, 12%);
+      color: var(--color-light);
+      background: var(--color-primary-dimmed);
     }
   }
 }
 
 .error {
-  color: #fa0101;
+  color: var(--color-alert-danger);
   margin: 1em 0;
   font-weight: bold;
 }
 
 .success {
-  color: #00f101;
+  color: var(--color-alert-success);
   margin: 1em 0;
   font-weight: bold;
 }
@@ -90,7 +91,7 @@ code {
 }
 
 .beta {
-  color: #ce2121;
+  color: var(--color-alert-danger);
   font-size: 1em;
   cursor: default;
   user-select: none;
@@ -104,8 +105,8 @@ textarea {
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #495057;
-  background-color: #fff;
+  color: var(--color-base-mid);
+  background-color: var(--color-base-light);
   background-clip: padding-box;
   border: 1px solid #ced4da;
   border-radius: .25rem;
@@ -127,7 +128,7 @@ form {
   input,
   select,
   textarea {
-    background-color: #272727;
+    background-color: var(--color-card-surface);
     border-color: #272727;
     color: #d7d7d7;
     width: 100%;
