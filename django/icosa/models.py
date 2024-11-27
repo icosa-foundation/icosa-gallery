@@ -157,7 +157,7 @@ FORMAT_ROLE_CHOICES = [
 
 DOWNLOADABLE_ROLES = [
     ORIGINAL_OBJ_FORMAT,
-    TILT_FORMAT,
+    # TILT_FORMAT,  # We should offet TILT, but they don't all work at present.
     ORIGINAL_FBX_FORMAT,
     BLOCKS_FORMAT,
     USD_FORMAT,
