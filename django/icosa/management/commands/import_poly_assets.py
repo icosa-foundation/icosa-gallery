@@ -10,7 +10,7 @@ from icosa.helpers.storage import get_b2_bucket
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     CATEGORY_CHOICES,
-    RESOURCE_ROLE_CHOICES,
+    FORMAT_ROLE_CHOICES,
     Asset,
     PolyFormat,
     PolyResource,
@@ -26,7 +26,7 @@ IMPORT_SOURCE = "internet_archive"
 POLY_JSON_DIR = "polygone_data"
 ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
 
-RESOURCE_ROLE_MAP = {x[1]: x[0] for x in RESOURCE_ROLE_CHOICES}
+FORMAT_ROLE_MAP = {x[1]: x[0] for x in FORMAT_ROLE_CHOICES}
 
 EXTENSION_ROLE_MAP = {
     ".tilt": 1000,
@@ -245,7 +245,7 @@ def create_formats_from_archive_data(formats_json, asset):
 
         PolyResource.objects.create(**root_resource_data)
 
-        role = RESOURCE_ROLE_MAP[root_resource_json["role"]]
+        role = FORMAT_ROLE_MAP[root_resource_json["role"]]
         if role is not None:
             format.role = role
             format.save()

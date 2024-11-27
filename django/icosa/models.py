@@ -3,6 +3,39 @@ from collections import OrderedDict
 
 import bcrypt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
+from icosa.helpers.format_roles import (
+    BLOCKS_FORMAT,
+    EDITOR_SETTINGS_PB_FORMAT,
+    GLB_FORMAT,
+    HTML_FORMAT,
+    JPG_BUGGY,
+    JSON_FORMAT,
+    LULLMODEL_FORMAT,
+    ORIGINAL_FBX_FORMAT,
+    ORIGINAL_GLTF_FORMAT,
+    ORIGINAL_OBJ_FORMAT,
+    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+    PB_FORMAT,
+    POLYGONE_BLOCKS_FORMAT,
+    POLYGONE_FBX_FORMAT,
+    POLYGONE_GLB_FORMAT,
+    POLYGONE_GLTF_FORMAT,
+    POLYGONE_OBJ_FORMAT,
+    POLYGONE_TILT_FORMAT,
+    SAND_FORMAT_A,
+    SAND_FORMAT_B,
+    SANDC_FORMAT,
+    TILT_FORMAT,
+    TOUR_CREATOR_EXPERIENCE,
+    UNKNOWN_GLB_FORMAT_A,
+    UNKNOWN_GLB_FORMAT_B,
+    UNKNOWN_GLTF_FORMAT_A,
+    UNKNOWN_GLTF_FORMAT_B,
+    UNKNOWN_GLTF_FORMAT_C,
+    UPDATED_GLTF_FORMAT,
+    USD_FORMAT,
+    USDZ_FORMAT,
+)
 
 from django.conf import settings
 from django.contrib.auth.models import User as DjangoUser
@@ -88,7 +121,7 @@ CATEGORY_CHOICES = [
 
 CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
 
-RESOURCE_ROLE_CHOICES = [
+FORMAT_ROLE_CHOICES = [
     (1, "Original OBJ File"),
     (2, "Tilt File"),
     (4, "Unknown GLTF File A"),
@@ -123,15 +156,15 @@ RESOURCE_ROLE_CHOICES = [
 ]
 
 DOWNLOADABLE_ROLES = [
-    1,
-    2,
-    6,
-    7,
-    8,
-    18,
-    24,
-    26,
-    30,
+    ORIGINAL_OBJ_FORMAT,
+    TILT_FORMAT,
+    ORIGINAL_FBX_FORMAT,
+    BLOCKS_FORMAT,
+    USD_FORMAT,
+    GLB_FORMAT,
+    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+    USDZ_FORMAT,
+    UPDATED_GLTF_FORMAT,
 ]
 
 BLOCKS_VIEWABLE_TYPES = [
@@ -623,7 +656,7 @@ class Asset(models.Model):
                 query = Q(external_url__isnull=False) & ~Q(external_url="")
                 query |= Q(file__isnull=False)
                 resources = format.polyresource_set.filter(query)
-                if format.role == 1003:
+                if format.role == POLYGONE_GLTF_FORMAT:
                     resource_data = {
                         "files_to_zip": [
                             x.file.name for x in resources if x.file
@@ -632,13 +665,42 @@ class Asset(models.Model):
                             suffix(x.file.name) for x in resources if x.file
                         ],
                         "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
+                        "role": format.role,
                     }
-                elif format.role in [12, 30]:
+                elif format.role == UPDATED_GLTF_FORMAT:
                     # If we hit this branch, we have a format which doesn't
                     # have an archive url, but also doesn't have local files.
                     # At time of writing, we can't create a zip on the client
-                    # from the archive.org urls because of CORS. Skip this
-                    # format until we can resolve this.
+                    # from the archive.org urls because of CORS. So compile a
+                    # list of files as if the role was 1003 using our suffixed
+                    # upload.
+                    try:
+                        override_format = self.polyformat_set.get(
+                            role=POLYGONE_GLTF_FORMAT
+                        )
+                        override_resources = (
+                            override_format.polyresource_set.all()
+                        )
+                        resource_data = {
+                            "files_to_zip": [
+                                suffix(x.file.name)
+                                for x in override_resources
+                                if x.file
+                            ],
+                            "role": format.role,
+                        }
+                    except (
+                        PolyFormat.DoesNotExist,
+                        PolyFormat.MultipleObjectsReturned,
+                    ):
+                        pass
+                elif format.role == ORIGINAL_GLTF_FORMAT:
+                    # If we hit this branch, we have a format which doesn't
+                    # have an archive url, but also doesn't have local files.
+                    # At time of writing, we can't create a zip on the client
+                    # from the archive.org urls because of CORS. We also don't
+                    # have the suffixed version to hand. Skip this format until
+                    # we can resolve this.
                     continue
                 else:
                     resource = resources.first()
@@ -740,7 +802,7 @@ class PolyFormat(models.Model):
     role = models.IntegerField(
         null=True,
         blank=True,
-        choices=RESOURCE_ROLE_CHOICES,
+        choices=FORMAT_ROLE_CHOICES,
     )
 
     @property
