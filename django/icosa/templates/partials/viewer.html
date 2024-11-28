@@ -28,9 +28,9 @@
     let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);
     let overrides = {
         'defaultBackgroundColor': presentationParams?.backgroundColor || "#000000",
-        'camera': presentationParams.camera,
-        'geometryData': presentationParams.GOOGLE_geometry_data,
-        'colorSpace': presentationParams.colorSpace,
+        'camera': presentationParams?.camera || {},
+        'geometryData': presentationParams?.GOOGLE_geometry_data || {},
+        'colorSpace': presentationParams?.colorSpace || "LINEAR",
     };
 
     // For debugging
