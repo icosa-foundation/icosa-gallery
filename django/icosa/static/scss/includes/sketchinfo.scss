@@ -31,6 +31,17 @@
     }
   }
 
+  .sketch-license {
+    margin-block-start: 2em;
+    color: var(--color-base-light-dim);
+
+    img {
+      height: 1em;
+      width: 1em;
+      margin-block-start: -4px;
+    }
+  }
+
   .actions {
     a {
       &:first-child {

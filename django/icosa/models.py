@@ -42,6 +42,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 from django.db.models import ExpressionWrapper, F, FloatField, Q
 from django.db.models.functions import Extract, Now
+from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 
 from .helpers.snowflake import get_snowflake_timestamp
@@ -88,6 +89,9 @@ V3_TO_V4_UPGRADE_MAP = {
 
 ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED"
 RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
+CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES] + [
+    x[0] for x in V4_CC_LICENSE_CHOICES
+]
 
 LICENSE_CHOICES = (
     [
@@ -514,6 +518,26 @@ class Asset(models.Model):
     @property
     def thumbnail_content_type(self):
         return self.thumbnail.content_type
+
+    def img_tag(self, src):
+        return f"<img src='{settings.STATIC_URL}/images/{src}'>"
+
+    def get_license_icons(self):
+        icons = []
+        if self.license in CC_LICENSES:
+            icons.append(self.img_tag("cc.svg"))
+            if self.license == "CREATIVE_COMMONS_0":
+                icons.append(self.img_tag("zero.svg"))
+            else:
+                typ = self.license.replace("CREATIVE_COMMONS_", "")[:-4]
+                if typ == "BY":
+                    icons.append(self.img_tag("by.svg"))
+                if typ == "BY_ND":
+                    icons.append(self.img_tag("by.svg"))
+                    icons.append(self.img_tag("nd.svg"))
+        else:
+            icons.append("&copy;")
+        return mark_safe("".join(icons))
 
     def __str__(self):
         return self.name if self.name else "(Un-named asset)"
