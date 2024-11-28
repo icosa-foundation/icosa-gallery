@@ -327,6 +327,12 @@ class Asset(models.Model):
         null=True,
         upload_to=thumbnail_upload_path,
     )
+    preview_image = models.ImageField(
+        max_length=FILENAME_MAX_LENGTH,
+        blank=True,
+        null=True,
+        upload_to=thumbnail_upload_path,
+    )
     thumbnail_contenttype = models.CharField(blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
@@ -503,7 +509,9 @@ class Asset(models.Model):
 
     def get_thumbnail_url(self):
         thumbnail_url = "/static/images/nothumbnail.png?v=1"
-        if self.thumbnail:
+        if self.preview_image:
+            thumbnail_url = self.preview_image.url
+        elif self.thumbnail:
             thumbnail_url = self.thumbnail.url
         return thumbnail_url
 
