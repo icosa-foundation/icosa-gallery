@@ -43,16 +43,12 @@
         font-weight: bold;
         font-size: 1rem;
         margin-block: 0;
-      }
 
-      a {
-        color: #ffffff;
-
-
-        &:hover {
-          text-decoration-color: #008f5c;
+        a {
+          color: var(--color-base-light);
         }
       }
+
 
       p {
         &:last-of-type {

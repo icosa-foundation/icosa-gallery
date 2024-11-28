@@ -23,16 +23,16 @@
                     {% like_button request asset %}
                 </h2>
                 {% if asset.owner %}
-                    <p>
-                        By <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a> &bull; {{ asset.timestamp|date:"d/m/Y" }}
+                    <p class="sketch-byline">
+                        <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a> &bull; {{ asset.timestamp|date:"d/m/Y" }}
                     </p>
                 {% endif %}
                 {% if asset.description %}
                     <p>{{ asset.description|linebreaksbr }}</p>
                 {% endif %}
-                <h6>
+                <p class="sketch-license">
                     {{ asset.get_license_display|default_if_none:"All rights reserved" }}
-                </h6>
+                </p>
                 <p></p>
                 {% if downloadable_formats %}
                     <p>

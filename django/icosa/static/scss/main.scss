@@ -34,7 +34,7 @@ a {
   color: var(--color-primary);
 
   &:hover {
-    color: var(--color-primary-dimmed);
+    color: var(--color-primary-dim);
   }
 }
 
@@ -48,7 +48,6 @@ code {
   text-transform: uppercase;
   font-weight: bold;
   color: var(--color-base-light);
-  text-shadow: 1px 1px black;
   border: none;
 
   &:hover {
@@ -60,7 +59,7 @@ code {
 
     &:hover {
       color: var(--color-light);
-      background: var(--color-primary-dimmed);
+      background: var(--color-primary-dim);
     }
   }
 }
@@ -128,7 +127,7 @@ form {
   input,
   select,
   textarea {
-    background-color: var(--color-card-surface);
+    background-color: #272727;
     border-color: #272727;
     color: #d7d7d7;
     width: 100%;

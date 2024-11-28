@@ -1,0 +1,13 @@
+.sketch-byline {
+  --byline-color: var(--color-base-light-dim);
+  color: var(--byline-color);
+
+  a {
+    color: var(--byline-color);
+
+
+    &:hover {
+      text-decoration-color: #008f5c;
+    }
+  }
+}
