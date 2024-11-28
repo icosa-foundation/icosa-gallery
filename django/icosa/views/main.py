@@ -1,3 +1,4 @@
+import base64
 import inspect
 import random
 import secrets
@@ -35,11 +36,13 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
+from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import (
     Http404,
     HttpResponse,
+    HttpResponseBadRequest,
     HttpResponseNotAllowed,
     HttpResponseRedirect,
 )
@@ -421,6 +424,26 @@ def view_poly_asset(request, asset_url):
         template,
         context,
     )
+
+
+@never_cache
+@user_passes_test(lambda u: u.is_superuser)
+def make_asset_preview_image(request, asset_url):
+    if request.method == "POST":
+        asset = get_object_or_404(Asset, url=asset_url)
+        b64_image = request.POST.get("preview_image", None)
+        if not b64_image:
+            return HttpResponseBadRequest("No image data received")
+        format, imgstr = b64_image.split(";base64,")
+        ext = format.split("/")[-1]
+        data = ContentFile(
+            base64.b64decode(imgstr), name="preview_image." + ext
+        )
+        asset.preview_image = data
+        asset.save()
+        return HttpResponse("Image saved")
+    else:
+        return HttpResponseNotAllowed(["POST"])
 
 
 @never_cache
