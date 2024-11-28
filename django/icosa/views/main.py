@@ -262,7 +262,6 @@ def category(request, category):
         assets,
         show_hero=False,
         heading=f"Exploring: {category_name}",
-        page_title=f"Exploring: {category_name}",
     )
 
 
