@@ -50,6 +50,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 
 POLY_USER_URL = "4aEd8rQgKu2"
@@ -442,7 +443,9 @@ def make_asset_preview_image(request, asset_url):
         )
         asset.preview_image = data
         asset.save()
-        return HttpResponse("Image saved")
+        body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
+
+        return HttpResponse(mark_safe(body))
     else:
         return HttpResponseNotAllowed(["POST"])
 
