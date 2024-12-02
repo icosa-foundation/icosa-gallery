@@ -145,7 +145,7 @@ def landing_page(
                 assets.filter(
                     curated=True,
                     rank__gt=HERO_TOP_RANK,
-                    preview_image__isnull=False
+                    preview_image__isnull=False,
                 )
             )
 
