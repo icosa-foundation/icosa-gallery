@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Literal, Optional
 
-from icosa.models import DOWNLOADABLE_ROLES, Asset
+from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
@@ -138,7 +138,10 @@ class _DBAsset(ModelSchema):
     @staticmethod
     def resolve_formats(obj, context):
         return [
-            f for f in obj.polyformat_set.filter(role__in=DOWNLOADABLE_ROLES)
+            f
+            for f in obj.polyformat_set.filter(
+                role__in=API_DOWNLOAD_COMPATIBLE
+            )
         ]
 
     @staticmethod

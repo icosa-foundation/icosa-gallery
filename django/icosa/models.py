@@ -159,9 +159,24 @@ FORMAT_ROLE_CHOICES = [
     (1005, "Polygone FBX File"),
 ]
 
-DOWNLOADABLE_ROLES = [
+WEB_UI_DOWNLOAD_COMPATIBLE = [
     ORIGINAL_OBJ_FORMAT,
-    # TILT_FORMAT,  # We should offet TILT, but they don't all work at present.
+    # We should offer TILT, but they don't all have an archive URL for the main
+    # format and we can't build a zip on the client from individual archive
+    # URLS owing to CORS.
+    # TILT_FORMAT,
+    ORIGINAL_FBX_FORMAT,
+    BLOCKS_FORMAT,
+    USD_FORMAT,
+    GLB_FORMAT,
+    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+    USDZ_FORMAT,
+    UPDATED_GLTF_FORMAT,
+]
+
+API_DOWNLOAD_COMPATIBLE = [
+    ORIGINAL_OBJ_FORMAT,
+    TILT_FORMAT,
     ORIGINAL_FBX_FORMAT,
     BLOCKS_FORMAT,
     USD_FORMAT,
@@ -681,7 +696,9 @@ class Asset(models.Model):
             "Updated glTF File": "GLTF File",
         }
 
-        for format in self.polyformat_set.filter(role__in=DOWNLOADABLE_ROLES):
+        for format in self.polyformat_set.filter(
+            role__in=WEB_UI_DOWNLOAD_COMPATIBLE
+        ):
             if format.archive_url:
                 resource_data = {
                     "archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"
