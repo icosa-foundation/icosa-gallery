@@ -20,7 +20,7 @@ class FullUserSchema(Schema):
     url: str
     email: EmailStr
     displayName: str = Field(None, alias="displayname")
-    description: str
+    description: Optional[str] = None
 
 
 class PatchUserSchema(Schema):
