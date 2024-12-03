@@ -14,7 +14,7 @@ we should accept snake_case and camelCase url params and do the translation. The
 
 
 
-Docs for potential inclusion:
+Docs for potential inclusion TODO include some info on how to wrangle this with Windows:
 
 ## Seeding the database
 
