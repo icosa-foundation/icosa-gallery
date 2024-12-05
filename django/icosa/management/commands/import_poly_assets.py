@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from icosa.helpers.file import get_content_type, is_gltf2
+from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.storage import get_b2_bucket
 from icosa.models import (
@@ -28,14 +29,6 @@ ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
 
 FORMAT_ROLE_MAP = {x[1]: x[0] for x in FORMAT_ROLE_CHOICES}
 
-EXTENSION_ROLE_MAP = {
-    ".tilt": 1000,
-    ".blocks": 1001,
-    ".glb": 1002,
-    ".gltf": 1003,
-    ".obj": 1004,
-    ".fbx": 1005,
-}
 
 VALID_TYPES = [x.replace(".", "").upper() for x in EXTENSION_ROLE_MAP.keys()]
 

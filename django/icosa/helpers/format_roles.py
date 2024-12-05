@@ -29,3 +29,12 @@ POLYGONE_GLB_FORMAT = 1002
 POLYGONE_GLTF_FORMAT = 1003
 POLYGONE_OBJ_FORMAT = 1004
 POLYGONE_FBX_FORMAT = 1005
+
+EXTENSION_ROLE_MAP = {
+    ".tilt": 1000,
+    ".blocks": 1001,
+    ".glb": 1002,
+    ".gltf": 1003,
+    ".obj": 1004,
+    ".fbx": 1005,
+}
