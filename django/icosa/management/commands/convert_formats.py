@@ -54,9 +54,8 @@ class Command(BaseCommand):
                     PolyResource.objects.create(**root_resource_data)
 
                     if asset.thumbnail and done_thumbnail is False:
-                        asset_thumbnail = asset.thumbnail
                         asset.thumbnail_contenttype = get_content_type(
-                            asset_thumbnail.name
+                            asset.thumbnail.name
                         )
                         asset.save()
                         done_thumbnail = True
