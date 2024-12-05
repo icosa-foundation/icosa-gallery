@@ -8,6 +8,14 @@ from pathlib import Path
 from typing import List, Optional
 
 import ijson
+from icosa.helpers.format_roles import (
+    BLOCKS_FORMAT,
+    ORIGINAL_FBX_FORMAT,
+    ORIGINAL_GLTF_FORMAT,
+    ORIGINAL_OBJ_FORMAT,
+    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+    TILT_FORMAT,
+)
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
@@ -234,24 +242,29 @@ def add_thumbnail_to_asset(thumbnail, asset):
         asset.save()
 
 
+def get_role_id_from_file(filetype: str, name: str) -> Optional[int]:
+    if filetype == "OBJ":
+        if name == "model-triangulated":
+            return ORIGINAL_TRIANGULATED_OBJ_FORMAT
+        if name == "model":
+            return ORIGINAL_OBJ_FORMAT
+    if filetype in ["GLTF", "GLTF2"]:
+        return ORIGINAL_GLTF_FORMAT
+    if filetype == "FBX":
+        return ORIGINAL_FBX_FORMAT
+    if filetype == "TILT":
+        return TILT_FORMAT
+    if filetype == "BLOCKS":
+        return BLOCKS_FORMAT
+    return None
+
+
 def get_role_id(f: UploadedFormat) -> Optional[int]:
     if f is None:
         return None
     filetype = f.filetype
     name = f.file.name.split(".")[0]
-    if filetype == "OBJ":
-        if name == "model-triangulated":
-            return 24
-        if name == "model":
-            return 1
-    if filetype in ["GLTF", "GLTF2"]:
-        return 12
-    if filetype == "FBX":
-        return 6
-    if filetype == "TILT":
-        return 2
-    if filetype == "BLOCKS":
-        return 7
+    return get_role_id_from_file(filetype, name)
 
 
 def get_obj_non_triangulated(asset: Asset) -> Optional[PolyResource]:

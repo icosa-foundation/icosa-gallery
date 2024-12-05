@@ -1,7 +1,11 @@
+import os
+
 from icosa.helpers.file import get_content_type
+from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
 from icosa.models import Asset, PolyFormat, PolyResource
 
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 
 STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
 
@@ -13,12 +17,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         assets = Asset.objects.filter(
-            imported_from__isnull=True,
-            formats__isnull=False,
-        ).exclude(formats="", imported_from="")
+            Q(imported_from__isnull=True) | Q(imported_from="")
+        ).exclude(Q(formats__isnull=True) | Q(formats=""))
+
         for idx, asset in enumerate(assets):
-            # print(f"Processing {asset.id} ({idx} of {assets.count()})...")
             done_thumbnail = False
+
+            print(f"Processing {asset.id} ({idx} of {assets.count()})...")
+
             for format_json in asset.formats:
                 format_data = {
                     "format_type": format_json["format"],
@@ -32,6 +38,11 @@ class Command(BaseCommand):
                         STORAGE_ROOT,
                         "",
                     )
+                    extension = os.path.splitext(file_path)[-1].lower()
+                    role = EXTENSION_ROLE_MAP.get(extension)
+                    format.role = role
+                    format.save()
+
                     root_resource_data = {
                         "file": file_path,
                         "is_root": True,
@@ -46,9 +57,9 @@ class Command(BaseCommand):
                         asset.thumbnail_contenttype = get_content_type(
                             asset_thumbnail.name
                         )
-                        print(asset.thumbnail, asset.thumbnail_contenttype)
                         asset.save()
                         done_thumbnail = True
+
                     if format_json.get("subfiles", None) is not None:
                         for resource in format_json["subfiles"]:
                             resource_data = {
