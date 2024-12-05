@@ -142,7 +142,7 @@ def create_formats_from_scraped_data(
             asset.thumbnail = f"poly/{directory}/thumbnail.png"
             asset.thumbnail_contenttype = "image/png"
             asset.save()
-        done_thumbnail = True
+            done_thumbnail = True
         root_resource_json = format_json["root"]
 
         file_path = root_resource_json["relativePath"]
