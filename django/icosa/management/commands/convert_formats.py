@@ -1,7 +1,6 @@
 import os
 
-from icosa.helpers.file import get_content_type
-from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
+from icosa.helpers.file import get_content_type, get_role_id_from_file
 from icosa.models import Asset, PolyFormat, PolyResource
 
 from django.core.management.base import BaseCommand
@@ -38,8 +37,10 @@ class Command(BaseCommand):
                         STORAGE_ROOT,
                         "",
                     )
-                    extension = os.path.splitext(file_path)[-1].lower()
-                    role = EXTENSION_ROLE_MAP.get(extension)
+                    name_and_extension = os.path.splitext(file_path)
+                    file_name = name_and_extension[0].lower()
+                    extension = name_and_extension[1].lower().replace(".", "")
+                    role = get_role_id_from_file(file_name, extension)
                     format.role = role
                     format.save()
 

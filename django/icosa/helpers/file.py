@@ -242,7 +242,8 @@ def add_thumbnail_to_asset(thumbnail, asset):
         asset.save()
 
 
-def get_role_id_from_file(filetype: str, name: str) -> Optional[int]:
+def get_role_id_from_file(name: str, filetype: str) -> Optional[int]:
+    filetype = filetype.upper()
     if filetype == "OBJ":
         if name == "model-triangulated":
             return ORIGINAL_TRIANGULATED_OBJ_FORMAT
@@ -264,7 +265,7 @@ def get_role_id(f: UploadedFormat) -> Optional[int]:
         return None
     filetype = f.filetype
     name = f.file.name.split(".")[0]
-    return get_role_id_from_file(filetype, name)
+    return get_role_id_from_file(name, filetype)
 
 
 def get_obj_non_triangulated(asset: Asset) -> Optional[PolyResource]:
