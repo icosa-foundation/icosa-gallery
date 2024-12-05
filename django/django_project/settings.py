@@ -255,6 +255,11 @@ CONSTANCE_CONFIG = {
         "Comma-separated list of email addresses. When populated, will only allow these email addresses to register new accounts.",
         str,
     ),
+    "EXTERNAL_MEDIA_CORS_ALLOW_LIST": (
+        "",
+        "Comma-separated list of domains who have set their CORS to allow fetching from this site's domain.",
+        str,
+    ),
 }
 
 # Debug Toolbar settings

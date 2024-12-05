@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 import bcrypt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
+from constance import config
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
     GLB_FORMAT,
@@ -179,6 +180,13 @@ VIEWABLE_ROLES = [
     POLYGONE_GLB_FORMAT,
     POLYGONE_GLTF_FORMAT,
     POLYGONE_OBJ_FORMAT,
+]
+
+VIEWABLE_FORMAT_TYPES = [
+    "FBX",
+    "GLB",
+    "GLTF",
+    "OBJ",
 ]
 
 
@@ -476,6 +484,53 @@ class Asset(models.Model):
         return format
 
     @property
+    def has_viewable_format_types(self):
+        return (
+            self.polyformat_set.filter(
+                format_type__in=VIEWABLE_FORMAT_TYPES
+            ).count()
+            > 0
+        )
+
+    @property
+    def has_cors_allowed(self):
+        # If this resource has a file managed by Django storage, then it will
+        # be viewable.
+        if (
+            self.polyresource_set.filter(
+                file__isnull=False,
+            ).count()
+            > 0
+        ):
+            return True
+
+        # If any resource does not have a file managed by Django storage, check
+        # if any of the externally-hosted files' sources have been allowed by
+        # the site admin in django constance settings.
+        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
+            allowed_sources = tuple(
+                [
+                    x.strip()
+                    for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")
+                ]
+            )
+        else:
+            allowed_sources = tuple([])
+
+        return (
+            len(
+                [
+                    x.external_url
+                    for x in self.polyresource_set.filter(
+                        external_url__isnull=False,
+                    )
+                    if x.external_url.startswith(allowed_sources)
+                ]
+            )
+            > 0
+        )
+
+    @property
     def download_url(self):
         if self.license == ALL_RIGHTS_RESERVED or not self.license:
             return None
@@ -556,13 +611,12 @@ class Asset(models.Model):
             f"{self.name} {description} {tag_str} {self.owner.displayname}"
         )
 
-    def validate(self):
+    def calc_is_viewable(self):
         if not self.pk:
-            return
-        if self.is_blocks:
-            return self.is_blocks_viewable
-        else:
+            return False
+        if self.has_viewable_format_types and self.has_cors_allowed:
             return True
+        return False
 
     def denorm_format_types(self):
         if not self.pk:
@@ -582,19 +636,6 @@ class Asset(models.Model):
         ).exists()
         self.has_fbx = self.polyformat_set.filter(format_type="FBX").exists()
         self.has_obj = self.polyformat_set.filter(format_type="OBJ").exists()
-
-    @property
-    def is_blocks(self):
-        return bool(self.polyformat_set.filter(format_type="BLOCKS").count())
-
-    @property
-    def is_blocks_viewable(self):
-        return bool(
-            self.polyformat_set.filter(
-                format_type__in=BLOCKS_VIEWABLE_TYPES,
-                role__in=VIEWABLE_ROLES,
-            ).count()
-        )
 
     # get_updated_rank() and inc_views_and_rank() are very similar. TODO: Find
     # a way to abstract the rank expression. Currently dumping the whole thing
@@ -792,7 +833,7 @@ class Asset(models.Model):
             # Only denorm fields when updating an existing model
             self.rank = self.get_updated_rank()
             self.update_search_text()
-            self.is_viewer_compatible = self.validate()
+            self.is_viewer_compatible = self.calc_is_viewable()
             self.denorm_format_types()
         super().save(*args, **kwargs)
 
