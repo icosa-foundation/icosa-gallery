@@ -186,6 +186,7 @@ VIEWABLE_FORMAT_TYPES = [
     "FBX",
     "GLB",
     "GLTF",
+    "GLTF2",
     "OBJ",
 ]
 
