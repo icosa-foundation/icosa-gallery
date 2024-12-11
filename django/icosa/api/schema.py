@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import List, Literal, Optional
 
 from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset
@@ -250,6 +251,12 @@ class OembedOut(Schema):
     height: int
 
 
+class Complexity(Enum):
+    COMPLEX = "COMPLEX"
+    MEDIUM = "MEDIUM"
+    SIMPLE = "SIMPLE"
+
+
 class FilterBase(Schema):
     category: Optional[str] = None
     curated: bool = False
@@ -260,6 +267,7 @@ class FilterBase(Schema):
     tag: List[str] = Field(None, alias="tag")
     orderBy: Optional[str] = None
     order_by: Optional[str] = None
+    maxComplexity: Optional[Complexity] = None
 
 
 class AssetFilters(FilterBase):
@@ -291,6 +299,20 @@ def filter_license(query_string: str) -> Q:
         q = Q(license__in=variants)
     else:
         q = Q(license__iexact=license_str)
+    return q
+
+
+def filter_complexity(complexity: Complexity) -> Q:
+    # See https://github.com/icosa-foundation/icosa-gallery/issues/107#issuecomment-2518016302
+    complex = 50000000
+    medium = 10000
+    simple = 1000
+    if complexity == Complexity.COMPLEX:
+        q = Q(triangle_count__lte=complex)
+    if complexity == Complexity.MEDIUM:
+        q = Q(triangle_count__lte=medium)
+    if complexity == Complexity.SIMPLE:
+        q = Q(triangle_count__lte=simple)
     return q
 
 

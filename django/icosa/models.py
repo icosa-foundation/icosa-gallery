@@ -11,6 +11,7 @@ from icosa.helpers.format_roles import (
     ORIGINAL_GLTF_FORMAT,
     ORIGINAL_OBJ_FORMAT,
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+    POLYGONE_FBX_FORMAT,
     POLYGONE_GLB_FORMAT,
     POLYGONE_GLTF_FORMAT,
     POLYGONE_OBJ_FORMAT,
@@ -370,6 +371,7 @@ class Asset(models.Model):
     )
 
     # Denorm fields
+    triangle_count = models.PositiveIntegerField(default=0)
     search_text = models.TextField(null=True, blank=True)
     is_viewer_compatible = models.BooleanField(default=False)
 
@@ -638,6 +640,33 @@ class Asset(models.Model):
         self.has_fbx = self.polyformat_set.filter(format_type="FBX").exists()
         self.has_obj = self.polyformat_set.filter(format_type="OBJ").exists()
 
+    def get_triangle_count(self):
+        formats = {}
+        for format in self.polyformat_set.filter(triangle_count__gt=0):
+            formats.setdefault(format.role, format.triangle_count)
+        if POLYGONE_GLTF_FORMAT in formats.keys():
+            return formats[POLYGONE_GLTF_FORMAT]
+        if UPDATED_GLTF_FORMAT in formats.keys():
+            return formats[UPDATED_GLTF_FORMAT]
+        if ORIGINAL_GLTF_FORMAT in formats.keys():
+            return formats[ORIGINAL_GLTF_FORMAT]
+        if POLYGONE_OBJ_FORMAT in formats.keys():
+            return formats[POLYGONE_OBJ_FORMAT]
+        if ORIGINAL_OBJ_FORMAT in formats.keys():
+            return formats[ORIGINAL_OBJ_FORMAT]
+        if POLYGONE_GLB_FORMAT in formats.keys():
+            return formats[POLYGONE_GLB_FORMAT]
+        if GLB_FORMAT in formats.keys():
+            return formats[GLB_FORMAT]
+        if POLYGONE_FBX_FORMAT in formats.keys():
+            return formats[POLYGONE_FBX_FORMAT]
+        if ORIGINAL_FBX_FORMAT in formats.keys():
+            return formats[ORIGINAL_FBX_FORMAT]
+        return 0
+
+    def denorm_triangle_count(self):
+        self.triangle_count = self.get_triangle_count()
+
     # get_updated_rank() and inc_views_and_rank() are very similar. TODO: Find
     # a way to abstract the rank expression. Currently dumping the whole thing
     # into a function doesn't evaluate it properly.
@@ -836,6 +865,7 @@ class Asset(models.Model):
             self.update_search_text()
             self.is_viewer_compatible = self.calc_is_viewable()
             self.denorm_format_types()
+            self.denorm_triangle_count()
         super().save(*args, **kwargs)
 
     class Meta:
