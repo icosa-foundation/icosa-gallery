@@ -647,14 +647,14 @@ class Asset(models.Model):
             formats.setdefault(format.role, format.triangle_count)
         if POLYGONE_GLTF_FORMAT in formats.keys():
             return formats[POLYGONE_GLTF_FORMAT]
+        if ORIGINAL_TRIANGULATED_OBJ_FORMAT in formats.keys():
+            return formats[ORIGINAL_OBJ_FORMAT]
         if UPDATED_GLTF_FORMAT in formats.keys():
             return formats[UPDATED_GLTF_FORMAT]
         if ORIGINAL_GLTF_FORMAT in formats.keys():
             return formats[ORIGINAL_GLTF_FORMAT]
         if POLYGONE_OBJ_FORMAT in formats.keys():
             return formats[POLYGONE_OBJ_FORMAT]
-        if ORIGINAL_OBJ_FORMAT in formats.keys():
-            return formats[ORIGINAL_OBJ_FORMAT]
         if POLYGONE_GLB_FORMAT in formats.keys():
             return formats[POLYGONE_GLB_FORMAT]
         if GLB_FORMAT in formats.keys():
