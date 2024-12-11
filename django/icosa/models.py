@@ -207,7 +207,7 @@ ASSET_STATE_CHOICES = [
 class User(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.CharField("User Name / URL", max_length=255, unique=True)
-    email = models.EmailField(max_length=255, null=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
     password = models.BinaryField()
     displayname = models.CharField("Display Name", max_length=255)
     description = models.TextField(blank=True, null=True)
