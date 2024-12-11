@@ -7,11 +7,8 @@
   text-align: center;
 
   a {
-    background-color: var(--color-alert-warning);
     color: var(--color-base-dark);
     text-decoration: underline;
-    padding: 0.2rem;
-    border-radius: var(--border-radius-tiny);
 
     &:hover {
       color: var(--color-base-dark);
