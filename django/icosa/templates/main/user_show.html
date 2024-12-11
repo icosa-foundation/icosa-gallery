@@ -1,4 +1,11 @@
 {% extends "base.html" %}
+
+{% block banner %}
+{% if not user.is_claimed %}
+{% include "partials/artist_info_banner.html" %}
+{% endif %}
+{% endblock banner %}
+
 {% block content %}
     <div class="container">
         <div class="row">

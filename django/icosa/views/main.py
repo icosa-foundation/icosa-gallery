@@ -329,6 +329,7 @@ def uploads(request):
     )
 
 
+@never_cache
 def user_show(request, user_url):
     template = "main/user_show.html"
 

@@ -4,14 +4,18 @@
   --color-base-mid: #d7d7d7; // TODO(james): This could turn into too many greys. Need to land on a good one.
   --color-base-light: #ffffff;
   --color-base-light-dim: #d0d0d0;
-  --color-primary: #009962;
+  --color-primary: #009962; //Green
   --color-primary-dim: #008f5c;
+  --color-primary-bright: #00CC83;
   --color-card-surface: Rgb(0 0 0 / 20%); // Needs to be uppercase Rgb so as not to collide with the sass function. (sigh)
 
+
+  --color-alert-warning: #fadd03;
   --color-alert-danger: #ce2121;
   --color-alert-success: #00f101;
 
   // other properties
+  --border-radius-tiny: 2px;
   --border-radius-small: 0.25rem;
   --border-radius-large: 0.5rem;
 }

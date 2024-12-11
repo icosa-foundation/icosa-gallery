@@ -1,6 +1,6 @@
 footer {
-  background: #00CC83;
-  color: #383838;
+  background-color: var(--color-primary-bright);
+  color: var(--color-base-dark);
   margin-top: 1em;
   padding: 1em 0;
 
@@ -15,7 +15,7 @@ footer {
 
         display: inline-block;
         padding-inline: 1em;
-        border-right: 1px solid #383838;
+        border-right: 1px solid var(--color-base-dark);
 
         &:first-child {
           padding-left: 0;
@@ -27,11 +27,14 @@ footer {
         }
 
         a {
-          color: #383838;
+          color: var(--color-base-dark);
           text-decoration: underline;
 
+          &:hover,
+          &:visited {
+            color: var(--color-base-dark);
+          }
         }
-
       }
     }
   }

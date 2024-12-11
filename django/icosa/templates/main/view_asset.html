@@ -8,6 +8,12 @@
     <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ asset.get_absolute_url }}" />
 {% endblock extrahead %}
 
+{% block banner %}
+{% if not asset.owner.is_claimed %}
+{% include "partials/artist_info_banner.html" %}
+{% endif %}
+{% endblock banner %}
+
 {% block content %}
 <div class="sketch-info container">
     <div class="row">

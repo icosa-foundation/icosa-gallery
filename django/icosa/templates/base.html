@@ -25,6 +25,7 @@
         {% include "partials/side_nav.html" %}
         {% endblock nav %}
         <main{% block mainattrs %}{% endblock mainattrs %}>
+            {% block banner %}{% endblock banner %}
             {% block header %}
                 <header>
                     <div class="container">
@@ -79,7 +80,7 @@
                             <nav class="text-right">
                                 <ul>
                                     <li>
-                                        <a href="{% url 'artist_info' %}">Why is my work here?</a>
+                                        <a class="alert-warning" href="{% url 'artist_info' %}">Why is my work here?</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'privacy_policy' %}">Privacy Policy</a>

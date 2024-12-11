@@ -193,3 +193,11 @@ label {
     margin-block-end: 1.2rem;
   }
 }
+
+.alert-warning {
+  color: inherit;
+  padding: 0.2rem;
+  border-radius: var(--border-radius-tiny);
+  background-color: var(--color-alert-warning);
+  border-color: var(--color-alert-warning);
+}

@@ -221,6 +221,7 @@ class User(models.Model):
         blank=True,
     )  # Only used while we are emulating fastapi auth. Should be removed.
     imported = models.BooleanField(default=False)
+    is_claimed = models.BooleanField(default=True)
 
     @classmethod
     def from_ninja_request(cls, request):
