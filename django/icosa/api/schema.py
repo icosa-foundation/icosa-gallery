@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Literal, Optional
+from typing import Annotated, List, Literal, Optional
 
 from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset
 from ninja import Field, ModelSchema, Schema
@@ -268,6 +268,8 @@ class FilterBase(Schema):
     orderBy: Optional[str] = None
     order_by: Optional[str] = None
     maxComplexity: Optional[Complexity] = None
+    triangleCountMin: Optional[int] = None
+    triangleCountMax: Optional[int] = None
 
 
 class AssetFilters(FilterBase):
@@ -302,22 +304,44 @@ def filter_license(query_string: str) -> Q:
     return q
 
 
-def filter_complexity(complexity: Complexity) -> Q:
+def filter_complexity(filters) -> Q:
+    q = Q()
+
+    # Ignore this filter if superceded by newer triangle count filters.
+    if filters.triangleCountMin or filters.triangleCountMax:
+        return q
+
     # See https://github.com/icosa-foundation/icosa-gallery/issues/107#issuecomment-2518016302
     complex = 50000000
     medium = 10000
     simple = 1000
-    if complexity == Complexity.COMPLEX:
-        q = Q(triangle_count__lte=complex)
-    if complexity == Complexity.MEDIUM:
-        q = Q(triangle_count__lte=medium)
-    if complexity == Complexity.SIMPLE:
-        q = Q(triangle_count__lte=simple)
+
+    if filters.maxComplexity:
+        if filters.maxComplexity == Complexity.COMPLEX:
+            q = Q(triangle_count__lte=complex)
+        if filters.maxComplexity == Complexity.MEDIUM:
+            q = Q(triangle_count__lte=medium)
+        if filters.maxComplexity == Complexity.SIMPLE:
+            q = Q(triangle_count__lte=simple)
+        q &= Q(triangle_count__gt=1)
     return q
 
 
-def get_keyword_q(filters):
-    keyword_q = Q()
+def filter_triangle_count(filters) -> Q:
+    q = Q()
+    min = filters.triangleCountMin
+    max = filters.triangleCountMax
+    if min:
+        q &= Q(triangle_count__gte=min)
+    if max:
+        q &= Q(triangle_count__lte=max)
+    if min or max:
+        q &= Q(triangle_count__gt=1)
+    return q
+
+
+def get_keyword_q(filters) -> Q:
+    q = Q()
     if filters.keywords:
         # The original API spec says "Multiple keywords should be separated
         # by spaces.". I believe this could be implemented better to allow
@@ -327,5 +351,5 @@ def get_keyword_q(filters):
         if len(keyword_list) > 16:
             raise HttpError(400, "Exceeded 16 space-separated keywords.")
         for keyword in keyword_list:
-            keyword_q &= Q(search_text__icontains=keyword)
-    return keyword_q
+            q &= Q(search_text__icontains=keyword)
+    return q

@@ -39,6 +39,7 @@ from .schema import (
     UploadJobSchemaOut,
     filter_complexity,
     filter_license,
+    filter_triangle_count,
     get_keyword_q,
 )
 
@@ -360,8 +361,8 @@ def get_assets(
         keyword_q = get_keyword_q(filters)
     except HttpError:
         raise
-    if filters.maxComplexity:
-        q &= filter_complexity(filters.maxComplexity)
+    q &= filter_complexity(filters)
+    q &= filter_triangle_count(filters)
 
     assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
 
