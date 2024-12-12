@@ -105,6 +105,7 @@ class _DBAsset(ModelSchema):
     tags: List[str] = []
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     thumbnail: Optional[Thumbnail]
+    triangleCount: int = Field(..., alias=("triangle_count"))
     presentationParams: Optional[dict] = Field(
         None, alias=("presentation_params")
     )
