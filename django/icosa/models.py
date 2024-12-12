@@ -299,6 +299,11 @@ def thumbnail_upload_path(instance, filename):
     return f"{root}/{instance.owner.id}/{instance.id}/{filename}"
 
 
+def preview_image_upload_path(instance, filename):
+    root = settings.MEDIA_ROOT
+    return f"{root}/{instance.owner.id}/{instance.id}/preview_image/{filename}"
+
+
 class Asset(models.Model):
     COLOR_SPACES = [
         ("LINEAR", "LINEAR"),
@@ -339,7 +344,7 @@ class Asset(models.Model):
         max_length=FILENAME_MAX_LENGTH,
         blank=True,
         null=True,
-        upload_to=thumbnail_upload_path,
+        upload_to=preview_image_upload_path,
     )
     thumbnail_contenttype = models.CharField(blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
@@ -969,6 +974,48 @@ class PolyResource(models.Model):
     @property
     def content_type(self):
         return self.file.content_type if self.file else self.contenttype
+
+
+def masthead_image_upload_path(instance, filename):
+    root = settings.MEDIA_ROOT
+    return f"{root}/masthead_images/{instance.id}/{filename}"
+
+
+class MastheadSection(models.Model):
+    image = models.ImageField(
+        max_length=FILENAME_MAX_LENGTH,
+        blank=True,
+        null=True,
+        upload_to=masthead_image_upload_path,
+    )
+    asset = models.ForeignKey(
+        Asset, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    url = models.CharField(
+        max_length=1024,
+        null=True,
+        blank=True,
+        help_text="URL to link to in place of an asset's viewer page.",
+    )
+    headline_text = models.CharField(
+        max_length=1024,
+        null=True,
+        blank=True,
+        help_text="Text displayed in place of an asset's name.",
+    )
+    sub_text = models.CharField(
+        max_length=1024,
+        null=True,
+        blank=True,
+        help_text="Text displayed in place of an asset's owner's name.",
+    )
+
+    @property
+    def visibility(self):
+        if self.asset is None:
+            return PUBLIC
+        print(self.asset.visibility)
+        return self.asset.visibility
 
 
 class DeviceCode(models.Model):

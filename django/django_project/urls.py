@@ -102,9 +102,14 @@ urlpatterns = [
         name="view_poly_asset",
     ),
     path(
-        "preview_image/<str:asset_url>",
-        main_views.make_asset_preview_image,
-        name="make_asset_preview_image",
+        "masthead_image/<str:asset_url>",
+        main_views.make_asset_masthead_image,
+        name="make_asset_masthead_image",
+    ),
+    path(
+        "thumbnail/<str:asset_url>",
+        main_views.make_asset_thumbnail,
+        name="make_asset_thumbnail",
     ),
     path(
         "download/<str:asset_url>",

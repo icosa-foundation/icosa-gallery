@@ -56,37 +56,7 @@
                     </small>
                 </p>
                 {% if request.user.is_superuser %}
-                    <form id="super-preview-form" action="{% url 'make_asset_preview_image' asset_url=asset.url %}" method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="preview_image">
-                        <input type="submit" class="btn btn-danger btn-inline" id="super-preview-form-submit" value="Generate preview image">
-                    </form>
-                    <p>
-                        <button class="btn btn-danger" id="viewer-guide-button">Show guides</button>
-                    </p>
-                    <script>
-                        let previewForm = document.querySelector("#super-preview-form");
-                        let previewButton = document.querySelector("#super-preview-form-submit");
-                        let previewInput = document.querySelector("input[name='preview_image']");
-                        function handleSubmit() {
-                            let data = viewer.captureThumbnail(1280, 720);
-                            previewInput.value = data;
-                            return false;
-                        }
-                        previewButton.addEventListener('click',handleSubmit, false);
-
-                        let guideButton = document.querySelector("#viewer-guide-button");
-                        function handleGuides() {
-                            viewer.canvas.parentElement.style.position = 'relative';
-                            viewer.canvas.parentElement.appendChild(
-                                Object.assign(
-                                    document.createElement('div'),
-                                    { style: 'position:absolute;top:26%;height:48%;width:100%;border-top:1px solid red;border-bottom:1px solid red;pointer-events:none;' }
-                                )
-                            );
-                        }
-                        guideButton.addEventListener('click',handleGuides, false);
-                    </script>
+                {% include "include/asset_superuser_actions.html" %}
                 {% endif %}
             </div>
         </div>

@@ -2,6 +2,7 @@ from icosa.models import (
     Asset,
     DeviceCode,
     HiddenMediaFileLog,
+    MastheadSection,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -204,6 +205,32 @@ class UserAdmin(admin.ModelAdmin):
         ("email", admin.EmptyFieldListFilter),
     )
     inlines = (UserAssetLikeInline,)
+
+
+@admin.register(MastheadSection)
+class MastheadSectionAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "_thumbnail_image",
+        "asset",
+        "headline_text",
+        "sub_text",
+    )
+
+    def _thumbnail_image(self, obj):
+        html = ""
+
+        if obj.image:
+            html = f"""
+<img src="{obj.image.url}" width="150" loading="lazy">
+            """
+        else:
+            html = ""
+
+        return mark_safe(html)
+
+    _thumbnail_image.short_description = "Thumbnail"
+    _thumbnail_image.allow_tags = True
 
 
 @admin.register(HiddenMediaFileLog)

@@ -1,4 +1,3 @@
-import base64
 import inspect
 import random
 import secrets
@@ -13,7 +12,7 @@ from icosa.forms import (
     UserSettingsForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
-from icosa.helpers.file import upload_asset
+from icosa.helpers.file import b64_to_img, upload_asset
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.user import get_owner
 from icosa.models import (
@@ -25,6 +24,7 @@ from icosa.models import (
     PUBLIC,
     UNLISTED,
     Asset,
+    MastheadSection,
 )
 from icosa.models import User as IcosaUser
 from icosa.tasks import queue_upload_asset
@@ -36,7 +36,6 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
-from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import (
@@ -141,13 +140,7 @@ def landing_page(
         if cache.get(cache_key):
             heroes = cache.get(cache_key)
         else:
-            heroes = list(
-                assets.filter(
-                    curated=True,
-                    rank__gt=HERO_TOP_RANK,
-                    preview_image__isnull=False,
-                )
-            )
+            heroes = list(MastheadSection.objects.all())
 
             cache.set(
                 f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}",
@@ -431,19 +424,42 @@ def view_poly_asset(request, asset_url):
 
 @never_cache
 @user_passes_test(lambda u: u.is_superuser)
-def make_asset_preview_image(request, asset_url):
+def make_asset_thumbnail(request, asset_url):
     if request.method == "POST":
         asset = get_object_or_404(Asset, url=asset_url)
-        b64_image = request.POST.get("preview_image", None)
+        b64_image = request.POST.get("thumbnail_image", None)
         if not b64_image:
             return HttpResponseBadRequest("No image data received")
-        format, imgstr = b64_image.split(";base64,")
-        ext = format.split("/")[-1]
-        data = ContentFile(
-            base64.b64decode(imgstr), name="preview_image." + ext
-        )
-        asset.preview_image = data
+
+        image_file = b64_to_img(b64_image)
+
+        asset.preview_image = image_file
         asset.save()
+        body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
+
+        return HttpResponse(mark_safe(body))
+    else:
+        return HttpResponseNotAllowed(["POST"])
+
+
+@never_cache
+@user_passes_test(lambda u: u.is_superuser)
+def make_asset_masthead_image(request, asset_url):
+    if request.method == "POST":
+        asset = get_object_or_404(Asset, url=asset_url)
+        b64_image = request.POST.get("masthead_image", None)
+        if not b64_image:
+            return HttpResponseBadRequest("No image data received")
+
+        image_file = b64_to_img(b64_image)
+        create = {
+            "asset": asset,
+        }
+        masthead = MastheadSection.objects.create(**create)
+        # We need an instance ID to populate the image path in storage.
+        # So we need to save it separately after the create.
+        masthead.image = image_file
+        masthead.save()
         body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
 
         return HttpResponse(mark_safe(body))

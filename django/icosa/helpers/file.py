@@ -1,3 +1,4 @@
+import base64
 import io
 import os
 import re
@@ -26,9 +27,11 @@ from icosa.models import (
 from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
+from PIL import Image
 
 from django.conf import settings
 from django.core.files.storage import get_storage_class
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 default_storage = get_storage_class()()
 
@@ -599,3 +602,25 @@ def upload_thumbnail(
         raise HttpError(415, "Thumbnail must be png or jpg")
 
     add_thumbnail_to_asset(thumbnail, asset)
+
+
+def b64_to_img(b64_image: str) -> InMemoryUploadedFile:
+    _, imgstr = b64_image.split(";base64,")
+    # Decode base64 data to a buffer.
+    image_bytes_in = io.BytesIO(base64.b64decode(imgstr))
+
+    # Remove alpha channel and save into a fresh buffer as jpg.
+    pil_image = Image.open(image_bytes_in)
+    jpg_image = pil_image.convert("RGB")
+    image_bytes_out = io.BytesIO()
+    jpg_image.save(image_bytes_out, format="JPEG", quality=85)
+
+    # Construct a file object Django can deal with.
+    return InMemoryUploadedFile(
+        image_bytes_out,
+        None,
+        "preview_image.jpg",
+        "image/jpeg",
+        image_bytes_out.getbuffer().nbytes,
+        None,
+    )

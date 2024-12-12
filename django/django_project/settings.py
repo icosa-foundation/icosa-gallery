@@ -79,7 +79,7 @@ STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 # Application definition
 
 APPEND_SLASH = False
-
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
