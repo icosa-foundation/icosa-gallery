@@ -1,0 +1,49 @@
+<form id="super-thumbnail-form" action="{% url 'make_asset_thumbnail' asset_url=asset.url %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="thumbnail_image">
+    <input type="submit" class="btn btn-danger btn-inline" id="super-thumbnail-form-submit" value="Generate thumbnail image">
+</form>
+<form id="super-preview-form" action="{% url 'make_asset_masthead_image' asset_url=asset.url %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="masthead_image">
+    <input type="submit" class="btn btn-danger btn-inline" id="super-masthead-form-submit" value="Generate masthead image section">
+</form>
+<p>
+    <button class="btn btn-danger" id="viewer-guide-button">Show guides</button>
+</p>
+<script>
+    let thumbnailForm = document.querySelector("#super-thumbnail-form");
+    let thumbnailButton = document.querySelector("#super-thumbnail-form-submit");
+    let thumbnailInput = document.querySelector("input[name='thumbnail_image']");
+
+    let mastheadForm = document.querySelector("#super-masthead-form");
+    let mastheadButton = document.querySelector("#super-masthead-form-submit");
+    let mastheadInput = document.querySelector("input[name='masthead_image']");
+
+    function handleThumbnail() {
+        let data = viewer.captureThumbnail(1280, 720);
+        thumbnailInput.value = data;
+        return false;
+    }
+
+    function handleMasthead() {
+        let data = viewer.captureThumbnail(2560, 1440);
+        mastheadInput.value = data;
+        return false;
+    }
+
+    thumbnailButton.addEventListener('click',handleThumbnail, false);
+    mastheadButton.addEventListener('click',handleMasthead, false);
+
+    let guideButton = document.querySelector("#viewer-guide-button");
+    function handleGuides() {
+        viewer.canvas.parentElement.style.position = 'relative';
+        viewer.canvas.parentElement.appendChild(
+            Object.assign(
+                document.createElement('div'),
+                { style: 'position:absolute;top:26%;height:48%;width:100%;border-top:1px solid red;border-bottom:1px solid red;pointer-events:none;' }
+            )
+        );
+    }
+    guideButton.addEventListener('click',handleGuides, false);
+</script>
