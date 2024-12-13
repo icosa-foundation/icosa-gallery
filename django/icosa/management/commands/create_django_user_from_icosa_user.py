@@ -54,6 +54,7 @@ class Command(BaseCommand):
             "Enter a new password for the user (keep blank to use the original password): "
         )
         password = new_password or icosa_user.password
+        password = str(password)
 
         is_staff = (
             input(
