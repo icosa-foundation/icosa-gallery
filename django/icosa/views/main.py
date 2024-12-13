@@ -57,7 +57,7 @@ POLY_USER_URL = "4aEd8rQgKu2"
 # TODO(james): not sure how to decide on a decent rank. As of writing, our
 # top-ranked asset is at 80459.
 HERO_TOP_RANK = 10000
-HERO_CACHE_SECONDS = 3600
+HERO_CACHE_SECONDS = 10
 HERO_CACHE_PREFIX = "heroes"
 
 
