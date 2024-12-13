@@ -1014,7 +1014,6 @@ class MastheadSection(models.Model):
     def visibility(self):
         if self.asset is None:
             return PUBLIC
-        print(self.asset.visibility)
         return self.asset.visibility
 
 
