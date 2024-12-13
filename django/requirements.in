@@ -20,3 +20,4 @@ psycopg2==2.9.3
 pydantic[email]
 PyJWT==2.0.1
 requests==2.32.3
+sentry-sdk[django]

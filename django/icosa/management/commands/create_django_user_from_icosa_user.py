@@ -14,23 +14,25 @@ class Command(BaseCommand):
     format."""
 
     def add_arguments(self, parser):
-        parser.add_argument("-e", "--email", action="store", type=str)
+        parser.add_argument("--id", action="store", type=str)
 
     def handle(self, *args, **options):
-        email = options["email"]
-        if email is None:
+        id = options["id"]
+        if id is None:
             print(
-                "Usage: -e, --email\tThe email address of the Icosa User from which to create a Django User."
+                "Usage: --id\tThe primary key of the Icosa User from which to create a Django User."
             )
             return
         try:
-            icosa_user = IcosaUser.objects.get(email=email)
+            icosa_user = IcosaUser.objects.get(pk=id)
         except IcosaUser.DoesNotExist:
-            print(f"Icosa User with email address `{email}` not found.")
+            print(f"Icosa User with id `{id}` not found.")
             return
 
+        email = icosa_user.email
+
         try:
-            django_user = DjangoUser.objects.get(username=icosa_user.email)
+            django_user = DjangoUser.objects.get(username=email)
         except DjangoUser.DoesNotExist:
             django_user = None
 
@@ -62,13 +64,13 @@ class Command(BaseCommand):
         # Assuming we are overwriting here othewise we would have returned
         # above.
         if django_user is not None:
-            django_user = DjangoUser.objects.get(username=icosa_user.email)
+            django_user = DjangoUser.objects.get(username=email)
             django_user.set_password(password)
             django_user.save()
         else:
             django_user = DjangoUser.objects.create_user(
-                username=icosa_user.email,
-                email=icosa_user.email,
+                username=email,
+                email=email,
                 password=password,
             )
 
