@@ -55,7 +55,7 @@
                         </a>
                     </small>
                 </p>
-                {% if request.user.is_superuser %}
+                {% if request.user.is_superuser and not settings.DEBUG %}
                 {% include "include/asset_superuser_actions.html" %}
                 {% endif %}
             </div>
