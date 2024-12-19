@@ -346,7 +346,9 @@ class Asset(models.Model):
         null=True,
         upload_to=preview_image_upload_path,
     )
-    thumbnail_contenttype = models.CharField(blank=True, null=True)
+    thumbnail_contenttype = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(
@@ -362,7 +364,7 @@ class Asset(models.Model):
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)
     presentation_params = models.JSONField(null=True, blank=True)
-    imported_from = models.CharField(null=True, blank=True)
+    imported_from = models.CharField(max_length=255, null=True, blank=True)
     remix_ids = models.JSONField(null=True, blank=True)
     historical_likes = models.PositiveIntegerField(default=0)
     historical_views = models.PositiveIntegerField(default=0)
