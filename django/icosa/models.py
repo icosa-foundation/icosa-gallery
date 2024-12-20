@@ -698,6 +698,8 @@ class Asset(models.Model):
         return asset_qs.first().rank
 
     def inc_views_and_rank(self):
+        # TODO(james): This was always supposed to be a POC. Rip this out at
+        # the earliest convenience.
         asset_qs = Asset.objects.filter(pk=self.pk)
         asset_qs.update(
             views=F("views") + 1,
