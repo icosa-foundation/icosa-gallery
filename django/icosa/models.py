@@ -1,5 +1,6 @@
 import os
 from collections import OrderedDict
+from datetime import datetime
 
 import bcrypt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
@@ -675,48 +676,17 @@ class Asset(models.Model):
     def denorm_triangle_count(self):
         self.triangle_count = self.get_triangle_count()
 
-    # get_updated_rank() and inc_views_and_rank() are very similar. TODO: Find
-    # a way to abstract the rank expression. Currently dumping the whole thing
-    # into a function doesn't evaluate it properly.
     def get_updated_rank(self):
-        asset_qs = Asset.objects.filter(pk=self.pk)
-        asset_qs.update(
-            rank=((F("likes") + F("historical_likes") + 1) * LIKES_WEIGHT)
-            + ((F("views") + F("historical_views")) * VIEWS_WEIGHT)
-            + (
-                ExpressionWrapper(
-                    1
-                    / (
-                        Extract(Now(), "epoch")
-                        - Extract(F("create_time"), "epoch")
-                    ),
-                    output_field=FloatField(),
-                )
-                * RECENCY_WEIGHT
-            ),
-        )
-        return asset_qs.first().rank
+        rank = (self.likes + self.historical_likes + 1) * LIKES_WEIGHT
+        rank += (self.views + self.historical_views) * VIEWS_WEIGHT
+        rank += (1 / (datetime.now().timestamp() - self.create_time.timestamp())) * RECENCY_WEIGHT
+        return rank
 
-    def inc_views_and_rank(self):
-        # TODO(james): This was always supposed to be a POC. Rip this out at
-        # the earliest convenience.
-        asset_qs = Asset.objects.filter(pk=self.pk)
-        asset_qs.update(
-            views=F("views") + 1,
-            rank=((F("likes") + F("historical_likes") + 1) * LIKES_WEIGHT)
-            + ((F("views") + 1 + F("historical_views")) * VIEWS_WEIGHT)
-            + (
-                ExpressionWrapper(
-                    1
-                    / (
-                        Extract(Now(), "epoch")
-                        - Extract(F("create_time"), "epoch")
-                    ),
-                    output_field=FloatField(),
-                )
-                * RECENCY_WEIGHT
-            ),
-        )
+    def inc_views_and_rank(self, save=False):
+        self.views += 1
+        self.rank = self.get_updated_rank()
+        if save:
+            self.save()
 
     def get_all_file_names(self):
         file_list = []
