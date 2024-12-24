@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.staticfiles",
     "django.contrib.messages",
+    "django_extensions",
     "constance",
     "constance.backends.database",
     "icosa",
@@ -399,6 +400,8 @@ ASSET_CATEGORIES_REVERSE_MAP = {
 ASSET_CATEGORY_LABEL_MAP = {
     v[1]: v[0] for k, v in ASSET_CATEGORIES_MAP.items()
 }
+
+SHELL_PLUS = "ptpython"
 
 # Sentry settings
 SENTRY_DSN = os.environ.get("DJANGO_SENTRY_DSN", None)
