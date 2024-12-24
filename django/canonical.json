@@ -1,0 +1,125 @@
+{
+    "name": "Astronaut",
+    "assetId": "dLHpzNdygsg",
+    "description": "#space #solarsystem #exploration",
+    "authorName": "Poly by Google",
+    "authorId": "4aEd8rQgKu2",
+    "createTime": "2017-10-22T21:25:02.374577Z",
+    "updateTime": "2021-06-16T18:54:16.414941Z",
+    "category": "People & Characters",
+    "license": "CREATIVE_COMMONS_BY",
+    "visibility": "PUBLIC",
+    "views": 33036,
+    "likes": 385,
+    "tags": [
+        "people",
+        "curated",
+        "space",
+        "solarsystem",
+        "exploration"
+    ],
+    "thumbnail_url": "https://lh3.googleusercontent.com/x0RRRsF5Rjgwbadieg7uhUv4iQyOaoJBZsJluHmOGzMiNKfdqCY-WYz8bDjRxSSi",
+    "formats": [
+        {
+            "root": {
+                "id": "4jzWlw6fZh5",
+                "url": "https://poly.googleusercontent.com/downloads/c/fp/1623272430922436/dLHpzNdygsg/4jzWlw6fZh5/Astronaut.gltf",
+                "role": "Updated glTF File"
+            },
+            "formatComplexity": {
+                "triangleCount": 0
+            },
+            "formatType": "GLTF2",
+            "archive": {
+                "id": "6nCfHwD0wQF",
+                "filename": "archive.zip",
+                "url": "https://poly.googleusercontent.com/downloads/c/fp/1623272430922436/dLHpzNdygsg/4jzWlw6fZh5/archive.zip"
+            },
+            "resources": [
+                {
+                    "id": "eJMWAq0hrnF",
+                    "filename": "Astronaut_BaseColor.png",
+                    "url": "https://poly.googleusercontent.com/downloads/c/fp/1623272430922436/dLHpzNdygsg/4jzWlw6fZh5/Astronaut_BaseColor.png"
+                },
+                {
+                    "id": "16zl1z_oa4T",
+                    "filename": "Astronaut.bin",
+                    "url": "https://poly.googleusercontent.com/downloads/c/fp/1623272430922436/dLHpzNdygsg/4jzWlw6fZh5/Astronaut.bin"
+                }
+            ]
+        }
+
+    ],
+    "presentationParams": {
+        "orientingRotation": {
+            "w": 1
+        },
+        "colorSpace": "LINEAR",
+        "GOOGLE_initial_camera_motion": {
+            "motionPath": "FULL_ROTATION"
+        },
+        "GOOGLE_lighting_rig": {
+            "disableShadows": false
+        },
+        "GOOGLE_backgrounds": {
+            "color": [
+                0,
+                0.7372549019607844,
+                0.8313725490196079
+            ]
+        },
+        "GOOGLE_real_world_transform": {"scaling_factor": 0.5},
+        "GOOGLE_scene_rotation": [0.2, 0, 0, 1],
+        "GOOGLE_lights_image_based": 2,
+        "camera": {
+            "perspective": {
+                "yfov": 0.7853981633974483,
+                "znear": 0.1000000014901161
+            },
+            "type": "perspective",
+            "translation": [
+                -2.582096317759857,
+                4.681189157482669,
+                4.442210172000502
+            ],
+            "rotation": [
+                -0.2219240542792781,
+                -0.2518950318538159,
+                -0.05946428056213499,
+                0.9400864887853888
+            ],
+            "GOOGLE_camera_settings": {
+                "panLimits": {"min": [0.1, 0.1, 0.1], "max": [0.1, 0.1, 0.1]},
+                "yawLimits": {"min": 0.1, "max": 0.1},
+                "pitchLimits": {"min": 0.1, "max": 0.1},
+                "distanceLimits": {"min": 0.1, "max": 0.1},
+                "mode": "orbit",
+                "pivot": [0.1, 0.1, 0.1]
+            }
+        },
+        "GOOGLE_hemi_light": {
+            "groundColor": [
+                0,
+                0.7372549019607844,
+                0.8313725490196079
+            ]
+        },
+        "GOOGLE_geometry_data": {
+            "stats": {
+                "centroid": [
+                    -2.304424941292031e-06,
+                    2.126976956539816,
+                    0.1816372370332726
+                ],
+                "radius": 2.413142642834748,
+                "stdev": 1.191126726507961
+            },
+            "visualCenterPoint": [
+                -0.009971470925460404,
+                2.108961134862853,
+                -0.01285705997393671
+            ]
+        },
+        "backgroundColor": "#00bcd4"
+    }
+}
