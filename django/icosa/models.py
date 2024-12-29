@@ -592,7 +592,7 @@ class Asset(models.Model):
         return self.thumbnail.content_type
 
     def img_tag(self, src):
-        return f"<img src='{settings.STATIC_URL}/images/{src}'>"
+        return f"<img src='{settings.STATIC_URL}images/{src}'>"
 
     def get_license_icons(self):
         icons = []
