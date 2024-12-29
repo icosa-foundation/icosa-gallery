@@ -223,8 +223,8 @@ STATICFILES_FINDERS = (
 # Media files
 # TODO make this configurable based on file storage. We should have an absolute
 # path for local storage and a root-relative path for storages such as s3.
-MEDIA_ROOT = "icosa"
-# MEDIA_URL = "..."  # unused with django-storages
+MEDIA_ROOT = "media/"
+MEDIA_URL = "/media/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
