@@ -11,6 +11,7 @@ from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 from django.conf import settings
 from django.conf.urls import include
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from django.views.generic import RedirectView
@@ -158,6 +159,8 @@ urlpatterns = [
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
 ]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEPLOYMENT_HOST_API:
     urlpatterns.append(
