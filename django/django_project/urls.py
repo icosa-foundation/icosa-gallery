@@ -26,17 +26,11 @@ throttle_rules = [
 if getattr(settings, "STAFF_ONLY_ACCESS", False):
     api = NinjaAPI(
         auth=AuthBearer(),
-        throttle=[
-            AnonRateThrottle("10/h"),
-            AuthRateThrottle("100/h"),
-        ],
+        throttle=throttle_rules,
     )
 else:
     api = NinjaAPI(
-        throttle=[
-            AnonRateThrottle("10/h"),
-            AuthRateThrottle("100/h"),
-        ],
+        throttle=throttle_rules,
     )
 
 api.add_router("assets", assets_router, tags=["Assets"])
