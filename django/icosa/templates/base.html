@@ -22,9 +22,11 @@
 <div id="root">
     <div class="App">
         {% block nav %}
-        {% include "partials/side_nav.html" %}
+        {% if can_view_in_maintenance %}
+            {% include "partials/side_nav.html" %}
+        {% endif %}
         {% endblock nav %}
-        <main{% block mainattrs %}{% endblock mainattrs %}>
+        <main{% block mainattrs %}{% if not can_view_in_maintenance %} style="margin-left:0;"{% endif %}{% endblock mainattrs %}>
             {% block banner %}{% endblock banner %}
             {% block header %}
                 <header>
@@ -44,13 +46,15 @@
                                 </a>
                             </div>
                             <div class="text-right col">
-                                <div>
-                                {% if owner is not None %}
-                                    Welcome, <a href="/user/{{ owner.url }}">{{ owner.displayname }}</a>
-                                {% else %}
-                                    <a href="{% url 'login' %}">Login / Register</a>
+                                {% if can_view_in_maintenance %}
+                                    <div>
+                                    {% if owner is not None %}
+                                        Welcome, <a href="/user/{{ owner.url }}">{{ owner.displayname }}</a>
+                                    {% else %}
+                                        <a href="{% url 'login' %}">Login / Register</a>
+                                    {% endif %}
+                                    </div>
                                 {% endif %}
-                                </div>
                             </div>
                         </div>
                     </div>
