@@ -9,8 +9,13 @@ def owner_processor(request):
 
 
 def settings_processor(request):
+    can_view_in_maintenance = True
+
+    if settings.MAINTENANCE_MODE:
+        can_view_in_maintenance = request.user.is_staff
     return {
         "settings": settings,
+        "can_view_in_maintenance": can_view_in_maintenance,
     }
 
 
