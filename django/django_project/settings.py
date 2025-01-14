@@ -347,7 +347,13 @@ ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", True)
 
 MAINTENANCE_MODE = os.environ.get("DJANGO_MAINTENANCE_MODE", False)
 MAINTENANCE_MODE_IGNORE_STAFF = True
-MAINTENANCE_MODE_IGNORE_URLS = ["/admin/", "/device/", "/v1/"]
+MAINTENANCE_MODE_IGNORE_URLS = [
+    "/admin/",
+    "/device/",
+    "/v1/",
+    "/privacy-policy",
+    "/terms",
+]
 
 # Ninja settings
 

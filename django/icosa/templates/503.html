@@ -43,7 +43,31 @@
 <footer>
     <div class="container">
         <div class="row">
-            <div class="col">© 2020-{% now "Y" %} Icosa Gallery</div>
+            <div class="col-md-6">
+            {% spaceless %}
+                <nav>
+                    <ul>
+                        <li>
+                            © 2020-{% now "Y" %} Icosa Gallery
+                        </li>
+                    </ul>
+                </nav>
+            {% endspaceless %}
+            </div>
+            <div class="col-md-6">
+            {% spaceless %}
+                <nav class="text-right">
+                    <ul>
+                        <li>
+                            <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'terms' %}">Terms and Conditions</a>
+                        </li>
+                    </ul>
+                </nav>
+            {% endspaceless %}
+            </div>
         </div>
     </div>
 </footer>
