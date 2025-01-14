@@ -33,9 +33,11 @@
                     <div class="container">
                         <div class="row">
                             <div class="d-block d-lg-none col">
-                                <h3>
-                                    {% fa_icon "solid" "bars" "toggleicon toggler" %}
-                                </h3>
+                                {% if can_view_in_maintenance %}
+                                    <h3>
+                                        {% fa_icon "solid" "bars" "toggleicon toggler" %}
+                                    </h3>
+                                {% endif %}
                             </div>
                             <div class="d-none d-lg-block col"></div>
                             <div class="text-center col">
