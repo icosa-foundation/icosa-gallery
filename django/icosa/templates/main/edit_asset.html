@@ -29,7 +29,27 @@
                                 <p>Please choose a permissive, Creative Commons (CC) license before publishing your work. If you choose "All Rights Reserved", your work will only be shown on your profile page and via direct links. Work with a CC license will also appear in public lists and search results. Please note, CC licenses are non-revokable once chosen.</p>
                             {% endif %}
                         {% endif %}
+                        {% if field.name == "thumbnail" %}
+
+                        {% comment %}
+                        TODO: This extra thumbnail code should go in the custom_clearable_image_input.html once it's finalised.
+                        {% endcomment %}
+                        
+                        <label for="id_thumbnail_from_viewer">
+                            <input class="input-inline" type="checkbox" id="id_thumbnail_from_viewer" name="thumbnail_from_viewer">
+                            Use current viewer image as the thumbnail (will update when you save)
+                        </label>
+                        {% endif %}
                         {{ field }}
+                        {% if field.name == "thumbnail" %}
+                        <script>
+                            let thumbnailWidget = document.querySelector("#thumbnail-widget");
+                            let thumbnailCheckbox = document.querySelector("#id_thumbnail_from_viewer");
+                            thumbnailCheckbox.addEventListener("click", function(){
+                                thumbnailWidget.classList.toggle("hidden");
+                            });
+                        </script>
+                        {% endif %}
                     </div>
                 {% endfor %}
                 <button type="submit" class="btn btn-primary">Save</button>
