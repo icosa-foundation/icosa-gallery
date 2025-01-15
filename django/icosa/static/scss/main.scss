@@ -67,6 +67,10 @@ code {
     display: inline;
     width: auto;
   }
+
+  &.btn-xs {
+    font-size: 0.62rem;
+  }
 }
 
 .error {
