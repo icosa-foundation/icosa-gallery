@@ -66,10 +66,7 @@ def user_can_view_asset(
     asset: Asset,
 ) -> bool:
     if asset.visibility == PRIVATE:
-        return (
-            user.is_authenticated
-            and IcosaUser.from_django_user(user) == asset.owner
-        )
+        return user.is_authenticated and IcosaUser.from_django_user(user) == asset.owner
     return True
 
 
@@ -157,9 +154,7 @@ def landing_page(
     if hero is not None and not hero.visibility == PUBLIC:
         hero = None
 
-    paginator = Paginator(
-        assets.order_by("-rank"), settings.PAGINATION_PER_PAGE
-    )
+    paginator = Paginator(assets.order_by("-rank"), settings.PAGINATION_PER_PAGE)
     assets = paginator.get_page(page_number)
     page_title = f"Exploring {heading}" if is_explore_heading else heading
     context = {
@@ -292,9 +287,7 @@ def uploads(request):
                     asset,
                     [request.FILES["file"]],
                 )
-            messages.add_message(
-                request, messages.INFO, "Your upload has started."
-            )
+            messages.add_message(request, messages.INFO, "Your upload has started.")
             return HttpResponseRedirect(reverse("uploads"))
     elif request.method == "GET":
         form = AssetUploadForm()
@@ -469,7 +462,6 @@ def make_asset_masthead_image(request, asset_url):
 
 @never_cache
 def asset_downloads(request, asset_url):
-
     asset = get_object_or_404(Asset, url=asset_url)
     if asset.license == ALL_RIGHTS_RESERVED:
         raise Http404()
@@ -689,6 +681,14 @@ def terms(request):
     )
 
 
+def supporters(request):
+    return template_view(
+        request,
+        "main/supporters.html",
+        "Our supporters",
+    )
+
+
 def artist_info(request):
     template = "main/info_for_artists.html"
     subject = ""
@@ -698,9 +698,7 @@ def artist_info(request):
         # Assuming that the form is posted via htmx, so we are returning
         # a partial.
         form = ArtistQueryForm(request.POST)
-        subject = dict(form.fields["subject"].choices).get(
-            request.POST.get("subject")
-        )
+        subject = dict(form.fields["subject"].choices).get(request.POST.get("subject"))
         if form.is_valid():
             current_site = get_current_site(request)
             mail_subject = f"Enquiry from {current_site.name}: {subject}"

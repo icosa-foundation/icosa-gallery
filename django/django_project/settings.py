@@ -353,6 +353,7 @@ MAINTENANCE_MODE_IGNORE_URLS = [
     "/v1/",
     "/privacy-policy",
     "/terms",
+    "/supporters",
 ]
 
 # Ninja settings

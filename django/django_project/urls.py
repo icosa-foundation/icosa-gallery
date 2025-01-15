@@ -78,9 +78,7 @@ urlpatterns = [
     path("openbrush", main_views.home_openbrush, name="home_openbrush"),
     path("openblocks", main_views.home_blocks, name="home_blocks"),
     path("other", main_views.home_other, name="home_other"),
-    path(
-        "explore/<str:category>", main_views.category, name="explore_category"
-    ),
+    path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
     path("user/<str:user_url>", main_views.user_show, name="user_show"),
     path("likes", main_views.my_likes, name="my_likes"),
@@ -148,6 +146,7 @@ urlpatterns = [
         main_views.artist_info,
         name="artist_info",
     ),
+    path("supporters", main_views.supporters, name="supporters"),
     path("licenses", main_views.licenses, name="licenses"),
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),

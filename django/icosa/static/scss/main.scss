@@ -201,3 +201,23 @@ label {
   background-color: var(--color-alert-warning);
   border-color: var(--color-alert-warning);
 }
+
+.sponsor-images {
+  text-align: center;
+
+  img {
+    padding: 1rem;
+    background-color: var(--color-base-light);
+    border-radius: var(--border-radius-tiny);
+
+    margin-inline: 1rem;
+
+    &:first-child {
+      margin-inline-start: 0;
+    }
+
+    &:last-child {
+      margin-inline-end: 0;
+    }
+  }
+}
