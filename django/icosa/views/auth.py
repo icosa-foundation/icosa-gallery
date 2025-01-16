@@ -83,6 +83,9 @@ def save_access_token(user: IcosaUser):
 
 
 def custom_login(request):
+    if not request.user.is_anonymous:
+        return HttpResponseRedirect(reverse("home"))
+
     if request.method == "POST":
         username = request.POST.get("username", None)
         password = request.POST.get("password", None)
