@@ -1,20 +1,20 @@
 .sketchedit {
-    display: flex;
+  display: flex;
 
-    >div {
-        display: flex
+  >div {
+    display: flex
+  }
+
+  >.viewer {
+    flex-grow: 1;
+
+    .sketchviewer {
+      width: 100%;
     }
+  }
 
-    >.viewer {
-        flex-grow: 1;
-
-        .sketchviewer {
-            width: 100%;
-        }
-    }
-
-    >.editor {
-        width: 24em;
-    }
+  >.editor {
+    width: 24em;
+  }
 
 }
