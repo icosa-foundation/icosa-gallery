@@ -30,25 +30,26 @@
                             {% endif %}
                         {% endif %}
                         {% if field.name == "thumbnail" %}
-
-                        {% comment %}
-                        TODO: This extra thumbnail code should go in the custom_clearable_image_input.html once it's finalised.
-                        {% endcomment %}
-                        
-                        <label for="id_thumbnail_from_viewer">
-                            <input class="input-inline" type="checkbox" id="id_thumbnail_from_viewer" name="thumbnail_from_viewer">
-                            Use current viewer image as the thumbnail (will update when you save)
-                        </label>
+                            {% comment %}
+                            TODO: This extra thumbnail code should go in the custom_clearable_image_input.html once it's finalised.
+                    
+                            <label for="id_thumbnail_from_viewer">
+                                <input class="input-inline" type="checkbox" id="id_thumbnail_from_viewer" name="thumbnail_from_viewer">
+                                Use current viewer image as the thumbnail (will update when you save)
+                            </label>
+                            {% endcomment %}
                         {% endif %}
-                        {{ field }}
+                            {{ field }}
                         {% if field.name == "thumbnail" %}
-                        <script>
-                            let thumbnailWidget = document.querySelector("#thumbnail-widget");
-                            let thumbnailCheckbox = document.querySelector("#id_thumbnail_from_viewer");
-                            thumbnailCheckbox.addEventListener("click", function(){
-                                thumbnailWidget.classList.toggle("hidden");
-                            });
-                        </script>
+                            {% comment %}
+                            <script>
+                                let thumbnailWidget = document.querySelector("#thumbnail-widget");
+                                let thumbnailCheckbox = document.querySelector("#id_thumbnail_from_viewer");
+                                thumbnailCheckbox.addEventListener("click", function(){
+                                    thumbnailWidget.classList.toggle("hidden");
+                                });
+                            </script>
+                            {% endcomment %}
                         {% endif %}
                     </div>
                 {% endfor %}
