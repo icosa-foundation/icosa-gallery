@@ -4,27 +4,15 @@
 {% load fontawesome_tags %}
 {% load static %}
 
-{% block nav %}{% endblock nav %}
-{% block mainattrs %} style="margin-left:0;"{% endblock mainattrs %}
-{% block header %}
-    <header>
-        <div class="container">
-            <div class="row">
-                <div class="d-block d-md-none col">
-                </div>
-                <div class="d-none d-md-block col"></div>
-                <div class="text-center col">
-                    <a class="logo" href="/">
-                        <img alt="logo"
-                            src="{% static 'images/logo.png' %}">
-                    </a>
-                </div>
-                <div class="text-right col">
-                </div>
-            </div>
-        </div>
-    </header>
-{% endblock header %}
+{% block extrahead %}
+<script>
+    (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[])
+    .push(arguments);},l=d.createElement(e),l.async=1,l.src=u,
+    n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})
+    (window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
+    ml('account', '1187658');
+</script>
+{% endblock extrahead %}
 {% block content %}
 <div class="container">
     <div class="row">
@@ -34,17 +22,9 @@
             <h1>Coming Soon</h1>
             <p>A completely re-written Icosa Gallery with lots of new features!</p>
             <br>
+            <div class="ml-embedded" data-form="cTULY6"></div>
             <br>
         </div>
     </div>
 </div>
 {% endblock content %}
-{% block footer %}
-<footer>
-    <div class="container">
-        <div class="row">
-            <div class="col">© 2020-{% now "Y" %} Icosa Gallery</div>
-        </div>
-    </div>
-</footer>
-{% endblock footer %}

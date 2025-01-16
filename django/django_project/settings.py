@@ -63,7 +63,6 @@ if (
     and DJANGO_STORAGE_ACCESS_KEY
     and DJANGO_STORAGE_SECRET_KEY
 ):
-
     # Not using the STORAGES dict here as there is a bug in django-storages
     # that means we must set these separately.
     DEFAULT_FILE_STORAGE = DJANGO_DEFAULT_FILE_STORAGE
@@ -233,9 +232,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cors settings
 
-CORS_ALLOW_ALL_ORIGINS = bool(
-    os.environ.get("DJANGO_CORS_ALLOW_ALL_ORIGINS", False)
-)
+CORS_ALLOW_ALL_ORIGINS = bool(os.environ.get("DJANGO_CORS_ALLOW_ALL_ORIGINS", False))
 
 if os.environ.get("DJANGO_CORS_ALLOWED_ORIGINS", None) is not None:
     CORS_ALLOWED_ORIGINS = [
@@ -358,7 +355,14 @@ ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", True)
 
 MAINTENANCE_MODE = os.environ.get("DJANGO_MAINTENANCE_MODE", False)
 MAINTENANCE_MODE_IGNORE_STAFF = True
-MAINTENANCE_MODE_IGNORE_URLS = ["/admin/", "/device/", "/v1/"]
+MAINTENANCE_MODE_IGNORE_URLS = [
+    "/admin/",
+    "/device/",
+    "/v1/",
+    "/privacy-policy",
+    "/terms",
+    "/supporters",
+]
 
 # Ninja settings
 
@@ -394,12 +398,8 @@ ASSET_CATEGORIES_MAP = {
 }
 # TODO(james): move this to somewhere else so that categories can be overridden
 # in local settings and still be reverse mapped correctly.
-ASSET_CATEGORIES_REVERSE_MAP = {
-    v[1]: k for k, v in ASSET_CATEGORIES_MAP.items()
-}
-ASSET_CATEGORY_LABEL_MAP = {
-    v[1]: v[0] for k, v in ASSET_CATEGORIES_MAP.items()
-}
+ASSET_CATEGORIES_REVERSE_MAP = {v[1]: k for k, v in ASSET_CATEGORIES_MAP.items()}
+ASSET_CATEGORY_LABEL_MAP = {v[1]: v[0] for k, v in ASSET_CATEGORIES_MAP.items()}
 
 SHELL_PLUS = "ptpython"
 
