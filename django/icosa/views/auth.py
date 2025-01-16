@@ -38,9 +38,7 @@ INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
 def generate_device_code(length=5):
     # Define a string of characters to exclude
     exclude = "I1O0"
-    characters = "".join(
-        set(string.ascii_uppercase + string.digits) - set(exclude)
-    )
+    characters = "".join(set(string.ascii_uppercase + string.digits) - set(exclude))
     return "".join(secrets.choice(characters) for i in range(length))
 
 
@@ -76,9 +74,7 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
 
 
 def save_access_token(user: IcosaUser):
-    access_token_expires = timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
@@ -226,9 +222,7 @@ def password_reset(request):
                 user = User.objects.get(email=form.cleaned_data["email"])
 
                 current_site = get_current_site(request)
-                mail_subject = (
-                    f"Reset your {current_site.name} account password."
-                )
+                mail_subject = f"Reset your {current_site.name} account password."
                 message = render_to_string(
                     "auth/password_reset_email.html",
                     {
@@ -290,15 +284,11 @@ def password_reset_confirm(request, uidb64, token):
                         logout(request)
                         icosa_user = get_owner(user)
                         icosa_user.set_password(password)
-                        return HttpResponseRedirect(
-                            reverse("password_reset_complete")
-                        )
+                        return HttpResponseRedirect(reverse("password_reset_complete"))
         else:
             if default_token_generator.check_token(user, token):
                 request.session[INTERNAL_RESET_SESSION_TOKEN] = token
-                redirect_url = request.path.replace(
-                    token, redirected_url_token
-                )
+                redirect_url = request.path.replace(token, redirected_url_token)
                 return HttpResponseRedirect(redirect_url)
 
     return render(
