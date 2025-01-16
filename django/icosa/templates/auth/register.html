@@ -4,17 +4,22 @@
         <div class="row">
             <div class="col col-lg-6 offset-lg-3">
                 <h1>Register</h1>
-                {% if success %}
-                    <p>Please click the link in the email we've sent you to complete your registration.</p>
-                {% else %}
-                    {% if config.BETA_MODE %}
-                        {% include 'partials/login_notice.html' %}
+                {% if request.user.is_anonymous %}
+                    {% if success %}
+                        <p>Please click the link in the email we've sent you to complete your registration.</p>
+                    {% else %}
+                        {% if config.BETA_MODE %}
+                            {% include 'partials/login_notice.html' %}
+                        {% endif %}
+                        <form action="{% url 'register' %}" method="post" novalidate>
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            <button class="btn btn-primary" type="submit">Register</button>
+                        </form>
                     {% endif %}
-                    <form action="{% url 'register' %}" method="post" novalidate>
-                        {% csrf_token %}
-                        {{ form.as_p }}
-                        <button class="btn btn-primary" type="submit">Register</button>
-                    </form>
+                {% else %}
+                    <p>You are currently logged in.</p>
+                    <p>Manage <a href="{% url 'uploads' %}">your uploads</a></p>
                 {% endif %}
             </div>
         </div>
