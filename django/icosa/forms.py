@@ -11,6 +11,7 @@ from icosa.models import (
 )
 
 from django import forms
+from django.contrib.auth.models import User as DjangoUser
 from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
 from django.utils.translation import gettext_lazy as _
 
@@ -55,9 +56,7 @@ class AssetSettingsForm(forms.ModelForm):
         #  CC licenses are non-revokable, but are upgradeable. If the license
         # is cc but not in our current menu of options, they can upgrade and so
         # should be able to choose a different one.
-        self.fields["license"].disabled = (
-            self.instance.license in V4_CC_LICENSES
-        )
+        self.fields["license"].disabled = self.instance.license in V4_CC_LICENSES
 
         if (
             self.instance.license in V3_CC_LICENSES
@@ -129,9 +128,12 @@ class UserSettingsForm(forms.ModelForm):
         email = cleaned_data.get("email")
         email_confirm = cleaned_data.get("email_confirm")
 
-        if (
-            password_new or password_confirm
-        ) and password_new != password_confirm:
+        if not user.check_password(password_current):
+            self.add_error(
+                "password_current", "You must enter your password to make changes"
+            )
+
+        if (password_new or password_confirm) and password_new != password_confirm:
             msg = "Passwords must match"
             self.add_error("password_new", msg)
             self.add_error("password_confirm", msg)
@@ -153,6 +155,14 @@ class UserSettingsForm(forms.ModelForm):
                 msg = "Email addresses must match"
                 self.add_error("email", msg)
                 self.add_error("email_confirm", msg)
+            else:
+                if (
+                    DjangoUser.objects.filter(email=email_confirm).exists()
+                    or User.objects.filter(email=email_confirm).exists()
+                ):
+                    msg = "Cannot use this email address, please try another"
+                    self.add_error("email", msg)
+                    self.add_error("email_confirm", msg)
 
     class Meta:
         model = User
@@ -188,9 +198,7 @@ class NewUserForm(forms.ModelForm):
         password_new = cleaned_data.get("password_new")
         password_confirm = cleaned_data.get("password_confirm")
 
-        if (
-            password_new or password_confirm
-        ) and password_new != password_confirm:
+        if (password_new or password_confirm) and password_new != password_confirm:
             msg = "Passwords must match"
             self.add_error("password_new", msg)
             self.add_error("password_confirm", msg)
@@ -230,9 +238,7 @@ class PasswordResetConfirmForm(forms.ModelForm):
         password_new = cleaned_data.get("password_new")
         password_confirm = cleaned_data.get("password_confirm")
 
-        if (
-            password_new or password_confirm
-        ) and password_new != password_confirm:
+        if (password_new or password_confirm) and password_new != password_confirm:
             msg = "Passwords must match"
             self.add_error("password_new", msg)
             self.add_error("password_confirm", msg)

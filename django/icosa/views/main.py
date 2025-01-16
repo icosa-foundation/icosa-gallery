@@ -640,15 +640,16 @@ def user_settings(request):
     if request.method == "POST":
         form = UserSettingsForm(request.POST, instance=icosa_user, user=user)
         if form.is_valid():
-            updated_user = form.save()
+            form.save()
             password_new = request.POST.get("password_new")
             if password_new:
                 user.set_password(password_new)
                 icosa_user.set_password(password_new)
                 need_login = True
             email = request.POST.get("email")
-            if email and icosa_user.email != updated_user.email:
+            if email:
                 user.email = email
+                user.username = email
                 need_login = True
             user.save()
             if need_login:

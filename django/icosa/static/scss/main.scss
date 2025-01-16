@@ -73,6 +73,12 @@ code {
   }
 }
 
+.errorlist {
+  margin-top: 2rem;
+  margin-bottom: 0;
+  color: var(--color-alert-danger);
+}
+
 .error {
   color: var(--color-alert-danger);
   margin: 1em 0;
