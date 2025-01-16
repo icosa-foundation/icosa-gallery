@@ -76,7 +76,8 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
 def save_access_token(user: IcosaUser):
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": f"{user.email}{user.password}"},
+        expires_delta=access_token_expires,
     )
     user.access_token = access_token
     user.save()
