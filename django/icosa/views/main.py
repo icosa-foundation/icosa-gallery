@@ -650,7 +650,6 @@ def user_settings(request):
             if email:
                 user.email = email
                 user.username = email
-                need_login = True
             user.save()
             if need_login:
                 logout(request)
