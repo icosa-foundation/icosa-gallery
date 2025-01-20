@@ -66,7 +66,13 @@ V3_CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES]
 V4_CC_LICENSES = [x[0] for x in V4_CC_LICENSE_CHOICES]
 V3_CC_LICENSE_MAP = {x[0]: x[1] for x in V3_CC_LICENSE_CHOICES}
 V4_CC_LICENSE_MAP = {x[0]: x[1] for x in V4_CC_LICENSE_CHOICES}
-V3_TO_V4_UPGRADE_MAP = {x[0]: x[1] for x in zip(V3_CC_LICENSES, V4_CC_LICENSES)}
+V3_TO_V4_UPGRADE_MAP = {
+    x[0]: x[1]
+    for x in zip(
+        V3_CC_LICENSES,
+        V4_CC_LICENSES,
+    )
+}
 
 ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED"
 RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
@@ -209,7 +215,11 @@ class AssetOwner(models.Model):
     displayname = models.CharField("Display Name", max_length=255)
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
-    likes = models.ManyToManyField("Asset", through="OwnerAssetLike", blank=True)
+    likes = models.ManyToManyField(
+        "Asset",
+        through="OwnerAssetLike",
+        blank=True,
+    )
     access_token = models.CharField(
         max_length=255,
         null=True,
@@ -341,7 +351,11 @@ class Asset(models.Model):
         null=True,
         upload_to=preview_image_upload_path,
     )
-    thumbnail_contenttype = models.CharField(max_length=255, blank=True, null=True)
+    thumbnail_contenttype = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(
@@ -399,13 +413,18 @@ class Asset(models.Model):
         # Return early with an obj if we know the asset is a blocks file.
         # There are some issues with displaying GLTF files from Blocks so we
         # have to return an OBJ and its associated MTL.
-        if False:  # TODO we now force updated gltf in the template instead of obj
+        # TODO we now force updated gltf in the template instead of obj
+        if False:
             # here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
-            obj_resource = obj_format.polyresource_set.filter(is_root=True).first()
-            mtl_resource = obj_format.polyresource_set.filter(is_root=False).first()
+            obj_resource = obj_format.polyresource_set.filter(
+                is_root=True,
+            ).first()
+            mtl_resource = obj_format.polyresource_set.filter(
+                is_root=False,
+            ).first()
 
             if obj_resource:
                 return {
