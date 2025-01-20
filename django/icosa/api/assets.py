@@ -62,9 +62,7 @@ def get_publish_url(request, asset: Asset) -> str:
         )
     )
     if settings.DEPLOYMENT_HOST_API is not None:
-        url = url.replace(
-            settings.DEPLOYMENT_HOST_API, settings.DEPLOYMENT_HOST_WEB
-        )
+        url = url.replace(settings.DEPLOYMENT_HOST_API, settings.DEPLOYMENT_HOST_WEB)
     return 200, {
         "publishUrl": url,
         "assetId": asset.url,
@@ -89,10 +87,7 @@ def user_owns_asset(
     # so probably needs a refactor
     if not hasattr(request, "auth"):
         user = get_django_user_from_auth_bearer(request)
-        return (
-            user is not None
-            and IcosaUser.from_django_user(user) == asset.owner
-        )
+        return user is not None and IcosaUser.from_django_user(user) == asset.owner
     return IcosaUser.from_ninja_request(request) == asset.owner
 
 
