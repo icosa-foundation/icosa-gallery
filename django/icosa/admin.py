@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
@@ -190,6 +191,7 @@ class AssetOwnerAdmin(admin.ModelAdmin):
         "displayname",
         "email",
         "url",
+        "_django_user_link",
     )
 
     search_fields = (
@@ -204,6 +206,19 @@ class AssetOwnerAdmin(admin.ModelAdmin):
     )
     inlines = (UserAssetLikeInline,)
     raw_id_fields = ["django_user"]
+
+    def _django_user_link(self, obj):
+        html = "-"
+        if obj.django_user:
+            change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
+            html = f"""
+<a href="{change_url}">{obj.django_user}</a>
+"""
+
+        return mark_safe(html)
+
+    _django_user_link.short_description = "Django User"
+    _django_user_link.allow_tags = True
 
 
 @admin.register(MastheadSection)
