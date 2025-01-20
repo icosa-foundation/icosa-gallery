@@ -237,7 +237,7 @@ class AssetOwner(models.Model):
         instance = None
         if getattr(request.auth, "email", None):
             try:
-                instance = cls.objects.get(email=request.auth.email)
+                instance = cls.objects.get(django_user=request.auth)
             except cls.DoesNotExist:
                 pass
         return instance
@@ -247,7 +247,7 @@ class AssetOwner(models.Model):
         instance = None
         if getattr(request.user, "email", None):
             try:
-                instance = cls.objects.get(email=request.user.email)
+                instance = cls.objects.get(django_user=request.user)
             except cls.DoesNotExist:
                 pass
         return instance
