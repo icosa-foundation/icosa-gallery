@@ -8,8 +8,7 @@ from constance import config
 from django.conf import settings
 from django.contrib.auth.models import User as DjangoUser
 from django.db import models
-from django.db.models import ExpressionWrapper, F, FloatField, Q
-from django.db.models.functions import Extract, Now
+from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.format_roles import (
