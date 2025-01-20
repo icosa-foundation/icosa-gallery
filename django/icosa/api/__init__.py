@@ -98,7 +98,7 @@ def build_format_q(formats: List) -> Q:
         return q
     else:
         raise FilterException(
-            f"format filter not one of {', '.join(FILTERABLE_FORMATS)}"
+            f"Format filter not one of {', '.join(FILTERABLE_FORMATS)}"
         )
 
 
