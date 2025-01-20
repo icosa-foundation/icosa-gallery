@@ -87,28 +87,12 @@ def build_format_q(formats: List) -> Q:
     ]
     q = Q()
     valid_q = False
-
-    if "TILT" in formats:
-        q &= Q(has_tilt=True)
-        valid_q = True
-    if "BLOCKS" in formats:
-        q &= Q(has_blocks=True)
-        valid_q = True
-    if "GLTF" in formats:
-        q &= Q(has_gltf_any=True)
-        valid_q = True
-    if "GLTF1" in formats:
-        q &= Q(has_gltf1=True)
-        valid_q = True
-    if "GLTF2" in formats:
-        q &= Q(has_gltf2=True)
-        valid_q = True
-    if "OBJ" in formats:
-        q &= Q(has_obj=True)
-        valid_q = True
-    if "FBX" in formats:
-        q &= Q(has_fbx=True)
-        valid_q = True
+    for format in FILTERABLE_FORMATS:
+        if format in formats:
+            # Reliant on the fact that each of FILTERABLE_FORMATS has an
+            # associated has_<format> field in the db.
+            q &= Q(**{f"has_{format.lower()}": True})
+            valid_q = True
 
     if valid_q:
         return q
