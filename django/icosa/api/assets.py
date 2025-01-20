@@ -368,6 +368,8 @@ def get_assets(
             assets = assets.order_by("create_time")
         elif filters.orderBy == "BEST":
             assets = assets.order_by("-rank")
+        elif filters.orderBy == "TRIANGLECOUNT":
+            assets = assets.order_by("-triangle_count")
         else:
             pass
 
