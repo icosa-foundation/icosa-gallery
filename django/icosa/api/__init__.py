@@ -76,22 +76,46 @@ class AssetPagination(PaginationBase):
 
 
 def build_format_q(formats: List) -> Q:
+    FILTERABLE_FORMATS = [
+        "TILT",
+        "BLOCKS",
+        "GLTF",
+        "GLTF1",
+        "GLTF2",
+        "OBJ",
+        "FBX",
+    ]
     q = Q()
+    valid_q = False
+
     if "TILT" in formats:
         q &= Q(has_tilt=True)
+        valid_q = True
     if "BLOCKS" in formats:
         q &= Q(has_blocks=True)
+        valid_q = True
     if "GLTF" in formats:
         q &= Q(has_gltf_any=True)
+        valid_q = True
     if "GLTF1" in formats:
         q &= Q(has_gltf1=True)
+        valid_q = True
     if "GLTF2" in formats:
         q &= Q(has_gltf2=True)
+        valid_q = True
     if "OBJ" in formats:
         q &= Q(has_obj=True)
+        valid_q = True
     if "FBX" in formats:
         q &= Q(has_fbx=True)
-    return q
+        valid_q = True
+
+    if valid_q:
+        return q
+    else:
+        raise FilterException(
+            f"format filter not one of {', '.join(FILTERABLE_FORMATS)}"
+        )
 
 
 def get_django_user_from_auth_bearer(request):

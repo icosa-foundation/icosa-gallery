@@ -2,6 +2,13 @@ import re
 import secrets
 from typing import List, NoReturn, Optional
 
+from django.conf import settings
+from django.core.files.storage import get_storage_class
+from django.db import transaction
+from django.db.models import Q
+from django.db.models.query import QuerySet
+from django.http import HttpRequest, HttpResponseBadRequest
+from django.urls import reverse
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     POLY_CATEGORY_MAP,
@@ -10,6 +17,7 @@ from icosa.api import (
     get_django_user_from_auth_bearer,
 )
 from icosa.api.authentication import AuthBearer
+from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset
 from icosa.models import User as IcosaUser
@@ -24,14 +32,6 @@ from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
-
-from django.conf import settings
-from django.core.files.storage import get_storage_class
-from django.db import transaction
-from django.db.models import Q
-from django.db.models.query import QuerySet
-from django.http import HttpRequest
-from django.urls import reverse
 
 from .schema import (
     AssetFilters,
@@ -379,7 +379,10 @@ def get_assets(
     request,
     filters: AssetFilters = Query(...),
 ):
-    assets = filter_assets(filters)
+    try:
+        assets = filter_assets(filters)
+    except FilterException as err:
+        raise HttpError(400, f"{err}")
 
     if filters.orderBy:
         assets = sort_assets(filters.orderBy, assets)
