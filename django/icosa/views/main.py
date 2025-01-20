@@ -133,14 +133,14 @@ def landing_page(
     if show_hero is True:
         # The heroes query is slow, but we still want a rotating list on every
         # page load. Cache a list of heroes and choose one at random each time.
-        cache_key = f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}"
+        cache_key = f"{HERO_CACHE_PREFIX}-{landing_page_fn_name}"
         if cache.get(cache_key):
             heroes = cache.get(cache_key)
         else:
             heroes = list(MastheadSection.objects.all())
 
             cache.set(
-                f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}",
+                f"{HERO_CACHE_PREFIX}-{landing_page_fn_name}",
                 heroes,
                 HERO_CACHE_SECONDS,
             )
