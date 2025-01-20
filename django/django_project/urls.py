@@ -23,14 +23,22 @@ throttle_rules = [
     AuthRateThrottle("1000/h"),
 ]
 
+api_servers = [
+    {
+        "url": settings.API_SERVER,
+        "description": "Development server" if settings.DEBUG else "Production server",
+    }
+]
 if getattr(settings, "STAFF_ONLY_ACCESS", False):
     api = NinjaAPI(
         auth=AuthBearer(),
         throttle=throttle_rules,
+        servers=api_servers,
     )
 else:
     api = NinjaAPI(
         throttle=throttle_rules,
+        servers=api_servers,
     )
 
 api.add_router("assets", assets_router, tags=["Assets"])
