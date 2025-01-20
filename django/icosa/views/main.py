@@ -65,9 +65,7 @@ def user_can_view_asset(
     asset: Asset,
 ) -> bool:
     if asset.visibility == PRIVATE:
-        return (
-            user.is_authenticated and AssetOwner.from_django_user(user) == asset.owner
-        )
+        return user.is_authenticated and asset.owner.django_user == user
     return True
 
 
@@ -553,7 +551,7 @@ def delete_asset(request, asset_url):
 def publish_asset(request, asset_url):
     template = "main/edit_asset.html"
     asset = get_object_or_404(Asset, url=asset_url)
-    if AssetOwner.from_django_user(request.user) != asset.owner:
+    if request.user != asset.owner.django_user:
         raise Http404()
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)

@@ -1,6 +1,7 @@
 import os
 from collections import OrderedDict
 from datetime import datetime
+from typing import Self
 
 import bcrypt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
@@ -252,11 +253,11 @@ class AssetOwner(models.Model):
         return instance
 
     @classmethod
-    def from_django_user(cls, user):
+    def from_django_user(cls, user: DjangoUser) -> Self:
         instance = None
         if getattr(user, "email", None):
             try:
-                instance = cls.objects.get(email=user.email)
+                instance = cls.objects.get(django_user=user)
             except cls.DoesNotExist:
                 pass
         return instance

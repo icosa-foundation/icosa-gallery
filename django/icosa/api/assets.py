@@ -87,7 +87,7 @@ def user_owns_asset(
     # so probably needs a refactor
     if not hasattr(request, "auth"):
         user = get_django_user_from_auth_bearer(request)
-        return user is not None and AssetOwner.from_django_user(user) == asset.owner
+        return user is not None and user == asset.owner.django_user
     return AssetOwner.from_ninja_request(request) == asset.owner
 
 
