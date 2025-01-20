@@ -29,6 +29,7 @@ from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
 from django.db.models import Q
+from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
 
@@ -304,33 +305,10 @@ def upload_new_assets(
     return get_publish_url(request, asset)
 
 
-@router.get(
-    "",
-    response=List[AssetSchemaOut],
-    **COMMON_ROUTER_SETTINGS,
-    url_name="asset_list",
-)
-@router.get(
-    "/",
-    response=List[AssetSchemaOut],
-    include_in_schema=False,
-    **COMMON_ROUTER_SETTINGS,
-    url_name="asset_list",
-)
-@paginate(AssetPagination)
-@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
-def get_assets(
-    request,
-    filters: AssetFilters = Query(...),
-):
+def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
     q = Q(
         visibility=PUBLIC,
         # imported=True,
-    )
-    ex_q = (
-        Q(license__isnull=True)
-        | Q(license=ALL_RIGHTS_RESERVED)
-        | Q(last_reported_time__isnull=False)
     )
 
     if filters.tag:
@@ -359,18 +337,51 @@ def get_assets(
     q &= filter_complexity(filters)
     q &= filter_triangle_count(filters)
 
-    assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+    ex_q = (
+        Q(license__isnull=True)
+        | Q(license=ALL_RIGHTS_RESERVED)
+        | Q(last_reported_time__isnull=False)
+    )
+
+    return Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+
+
+def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
+    if key == "NEWEST":
+        assets = assets.order_by("-create_time")
+    elif key == "OLDEST":
+        assets = assets.order_by("create_time")
+    elif key == "BEST":
+        assets = assets.order_by("-rank")
+    elif key == "TRIANGLECOUNT":
+        assets = assets.order_by("-triangle_count")
+    else:
+        pass
+    return assets
+
+
+@router.get(
+    "",
+    response=List[AssetSchemaOut],
+    **COMMON_ROUTER_SETTINGS,
+    url_name="asset_list",
+)
+@router.get(
+    "/",
+    response=List[AssetSchemaOut],
+    include_in_schema=False,
+    **COMMON_ROUTER_SETTINGS,
+    url_name="asset_list",
+)
+@paginate(AssetPagination)
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+def get_assets(
+    request,
+    filters: AssetFilters = Query(...),
+):
+    assets = filter_assets(filters)
 
     if filters.orderBy:
-        if filters.orderBy == "NEWEST":
-            assets = assets.order_by("-create_time")
-        elif filters.orderBy == "OLDEST":
-            assets = assets.order_by("create_time")
-        elif filters.orderBy == "BEST":
-            assets = assets.order_by("-rank")
-        elif filters.orderBy == "TRIANGLECOUNT":
-            assets = assets.order_by("-triangle_count")
-        else:
-            pass
+        assets = sort_assets(filters.orderBy, assets)
 
     return assets
