@@ -1,10 +1,10 @@
 from typing import Any, List, Optional
 
+from django.db.models import Q
 from icosa.api.authentication import AuthBearer
+from icosa.api.exceptions import FilterException
 from ninja import Schema
 from ninja.pagination import PaginationBase
-
-from django.db.models import Q
 
 COMMON_ROUTER_SETTINGS = {
     "exclude_none": True,
@@ -34,9 +34,7 @@ class AssetPagination(PaginationBase):
 
     items_attribute: str = "assets"
 
-    def paginate_queryset(
-        self, queryset, pagination: Input, request, **params
-    ):
+    def paginate_queryset(self, queryset, pagination: Input, request, **params):
         try:
             page_size = (
                 int(pagination.pageSize)
