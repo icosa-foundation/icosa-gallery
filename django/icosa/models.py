@@ -4,6 +4,13 @@ from collections import OrderedDict
 import bcrypt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 from constance import config
+from django.conf import settings
+from django.contrib.auth.models import User as DjangoUser
+from django.db import models
+from django.db.models import ExpressionWrapper, F, FloatField, Q
+from django.db.models.functions import Extract, Now
+from django.utils.safestring import mark_safe
+from django.utils.text import slugify
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
     GLB_FORMAT,
@@ -20,14 +27,6 @@ from icosa.helpers.format_roles import (
     USD_FORMAT,
     USDZ_FORMAT,
 )
-
-from django.conf import settings
-from django.contrib.auth.models import User as DjangoUser
-from django.db import models
-from django.db.models import ExpressionWrapper, F, FloatField, Q
-from django.db.models.functions import Extract, Now
-from django.utils.safestring import mark_safe
-from django.utils.text import slugify
 
 from .helpers.snowflake import get_snowflake_timestamp
 from .helpers.storage import get_b2_bucket
@@ -67,9 +66,7 @@ V3_CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES]
 V4_CC_LICENSES = [x[0] for x in V4_CC_LICENSE_CHOICES]
 V3_CC_LICENSE_MAP = {x[0]: x[1] for x in V3_CC_LICENSE_CHOICES}
 V4_CC_LICENSE_MAP = {x[0]: x[1] for x in V4_CC_LICENSE_CHOICES}
-V3_TO_V4_UPGRADE_MAP = {
-    x[0]: x[1] for x in zip(V3_CC_LICENSES, V4_CC_LICENSES)
-}
+V3_TO_V4_UPGRADE_MAP = {x[0]: x[1] for x in zip(V3_CC_LICENSES, V4_CC_LICENSES)}
 
 ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED"
 RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
@@ -204,7 +201,7 @@ ASSET_STATE_CHOICES = [
 ]
 
 
-class User(models.Model):
+class AssetOwner(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.CharField("User Name / URL", max_length=255, unique=True)
     email = models.EmailField(max_length=255, null=True, blank=True)
@@ -212,9 +209,7 @@ class User(models.Model):
     displayname = models.CharField("Display Name", max_length=255)
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
-    likes = models.ManyToManyField(
-        "Asset", through="UserAssetLike", blank=True
-    )
+    likes = models.ManyToManyField("Asset", through="OwnerAssetLike", blank=True)
     access_token = models.CharField(
         max_length=255,
         null=True,
@@ -313,7 +308,7 @@ class Asset(models.Model):
     url = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
     owner = models.ForeignKey(
-        "User", null=True, blank=True, on_delete=models.CASCADE
+        "AssetOwner", null=True, blank=True, on_delete=models.CASCADE
     )
     description = models.TextField(blank=True, null=True)
     formats = models.JSONField(null=True, blank=True)
@@ -325,7 +320,7 @@ class Asset(models.Model):
     )
     curated = models.BooleanField(default=False)
     last_reported_by = models.ForeignKey(
-        "User",
+        "AssetOwner",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -346,9 +341,7 @@ class Asset(models.Model):
         null=True,
         upload_to=preview_image_upload_path,
     )
-    thumbnail_contenttype = models.CharField(
-        max_length=255, blank=True, null=True
-    )
+    thumbnail_contenttype = models.CharField(max_length=255, blank=True, null=True)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
     license = models.CharField(
@@ -403,23 +396,16 @@ class Asset(models.Model):
 
     @property
     def _preferred_viewer_format(self):
-
         # Return early with an obj if we know the asset is a blocks file.
         # There are some issues with displaying GLTF files from Blocks so we
         # have to return an OBJ and its associated MTL.
-        if (
-            False
-        ):  # TODO we now force updated gltf in the template instead of obj
+        if False:  # TODO we now force updated gltf in the template instead of obj
             # here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
-            obj_resource = obj_format.polyresource_set.filter(
-                is_root=True
-            ).first()
-            mtl_resource = obj_format.polyresource_set.filter(
-                is_root=False
-            ).first()
+            obj_resource = obj_format.polyresource_set.filter(is_root=True).first()
+            mtl_resource = obj_format.polyresource_set.filter(is_root=False).first()
 
             if obj_resource:
                 return {
@@ -497,9 +483,7 @@ class Asset(models.Model):
     @property
     def has_viewable_format_types(self):
         return (
-            self.polyformat_set.filter(
-                format_type__in=VIEWABLE_FORMAT_TYPES
-            ).count()
+            self.polyformat_set.filter(format_type__in=VIEWABLE_FORMAT_TYPES).count()
             > 0
         )
 
@@ -520,10 +504,7 @@ class Asset(models.Model):
         # the site admin in django constance settings.
         if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
             allowed_sources = tuple(
-                [
-                    x.strip()
-                    for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")
-                ]
+                [x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")]
             )
         else:
             allowed_sources = tuple([])
@@ -633,15 +614,9 @@ class Asset(models.Model):
         if not self.pk:
             return
         self.has_tilt = self.polyformat_set.filter(format_type="TILT").exists()
-        self.has_blocks = self.polyformat_set.filter(
-            format_type="BLOCKS"
-        ).exists()
-        self.has_gltf1 = self.polyformat_set.filter(
-            format_type="GLTF"
-        ).exists()
-        self.has_gltf2 = self.polyformat_set.filter(
-            format_type="GLTF2"
-        ).exists()
+        self.has_blocks = self.polyformat_set.filter(format_type="BLOCKS").exists()
+        self.has_gltf1 = self.polyformat_set.filter(format_type="GLTF").exists()
+        self.has_gltf2 = self.polyformat_set.filter(format_type="GLTF2").exists()
         self.has_gltf_any = self.polyformat_set.filter(
             format_type__in=["GLTF", "GLTF2"]
         ).exists()
@@ -685,11 +660,7 @@ class Asset(models.Model):
             + ((F("views") + F("historical_views")) * VIEWS_WEIGHT)
             + (
                 ExpressionWrapper(
-                    1
-                    / (
-                        Extract(Now(), "epoch")
-                        - Extract(F("create_time"), "epoch")
-                    ),
+                    1 / (Extract(Now(), "epoch") - Extract(F("create_time"), "epoch")),
                     output_field=FloatField(),
                 )
                 * RECENCY_WEIGHT
@@ -707,11 +678,7 @@ class Asset(models.Model):
             + ((F("views") + 1 + F("historical_views")) * VIEWS_WEIGHT)
             + (
                 ExpressionWrapper(
-                    1
-                    / (
-                        Extract(Now(), "epoch")
-                        - Extract(F("create_time"), "epoch")
-                    ),
+                    1 / (Extract(Now(), "epoch") - Extract(F("create_time"), "epoch")),
                     output_field=FloatField(),
                 )
                 * RECENCY_WEIGHT
@@ -743,15 +710,14 @@ class Asset(models.Model):
         def suffix(name):
             if name.endswith(".gltf"):
                 return "".join(
-                    [
-                        f"{p[0]}_(GLTFupdated){p[1]}"
-                        for p in [os.path.splitext(name)]
-                    ]
+                    [f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]]
                 )
             return name
 
         ARCHIVE_PREFIX = "https://web.archive.org/web/"
-        STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
+        STORAGE_PREFIX = (
+            f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
+        )
 
         format_name_override_map = {
             "Original OBJ File": "OBJ File",
@@ -759,13 +725,9 @@ class Asset(models.Model):
             "Updated glTF File": "GLTF File",
         }
 
-        for format in self.polyformat_set.filter(
-            role__in=WEB_UI_DOWNLOAD_COMPATIBLE
-        ):
+        for format in self.polyformat_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
             if format.archive_url:
-                resource_data = {
-                    "archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"
-                }
+                resource_data = {"archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"}
             else:
                 # Query all resources which have either an external url or a
                 # file.
@@ -798,9 +760,7 @@ class Asset(models.Model):
                         override_format = self.polyformat_set.get(
                             role=POLYGONE_GLTF_FORMAT
                         )
-                        override_resources = (
-                            override_format.polyresource_set.all()
-                        )
+                        override_resources = override_format.polyresource_set.all()
                         resource_data = {
                             "files_to_zip": [
                                 f"{STORAGE_PREFIX}{suffix(x.file.name)}"
@@ -890,9 +850,9 @@ class Asset(models.Model):
         ]
 
 
-class UserAssetLike(models.Model):
+class OwnerAssetLike(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="likedassets"
+        AssetOwner, on_delete=models.CASCADE, related_name="likedassets"
     )
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date_liked = models.DateTimeField(auto_now_add=True)
@@ -905,10 +865,7 @@ def format_upload_path(instance, filename):
     ext = filename.split(".")[-1]
     if instance.is_root:
         name = f"model.{ext}"
-    if (
-        ext == "obj"
-        and instance.format.role == ORIGINAL_TRIANGULATED_OBJ_FORMAT
-    ):
+    if ext == "obj" and instance.format.role == ORIGINAL_TRIANGULATED_OBJ_FORMAT:
         name = f"model-triangulated.{ext}"
     else:
         name = filename
@@ -936,9 +893,7 @@ class PolyFormat(models.Model):
 
 class PolyResource(models.Model):
     is_root = models.BooleanField(default=False)
-    asset = models.ForeignKey(
-        Asset, null=True, blank=False, on_delete=models.CASCADE
-    )
+    asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
     format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
@@ -992,9 +947,7 @@ class MastheadSection(models.Model):
         null=True,
         upload_to=masthead_image_upload_path,
     )
-    asset = models.ForeignKey(
-        Asset, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    asset = models.ForeignKey(Asset, on_delete=models.SET_NULL, null=True, blank=True)
     url = models.CharField(
         max_length=1024,
         null=True,
@@ -1023,7 +976,7 @@ class MastheadSection(models.Model):
 
 class DeviceCode(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(AssetOwner, on_delete=models.CASCADE)
     devicecode = models.CharField(max_length=6)
     expiry = models.DateTimeField()
 
@@ -1055,9 +1008,7 @@ class Oauth2Code(models.Model):
     response_type = models.TextField(blank=True, null=True)
     auth_time = models.IntegerField()
     code_challenge = models.TextField(blank=True, null=True)
-    code_challenge_method = models.CharField(
-        max_length=48, blank=True, null=True
-    )
+    code_challenge_method = models.CharField(max_length=48, blank=True, null=True)
     scope = models.TextField(blank=True, null=True)
     nonce = models.TextField(blank=True, null=True)
 

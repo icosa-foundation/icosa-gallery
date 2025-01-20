@@ -5,18 +5,6 @@ from typing import Optional
 
 import bcrypt
 import jwt
-from icosa.forms import (
-    NewUserForm,
-    PasswordResetConfirmForm,
-    PasswordResetForm,
-)
-from icosa.helpers.email import spawn_send_html_mail
-from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.user import get_owner
-from icosa.models import DeviceCode
-from icosa.models import User as IcosaUser
-from passlib.context import CryptContext
-
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -29,6 +17,16 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.cache import never_cache
+from icosa.forms import (
+    NewUserForm,
+    PasswordResetConfirmForm,
+    PasswordResetForm,
+)
+from icosa.helpers.email import spawn_send_html_mail
+from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.user import get_owner
+from icosa.models import AssetOwner, DeviceCode
+from passlib.context import CryptContext
 
 ALGORITHM = "HS256"
 
@@ -45,10 +43,10 @@ def generate_device_code(length=5):
 def authenticate_icosa_user(
     username: str,
     password: str,
-) -> Optional[IcosaUser]:
+) -> Optional[AssetOwner]:
     username = username.lower()
     try:
-        user = IcosaUser.objects.get(
+        user = AssetOwner.objects.get(
             email=username
         )  # This code used to check either url or username. Seems odd.
 
@@ -58,7 +56,7 @@ def authenticate_icosa_user(
 
         return user
 
-    except IcosaUser.DoesNotExist:
+    except AssetOwner.DoesNotExist:
         return None
 
 
@@ -73,7 +71,7 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 
-def save_access_token(user: IcosaUser):
+def save_access_token(user: AssetOwner):
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": f"{user.email}{user.password}"},
@@ -154,7 +152,7 @@ def register(request):
             snowflake = generate_snowflake()
             assettoken = secrets.token_urlsafe(8) if url is None else url
 
-            icosa_user = IcosaUser.objects.create(
+            icosa_user = AssetOwner.objects.create(
                 id=snowflake,
                 url=assettoken,
                 email=email,
@@ -322,7 +320,7 @@ def devicecode(request):
     user = request.user
     context = {}
     if user.is_authenticated:
-        owner = IcosaUser.from_django_request(request)
+        owner = AssetOwner.from_django_request(request)
         if owner:
             code = generate_device_code()
             expiry_time = datetime.utcnow() + timedelta(minutes=1)

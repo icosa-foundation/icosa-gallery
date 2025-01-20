@@ -1,14 +1,13 @@
 from typing import List, Optional
 
+from django.utils import timezone
 from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
 from icosa.api.schema import AssetFinalizeData
 from icosa.helpers.file import upload_asset, upload_format
-from icosa.models import ASSET_STATE_FAILED, Asset, PolyFormat, User
+from icosa.models import ASSET_STATE_FAILED, Asset, AssetOwner, PolyFormat
 from ninja import File
 from ninja.files import UploadedFile
-
-from django.utils import timezone
 
 
 @signal(signals.SIGNAL_ERROR)
@@ -29,18 +28,15 @@ def handle_upload_error(task, exc):
     # will the user dismiss the error, or will we dismiss it after it has been
     # viewed? How do we know it's been read?
     with open("huey_task_error.log", "a") as logfile:
-        logfile.write(
-            f"{timezone.now()} {asset.id} {user.id} {user.displayname}\n"
-        )
+        logfile.write(f"{timezone.now()} {asset.id} {user.id} {user.displayname}\n")
 
 
 @db_task()
 def queue_upload_asset(
-    current_user: User,
+    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
-
     upload_asset(
         current_user,
         asset,
@@ -50,7 +46,7 @@ def queue_upload_asset(
 
 @on_commit_task()
 def queue_upload_format(
-    current_user: User,
+    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
@@ -63,7 +59,6 @@ def queue_upload_format(
 
 @on_commit_task()
 def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
-
     asset = Asset.objects.get(url=asset_url)
 
     # Clean up formats with no root resource.
@@ -77,9 +72,7 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
 
     non_tri_roles = [1, 7]  # Original OBJ, BLOCKS
 
-    non_triangulated_formats = asset.polyformat_set.filter(
-        role__in=non_tri_roles
-    )
+    non_triangulated_formats = asset.polyformat_set.filter(role__in=non_tri_roles)
     for format in non_triangulated_formats:
         format.triangle_count = data.objPolyCount
         format.save()

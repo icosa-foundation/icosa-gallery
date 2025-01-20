@@ -19,8 +19,7 @@ from icosa.api import (
 from icosa.api.authentication import AuthBearer
 from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset
-from icosa.models import User as IcosaUser
+from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset, AssetOwner
 from icosa.tasks import (
     queue_finalize_asset,
     queue_upload_asset,
@@ -88,8 +87,8 @@ def user_owns_asset(
     # so probably needs a refactor
     if not hasattr(request, "auth"):
         user = get_django_user_from_auth_bearer(request)
-        return user is not None and IcosaUser.from_django_user(user) == asset.owner
-    return IcosaUser.from_ninja_request(request) == asset.owner
+        return user is not None and AssetOwner.from_django_user(user) == asset.owner
+    return AssetOwner.from_ninja_request(request) == asset.owner
 
 
 def check_user_owns_asset(
@@ -190,7 +189,7 @@ def add_asset_format(
     asset: str,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    user = IcosaUser.from_ninja_request(request)
+    user = AssetOwner.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
@@ -287,7 +286,7 @@ def upload_new_assets(
     request,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    user = IcosaUser.from_ninja_request(request)
+    user = AssetOwner.from_ninja_request(request)
     job_snowflake = generate_snowflake()
     asset_token = secrets.token_urlsafe(8)
     asset = Asset.objects.create(

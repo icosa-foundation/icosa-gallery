@@ -1,12 +1,12 @@
-from icosa.models import User as IcosaUser
+from icosa.models import AssetOwner
 
 
 def get_owner(user):
     email = getattr(user, "username", None)
     owner = None
-    if email:  # TODO:(safety) coercing to boolean
+    if email:
         try:
-            owner = IcosaUser.objects.get(email=email)
-        except (IcosaUser.DoesNotExist, IcosaUser.MultipleObjectsReturned):
+            owner = AssetOwner.objects.get(email=email)
+        except (AssetOwner.DoesNotExist, AssetOwner.MultipleObjectsReturned):
             pass
     return owner

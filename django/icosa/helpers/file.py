@@ -9,6 +9,9 @@ from pathlib import Path
 from typing import List, Optional
 
 import ijson
+from django.conf import settings
+from django.core.files.storage import get_storage_class
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
     ORIGINAL_FBX_FORMAT,
@@ -20,18 +23,14 @@ from icosa.helpers.format_roles import (
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
+    AssetOwner,
     PolyFormat,
     PolyResource,
-    User,
 )
 from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from PIL import Image
-
-from django.conf import settings
-from django.core.files.storage import get_storage_class
-from django.core.files.uploadedfile import InMemoryUploadedFile
 
 default_storage = get_storage_class()()
 
@@ -98,19 +97,14 @@ def is_gltf2(file) -> bool:
     return True
 
 
-def validate_file(
-    file: UploadedFile, extension: str
-) -> Optional[UploadedFormat]:
+def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat]:
     # Need to check if the resource is a main file or helper file.
     # Ordered in most likely file types for 'performance'
 
     # TODO(safety): Do we fail to identify what the main file is if the zip
     # archive contains both (e.g.) a .tilt and a .fbx?
 
-    if (
-        extension not in VALID_FORMAT_TYPES
-        and IMAGE_REGEX.match(extension) is None
-    ):
+    if extension not in VALID_FORMAT_TYPES and IMAGE_REGEX.match(extension) is None:
         return None
 
     filetype = None
@@ -220,7 +214,6 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
                 and (subfile.filetype == "FBM" or subfile.filetype == "IMAGE")
             )
         ):
-
             sub_resource_data = {
                 "file": subfile.file,
                 "format": format,
@@ -349,9 +342,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
         "asset": asset,
         "contenttype": get_content_type(f.file.name),
     }
-    PolyResource.objects.create(
-        format=format_non_triangulated, **resource_data
-    )
+    PolyResource.objects.create(format=format_non_triangulated, **resource_data)
     PolyResource.objects.create(format=format_triangulated, **resource_data)
 
 
@@ -402,7 +393,7 @@ def process_root(asset: Asset, f: UploadedFormat):
 
 
 def upload_format(
-    current_user: User,
+    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
@@ -410,9 +401,7 @@ def upload_format(
         raise HttpError(422, "Must upload exactly one file.")
     file = files[0]
 
-    splitnames = file.name.split(
-        "."
-    )  # TODO(james): better handled by the `os` module?
+    splitnames = file.name.split(".")  # TODO(james): better handled by the `os` module?
     extension = splitnames[-1].lower()
     f = validate_file(file, extension)
     if f is None:
@@ -445,7 +434,7 @@ def upload_format(
 
 
 def upload_asset(
-    current_user: User,
+    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
@@ -496,7 +485,6 @@ def upload_asset(
     bin_for_conversion = None
     asset_dir = os.path.join("/tmp/", f"{asset.id}")
     for file in unzipped_files:
-
         splitext = os.path.splitext(file.name)
         extension = splitext[1].lower().replace(".", "")
         upload_details = validate_file(file, extension)
@@ -529,9 +517,7 @@ def upload_asset(
 
     converted_gltf_path = None
     if gltf_to_convert is not None and bin_for_conversion is not None:
-        Path(os.path.join(asset_dir, "converted")).mkdir(
-            parents=True, exist_ok=True
-        )
+        Path(os.path.join(asset_dir, "converted")).mkdir(parents=True, exist_ok=True)
         name, extension = os.path.splitext(gltf_to_convert[1])
         out_path = os.path.join(asset_dir, "converted", f"{name}.glb")
         data = Path(gltf_to_convert[0]).read_text()

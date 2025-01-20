@@ -1,4 +1,8 @@
 from constance import config
+from django import forms
+from django.contrib.auth.models import User as DjangoUser
+from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
+from django.utils.translation import gettext_lazy as _
 from icosa.models import (
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
@@ -7,13 +11,8 @@ from icosa.models import (
     V4_CC_LICENSE_MAP,
     V4_CC_LICENSES,
     Asset,
-    User,
+    AssetOwner,
 )
-
-from django import forms
-from django.contrib.auth.models import User as DjangoUser
-from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
-from django.utils.translation import gettext_lazy as _
 
 ARTIST_QUERY_SUBJECT_CHOICES = [
     ("WORK_REMOVED", "I want my work removed from this website"),
@@ -158,14 +157,14 @@ class UserSettingsForm(forms.ModelForm):
             else:
                 if (
                     DjangoUser.objects.filter(email=email_confirm).exists()
-                    or User.objects.filter(email=email_confirm).exists()
+                    or AssetOwner.objects.filter(email=email_confirm).exists()
                 ):
                     msg = "Cannot use this email address, please try another"
                     self.add_error("email", msg)
                     self.add_error("email_confirm", msg)
 
     class Meta:
-        model = User
+        model = AssetOwner
 
         fields = [
             "url",
@@ -204,7 +203,7 @@ class NewUserForm(forms.ModelForm):
             self.add_error("password_confirm", msg)
 
     class Meta:
-        model = User
+        model = AssetOwner
 
         fields = [
             "url",
@@ -215,7 +214,7 @@ class NewUserForm(forms.ModelForm):
 
 class PasswordResetForm(forms.ModelForm):
     class Meta:
-        model = User
+        model = AssetOwner
 
         fields = [
             "email",
@@ -244,7 +243,7 @@ class PasswordResetConfirmForm(forms.ModelForm):
             self.add_error("password_confirm", msg)
 
     class Meta:
-        model = User
+        model = AssetOwner
         fields = []
 
 

@@ -1,15 +1,13 @@
 import bcrypt
-from icosa.models import User as IcosaUser
-from icosa.views.auth import save_access_token
-
 from django.contrib.auth.models import User as DjangoUser
 from django.core.management.base import BaseCommand
+from icosa.models import AssetOwner
+from icosa.views.auth import save_access_token
 
 YES = ["y", "yes"]
 
 
 class Command(BaseCommand):
-
     help = """Extracts format json into concrete models and converts to poly
     format."""
 
@@ -24,8 +22,8 @@ class Command(BaseCommand):
             )
             return
         try:
-            icosa_user = IcosaUser.objects.get(pk=id)
-        except IcosaUser.DoesNotExist:
+            icosa_user = AssetOwner.objects.get(pk=id)
+        except AssetOwner.DoesNotExist:
             print(f"Icosa User with id `{id}` not found.")
             return
 

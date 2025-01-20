@@ -1,5 +1,8 @@
+from django.contrib import admin
+from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
+    AssetOwner,
     DeviceCode,
     HiddenMediaFileLog,
     MastheadSection,
@@ -9,11 +12,7 @@ from icosa.models import (
     PolyFormat,
     PolyResource,
     Tag,
-    User,
 )
-
-from django.contrib import admin
-from django.utils.safestring import mark_safe
 
 
 @admin.register(Tag)
@@ -67,7 +66,6 @@ class PolyResourceInline(admin.TabularInline):
 
 @admin.register(PolyFormat)
 class PolyFormatAdmin(admin.ModelAdmin):
-
     list_display = (
         "asset",
         "format_type",
@@ -182,12 +180,12 @@ class DeviceCodeAdmin(admin.ModelAdmin):
 
 class UserAssetLikeInline(admin.TabularInline):
     extra = 0
-    model = User.likes.through
+    model = AssetOwner.likes.through
     raw_id_fields = ["asset"]
 
 
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+@admin.register(AssetOwner)
+class AssetOwnerAdmin(admin.ModelAdmin):
     list_display = (
         "displayname",
         "email",
@@ -209,7 +207,6 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(MastheadSection)
 class MastheadSectionAdmin(admin.ModelAdmin):
-
     list_display = (
         "_thumbnail_image",
         "asset",
