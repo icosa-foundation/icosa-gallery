@@ -227,6 +227,9 @@ class AssetOwner(models.Model):
     )  # Only used while we are emulating fastapi auth. Should be removed.
     imported = models.BooleanField(default=False)
     is_claimed = models.BooleanField(default=True)
+    django_user = models.ForeignKey(
+        DjangoUser, null=True, blank=True, on_delete=models.CASCADE
+    )
 
     @classmethod
     def from_ninja_request(cls, request):

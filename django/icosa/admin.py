@@ -203,6 +203,7 @@ class AssetOwnerAdmin(admin.ModelAdmin):
         ("email", admin.EmptyFieldListFilter),
     )
     inlines = (UserAssetLikeInline,)
+    raw_id_fields = ["django_user"]
 
 
 @admin.register(MastheadSection)
