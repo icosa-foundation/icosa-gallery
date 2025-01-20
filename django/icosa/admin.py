@@ -203,6 +203,7 @@ class AssetOwnerAdmin(admin.ModelAdmin):
     list_filter = (
         "imported",
         ("email", admin.EmptyFieldListFilter),
+        ("django_user", admin.EmptyFieldListFilter),
     )
     inlines = (UserAssetLikeInline,)
     raw_id_fields = ["django_user"]
