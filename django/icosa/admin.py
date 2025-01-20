@@ -210,7 +210,10 @@ class AssetOwnerAdmin(admin.ModelAdmin):
     def _django_user_link(self, obj):
         html = "-"
         if obj.django_user:
-            change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
+            change_url = reverse(
+                "admin:auth_user_change",
+                args=(obj.django_user.id,),
+            )
             html = f"""
 <a href="{change_url}">{obj.django_user}</a>
 """
