@@ -2,11 +2,10 @@ from icosa.models import AssetOwner
 
 
 def get_owner(user):
-    email = getattr(user, "username", None)
     owner = None
-    if email:
+    if not user.is_anonymous:
         try:
-            owner = AssetOwner.objects.get(email=email)
+            owner = AssetOwner.objects.get(django_user=user)
         except (AssetOwner.DoesNotExist, AssetOwner.MultipleObjectsReturned):
             pass
     return owner
