@@ -1,12 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;400;600;700&family=Gabarito:wght@400;600;700&display=swap');
 
+html {
+  height: 100%;
+}
+
 body {
   background: var(--color-base-dark);
   color: var(--color-base-light);
-  margin: 0;
+  height: 100%;
   font-family: Gabarito;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin: 0;
 
   h1,
   h2,
@@ -18,6 +23,31 @@ body {
   }
 }
 
+.app {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+
+  >main,
+  >header,
+  >footer {
+    margin-left: 5em;
+
+    @media(max-width: 1024px) {
+      margin-left: 0;
+    }
+  }
+
+  >main {
+    flex-grow: 1;
+  }
+
+  >header,
+  >footer {
+    flex-shrink: 0;
+  }
+
+}
 
 @media (min-width: 1600px) {
 
@@ -91,18 +121,6 @@ code {
   font-weight: bold;
 }
 
-.App {
-  display: flex;
-
-  main {
-    width: 100%;
-    margin-left: 5em;
-
-    @media(max-width: 1024px) {
-      margin-left: 0;
-    }
-  }
-}
 
 .beta {
   color: var(--color-alert-danger);
