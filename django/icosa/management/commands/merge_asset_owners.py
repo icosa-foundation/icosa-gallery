@@ -54,7 +54,7 @@ running as a script or as a result of user confirmation elsewhere.
     def handle(self, *args, **options):
         source_id = options["sourceid"]
         destination_id = options["destinationid"]
-        is_prompting = not options["non_interactive"]
+        is_interactive = not options["non_interactive"]
 
         if source_id is None or destination_id is None:
             print(
@@ -83,14 +83,14 @@ Usage:
         action = None
         if not assets and not likes and not reports:
             print(f"{source_owner} doesn't own any Assets, Likes or Reports.")
-            if is_prompting:
+            if is_interactive:
                 ask_to_merge(source_owner, destination_owner)
             else:
                 merge(source_owner, destination_owner)
 
             print("\nDone")
             return
-        else:
+        elif is_interactive:
             action = input(
                 f"""Will move:
     \n{assets.count()} Assets
@@ -102,7 +102,7 @@ Usage:
             ).lower()
 
         do_work = False
-        if action in YES or not is_prompting:
+        if not is_interactive or action in YES:
             do_work = True
         if action == "l":
             print("The following objects would be moved:")
@@ -122,7 +122,7 @@ Usage:
         reports.update(last_reported_by=destination_owner)
         device_codes.delete()
 
-        if is_prompting:
+        if is_interactive:
             ask_to_merge(source_owner, destination_owner)
         else:
             merge(source_owner, destination_owner)
