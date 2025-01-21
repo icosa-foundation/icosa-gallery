@@ -97,6 +97,10 @@ def custom_login(request):
         )
 
         icosa_user = authenticate_icosa_user(username, password)
+        # TODO(james): if icosa_user has been merged with another, we probably
+        #  don't want to allow them to log in. We need a nice error here that's
+        #  not confusing and perhaps different from failing login under normal
+        #  circumstances.
         if icosa_user is None:
             # Icosa user auth failed, so we return early.
             return error_response
