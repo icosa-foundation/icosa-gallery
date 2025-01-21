@@ -229,7 +229,16 @@ class AssetOwner(models.Model):
     imported = models.BooleanField(default=False)
     is_claimed = models.BooleanField(default=True)
     django_user = models.ForeignKey(
-        DjangoUser, null=True, blank=True, on_delete=models.CASCADE
+        DjangoUser,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    merged_with = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
     )
 
     @classmethod

@@ -206,7 +206,10 @@ class AssetOwnerAdmin(admin.ModelAdmin):
         ("django_user", admin.EmptyFieldListFilter),
     )
     inlines = (UserAssetLikeInline,)
-    raw_id_fields = ["django_user"]
+    raw_id_fields = [
+        "django_user",
+        "merged_with",
+    ]
 
     def _django_user_link(self, obj):
         html = "-"
