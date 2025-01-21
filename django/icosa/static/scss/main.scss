@@ -213,13 +213,16 @@ label {
 }
 
 .sponsor-images {
-  text-align: center;
+  align-items: stretch;
+  display: flex;
 
-  img {
-    padding: 1rem;
+  a {
+    align-items: center;
     background-color: var(--color-base-light);
     border-radius: var(--border-radius-tiny);
-
+    display: flex;
+    flex-grow: 1;
+    justify-content: center;
     margin-inline: 1rem;
 
     &:first-child {
@@ -228,6 +231,11 @@ label {
 
     &:last-child {
       margin-inline-end: 0;
+    }
+
+    img {
+      padding: 1rem;
+
     }
   }
 }
