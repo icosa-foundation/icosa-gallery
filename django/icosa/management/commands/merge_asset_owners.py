@@ -41,17 +41,18 @@ class Command(BaseCommand):
         parser.add_argument("--sourceid", action="store", type=str)
         parser.add_argument("--destinationid", action="store", type=str)
         parser.add_argument(
-            "--no-prompt",
+            "--non-interactive",
             action="store_true",
             help="""
-Don't prompt. Assume `yes` to moving assets and marking as merged
+Don't prompt. Assume `yes` to moving assets and marking as merged. Useful when
+running as a script or as a result of user confirmation elsewhere.
             """,
         )
 
     def handle(self, *args, **options):
         source_id = options["sourceid"]
         destination_id = options["destinationid"]
-        is_prompting = not options["no_prompt"]
+        is_prompting = not options["non_interactive"]
 
         if source_id is None or destination_id is None:
             print(
