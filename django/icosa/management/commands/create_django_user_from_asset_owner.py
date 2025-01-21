@@ -17,13 +17,16 @@ class Command(BaseCommand):
         id = options["id"]
         if id is None:
             print(
-                "Usage: --id\tThe primary key of the Icosa User from which to create a Django User."
+                """
+Usage:
+--id\tThe primary key of the Asset Owner from which to create a Django User.
+                """
             )
             return
         try:
             icosa_user = AssetOwner.objects.get(pk=id)
         except AssetOwner.DoesNotExist:
-            print(f"Icosa User with id `{id}` not found.")
+            print(f"Asset Owner with id `{id}` not found.")
             return
 
         email = icosa_user.email
