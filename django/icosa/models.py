@@ -858,6 +858,10 @@ class OwnerAssetLike(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date_liked = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        date_str = self.date_liked.strftime("%d/%m/%Y %H:%M:%S %Z")
+        return f"{self.user.displayname} -> {self.asset.name} @ {date_str}"
+
 
 def format_upload_path(instance, filename):
     root = settings.MEDIA_ROOT
