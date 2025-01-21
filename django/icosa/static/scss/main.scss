@@ -213,29 +213,41 @@ label {
 }
 
 .sponsor-images {
-  align-items: stretch;
-  display: flex;
+  display: block;
 
   a {
-    align-items: center;
     background-color: var(--color-base-light);
     border-radius: var(--border-radius-tiny);
-    display: flex;
-    flex-grow: 1;
-    justify-content: center;
+    display: block;
     margin-inline: 1rem;
+    margin-block: 1rem;
+    text-align: center;
 
-    &:first-child {
-      margin-inline-start: 0;
-    }
-
-    &:last-child {
-      margin-inline-end: 0;
-    }
 
     img {
       padding: 1rem;
+      max-width: 100%;
 
+    }
+  }
+
+  @media (min-width: 768px) {
+    align-items: stretch;
+    display: flex;
+
+    a {
+      align-items: center;
+      display: flex;
+      flex-grow: 1;
+      justify-content: center;
+
+      &:first-child {
+        margin-inline-start: 0;
+      }
+
+      &:last-child {
+        margin-inline-end: 0;
+      }
     }
   }
 }
