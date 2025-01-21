@@ -8,8 +8,7 @@ YES = ["y", "yes"]
 
 
 class Command(BaseCommand):
-    help = """Extracts format json into concrete models and converts to poly
-    format."""
+    help = """Creates a Django user based on an existing Asset Owner"""
 
     def add_arguments(self, parser):
         parser.add_argument("--id", action="store", type=str)
