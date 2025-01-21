@@ -68,52 +68,7 @@
             {% endblock header %}
             {% block content %}{% endblock content %}
             {% block footer %}
-            <footer>
-                <div class="container">
-                    <div class="row">
-                        <div class="col-md-6">
-                        {% spaceless %}
-                            <nav>
-                                <ul>
-                                    <li>
-                                        © 2020-{% now "Y" %} Icosa Gallery
-                                    </li>
-                                    {% if can_view_in_maintenance %}
-                                    <li>
-                                        <a href="https://{{ settings.DEPLOYMENT_HOST_API }}{% url "api-1.0.0:openapi-view" %}">API Docs</a>
-                                    </li>
-                                    {% endif %}
-                                    <li>
-                                        <a href="/supporters">
-                                            Our supporters
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        {% endspaceless %}
-                        </div>
-                        <div class="col-md-6">
-                        {% spaceless %}
-                            <nav class="text-right">
-                                <ul>
-                                    {% if can_view_in_maintenance %}
-                                    <li>
-                                        <strong><a href="{% url 'artist_info' %}">Why is my work here?</a></strong>
-                                    </li>
-                                    {% endif %}
-                                    <li>
-                                        <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'terms' %}">Terms and Conditions</a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        {% endspaceless %}
-                        </div>
-                    </div>
-                </div>
-            </footer>
+                {% include "partials/footer.html" %}
             {% endblock footer %}
         </main>
     </div>
