@@ -1,10 +1,9 @@
 import bcrypt
 from django.contrib.auth.models import User as DjangoUser
 from django.core.management.base import BaseCommand
+from icosa.helpers import YES
 from icosa.models import AssetOwner
 from icosa.views.auth import save_access_token
-
-YES = ["y", "yes"]
 
 
 class Command(BaseCommand):
