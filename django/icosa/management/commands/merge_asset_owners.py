@@ -19,6 +19,8 @@ def print_actions(assets, likes, reports):
 
 
 def merge(source_owner, destination_owner):
+    # TODO(james): We will want to handle associated Django users here. What to
+    # do: delete, mark as inactive, something else?
     source_owner.merged_with = destination_owner
     source_owner.save()
 
