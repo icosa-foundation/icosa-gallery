@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.urls import reverse
 from icosa.helpers import YES
 from icosa.models import Asset, AssetOwner, DeviceCode, OwnerAssetLike
 
@@ -18,21 +20,11 @@ def print_actions(assets, likes, reports):
             print(f"\t{report} asset id: {report.id}")
 
 
-def merge(source_owner, destination_owner):
+def mark_merged(source_owner, destination_owner):
     # TODO(james): We will want to handle associated Django users here. What to
     # do: delete, mark as inactive, something else?
     source_owner.merged_with = destination_owner
     source_owner.save()
-
-
-def ask_to_merge(source_owner, destination_owner):
-    if (
-        input(
-            f"Mark {source_owner} as merged with {destination_owner}? Default is yes. "
-        ).strip()
-        or "y" in YES
-    ):
-        merge(source_owner, destination_owner)
 
 
 class Command(BaseCommand):
@@ -83,22 +75,19 @@ Usage:
         action = None
         if not assets and not likes and not reports:
             print(f"{source_owner} doesn't own any Assets, Likes or Reports.")
-            if is_interactive:
-                ask_to_merge(source_owner, destination_owner)
-            else:
-                merge(source_owner, destination_owner)
-
+            mark_merged(source_owner, destination_owner)
             print("\nDone")
             return
+
         elif is_interactive:
             action = input(
                 f"""Will move:
-    \n{assets.count()} Assets
-    {likes.count()} Likes
-    {reports.count()} Reports of inappropriate Assets
-    from {source_owner} to {destination_owner}
-    \nand will expire any active device codes.
-    Do you want to continue? Default is `no`. [(y)es,(n)o,(l)ist objects] """
+\n{assets.count()} Assets
+{likes.count()} Likes
+{reports.count()} Reports of inappropriate Assets
+from {source_owner} to {destination_owner}
+\nand will expire any active device codes.
+Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
             ).lower()
 
         do_work = False
@@ -112,9 +101,7 @@ Usage:
             print("\nQuitting without doing anything.")
             return
 
-        print(
-            "Moving the following objects from {source_owner} to {destination_owner}:"
-        )
+        print("Moving the following from {source_owner} to {destination_owner}:")
         print_actions(assets, likes, reports)
 
         assets.update(owner=destination_owner)
@@ -122,8 +109,12 @@ Usage:
         reports.update(last_reported_by=destination_owner)
         device_codes.delete()
 
-        if is_interactive:
-            ask_to_merge(source_owner, destination_owner)
-        else:
-            merge(source_owner, destination_owner)
+        mark_merged(source_owner, destination_owner)
+        change_url = reverse(
+            "admin:icosa_assetowner_change",
+            args=(source_owner.id,),
+        )
+        print(
+            f"Visit the admin for the old source owner at {settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}{change_url}"
+        )
         print("\nDone")
