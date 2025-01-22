@@ -10,7 +10,7 @@
                         </li>
                         {% if can_view_in_maintenance %}
                             <li>
-                                <a href="https://{{ settings.API_SERVER }}{% url "api-1.0.0:openapi-view" %}">
+                                <a href="{{ settings.DEPLOYMENT_SCHEME }}{{ settings.API_SERVER }}{% url "api-1.0.0:openapi-view" %}">
                                     API Docs
                                 </a>
                             </li>
