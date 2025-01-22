@@ -15,7 +15,7 @@ def print_actions(assets, likes, reports):
         for like in likes:
             print(f"\t{like} - like id: {like.id}")
     if len(reports):
-        print("Likes:")
+        print("Reports:")
         for report in reports:
             print(f"\t{report} asset id: {report.id}")
 
@@ -84,7 +84,7 @@ Usage:
                 f"""Will move:
 \n{assets.count()} Assets
 {likes.count()} Likes
-{reports.count()} Reports of inappropriate Assets
+{reports.count()} "Last reported" attributions on Assets
 from {source_owner} to {destination_owner}
 \nand will expire any active device codes.
 Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
