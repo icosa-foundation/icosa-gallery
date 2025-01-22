@@ -1,5 +1,4 @@
 import secrets
-from datetime import datetime, timedelta
 from typing import Optional
 
 import bcrypt
@@ -11,6 +10,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.cache import never_cache
@@ -193,14 +193,14 @@ def password_reset(request):
             try:
                 user = User.objects.get(email=form.cleaned_data["email"])
 
-                current_site = get_current_site(request)
-                mail_subject = f"Reset your {current_site.name} account password."
+                site = get_current_site(request)
+                mail_subject = f"Reset your {site.name} account password."
                 message = render_to_string(
                     "auth/password_reset_email.html",
                     {
                         "request": request,
                         "user": user,
-                        "domain": current_site.domain,
+                        "domain": site.domain,
                         "uid": urlsafe_base64_encode(force_bytes(user.pk)),
                         "token": default_token_generator.make_token(user),
                     },
@@ -298,12 +298,12 @@ def devicecode(request):
         owner = AssetOwner.from_django_request(request)
         if owner:
             code = AssetOwner.generate_device_code()
-            expiry_time = datetime.utcnow() + timedelta(minutes=1)
+            expiry_time = timezone.now() + timezone.timedelta(minutes=1)
 
             # Delete all codes for this user
             DeviceCode.objects.filter(user=owner).delete()
             # Delete all expired codes for any user
-            DeviceCode.objects.filter(expiry__lt=datetime.utcnow()).delete()
+            DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
 
             DeviceCode.objects.create(
                 user=owner,

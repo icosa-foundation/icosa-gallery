@@ -31,9 +31,7 @@ def generate_snowflake():
 
 def get_timestamp(snowflake):
     timestamp = get_timestamp_raw(snowflake) / 1000
-    return datetime.datetime.utcfromtimestamp(timestamp).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
+    return datetime.datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def get_timestamp_raw(snowflake):
