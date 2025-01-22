@@ -116,7 +116,14 @@ def get_me_assets(
     except HttpError:
         raise
     # TODO: orderBy
-    assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+    assets = (
+        Asset.objects.filter(q, keyword_q)
+        .exclude(ex_q)
+        .distinct()
+        .select_related("owner")
+        .prefetch_related("polyformat_set")
+        .prefetch_related("tags")
+    )
     return assets
 
 
