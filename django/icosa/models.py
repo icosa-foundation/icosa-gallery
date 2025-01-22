@@ -1,9 +1,12 @@
 import os
+import secrets
+import string
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Self
 
 import bcrypt
+import jwt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 from constance import config
 from django.conf import settings
@@ -287,6 +290,41 @@ class AssetOwner(models.Model):
         salt = bcrypt.gensalt(10)
         hashed_password = bcrypt.hashpw(password.encode(), salt)
         self.password = hashed_password
+        self.save()
+
+    @staticmethod
+    def generate_device_code(length=5):
+        # Define a string of characters to exclude
+        exclude = "I1O0"
+        characters = "".join(
+            set(string.ascii_uppercase + string.digits) - set(exclude),
+        )
+        return "".join(secrets.choice(characters) for i in range(length))
+
+    @staticmethod
+    def generate_access_token(*, data: dict, expires_delta: timedelta = None):
+        ALGORITHM = "HS256"
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=expires_delta)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(
+            to_encode,
+            settings.JWT_KEY,
+            algorithm=ALGORITHM,
+        )
+        return encoded_jwt
+
+    def update_access_token(self):
+        subject = f"{self.email}"
+        data = {"sub": subject}
+        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        self.access_token = self.generate_access_token(
+            data=data,
+            expires_delta=expires_delta,
+        )
         self.save()
 
     def __str__(self):

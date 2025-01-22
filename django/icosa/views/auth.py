@@ -21,7 +21,6 @@ from icosa.forms import (
 )
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.user import generate_device_code, get_owner, save_access_token
 from icosa.models import AssetOwner, DeviceCode
 from passlib.context import CryptContext
 
@@ -72,7 +71,7 @@ def custom_login(request):
             # Icosa user auth failed, so we return early.
             return error_response
         else:
-            save_access_token(icosa_user)
+            icosa_user.update_access_token()
 
         user, created = User.objects.get_or_create(
             username=username,
@@ -255,13 +254,18 @@ def password_reset_confirm(request, uidb64, token):
                         user.set_password(password)
                         user.save()
                         logout(request)
-                        icosa_user = get_owner(user)
+                        icosa_user = AssetOwner.from_django_user(user)
                         icosa_user.set_password(password)
-                        return HttpResponseRedirect(reverse("password_reset_complete"))
+                        return HttpResponseRedirect(
+                            reverse("password_reset_complete"),
+                        )
         else:
             if default_token_generator.check_token(user, token):
                 request.session[INTERNAL_RESET_SESSION_TOKEN] = token
-                redirect_url = request.path.replace(token, redirected_url_token)
+                redirect_url = request.path.replace(
+                    token,
+                    redirected_url_token,
+                )
                 return HttpResponseRedirect(redirect_url)
 
     return render(
@@ -293,7 +297,7 @@ def devicecode(request):
     if user.is_authenticated:
         owner = AssetOwner.from_django_request(request)
         if owner:
-            code = generate_device_code()
+            code = AssetOwner.generate_device_code()
             expiry_time = datetime.utcnow() + timedelta(minutes=1)
 
             # Delete all codes for this user

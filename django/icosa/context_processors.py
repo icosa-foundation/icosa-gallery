@@ -1,10 +1,9 @@
 from django.conf import settings
-from icosa.helpers.user import get_owner
 from icosa.models import AssetOwner
 
 
 def owner_processor(request):
-    return {"owner": get_owner(request.user)}
+    return {"owner": AssetOwner.from_django_user(request.user)}
 
 
 def settings_processor(request):

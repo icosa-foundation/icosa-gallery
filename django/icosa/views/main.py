@@ -36,7 +36,6 @@ from icosa.forms import (
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img, upload_asset
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.user import get_owner, save_access_token
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ASSET_STATE_BARE,
@@ -635,7 +634,7 @@ def user_settings(request):
     need_login = False
     template = "main/settings.html"
     user = request.user
-    icosa_user = get_owner(user)
+    icosa_user = AssetOwner.from_django_user(user)
     if request.method == "POST":
         form = UserSettingsForm(request.POST, instance=icosa_user, user=user)
         if form.is_valid():
@@ -651,7 +650,7 @@ def user_settings(request):
                 user.username = email
             user.save()
             if need_login:
-                save_access_token(icosa_user)
+                icosa_user.update_access_token()
                 logout(request)
 
     else:
