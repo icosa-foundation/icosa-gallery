@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 
 import jwt
-from ninja.errors import HttpError
-from ninja.security import HttpBearer
-
 from django.conf import settings
 from django.contrib.auth.models import User
+from ninja.errors import HttpError
+from ninja.security import HttpBearer
 
 ALGORITHM = "HS256"
 

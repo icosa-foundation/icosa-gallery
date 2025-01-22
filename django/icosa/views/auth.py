@@ -1,11 +1,8 @@
 import secrets
-import string
 from datetime import datetime, timedelta
 from typing import Optional
 
 import bcrypt
-import jwt
-from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
@@ -24,20 +21,11 @@ from icosa.forms import (
 )
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.user import get_owner
+from icosa.helpers.user import generate_device_code, get_owner, save_access_token
 from icosa.models import AssetOwner, DeviceCode
 from passlib.context import CryptContext
 
-ALGORITHM = "HS256"
-
 INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
-
-
-def generate_device_code(length=5):
-    # Define a string of characters to exclude
-    exclude = "I1O0"
-    characters = "".join(set(string.ascii_uppercase + string.digits) - set(exclude))
-    return "".join(secrets.choice(characters) for i in range(length))
 
 
 def authenticate_icosa_user(
@@ -58,27 +46,6 @@ def authenticate_icosa_user(
 
     except AssetOwner.DoesNotExist:
         return None
-
-
-def create_access_token(*, data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=expires_delta)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def save_access_token(user: AssetOwner):
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": f"{user.email}{user.password}"},
-        expires_delta=access_token_expires,
-    )
-    user.access_token = access_token
-    user.save()
 
 
 def custom_login(request):

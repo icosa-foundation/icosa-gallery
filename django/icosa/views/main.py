@@ -36,7 +36,7 @@ from icosa.forms import (
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img, upload_asset
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.user import get_owner
+from icosa.helpers.user import get_owner, save_access_token
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ASSET_STATE_BARE,
@@ -651,6 +651,7 @@ def user_settings(request):
                 user.username = email
             user.save()
             if need_login:
+                save_access_token(icosa_user)
                 logout(request)
 
     else:
