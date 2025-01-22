@@ -321,11 +321,13 @@ class AssetOwner(models.Model):
         subject = f"{self.email}"
         data = {"sub": subject}
         expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        self.access_token = self.generate_access_token(
+        access_token = self.generate_access_token(
             data=data,
             expires_delta=expires_delta,
         )
+        self.access_token = access_token
         self.save()
+        return access_token
 
     def __str__(self):
         return self.displayname
