@@ -24,7 +24,7 @@ throttle_rules = [
 
 api_servers = [
     {
-        "url": settings.API_SERVER,
+        "url": f"{settings.DEPLOYMENT_SCHEME}{settings.API_SERVER}",
         "description": "Development server" if settings.DEBUG else "Production server",
     }
 ]
