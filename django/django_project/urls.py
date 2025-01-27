@@ -1,3 +1,8 @@
+from django.conf import settings
+from django.conf.urls import include
+from django.contrib import admin
+from django.urls import path
+from django.views.generic import RedirectView
 from icosa.api.assets import router as assets_router
 from icosa.api.authentication import AuthBearer
 from icosa.api.login import router as login_router
@@ -8,12 +13,6 @@ from icosa.views import auth as auth_views
 from icosa.views import main as main_views
 from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
-
-from django.conf import settings
-from django.conf.urls import include
-from django.contrib import admin
-from django.urls import path
-from django.views.generic import RedirectView
 
 handler404 = main_views.handler404
 handler500 = main_views.handler500
