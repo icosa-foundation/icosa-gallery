@@ -759,7 +759,7 @@ def search(request):
         Asset.objects.filter(q)
         .exclude(license__isnull=True)
         .exclude(license=ALL_RIGHTS_RESERVED)
-        .order_by("-id")
+        .order_by("-rank")
     )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
