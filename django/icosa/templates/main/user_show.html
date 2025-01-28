@@ -15,6 +15,11 @@
                     {% if user.description %}
                         <p>{{ user.description|linebreaksbr }}</p>
                     {% endif %}
+                    {% if not user.django_user %}
+                        <p>This profile was migrated from Google Poly or another web source and doesn't have an active user associated with it. If this is you and want to claim the account please contact
+                        <a href="mailto:contact@icosa.gallery">contact@icosa.gallery</a>.</p>
+                        <p>Also read about <a href="{% url 'artist_info' %}">why your work is here</a>.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
