@@ -25,4 +25,52 @@ header {
       }
     }
   }
+
+  .search-widget {
+    display: inline-block;
+    position: relative;
+
+    input,
+    button {
+      display: inline-block;
+    }
+
+    input {
+      width: auto;
+    }
+
+    .searchbar {
+      background: #DDD;
+      padding: 0.2em 2.1em 0.2em 1em;
+      font-weight: bold;
+      color: #000;
+      font-size: 1.3em;
+      border: 0;
+      border-radius: 1em;
+      width: 95%;
+      margin: .2em .2em;
+      height: 2em;
+    }
+
+    .searchbutton {
+      background: #828282;
+      padding: 0.2em 0.2em;
+      font-weight: bold;
+      color: #ffffff;
+      font-size: 1.3em;
+      border: 0;
+      border-radius: 1em;
+      margin: .2em .2em;
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 2em;
+      width: 2em;
+    }
+
+  }
+
+  .user-info {
+    display: inline-block;
+  }
 }

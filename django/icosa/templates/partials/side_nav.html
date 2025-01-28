@@ -110,21 +110,6 @@
                 </nav>
                 <nav class="pro-menu shaped square hide-when-collapsed">
                     <ul>
-                        <h3>Search</h3>
-                        <li class="pro-menu-item">
-                            <div class="pro-inner-item" tabindex="0" role="button">
-                                <form action="{% url 'search' %}" method="get">
-                                    <span class="pro-item-content">
-                                        <input type="search" class="searchbar" name="s" value="{% if search_query %}{{ search_query }}{% endif %}">
-                                        <button class="searchbutton">Search</button>
-                                    </span>
-                                </form>
-                            </div>
-                        </li>
-                    </ul>
-                </nav>
-                <nav class="pro-menu shaped square hide-when-collapsed">
-                    <ul>
                         <h3>Explore</h3>
                         <div>
                             <li class="pro-menu-item">
@@ -214,40 +199,40 @@
                         </div>
                     </ul>
                 </nav>
-            </div>
-            <div class="pro-sidebar-footer">
-                <div class="socials text-center hide-when-collapsed">
-                    <h5>Join our Community!</h5>
-                    <a href="https://mastodon.gamedev.place/@openbrushapp" alt="mastodon" rel="noreferrer" target="_blank">
-                        {% fa_icon "brands" "mastodon" %}
-                    </a>
-                    <a href="https://bsky.app/profile/icosa.gallery" alt="bluesky" rel="noreferrer" target="_blank">
-                        {% fa_icon "brands" "bluesky" %}
-                    </a>
-                    <a href="https://discord.gg/W7NCEYnEfy" alt="discord" rel="noreferrer" target="_blank">
-                        {% fa_icon "brands" "discord" %}
-                    </a>
-                    <a href="https://github.com/icosa-foundation" alt="github" rel="noreferrer" target="_blank">
-                        {% fa_icon "brands" "github" %}
-                    </a>
-                </div>
-                <div class="support text-center hide-when-collapsed row">
-                    <div class="col-lg-6 col-sm-12">
-                        <a href="{% url 'home_openbrush' %}" rel="noreferrer" alt="OpenBrush">
-                            <img src="{% static "images/openbrushlogo_1200.png" %}" alt="Open Brush Logo">
+                <div class="pro-sidebar-footer">
+                    <div class="socials text-center hide-when-collapsed">
+                        <h5>Join our Community!</h5>
+                        <a href="https://mastodon.gamedev.place/@openbrushapp" alt="mastodon" rel="noreferrer" target="_blank">
+                            {% fa_icon "brands" "mastodon" %}
+                        </a>
+                        <a href="https://bsky.app/profile/icosa.gallery" alt="bluesky" rel="noreferrer" target="_blank">
+                            {% fa_icon "brands" "bluesky" %}
+                        </a>
+                        <a href="https://discord.gg/W7NCEYnEfy" alt="discord" rel="noreferrer" target="_blank">
+                            {% fa_icon "brands" "discord" %}
+                        </a>
+                        <a href="https://github.com/icosa-foundation" alt="github" rel="noreferrer" target="_blank">
+                            {% fa_icon "brands" "github" %}
                         </a>
                     </div>
-                    <div class="col-lg-6 col-sm-12">
-                        <a href="{% url 'home_blocks' %}" rel="noreferrer" alt="OpenBrush">
-                            <img src="{% static "images/openblockslogo_1200.png" %}" alt="Open Brush Logo">
-                        </a>
+                    <div class="support text-center hide-when-collapsed row">
+                        <div class="col-lg-6 col-sm-12">
+                            <a href="{% url 'home_openbrush' %}" rel="noreferrer" alt="OpenBrush">
+                                <img src="{% static "images/openbrushlogo_1200.png" %}" alt="Open Brush Logo">
+                            </a>
+                        </div>
+                        <div class="col-lg-6 col-sm-12">
+                            <a href="{% url 'home_blocks' %}" rel="noreferrer" alt="OpenBrush">
+                                <img src="{% static "images/openblockslogo_1200.png" %}" alt="Open Brush Logo">
+                            </a>
+                        </div>
                     </div>
-                </div>
-                <div class="text-center title hide-when-collapsed">
-                    <div>
-                        <a target="_blank" href="https://opencollective.com/icosa">
-                            <h5>Support us!</h5>
-                        </a>
+                    <div class="text-center title hide-when-collapsed">
+                        <div>
+                            <a target="_blank" href="https://opencollective.com/icosa">
+                                <h5>Support us!</h5>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

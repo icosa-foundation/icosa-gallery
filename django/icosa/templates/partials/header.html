@@ -24,7 +24,7 @@
             </div>
             <div class="text-right col">
                 {% if can_view_in_maintenance %}
-                    <div>
+                    <div class="user-info">
                     {% if owner is not None %}
                         Welcome, <a href="/user/{{ owner.url }}">{{ owner.displayname }}</a>
                     {% else %}
@@ -32,6 +32,15 @@
                     {% endif %}
                     </div>
                 {% endif %}
+                <div class="search-widget">
+                    <form action="{% url 'search' %}" method="get">
+                        <input type="search" class="searchbar" name="s" value="{% if search_query %}{{ search_query }}{% endif %}">
+                        <button class="searchbutton">
+                            {% fa_icon "solid" "magnifying-glass" %}
+                            <span class="sr-only">Search</span>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
