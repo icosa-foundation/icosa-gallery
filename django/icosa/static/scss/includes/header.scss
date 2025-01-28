@@ -39,32 +39,31 @@ header {
     }
 
     .searchbar {
-      background: #DDD;
       padding: 0.2em 2.1em 0.2em 1em;
-      font-weight: bold;
-      color: #000;
-      font-size: 1.3em;
       border: 0;
-      border-radius: 1em;
-      width: 95%;
       margin: .2em .2em;
       height: 2em;
+
+      &:hover,
+      &:focus {
+        border: 1px solid var(--color-base-light);
+      }
     }
 
     .searchbutton {
-      background: #828282;
+      background-color: var(--color-black);
+      border-top-right-radius: var(--border-radius-small);
+      border-bottom-right-radius: var(--border-radius-small);
       padding: 0.2em 0.2em;
       font-weight: bold;
       color: #ffffff;
-      font-size: 1.3em;
       border: 0;
-      border-radius: 1em;
       margin: .2em .2em;
       position: absolute;
-      top: 0;
-      right: 0;
-      height: 2em;
-      width: 2em;
+      top: 2px;
+      right: 2px;
+      height: calc(2em - 4px);
+      width: calc(2em - 4px);
     }
 
   }

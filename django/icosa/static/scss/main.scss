@@ -141,7 +141,7 @@ textarea {
   background-color: var(--color-base-light);
   background-clip: padding-box;
   border: 1px solid #ced4da;
-  border-radius: .25rem;
+  border-radius: var(--border-radius-small);
   transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
   margin-block: 0.4em;
 
@@ -160,22 +160,22 @@ form {
   input,
   select,
   textarea {
-    background-color: #272727;
-    border-color: #272727;
-    color: #d7d7d7;
+    background-color: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-base-mid);
     width: 100%;
 
     &:active {
 
       background-color: lighten(#272727, 10%);
-      border-color: #272727;
-      color: #d7d7d7;
+      border-color: var(--color-black);
+      color: var(--color-base-mid);
     }
 
     &:focus {
-      background-color: #272727;
+      background-color: var(--color-black);
       border-color: lighten(#272727, 5%);
-      color: #d7d7d7;
+      color: var(--color-base-mid);
     }
   }
 
