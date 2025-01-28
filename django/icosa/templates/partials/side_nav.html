@@ -1,15 +1,15 @@
 {% load fontawesome_tags %}
 {% load static %}
+<div class="toggler">
+    {% fa_icon "solid" "bars" "toggleicon" %}
+</div>
 <div id="sidenav" class="pro-sidebar sidenav collapsed">
     <div class="pro-sidebar-inner">
         <div class="pro-sidebar-layout">
-            <div class="pro-sidebar-header">
-                <div class="toggler" id="toggler">
-                    {% fa_icon "solid" "bars" "toggleicon hide-when-open" %}
-                    {% fa_icon "solid" "xmark" "toggleicon hide-when-collapsed" %}
-                </div>
-            </div>
             <div class="pro-sidebar-content">
+                <div class="toggler toggle-close">
+                    {% fa_icon "solid" "xmark" "toggleicon" %}
+                </div>
                 <nav class="pro-menu shaped square">
                     <ul>
                         <li class="pro-menu-item active">

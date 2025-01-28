@@ -28,15 +28,6 @@ body {
   min-height: 100%;
   flex-direction: column;
 
-  >main,
-  >header,
-  >footer {
-    margin-left: 5em;
-
-    @media(max-width: 1024px) {
-      margin-left: 0;
-    }
-  }
 
   >main {
     flex-grow: 1;
