@@ -27,7 +27,6 @@ header {
   }
 
   .search-widget {
-    display: inline-block;
     position: relative;
 
     input,
@@ -71,6 +70,6 @@ header {
   }
 
   .user-info {
-    display: inline-block;
+    margin-right: 0.5em;
   }
 }
