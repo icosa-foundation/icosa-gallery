@@ -26,13 +26,7 @@
         <div class="sketch-list">
             {% if assets %}
                 {% for asset in assets %}
-                    {% if request.user and request.user == user.django_user %}
-                        {% with owner_details=True %}
-                            {% include "partials/sketch_list_item.html" %}
-                        {% endwith %}
-                    {% else %}
-                        {% include "partials/sketch_list_item.html" %}
-                    {% endif %}
+                    {% include "partials/sketch_list_item.html" %}
                 {% endfor %}
             {% else %}
                 <p>{{ user.displayname }} hasn't created anything yet.</p>
