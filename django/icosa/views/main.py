@@ -318,11 +318,11 @@ def user_show(request, user_url):
     template = "main/user_show.html"
 
     owner = get_object_or_404(AssetOwner, url=user_url)
-    q = Q(owner=owner.id)
-    if AssetOwner.from_django_request(request) != owner:
-        q &= Q(visibility=PUBLIC)
 
-    asset_objs = Asset.objects.filter(q).order_by("-id")
+    asset_objs = Asset.objects.filter(
+        owner=owner,
+        visibility=PUBLIC,
+    ).order_by("-id")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
