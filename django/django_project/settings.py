@@ -95,6 +95,7 @@ INSTALLED_APPS = [
     "constance",
     "constance.backends.database",
     "icosa",
+    "import_export",
     "honeypot",
     "maintenance_mode",
     "compressor",

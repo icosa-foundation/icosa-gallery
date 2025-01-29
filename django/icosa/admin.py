@@ -14,15 +14,16 @@ from icosa.models import (
     PolyResource,
     Tag,
 )
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass
 
 
 @admin.register(PolyResource)
-class PolyResourceAdmin(admin.ModelAdmin):
+class PolyResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "id",
         "asset",
@@ -66,7 +67,7 @@ class PolyResourceInline(admin.TabularInline):
 
 
 @admin.register(PolyFormat)
-class PolyFormatAdmin(admin.ModelAdmin):
+class PolyFormatAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "asset",
         "format_type",
@@ -78,7 +79,7 @@ class PolyFormatAdmin(admin.ModelAdmin):
 
 
 @admin.register(Asset)
-class AssetAdmin(admin.ModelAdmin):
+class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "name",
         "_thumbnail_image",
@@ -167,7 +168,7 @@ class AssetAdmin(admin.ModelAdmin):
 
 
 @admin.register(DeviceCode)
-class DeviceCodeAdmin(admin.ModelAdmin):
+class DeviceCodeAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "user",
         "devicecode",
@@ -186,7 +187,7 @@ class UserAssetLikeInline(admin.TabularInline):
 
 
 @admin.register(AssetOwner)
-class AssetOwnerAdmin(admin.ModelAdmin):
+class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "displayname",
         "email",
@@ -229,7 +230,7 @@ class AssetOwnerAdmin(admin.ModelAdmin):
 
 
 @admin.register(MastheadSection)
-class MastheadSectionAdmin(admin.ModelAdmin):
+class MastheadSectionAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "_thumbnail_image",
         "asset",
@@ -254,7 +255,7 @@ class MastheadSectionAdmin(admin.ModelAdmin):
 
 
 @admin.register(HiddenMediaFileLog)
-class HiddenMediaFileLogAdmin(admin.ModelAdmin):
+class HiddenMediaFileLogAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "original_asset_id",
         "file_name",
@@ -278,15 +279,15 @@ class HiddenMediaFileLogAdmin(admin.ModelAdmin):
 
 
 @admin.register(Oauth2Client)
-class Oauth2ClientAdmin(admin.ModelAdmin):
+class Oauth2ClientAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass
 
 
 @admin.register(Oauth2Code)
-class Oauth2CodeAdmin(admin.ModelAdmin):
+class Oauth2CodeAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass
 
 
 @admin.register(Oauth2Token)
-class Oauth2TokenAdmin(admin.ModelAdmin):
+class Oauth2TokenAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass
