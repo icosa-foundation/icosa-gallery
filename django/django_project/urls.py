@@ -90,15 +90,9 @@ urlpatterns = [
     path("user/<str:user_url>", main_views.user_show, name="user_show"),
     path("likes", main_views.my_likes, name="my_likes"),
     path(
-        "view/<str:user_url>/<str:asset_url>",
-        main_views.view_asset,
-        name="view_asset",
-    ),
-    # TODO(james): view_asset should probably be replaced by view_poly_asset.
-    path(
         "view/<str:asset_url>",
-        main_views.view_poly_asset,
-        name="view_poly_asset",
+        main_views.asset_view,
+        name="asset_view",
     ),
     path(
         "masthead_image/<str:asset_url>",

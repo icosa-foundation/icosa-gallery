@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.format_roles import (
@@ -615,7 +616,7 @@ class Asset(models.Model):
         return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/icosa/{self.url}/archive.zip"
 
     def get_absolute_url(self):
-        return f"/view/{self.url}"
+        return reverse("asset_view", kwargs={"asset_url": self.url})
 
     def get_edit_url(self):
         return f"/edit/{self.url}"

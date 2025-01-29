@@ -363,32 +363,9 @@ def my_likes(request):
     )
 
 
-# TODO(james): This is very similar to view_poly_asset. Do we need both?
 @never_cache
-def view_asset(request, user_url, asset_url):
-    template = "main/view_asset.html"
-    icosa_user = get_object_or_404(AssetOwner, url=user_url)
-    asset = get_object_or_404(Asset, owner=icosa_user.id, url=asset_url)
-    check_user_can_view_asset(request.user, asset)
-    asset.inc_views_and_rank()
-    context = {
-        "request_user": AssetOwner.from_django_user(request.user),
-        "user": icosa_user,
-        "asset": asset,
-        "asset_files": asset.get_all_absolute_file_names(),
-        "page_title": asset.name,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
-
-
-# TODO(james): This is very similar to view_asset. Do we need both?
-@never_cache
-def view_poly_asset(request, asset_url):
-    template = "main/view_asset.html"
+def asset_view(request, asset_url):
+    template = "main/asset_view.html"
 
     asset = get_object_or_404(Asset, url=asset_url)
     check_user_can_view_asset(request.user, asset)
