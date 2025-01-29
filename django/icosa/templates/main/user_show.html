@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load fontawesome_tags %}
 
 {% block banner %}
 {% if not user.is_claimed %}
@@ -16,9 +17,11 @@
                         <p>{{ user.description|linebreaksbr }}</p>
                     {% endif %}
                     {% if not user.django_user %}
-                        <p>This profile was migrated from Google Poly or another web source and doesn't have an active user associated with it. If this is you and want to claim the account please contact
-                        <a href="mailto:contact@icosa.gallery">contact@icosa.gallery</a>.</p>
-                        <p>Also read about <a href="{% url 'artist_info' %}">why your work is here</a>.</p>
+                        <div class="well">
+                            <p>{% fa_icon "solid" "triangle-exclamation" %} This profile was migrated from Google Poly or another web source and doesn't have an active user associated with it. If this is you and want to claim the account please contact
+                            <a href="mailto:contact@icosa.gallery">contact@icosa.gallery</a> or
+                            <a href="{% url 'artist_info' %}">read more about where the works here originated</a>.</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>

@@ -264,3 +264,14 @@ label {
 .hidden {
   display: none;
 }
+
+.well {
+  background-color: var(--color-card-surface);
+  padding: 1rem;
+  border-radius: var(--border-radius-small);
+  margin-bottom: 1em;
+
+  p:last-of-type {
+    margin-bottom: 0;
+  }
+}
