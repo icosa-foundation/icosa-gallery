@@ -37,7 +37,7 @@
                     <p>{{ asset.description|linebreaksbr }}</p>
                 {% endif %}
                 <p class="sketch-license">
-                    {{ asset.get_license_icons }} {{ asset.get_license_display|default_if_none:"&copy; All rights reserved" }}
+                    {{ asset.get_license_icons }} {{ asset.get_license_display|default_if_none:" All rights reserved" }}
                 </p>
                 <p></p>
                 {% if downloadable_formats %}

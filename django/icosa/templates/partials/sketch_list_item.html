@@ -44,6 +44,12 @@
             <a href="{% url 'user_show' user_url=asset.owner.url %}">{{ asset.owner.displayname }}</a>
             &bull; {{ asset.timestamp|date:"d/m/Y" }}
         </p>
+            {% if owner_details %}
+            <p><small>Visibility: {{ asset.get_visibility_display }}<br>
+            <span class="sketch-license">
+                {{ asset.get_license_icons }} {{ asset.get_license_display|default_if_none:" All rights reserved" }}
+            </small></span></p>
+            {% endif %}
     </div>
 </article>
 {% if asset.state == "COMPLETE" and is_polling %}
