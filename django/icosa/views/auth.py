@@ -2,11 +2,13 @@ import secrets
 from typing import Optional
 
 import bcrypt
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -27,6 +29,47 @@ from passlib.context import CryptContext
 INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
 
 
+def send_password_reset_email(request, user, to_email):
+    site = get_current_site(request)
+    owner = None
+    try:
+        owner = AssetOwner.objects.get(django_user=user)
+    except AssetOwner.DoesNotExist:
+        # TODO(james): We should probably error out here
+        pass
+
+    mail_subject = f"Reset your {site.name} account password."
+    message = render_to_string(
+        "emails/password_reset_email.html",
+        {
+            "request": request,
+            "user": user,
+            "owner": owner,
+            "domain": site.domain,
+            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+            "token": default_token_generator.make_token(user),
+        },
+    )
+    spawn_send_html_mail(mail_subject, message, [to_email])
+
+
+def send_registration_email(request, user, owner, to_email=None):
+    current_site = get_current_site(request)
+    mail_subject = f"Activate your {current_site.name} account."
+    message = render_to_string(
+        "emails/confirm_registration_email.html",
+        {
+            "request": request,
+            "user": user,
+            "owner": owner,
+            "domain": current_site.domain,
+            "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+            "token": default_token_generator.make_token(user),
+        },
+    )
+    spawn_send_html_mail(mail_subject, message, [to_email])
+
+
 def authenticate_icosa_user(
     username: str,
     password: str,
@@ -45,6 +88,31 @@ def authenticate_icosa_user(
 
     except AssetOwner.DoesNotExist:
         return None
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def debug_password_reset_email(request):
+    user = request.user
+    send_password_reset_email(
+        request,
+        user,
+        settings.ADMIN_EMAIL,
+    )
+    return HttpResponse("ok")
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def debug_registration_email(request):
+    user = request.user
+    owner = AssetOwner.objects.get(django_user=user)
+    send_registration_email(
+        request,
+        user,
+        owner,
+        settings.ADMIN_EMAIL,
+    )
+
+    return HttpResponse("ok")
 
 
 def custom_login(request):
@@ -122,7 +190,7 @@ def register(request):
             snowflake = generate_snowflake()
             assettoken = secrets.token_urlsafe(8) if url is None else url
 
-            icosa_user = AssetOwner.objects.create(
+            owner = AssetOwner.objects.create(
                 id=snowflake,
                 url=assettoken,
                 email=email,
@@ -131,27 +199,16 @@ def register(request):
             )
 
             user = User.objects.create_user(
-                username=icosa_user.email,
-                email=icosa_user.email,
+                username=owner.email,
+                email=owner.email,
                 password=password,
             )
             user.is_active = False
             user.save()
 
-            current_site = get_current_site(request)
-            mail_subject = f"Activate your {current_site.name} account."
-            message = render_to_string(
-                "auth/confirm_registration_email.html",
-                {
-                    "request": request,
-                    "user": user,
-                    "domain": current_site.domain,
-                    "uid": urlsafe_base64_encode(force_bytes(user.pk)),
-                    "token": default_token_generator.make_token(user),
-                },
+            send_registration_email(
+                request, user, owner, to_email=form.cleaned_data.get("email")
             )
-            to_email = form.cleaned_data.get("email")
-            spawn_send_html_mail(mail_subject, message, [to_email])
             success = True
     else:
         form = NewUserForm()
@@ -192,21 +249,11 @@ def password_reset(request):
         if form.is_valid():
             try:
                 user = User.objects.get(email=form.cleaned_data["email"])
-
-                site = get_current_site(request)
-                mail_subject = f"Reset your {site.name} account password."
-                message = render_to_string(
-                    "auth/password_reset_email.html",
-                    {
-                        "request": request,
-                        "user": user,
-                        "domain": site.domain,
-                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
-                        "token": default_token_generator.make_token(user),
-                    },
+                send_password_reset_email(
+                    request,
+                    user,
+                    to_email=form.cleaned_data.get("email"),
                 )
-                to_email = form.cleaned_data.get("email")
-                spawn_send_html_mail(mail_subject, message, [to_email])
             except User.DoesNotExist:
                 pass
             return redirect(reverse("password_reset_done"))

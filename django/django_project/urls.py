@@ -177,3 +177,16 @@ if (
     urlpatterns = [
         path("__debug__/", include("debug_toolbar.urls")),
     ] + urlpatterns
+if getattr(settings, "DEBUG", False):
+    urlpatterns = [
+        path(
+            "debug_password_reset_email",
+            auth_views.debug_password_reset_email,
+            name="debug_password_reset_email",
+        ),
+        path(
+            "debug_registration_email",
+            auth_views.debug_registration_email,
+            name="debug_registration_email",
+        ),
+    ] + urlpatterns
