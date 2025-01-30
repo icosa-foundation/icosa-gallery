@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 import sentry_sdk
+from boto3.s3.transfer import TransferConfig
 from botocore.config import Config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -85,6 +86,11 @@ if (
     if "backblazeb2.com" in DJANGO_STORAGE_URL:
         AWS_S3_CLIENT_CONFIG = Config(
             request_checksum_calculation="when_required",
+        )
+        # Effectively disable multipart uploads so that checksum calculation is
+        # never required.
+        AWS_S3_TRANSFER_CONFIG = TransferConfig(
+            multipart_threshold=5368709120,  # 5GiB in bytes
         )
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
