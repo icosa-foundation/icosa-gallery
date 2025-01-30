@@ -482,6 +482,7 @@ def asset_status(request, asset_url):
 
 
 @login_required
+@never_cache
 def edit_asset(request, asset_url):
     template = "main/edit_asset.html"
     owner = AssetOwner.from_django_user(request.user)
