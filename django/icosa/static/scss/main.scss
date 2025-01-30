@@ -174,7 +174,50 @@ form {
     margin: 0.4em;
     width: 100%;
   }
+
 }
+
+.select2-container.select2-container--default {
+  .select2-dropdown {
+    border-color: var(--color-black);
+  }
+
+  .select2-selection {
+    background-color: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-base-mid);
+    border-radius: var(--border-radius-small);
+  }
+
+  .select2-selection__rendered {
+    background-color: transparent;
+    border-color: var(--color-black);
+  }
+
+  .select2-results__options {
+    background-color: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-base-mid);
+  }
+
+  .select2-results__option.select2-results__option--highlighted {
+    background-color: transparent;
+    font-weight: bold;
+    color: var(--color-base-light);
+  }
+
+
+  .select2-results__option[aria-selected="true"] {
+    background-color: var(--color-base-dark);
+    font-weight: bold;
+
+    &::before {
+      content: "• ";
+    }
+  }
+
+}
+
 
 label {
   margin-top: 1em;
