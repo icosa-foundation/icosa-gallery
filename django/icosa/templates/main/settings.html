@@ -5,7 +5,7 @@
             <div class="col">
                 <h1>My Settings</h1>
                 {% if need_login %}
-                    <p>You have changed your email or password, please <a href="{% url 'login' %}">log in</a> again.</p>
+                    <p>You have changed your password, please <a href="{% url 'login' %}">log in</a> again.</p>
                 {% else %}
                     <form action="{% url 'settings' %}" method="post" novalidate>
                         {% csrf_token %}
