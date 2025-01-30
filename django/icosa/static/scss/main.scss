@@ -200,7 +200,16 @@ form {
     color: var(--color-base-mid);
   }
 
+  .select2-selection__clear {
+    color: var(--color-base-light);
+  }
+
+  input.select2-search__field {
+    color: var(--color-base-mid);
+  }
+
   .select2-results__option.select2-results__option--highlighted,
+
   .select2-results__option.select2-results__option--highlighted[aria-selected=true] {
     background-color: var(--color-base-mid);
     color: var(--color-base-dark);
