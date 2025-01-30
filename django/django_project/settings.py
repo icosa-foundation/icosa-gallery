@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 
 import sentry_sdk
+from botocore.config import Config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,6 +79,13 @@ if (
     AWS_S3_ENDPOINT_URL = DJANGO_STORAGE_URL
     if DJANGO_STORAGE_CUSTOM_DOMAIN:
         AWS_S3_CUSTOM_DOMAIN = DJANGO_STORAGE_CUSTOM_DOMAIN
+    # Special case for Backblaze B2, which doesn't support `x-amz-checksum-*`
+    # headers. See here (at time of writing):
+    # https://www.backblaze.com/docs/cloud-storage-s3-compatible-api#unsupported-features
+    if "backblazeb2.com" in DJANGO_STORAGE_URL:
+        AWS_S3_CLIENT_CONFIG = Config(
+            request_checksum_calculation="when_required",
+        )
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
