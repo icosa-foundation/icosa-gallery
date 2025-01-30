@@ -1,7 +1,9 @@
 from dal import autocomplete
+from django.views.decorators.cache import never_cache
 from icosa.models import Asset, AssetOwner, Tag
 
 
+@never_cache
 class TagAutocomplete(autocomplete.Select2QuerySetView):
     def create_object(self, text):
         name = text.strip()
