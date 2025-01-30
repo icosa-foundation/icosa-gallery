@@ -200,10 +200,11 @@ form {
     color: var(--color-base-mid);
   }
 
-  .select2-results__option.select2-results__option--highlighted {
-    background-color: transparent;
+  .select2-results__option.select2-results__option--highlighted,
+  .select2-results__option.select2-results__option--highlighted[aria-selected=true] {
+    background-color: var(--color-base-mid);
+    color: var(--color-base-dark);
     font-weight: bold;
-    color: var(--color-base-light);
   }
 
 
