@@ -317,7 +317,13 @@ def uploads(request):
 def user_show(request, user_url):
     template = "main/user_show.html"
 
-    owner = get_object_or_404(AssetOwner, url=user_url)
+    owner = get_object_or_404(
+        AssetOwner.objects.select_related(
+            "django_user",
+            "merged_with",
+        ),
+        url=user_url,
+    )
 
     asset_objs = Asset.objects.filter(
         owner=owner,
