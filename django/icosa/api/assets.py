@@ -7,7 +7,7 @@ from django.core.files.storage import get_storage_class
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.query import QuerySet
-from django.http import HttpRequest, HttpResponseBadRequest
+from django.http import HttpRequest
 from django.urls import reverse
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,

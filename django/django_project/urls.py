@@ -10,6 +10,7 @@ from icosa.api.oembed import router as oembed_router
 from icosa.api.poly import router as poly_router
 from icosa.api.users import router as users_router
 from icosa.views import auth as auth_views
+from icosa.views import autocomplete as autocomplete_views
 from icosa.views import main as main_views
 from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
@@ -151,6 +152,15 @@ urlpatterns = [
     path("licenses", main_views.licenses, name="licenses"),
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
+    # autocomplete views
+    path(
+        "tag-autocomplete",
+        autocomplete_views.TagAutocomplete.as_view(
+            create_field="name",
+            validate_create=False,
+        ),
+        name="tag-autocomplete",
+    ),
 ]
 
 if settings.DEPLOYMENT_HOST_API:

@@ -102,6 +102,8 @@ STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 APPEND_SLASH = False
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 INSTALLED_APPS = [
+    "dal",
+    "dal_select2",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

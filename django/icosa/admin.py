@@ -19,7 +19,7 @@ from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 @admin.register(Tag)
 class TagAdmin(ImportExportModelAdmin, ExportActionMixin):
-    pass
+    search_fields = ("name",)
 
 
 @admin.register(PolyResource)

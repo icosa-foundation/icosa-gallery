@@ -1,4 +1,5 @@
 from constance import config
+from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User as DjangoUser
 from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
@@ -97,7 +98,13 @@ class AssetSettingsForm(forms.ModelForm):
             "license",
             "thumbnail",
             "category",
+            "tags",
         ]
+        widgets = {
+            "tags": autocomplete.ModelSelect2Multiple(
+                url="tag-autocomplete",
+            ),
+        }
 
 
 class UserSettingsForm(forms.ModelForm):
