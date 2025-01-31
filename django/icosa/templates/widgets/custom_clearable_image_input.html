@@ -1,12 +1,19 @@
-{% if widget.is_initial %}
-    <img src="{{ widget.value.url }}" alt="Preview" class="img-preview" />
-    {% if not widget.required %}
-        <label for="{{ widget.checkbox_id }}">
-            <input class="input-inline" type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}{% if widget.attrs.checked %} checked{% endif %}>
-            {{ widget.clear_checkbox_label }}
-        </label>
+{% comment %}
+This widget can currently only be included on the page once owing to the use of
+ids as targets. This could easily be improved once the final markup is decided.
+{% endcomment %}
+
+<div class="thumbnail-widget" id="thumbnail-widget">
+    {% if widget.is_initial %}
+        <img src="{{ widget.value.url }}" alt="Preview" class="img-preview" />
+        {% if not widget.required %}
+            <label for="{{ widget.checkbox_id }}">
+                <input class="input-inline" type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}{% if widget.attrs.checked %} checked{% endif %}>
+                {{ widget.clear_checkbox_label }}
+            </label>
+        {% endif %}
+        <br>
+        {{ widget.input_text }}:
     {% endif %}
-    <br>
-    {{ widget.input_text }}:
-{% endif %}
-<input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+    <input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>
+</div>

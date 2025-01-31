@@ -7,23 +7,19 @@ footer {
   nav {
 
     ul {
+      list-style: none;
       margin: 0;
-      list-style-type: none;
       padding: 0;
+      display: block;
 
       li {
-
-        display: inline-block;
+        display: block;
+        margin-block: 0.5em;
         padding-inline: 1em;
-        border-right: 1px solid var(--color-base-dark);
-
-        &:first-child {
-          padding-left: 0;
-        }
 
         &:last-child {
-          padding-right: 0;
           border-right: none;
+          padding-right: 0;
         }
 
         a {
@@ -34,6 +30,38 @@ footer {
           &:visited {
             color: var(--color-base-dark);
           }
+        }
+      }
+
+      @media (min-width: 1024px) {
+        display: flex;
+
+
+      }
+
+      @media (min-width: 768px) {
+        li {
+          display: inline-block;
+
+          &.push {
+            margin-left: auto;
+          }
+
+          &:first-child {
+            padding-left: 0;
+          }
+
+          &.last {
+            border-right: none;
+            padding-right: 0;
+          }
+        }
+      }
+
+      @media (min-width: 480px) {
+        li {
+          border-right: 1px solid var(--color-base-dark);
+          display: inline-block;
         }
       }
     }

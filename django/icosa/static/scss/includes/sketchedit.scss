@@ -1,20 +1,36 @@
 .sketchedit {
+  display: block;
+
+  >div {
+    diplay: block;
+  }
+
+  >.viewer {
+    position: static;
+    top: 0;
+    padding-inline: 15px;
+  }
+
+  @media (min-width: 768px) {
     display: flex;
 
     >div {
-        display: flex
+      display: flex
     }
 
     >.viewer {
-        flex-grow: 1;
+      position: sticky;
+      top: 15px;
+      flex: 3 1 66%;
+      align-self: flex-start;
 
-        .sketchviewer {
-            width: 100%;
-        }
+      .sketchviewer {
+        width: 100%;
+      }
     }
 
     >.editor {
-        width: 24em;
+      flex: 1 1 33%;
     }
-
+  }
 }

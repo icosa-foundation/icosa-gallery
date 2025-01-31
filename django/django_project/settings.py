@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 
 import sentry_sdk
+from boto3.s3.transfer import TransferConfig
+from botocore.config import Config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +33,8 @@ if DEPLOYMENT_ENV in [
 ]:
     DEBUG = True
 
+DEPLOYMENT_SCHEME = "http://" if os.environ.get("DEPLOYMENT_NO_SSL") else "https://"
+
 SITE_ID = 1
 
 ALLOWED_HOSTS = [
@@ -38,16 +42,17 @@ ALLOWED_HOSTS = [
     f"{DEPLOYMENT_HOST_WEB}",
 ]
 
-if DEPLOYMENT_HOST_API:
-    ALLOWED_HOSTS.append(f"{DEPLOYMENT_HOST_API}")
-
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.127.0.0.1",
-    f"https://{DEPLOYMENT_HOST_WEB}",
+    f"{DEPLOYMENT_SCHEME}*.127.0.0.1",
+    f"{DEPLOYMENT_SCHEME}{DEPLOYMENT_HOST_WEB}",
 ]
 
+
+API_SERVER = DEPLOYMENT_HOST_WEB
 if DEPLOYMENT_HOST_API:
-    CSRF_TRUSTED_ORIGINS.append(f"https://{DEPLOYMENT_HOST_API}")
+    ALLOWED_HOSTS.append(f"{DEPLOYMENT_HOST_API}")
+    CSRF_TRUSTED_ORIGINS.append(f"{DEPLOYMENT_SCHEME}{DEPLOYMENT_HOST_API}")
+    API_SERVER = DEPLOYMENT_HOST_API
 
 DJANGO_DEFAULT_FILE_STORAGE = os.environ.get("DJANGO_DEFAULT_FILE_STORAGE")
 DJANGO_STORAGE_URL = os.environ.get("DJANGO_STORAGE_URL")
@@ -55,6 +60,7 @@ DJANGO_STORAGE_BUCKET_NAME = os.environ.get("DJANGO_STORAGE_BUCKET_NAME")
 DJANGO_STORAGE_REGION_NAME = os.environ.get("DJANGO_STORAGE_REGION_NAME")
 DJANGO_STORAGE_ACCESS_KEY = os.environ.get("DJANGO_STORAGE_ACCESS_KEY")
 DJANGO_STORAGE_SECRET_KEY = os.environ.get("DJANGO_STORAGE_SECRET_KEY")
+DJANGO_STORAGE_CUSTOM_DOMAIN = os.environ.get("DJANGO_STORAGE_CUSTOM_DOMAIN")
 
 if (
     DJANGO_STORAGE_URL
@@ -72,6 +78,20 @@ if (
     AWS_STORAGE_BUCKET_NAME = DJANGO_STORAGE_BUCKET_NAME
     AWS_S3_REGION_NAME = DJANGO_STORAGE_REGION_NAME
     AWS_S3_ENDPOINT_URL = DJANGO_STORAGE_URL
+    if DJANGO_STORAGE_CUSTOM_DOMAIN:
+        AWS_S3_CUSTOM_DOMAIN = DJANGO_STORAGE_CUSTOM_DOMAIN
+    # Special case for Backblaze B2, which doesn't support `x-amz-checksum-*`
+    # headers. See here (at time of writing):
+    # https://www.backblaze.com/docs/cloud-storage-s3-compatible-api#unsupported-features
+    if "backblazeb2.com" in DJANGO_STORAGE_URL:
+        AWS_S3_CLIENT_CONFIG = Config(
+            request_checksum_calculation="when_required",
+        )
+        # Effectively disable multipart uploads so that checksum calculation is
+        # never required.
+        AWS_S3_TRANSFER_CONFIG = TransferConfig(
+            multipart_threshold=5368709120,  # 5GiB in bytes
+        )
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
@@ -82,6 +102,8 @@ STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 APPEND_SLASH = False
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 INSTALLED_APPS = [
+    "dal",
+    "dal_select2",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -93,6 +115,7 @@ INSTALLED_APPS = [
     "constance",
     "constance.backends.database",
     "icosa",
+    "import_export",
     "honeypot",
     "maintenance_mode",
     "compressor",

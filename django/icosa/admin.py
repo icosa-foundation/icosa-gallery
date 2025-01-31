@@ -1,5 +1,9 @@
+from django.contrib import admin
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
+    AssetOwner,
     DeviceCode,
     HiddenMediaFileLog,
     MastheadSection,
@@ -9,20 +13,17 @@ from icosa.models import (
     PolyFormat,
     PolyResource,
     Tag,
-    User,
 )
-
-from django.contrib import admin
-from django.utils.safestring import mark_safe
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
-    pass
+class TagAdmin(ImportExportModelAdmin, ExportActionMixin):
+    search_fields = ("name",)
 
 
 @admin.register(PolyResource)
-class PolyResourceAdmin(admin.ModelAdmin):
+class PolyResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "id",
         "asset",
@@ -66,8 +67,7 @@ class PolyResourceInline(admin.TabularInline):
 
 
 @admin.register(PolyFormat)
-class PolyFormatAdmin(admin.ModelAdmin):
-
+class PolyFormatAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "asset",
         "format_type",
@@ -79,7 +79,7 @@ class PolyFormatAdmin(admin.ModelAdmin):
 
 
 @admin.register(Asset)
-class AssetAdmin(admin.ModelAdmin):
+class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "name",
         "_thumbnail_image",
@@ -168,7 +168,7 @@ class AssetAdmin(admin.ModelAdmin):
 
 
 @admin.register(DeviceCode)
-class DeviceCodeAdmin(admin.ModelAdmin):
+class DeviceCodeAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "user",
         "devicecode",
@@ -182,16 +182,17 @@ class DeviceCodeAdmin(admin.ModelAdmin):
 
 class UserAssetLikeInline(admin.TabularInline):
     extra = 0
-    model = User.likes.through
+    model = AssetOwner.likes.through
     raw_id_fields = ["asset"]
 
 
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+@admin.register(AssetOwner)
+class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "displayname",
         "email",
         "url",
+        "_django_user_link",
     )
 
     search_fields = (
@@ -203,13 +204,33 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = (
         "imported",
         ("email", admin.EmptyFieldListFilter),
+        ("django_user", admin.EmptyFieldListFilter),
     )
     inlines = (UserAssetLikeInline,)
+    raw_id_fields = [
+        "django_user",
+        "merged_with",
+    ]
+
+    def _django_user_link(self, obj):
+        html = "-"
+        if obj.django_user:
+            change_url = reverse(
+                "admin:auth_user_change",
+                args=(obj.django_user.id,),
+            )
+            html = f"""
+<a href="{change_url}">{obj.django_user}</a>
+"""
+
+        return mark_safe(html)
+
+    _django_user_link.short_description = "Django User"
+    _django_user_link.allow_tags = True
 
 
 @admin.register(MastheadSection)
-class MastheadSectionAdmin(admin.ModelAdmin):
-
+class MastheadSectionAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "_thumbnail_image",
         "asset",
@@ -234,7 +255,7 @@ class MastheadSectionAdmin(admin.ModelAdmin):
 
 
 @admin.register(HiddenMediaFileLog)
-class HiddenMediaFileLogAdmin(admin.ModelAdmin):
+class HiddenMediaFileLogAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "original_asset_id",
         "file_name",
@@ -258,15 +279,15 @@ class HiddenMediaFileLogAdmin(admin.ModelAdmin):
 
 
 @admin.register(Oauth2Client)
-class Oauth2ClientAdmin(admin.ModelAdmin):
+class Oauth2ClientAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass
 
 
 @admin.register(Oauth2Code)
-class Oauth2CodeAdmin(admin.ModelAdmin):
+class Oauth2CodeAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass
 
 
 @admin.register(Oauth2Token)
-class Oauth2TokenAdmin(admin.ModelAdmin):
+class Oauth2TokenAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass

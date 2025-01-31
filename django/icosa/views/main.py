@@ -2,33 +2,6 @@ import inspect
 import random
 import secrets
 
-from honeypot.decorators import check_honeypot
-from icosa.forms import (
-    ARTIST_QUERY_SUBJECT_CHOICES,
-    ArtistQueryForm,
-    AssetReportForm,
-    AssetSettingsForm,
-    AssetUploadForm,
-    UserSettingsForm,
-)
-from icosa.helpers.email import spawn_send_html_mail
-from icosa.helpers.file import b64_to_img, upload_asset
-from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.user import get_owner
-from icosa.models import (
-    ALL_RIGHTS_RESERVED,
-    ASSET_STATE_BARE,
-    ASSET_STATE_UPLOADING,
-    CATEGORY_LABELS,
-    PRIVATE,
-    PUBLIC,
-    UNLISTED,
-    Asset,
-    MastheadSection,
-)
-from icosa.models import User as IcosaUser
-from icosa.tasks import queue_upload_asset
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -51,6 +24,31 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
+from honeypot.decorators import check_honeypot
+from icosa.forms import (
+    ARTIST_QUERY_SUBJECT_CHOICES,
+    ArtistQueryForm,
+    AssetReportForm,
+    AssetSettingsForm,
+    AssetUploadForm,
+    UserSettingsForm,
+)
+from icosa.helpers.email import spawn_send_html_mail
+from icosa.helpers.file import b64_to_img, upload_asset
+from icosa.helpers.snowflake import generate_snowflake
+from icosa.models import (
+    ALL_RIGHTS_RESERVED,
+    ASSET_STATE_BARE,
+    ASSET_STATE_UPLOADING,
+    CATEGORY_LABELS,
+    PRIVATE,
+    PUBLIC,
+    UNLISTED,
+    Asset,
+    AssetOwner,
+    MastheadSection,
+)
+from icosa.tasks import queue_upload_asset
 
 POLY_USER_URL = "4aEd8rQgKu2"
 
@@ -66,7 +64,7 @@ def user_can_view_asset(
     asset: Asset,
 ) -> bool:
     if asset.visibility == PRIVATE:
-        return user.is_authenticated and IcosaUser.from_django_user(user) == asset.owner
+        return user.is_authenticated and asset.owner.django_user == user
     return True
 
 
@@ -133,14 +131,14 @@ def landing_page(
     if show_hero is True:
         # The heroes query is slow, but we still want a rotating list on every
         # page load. Cache a list of heroes and choose one at random each time.
-        cache_key = f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}"
+        cache_key = f"{HERO_CACHE_PREFIX}-{landing_page_fn_name}"
         if cache.get(cache_key):
             heroes = cache.get(cache_key)
         else:
             heroes = list(MastheadSection.objects.all())
 
             cache.set(
-                f"{HERO_CACHE_PREFIX} - {landing_page_fn_name}",
+                f"{HERO_CACHE_PREFIX}-{landing_page_fn_name}",
                 heroes,
                 HERO_CACHE_SECONDS,
             )
@@ -263,7 +261,7 @@ def category(request, category):
 def uploads(request):
     template = "main/manage_uploads.html"
 
-    user = IcosaUser.from_django_request(request)
+    user = AssetOwner.from_django_request(request)
     if request.method == "POST":
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -319,12 +317,18 @@ def uploads(request):
 def user_show(request, user_url):
     template = "main/user_show.html"
 
-    owner = get_object_or_404(IcosaUser, url=user_url)
-    q = Q(owner=owner.id)
-    if IcosaUser.from_django_request(request) != owner:
-        q &= Q(visibility=PUBLIC)
+    owner = get_object_or_404(
+        AssetOwner.objects.select_related(
+            "django_user",
+            "merged_with",
+        ),
+        url=user_url,
+    )
 
-    asset_objs = Asset.objects.filter(q).order_by("-id")
+    asset_objs = Asset.objects.filter(
+        owner=owner,
+        visibility=PUBLIC,
+    ).order_by("-id")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
@@ -344,7 +348,7 @@ def user_show(request, user_url):
 def my_likes(request):
     template = "main/likes.html"
 
-    owner = IcosaUser.from_django_request(request)
+    owner = AssetOwner.from_django_request(request)
     q = Q(visibility__in=[PUBLIC, UNLISTED])
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
 
@@ -365,32 +369,9 @@ def my_likes(request):
     )
 
 
-# TODO(james): This is very similar to view_poly_asset. Do we need both?
 @never_cache
-def view_asset(request, user_url, asset_url):
-    template = "main/view_asset.html"
-    icosa_user = get_object_or_404(IcosaUser, url=user_url)
-    asset = get_object_or_404(Asset, owner=icosa_user.id, url=asset_url)
-    check_user_can_view_asset(request.user, asset)
-    asset.inc_views_and_rank()
-    context = {
-        "request_user": IcosaUser.from_django_user(request.user),
-        "user": icosa_user,
-        "asset": asset,
-        "asset_files": asset.get_all_absolute_file_names(),
-        "page_title": asset.name,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
-
-
-# TODO(james): This is very similar to view_asset. Do we need both?
-@never_cache
-def view_poly_asset(request, asset_url):
-    template = "main/view_asset.html"
+def asset_view(request, asset_url):
+    template = "main/asset_view.html"
 
     asset = get_object_or_404(Asset, url=asset_url)
     check_user_can_view_asset(request.user, asset)
@@ -399,7 +380,7 @@ def view_poly_asset(request, asset_url):
     format_override = request.GET.get("forceformat", "")
 
     context = {
-        "request_user": IcosaUser.from_django_user(request.user),
+        "request_user": AssetOwner.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
         "asset_files": asset.get_all_absolute_file_names(),
@@ -470,7 +451,7 @@ def asset_downloads(request, asset_url):
     check_user_can_view_asset(request.user, asset)
 
     context = {
-        "request_user": IcosaUser.from_django_user(request.user),
+        "request_user": AssetOwner.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
         "downloadable_formats": asset.get_all_downloadable_formats(),
@@ -487,7 +468,7 @@ def asset_downloads(request, asset_url):
 @never_cache
 def asset_status(request, asset_url):
     template = "partials/asset_status.html"
-    owner = IcosaUser.from_django_user(request.user)
+    owner = AssetOwner.from_django_user(request.user)
     asset = get_object_or_404(Asset, url=asset_url, owner=owner)
     context = {
         "asset": asset,
@@ -501,9 +482,10 @@ def asset_status(request, asset_url):
 
 
 @login_required
+@never_cache
 def edit_asset(request, asset_url):
     template = "main/edit_asset.html"
-    owner = IcosaUser.from_django_user(request.user)
+    owner = AssetOwner.from_django_user(request.user)
     asset = get_object_or_404(Asset, owner=owner, url=asset_url)
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
@@ -529,7 +511,7 @@ def edit_asset(request, asset_url):
 @login_required
 def delete_asset(request, asset_url):
     if request.method == "POST":
-        owner = IcosaUser.from_django_user(request.user)
+        owner = AssetOwner.from_django_user(request.user)
         asset = get_object_or_404(Asset, owner=owner, url=asset_url)
         if asset.name:
             asset_name = asset.name
@@ -552,7 +534,7 @@ def delete_asset(request, asset_url):
 def publish_asset(request, asset_url):
     template = "main/edit_asset.html"
     asset = get_object_or_404(Asset, url=asset_url)
-    if IcosaUser.from_django_user(request.user) != asset.owner:
+    if request.user != asset.owner.django_user:
         raise Http404()
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
@@ -590,7 +572,7 @@ def report_asset(request, asset_url):
             if reporter is None:
                 reporter_email = None
             else:
-                reporter = IcosaUser.from_django_user(reporter)
+                reporter = AssetOwner.from_django_user(reporter)
                 reporter_email = reporter.email
                 asset.last_reported_by = reporter
             asset.save()
@@ -636,22 +618,23 @@ def user_settings(request):
     need_login = False
     template = "main/settings.html"
     user = request.user
-    icosa_user = get_owner(user)
+    icosa_user = AssetOwner.from_django_user(user)
     if request.method == "POST":
         form = UserSettingsForm(request.POST, instance=icosa_user, user=user)
         if form.is_valid():
-            updated_user = form.save()
+            form.save()
             password_new = request.POST.get("password_new")
             if password_new:
                 user.set_password(password_new)
                 icosa_user.set_password(password_new)
                 need_login = True
             email = request.POST.get("email")
-            if email and icosa_user.email != updated_user.email:
+            if email:
                 user.email = email
-                need_login = True
+                user.username = email
             user.save()
             if need_login:
+                icosa_user.update_access_token()
                 logout(request)
 
     else:
@@ -760,7 +743,7 @@ def search(request):
         Asset.objects.filter(q)
         .exclude(license__isnull=True)
         .exclude(license=ALL_RIGHTS_RESERVED)
-        .order_by("-id")
+        .order_by("-rank")
     )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
@@ -782,7 +765,7 @@ def search(request):
 def toggle_like(request):
     error_return = HttpResponse(status=422)
 
-    owner = IcosaUser.from_django_request(request)
+    owner = AssetOwner.from_django_request(request)
     if owner is None:
         return error_return
 

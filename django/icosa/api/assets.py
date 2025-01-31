@@ -2,6 +2,13 @@ import re
 import secrets
 from typing import List, NoReturn, Optional
 
+from django.conf import settings
+from django.core.files.storage import get_storage_class
+from django.db import transaction
+from django.db.models import Q
+from django.db.models.query import QuerySet
+from django.http import HttpRequest
+from django.urls import reverse
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     POLY_CATEGORY_MAP,
@@ -10,9 +17,9 @@ from icosa.api import (
     get_django_user_from_auth_bearer,
 )
 from icosa.api.authentication import AuthBearer
+from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset
-from icosa.models import User as IcosaUser
+from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset, AssetOwner
 from icosa.tasks import (
     queue_finalize_asset,
     queue_upload_asset,
@@ -24,13 +31,6 @@ from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
-
-from django.conf import settings
-from django.core.files.storage import get_storage_class
-from django.db import transaction
-from django.db.models import Q
-from django.http import HttpRequest
-from django.urls import reverse
 
 from .schema import (
     AssetFilters,
@@ -62,9 +62,7 @@ def get_publish_url(request, asset: Asset) -> str:
         )
     )
     if settings.DEPLOYMENT_HOST_API is not None:
-        url = url.replace(
-            settings.DEPLOYMENT_HOST_API, settings.DEPLOYMENT_HOST_WEB
-        )
+        url = url.replace(settings.DEPLOYMENT_HOST_API, settings.DEPLOYMENT_HOST_WEB)
     return 200, {
         "publishUrl": url,
         "assetId": asset.url,
@@ -89,11 +87,8 @@ def user_owns_asset(
     # so probably needs a refactor
     if not hasattr(request, "auth"):
         user = get_django_user_from_auth_bearer(request)
-        return (
-            user is not None
-            and IcosaUser.from_django_user(user) == asset.owner
-        )
-    return IcosaUser.from_ninja_request(request) == asset.owner
+        return user is not None and user == asset.owner.django_user
+    return AssetOwner.from_ninja_request(request) == asset.owner
 
 
 def check_user_owns_asset(
@@ -194,7 +189,7 @@ def add_asset_format(
     asset: str,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    user = IcosaUser.from_ninja_request(request)
+    user = AssetOwner.from_ninja_request(request)
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
@@ -291,7 +286,7 @@ def upload_new_assets(
     request,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    user = IcosaUser.from_ninja_request(request)
+    user = AssetOwner.from_ninja_request(request)
     job_snowflake = generate_snowflake()
     asset_token = secrets.token_urlsafe(8)
     asset = Asset.objects.create(
@@ -309,33 +304,10 @@ def upload_new_assets(
     return get_publish_url(request, asset)
 
 
-@router.get(
-    "",
-    response=List[AssetSchemaOut],
-    **COMMON_ROUTER_SETTINGS,
-    url_name="asset_list",
-)
-@router.get(
-    "/",
-    response=List[AssetSchemaOut],
-    include_in_schema=False,
-    **COMMON_ROUTER_SETTINGS,
-    url_name="asset_list",
-)
-@paginate(AssetPagination)
-@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
-def get_assets(
-    request,
-    filters: AssetFilters = Query(...),
-):
+def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
     q = Q(
         visibility=PUBLIC,
         # imported=True,
-    )
-    ex_q = (
-        Q(license__isnull=True)
-        | Q(license=ALL_RIGHTS_RESERVED)
-        | Q(last_reported_time__isnull=False)
     )
 
     if filters.tag:
@@ -364,16 +336,54 @@ def get_assets(
     q &= filter_complexity(filters)
     q &= filter_triangle_count(filters)
 
-    assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+    ex_q = (
+        Q(license__isnull=True)
+        | Q(license=ALL_RIGHTS_RESERVED)
+        | Q(last_reported_time__isnull=False)
+    )
+
+    return Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+
+
+def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
+    if key == "NEWEST":
+        assets = assets.order_by("-create_time")
+    elif key == "OLDEST":
+        assets = assets.order_by("create_time")
+    elif key == "BEST":
+        assets = assets.order_by("-rank")
+    elif key == "TRIANGLECOUNT":
+        assets = assets.order_by("-triangle_count")
+    else:
+        pass
+    return assets
+
+
+@router.get(
+    "",
+    response=List[AssetSchemaOut],
+    **COMMON_ROUTER_SETTINGS,
+    url_name="asset_list",
+)
+@router.get(
+    "/",
+    response=List[AssetSchemaOut],
+    include_in_schema=False,
+    **COMMON_ROUTER_SETTINGS,
+    url_name="asset_list",
+)
+@paginate(AssetPagination)
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+def get_assets(
+    request,
+    filters: AssetFilters = Query(...),
+):
+    try:
+        assets = filter_assets(filters)
+    except FilterException as err:
+        raise HttpError(400, f"{err}")
 
     if filters.orderBy:
-        if filters.orderBy == "NEWEST":
-            assets = assets.order_by("-create_time")
-        elif filters.orderBy == "OLDEST":
-            assets = assets.order_by("create_time")
-        elif filters.orderBy == "BEST":
-            assets = assets.order_by("-rank")
-        else:
-            pass
+        assets = sort_assets(filters.orderBy, assets)
 
     return assets

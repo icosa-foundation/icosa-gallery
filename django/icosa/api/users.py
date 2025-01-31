@@ -1,18 +1,16 @@
 from typing import List
 
+from django.db.models import Q
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     POLY_CATEGORY_MAP,
     AssetPagination,
     build_format_q,
 )
-from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, Tag
-from icosa.models import User as IcosaUser
+from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetOwner, Tag
 from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
-
-from django.db.models import Q
 
 from .authentication import AuthBearer
 from .schema import (
@@ -36,7 +34,7 @@ router = Router()
     response=FullUserSchema,
 )
 def get_users_me(request):
-    return IcosaUser.from_ninja_request(request)
+    return AssetOwner.from_ninja_request(request)
 
 
 @router.patch(
@@ -48,11 +46,11 @@ def update_user(
     request,
     patch_user: PatchUserSchema,
 ):
-    current_user = IcosaUser.from_ninja_request(request)
+    current_user = AssetOwner.from_ninja_request(request)
     url = getattr(patch_user, "url", "").strip() or current_user.url
 
     if (
-        IcosaUser.objects.filter(url__iexact=url).count() != 0
+        AssetOwner.objects.filter(url__iexact=url).count() != 0
         and url != current_user.url
     ):
         # Used to return 403. James believes this is the wrong status code.
@@ -76,7 +74,7 @@ def get_me_assets(
     request,
     filters: UserAssetFilters = Query(...),
 ):
-    owner = IcosaUser.from_ninja_request(request)
+    owner = AssetOwner.from_ninja_request(request)
     q = Q(
         owner=owner,
     )
@@ -118,7 +116,14 @@ def get_me_assets(
     except HttpError:
         raise
     # TODO: orderBy
-    assets = Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+    assets = (
+        Asset.objects.filter(q, keyword_q)
+        .exclude(ex_q)
+        .distinct()
+        .select_related("owner")
+        .prefetch_related("polyformat_set")
+        .prefetch_related("tags")
+    )
     return assets
 
 
@@ -133,7 +138,7 @@ def get_me_likedassets(
     request,
     filters: AssetFilters = Query(...),
 ):
-    owner = IcosaUser.from_ninja_request(request)
+    owner = AssetOwner.from_ninja_request(request)
     liked_assets = owner.likedassets.all()
     q = Q(
         visibility__in=[PUBLIC, UNLISTED],

@@ -1,10 +1,21 @@
 import os
+import secrets
+import string
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Self
 
 import bcrypt
+import jwt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 from constance import config
+from django.conf import settings
+from django.contrib.auth.models import User as DjangoUser
+from django.db import models
+from django.db.models import Q
+from django.urls import reverse
+from django.utils.safestring import mark_safe
+from django.utils.text import slugify
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
     GLB_FORMAT,
@@ -21,14 +32,6 @@ from icosa.helpers.format_roles import (
     USD_FORMAT,
     USDZ_FORMAT,
 )
-
-from django.conf import settings
-from django.contrib.auth.models import User as DjangoUser
-from django.db import models
-from django.db.models import ExpressionWrapper, F, FloatField, Q
-from django.db.models.functions import Extract, Now
-from django.utils.safestring import mark_safe
-from django.utils.text import slugify
 
 from .helpers.snowflake import get_snowflake_timestamp
 from .helpers.storage import get_b2_bucket
@@ -69,7 +72,11 @@ V4_CC_LICENSES = [x[0] for x in V4_CC_LICENSE_CHOICES]
 V3_CC_LICENSE_MAP = {x[0]: x[1] for x in V3_CC_LICENSE_CHOICES}
 V4_CC_LICENSE_MAP = {x[0]: x[1] for x in V4_CC_LICENSE_CHOICES}
 V3_TO_V4_UPGRADE_MAP = {
-    x[0]: x[1] for x in zip(V3_CC_LICENSES, V4_CC_LICENSES)
+    x[0]: x[1]
+    for x in zip(
+        V3_CC_LICENSES,
+        V4_CC_LICENSES,
+    )
 }
 
 ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED"
@@ -205,7 +212,7 @@ ASSET_STATE_CHOICES = [
 ]
 
 
-class User(models.Model):
+class AssetOwner(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.CharField("User Name / URL", max_length=255, unique=True)
     email = models.EmailField(max_length=255, null=True, blank=True)
@@ -214,7 +221,9 @@ class User(models.Model):
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
     likes = models.ManyToManyField(
-        "Asset", through="UserAssetLike", blank=True
+        "Asset",
+        through="OwnerAssetLike",
+        blank=True,
     )
     access_token = models.CharField(
         max_length=255,
@@ -223,13 +232,25 @@ class User(models.Model):
     )  # Only used while we are emulating fastapi auth. Should be removed.
     imported = models.BooleanField(default=False)
     is_claimed = models.BooleanField(default=True)
+    django_user = models.ForeignKey(
+        DjangoUser,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    merged_with = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
 
     @classmethod
     def from_ninja_request(cls, request):
         instance = None
         if getattr(request.auth, "email", None):
             try:
-                instance = cls.objects.get(email=request.auth.email)
+                instance = cls.objects.get(django_user=request.auth)
             except cls.DoesNotExist:
                 pass
         return instance
@@ -239,17 +260,17 @@ class User(models.Model):
         instance = None
         if getattr(request.user, "email", None):
             try:
-                instance = cls.objects.get(email=request.user.email)
+                instance = cls.objects.get(django_user=request.user)
             except cls.DoesNotExist:
                 pass
         return instance
 
     @classmethod
-    def from_django_user(cls, user):
+    def from_django_user(cls, user: DjangoUser) -> Self:
         instance = None
         if getattr(user, "email", None):
             try:
-                instance = cls.objects.get(email=user.email)
+                instance = cls.objects.get(django_user=user)
             except cls.DoesNotExist:
                 pass
         return instance
@@ -271,6 +292,43 @@ class User(models.Model):
         hashed_password = bcrypt.hashpw(password.encode(), salt)
         self.password = hashed_password
         self.save()
+
+    @staticmethod
+    def generate_device_code(length=5):
+        # Define a string of characters to exclude
+        exclude = "I1O0"
+        characters = "".join(
+            set(string.ascii_uppercase + string.digits) - set(exclude),
+        )
+        return "".join(secrets.choice(characters) for i in range(length))
+
+    @staticmethod
+    def generate_access_token(*, data: dict, expires_delta: timedelta = None):
+        ALGORITHM = "HS256"
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=expires_delta)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(
+            to_encode,
+            settings.JWT_KEY,
+            algorithm=ALGORITHM,
+        )
+        return encoded_jwt
+
+    def update_access_token(self):
+        subject = f"{self.email}"
+        data = {"sub": subject}
+        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = self.generate_access_token(
+            data=data,
+            expires_delta=expires_delta,
+        )
+        self.access_token = access_token
+        self.save()
+        return access_token
 
     def __str__(self):
         return self.displayname
@@ -314,7 +372,7 @@ class Asset(models.Model):
     url = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
     owner = models.ForeignKey(
-        "User", null=True, blank=True, on_delete=models.CASCADE
+        "AssetOwner", null=True, blank=True, on_delete=models.CASCADE
     )
     description = models.TextField(blank=True, null=True)
     formats = models.JSONField(null=True, blank=True)
@@ -326,7 +384,7 @@ class Asset(models.Model):
     )
     curated = models.BooleanField(default=False)
     last_reported_by = models.ForeignKey(
-        "User",
+        "AssetOwner",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -348,7 +406,9 @@ class Asset(models.Model):
         upload_to=preview_image_upload_path,
     )
     thumbnail_contenttype = models.CharField(
-        max_length=255, blank=True, null=True
+        max_length=255,
+        blank=True,
+        null=True,
     )
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
@@ -404,22 +464,20 @@ class Asset(models.Model):
 
     @property
     def _preferred_viewer_format(self):
-
         # Return early with an obj if we know the asset is a blocks file.
         # There are some issues with displaying GLTF files from Blocks so we
         # have to return an OBJ and its associated MTL.
-        if (
-            False
-        ):  # TODO we now force updated gltf in the template instead of obj
+        # TODO we now force updated gltf in the template instead of obj
+        if False:
             # here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
             obj_resource = obj_format.polyresource_set.filter(
-                is_root=True
+                is_root=True,
             ).first()
             mtl_resource = obj_format.polyresource_set.filter(
-                is_root=False
+                is_root=False,
             ).first()
 
             if obj_resource:
@@ -498,9 +556,7 @@ class Asset(models.Model):
     @property
     def has_viewable_format_types(self):
         return (
-            self.polyformat_set.filter(
-                format_type__in=VIEWABLE_FORMAT_TYPES
-            ).count()
+            self.polyformat_set.filter(format_type__in=VIEWABLE_FORMAT_TYPES).count()
             > 0
         )
 
@@ -521,10 +577,7 @@ class Asset(models.Model):
         # the site admin in django constance settings.
         if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
             allowed_sources = tuple(
-                [
-                    x.strip()
-                    for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")
-                ]
+                [x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")]
             )
         else:
             allowed_sources = tuple([])
@@ -563,7 +616,7 @@ class Asset(models.Model):
         return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/icosa/{self.url}/archive.zip"
 
     def get_absolute_url(self):
-        return f"/view/{self.url}"
+        return reverse("asset_view", kwargs={"asset_url": self.url})
 
     def get_edit_url(self):
         return f"/edit/{self.url}"
@@ -634,15 +687,9 @@ class Asset(models.Model):
         if not self.pk:
             return
         self.has_tilt = self.polyformat_set.filter(format_type="TILT").exists()
-        self.has_blocks = self.polyformat_set.filter(
-            format_type="BLOCKS"
-        ).exists()
-        self.has_gltf1 = self.polyformat_set.filter(
-            format_type="GLTF"
-        ).exists()
-        self.has_gltf2 = self.polyformat_set.filter(
-            format_type="GLTF2"
-        ).exists()
+        self.has_blocks = self.polyformat_set.filter(format_type="BLOCKS").exists()
+        self.has_gltf1 = self.polyformat_set.filter(format_type="GLTF").exists()
+        self.has_gltf2 = self.polyformat_set.filter(format_type="GLTF2").exists()
         self.has_gltf_any = self.polyformat_set.filter(
             format_type__in=["GLTF", "GLTF2"]
         ).exists()
@@ -713,15 +760,14 @@ class Asset(models.Model):
         def suffix(name):
             if name.endswith(".gltf"):
                 return "".join(
-                    [
-                        f"{p[0]}_(GLTFupdated){p[1]}"
-                        for p in [os.path.splitext(name)]
-                    ]
+                    [f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]]
                 )
             return name
 
         ARCHIVE_PREFIX = "https://web.archive.org/web/"
-        STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
+        STORAGE_PREFIX = (
+            f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
+        )
 
         format_name_override_map = {
             "Original OBJ File": "OBJ File",
@@ -729,13 +775,9 @@ class Asset(models.Model):
             "Updated glTF File": "GLTF File",
         }
 
-        for format in self.polyformat_set.filter(
-            role__in=WEB_UI_DOWNLOAD_COMPATIBLE
-        ):
+        for format in self.polyformat_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
             if format.archive_url:
-                resource_data = {
-                    "archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"
-                }
+                resource_data = {"archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"}
             else:
                 # Query all resources which have either an external url or a
                 # file.
@@ -768,9 +810,7 @@ class Asset(models.Model):
                         override_format = self.polyformat_set.get(
                             role=POLYGONE_GLTF_FORMAT
                         )
-                        override_resources = (
-                            override_format.polyresource_set.all()
-                        )
+                        override_resources = override_format.polyresource_set.all()
                         resource_data = {
                             "files_to_zip": [
                                 f"{STORAGE_PREFIX}{suffix(x.file.name)}"
@@ -860,12 +900,16 @@ class Asset(models.Model):
         ]
 
 
-class UserAssetLike(models.Model):
+class OwnerAssetLike(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="likedassets"
+        AssetOwner, on_delete=models.CASCADE, related_name="likedassets"
     )
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date_liked = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        date_str = self.date_liked.strftime("%d/%m/%Y %H:%M:%S %Z")
+        return f"{self.user.displayname} -> {self.asset.name} @ {date_str}"
 
 
 def format_upload_path(instance, filename):
@@ -875,10 +919,7 @@ def format_upload_path(instance, filename):
     ext = filename.split(".")[-1]
     if instance.is_root:
         name = f"model.{ext}"
-    if (
-        ext == "obj"
-        and instance.format.role == ORIGINAL_TRIANGULATED_OBJ_FORMAT
-    ):
+    if ext == "obj" and instance.format.role == ORIGINAL_TRIANGULATED_OBJ_FORMAT:
         name = f"model-triangulated.{ext}"
     else:
         name = filename
@@ -906,9 +947,7 @@ class PolyFormat(models.Model):
 
 class PolyResource(models.Model):
     is_root = models.BooleanField(default=False)
-    asset = models.ForeignKey(
-        Asset, null=True, blank=False, on_delete=models.CASCADE
-    )
+    asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
     format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
@@ -962,9 +1001,7 @@ class MastheadSection(models.Model):
         null=True,
         upload_to=masthead_image_upload_path,
     )
-    asset = models.ForeignKey(
-        Asset, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    asset = models.ForeignKey(Asset, on_delete=models.SET_NULL, null=True, blank=True)
     url = models.CharField(
         max_length=1024,
         null=True,
@@ -993,7 +1030,7 @@ class MastheadSection(models.Model):
 
 class DeviceCode(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(AssetOwner, on_delete=models.CASCADE)
     devicecode = models.CharField(max_length=6)
     expiry = models.DateTimeField()
 
@@ -1025,9 +1062,7 @@ class Oauth2Code(models.Model):
     response_type = models.TextField(blank=True, null=True)
     auth_time = models.IntegerField()
     code_challenge = models.TextField(blank=True, null=True)
-    code_challenge_method = models.CharField(
-        max_length=48, blank=True, null=True
-    )
+    code_challenge_method = models.CharField(max_length=48, blank=True, null=True)
     scope = models.TextField(blank=True, null=True)
     nonce = models.TextField(blank=True, null=True)
 

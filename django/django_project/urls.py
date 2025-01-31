@@ -1,3 +1,8 @@
+from django.conf import settings
+from django.conf.urls import include
+from django.contrib import admin
+from django.urls import path
+from django.views.generic import RedirectView
 from icosa.api.assets import router as assets_router
 from icosa.api.authentication import AuthBearer
 from icosa.api.login import router as login_router
@@ -5,6 +10,7 @@ from icosa.api.oembed import router as oembed_router
 from icosa.api.poly import router as poly_router
 from icosa.api.users import router as users_router
 from icosa.views import auth as auth_views
+from icosa.views import autocomplete as autocomplete_views
 from icosa.views import main as main_views
 from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
@@ -24,14 +30,22 @@ throttle_rules = [
     AuthRateThrottle("1000/h"),
 ]
 
+api_servers = [
+    {
+        "url": f"{settings.DEPLOYMENT_SCHEME}{settings.API_SERVER}",
+        "description": "Development server" if settings.DEBUG else "Production server",
+    }
+]
 if getattr(settings, "STAFF_ONLY_ACCESS", False):
     api = NinjaAPI(
         auth=AuthBearer(),
         throttle=throttle_rules,
+        servers=api_servers,
     )
 else:
     api = NinjaAPI(
         throttle=throttle_rules,
+        servers=api_servers,
     )
 
 api.add_router("assets", assets_router, tags=["Assets"])
@@ -84,15 +98,9 @@ urlpatterns = [
     path("user/<str:user_url>", main_views.user_show, name="user_show"),
     path("likes", main_views.my_likes, name="my_likes"),
     path(
-        "view/<str:user_url>/<str:asset_url>",
-        main_views.view_asset,
-        name="view_asset",
-    ),
-    # TODO(james): view_asset should probably be replaced by view_poly_asset.
-    path(
         "view/<str:asset_url>",
-        main_views.view_poly_asset,
-        name="view_poly_asset",
+        main_views.asset_view,
+        name="asset_view",
     ),
     path(
         "masthead_image/<str:asset_url>",
@@ -151,6 +159,15 @@ urlpatterns = [
     path("licenses", main_views.licenses, name="licenses"),
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
+    # autocomplete views
+    path(
+        "tag-autocomplete",
+        autocomplete_views.TagAutocomplete.as_view(
+            create_field="name",
+            validate_create=False,
+        ),
+        name="tag-autocomplete",
+    ),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
@@ -168,4 +185,17 @@ if (
 ) and "debug_toolbar" in settings.INSTALLED_APPS:
     urlpatterns = [
         path("__debug__/", include("debug_toolbar.urls")),
+    ] + urlpatterns
+if getattr(settings, "DEBUG", False):
+    urlpatterns = [
+        path(
+            "debug_password_reset_email",
+            auth_views.debug_password_reset_email,
+            name="debug_password_reset_email",
+        ),
+        path(
+            "debug_registration_email",
+            auth_views.debug_registration_email,
+            name="debug_registration_email",
+        ),
     ] + urlpatterns

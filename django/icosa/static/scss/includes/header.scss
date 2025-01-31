@@ -25,4 +25,50 @@ header {
       }
     }
   }
+
+  .search-widget {
+    position: relative;
+
+    input,
+    button {
+      display: inline-block;
+    }
+
+    input {
+      width: auto;
+    }
+
+    .searchbar {
+      padding: 0.2em 2.1em 0.2em 1em;
+      border: 0;
+      margin: .2em .2em;
+      height: 2em;
+
+      &:hover,
+      &:focus {
+        border: 1px solid var(--color-base-light);
+      }
+    }
+
+    .searchbutton {
+      background-color: var(--color-black);
+      border-top-right-radius: var(--border-radius-small);
+      border-bottom-right-radius: var(--border-radius-small);
+      padding: 0.2em 0.2em;
+      font-weight: bold;
+      color: #ffffff;
+      border: 0;
+      margin: .2em .2em;
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      height: calc(2em - 4px);
+      width: calc(2em - 4px);
+    }
+
+  }
+
+  .user-info {
+    margin-right: 0.5em;
+  }
 }

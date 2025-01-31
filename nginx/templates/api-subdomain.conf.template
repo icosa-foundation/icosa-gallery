@@ -4,6 +4,10 @@ upstream web {
 }
 
 server {
+    if ( $host != "${DEPLOYMENT_HOST_WEB}" ){
+        return 444; #CONNECTION CLOSED WITHOUT RESPONSE
+    }
+
     client_max_body_size 500M;
 
     location /static/ {
@@ -34,6 +38,9 @@ server {
     server_name ${DEPLOYMENT_HOST_WEB};
 }
 server {
+    if ( $host != "${DEPLOYMENT_HOST_API}" ){
+        return 444; #CONNECTION CLOSED WITHOUT RESPONSE
+    }
     client_max_body_size 500M;
 
     location /static/ {
@@ -66,8 +73,11 @@ server {
 
 server {
     listen 80 default_server;
+    listen [::]:80 default_server;
+    listen 443 default_server;
+    listen [::]:443 default_server;
+    listen 8000 default_server;
+    listen [::]:8000 default_server;
     server_name _;
-    location / {
-        return 503;
-    }
+    return 444; #CONNECTION CLOSED WITHOUT RESPONSE
 }

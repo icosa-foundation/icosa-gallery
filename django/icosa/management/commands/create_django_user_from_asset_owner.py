@@ -1,17 +1,13 @@
 import bcrypt
-from icosa.models import User as IcosaUser
-from icosa.views.auth import save_access_token
-
 from django.contrib.auth.models import User as DjangoUser
 from django.core.management.base import BaseCommand
-
-YES = ["y", "yes"]
+from icosa.helpers import YES
+from icosa.models import AssetOwner
+from icosa.views.auth import save_access_token
 
 
 class Command(BaseCommand):
-
-    help = """Extracts format json into concrete models and converts to poly
-    format."""
+    help = """Creates a Django user based on an existing Asset Owner"""
 
     def add_arguments(self, parser):
         parser.add_argument("--id", action="store", type=str)
@@ -20,13 +16,16 @@ class Command(BaseCommand):
         id = options["id"]
         if id is None:
             print(
-                "Usage: --id\tThe primary key of the Icosa User from which to create a Django User."
+                """
+Usage:
+--id\tThe primary key of the Asset Owner from which to create a Django User.
+                """
             )
             return
         try:
-            icosa_user = IcosaUser.objects.get(pk=id)
-        except IcosaUser.DoesNotExist:
-            print(f"Icosa User with id `{id}` not found.")
+            icosa_user = AssetOwner.objects.get(pk=id)
+        except AssetOwner.DoesNotExist:
+            print(f"Asset Owner with id `{id}` not found.")
             return
 
         email = icosa_user.email

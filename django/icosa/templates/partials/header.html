@@ -1,0 +1,40 @@
+{% load fontawesome_tags %}
+{% load static %}
+<header>
+    <div class="container">
+        <div class="row">
+            <div class="d-none d-lg-block col"></div>
+            <div class="text-center col">
+                <a class="logo" href="/">
+                    <img
+                        alt="logo"
+                        src="{% static 'images/logo.png' %}"
+                        width="156"
+                        height="80"
+                    >
+                        {% if config.BETA_MODE %}<span class="beta">Beta</span>{% endif %}
+                </a>
+            </div>
+            <div class="text-right col">
+                {% if can_view_in_maintenance %}
+                    <div class="user-info">
+                    {% if owner is not None %}
+                        Welcome, <a href="/user/{{ owner.url }}">{{ owner.displayname }}</a>
+                    {% else %}
+                        <a href="{% url 'login' %}">Login / Register</a>
+                    {% endif %}
+                    </div>
+                {% endif %}
+                <div class="search-widget">
+                    <form action="{% url 'search' %}" method="get">
+                        <input type="search" class="searchbar" name="s" value="{% if search_query %}{{ search_query }}{% endif %}">
+                        <button class="searchbutton">
+                            {% fa_icon "solid" "magnifying-glass" %}
+                            <span class="sr-only">Search</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

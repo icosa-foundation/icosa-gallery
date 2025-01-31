@@ -20,6 +20,17 @@
   }
 }
 
+.sketch-license {
+  margin-block-start: 2em;
+  color: var(--color-base-light-dim);
+
+  img {
+    height: 1em;
+    width: 1em;
+    margin-block-start: -4px;
+  }
+}
+
 .sketch-info-details {
   padding: 1rem;
   background-color: var(--color-card-surface);
@@ -31,16 +42,6 @@
     }
   }
 
-  .sketch-license {
-    margin-block-start: 2em;
-    color: var(--color-base-light-dim);
-
-    img {
-      height: 1em;
-      width: 1em;
-      margin-block-start: -4px;
-    }
-  }
 
   .actions {
     a {

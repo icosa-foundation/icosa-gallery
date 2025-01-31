@@ -1,12 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;400;600;700&family=Gabarito:wght@400;600;700&display=swap');
 
+html {
+  height: 100%;
+}
+
 body {
   background: var(--color-base-dark);
   color: var(--color-base-light);
-  margin: 0;
+  height: 100%;
   font-family: Gabarito;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin: 0;
 
   h1,
   h2,
@@ -18,6 +23,22 @@ body {
   }
 }
 
+.app {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+
+
+  >main {
+    flex-grow: 1;
+  }
+
+  >header,
+  >footer {
+    flex-shrink: 0;
+  }
+
+}
 
 @media (min-width: 1600px) {
 
@@ -67,6 +88,16 @@ code {
     display: inline;
     width: auto;
   }
+
+  &.btn-xs {
+    font-size: 0.62rem;
+  }
+}
+
+.errorlist {
+  margin-top: 2rem;
+  margin-bottom: 0;
+  color: var(--color-alert-danger);
 }
 
 .error {
@@ -81,18 +112,6 @@ code {
   font-weight: bold;
 }
 
-.App {
-  display: flex;
-
-  main {
-    width: 100%;
-    margin-left: 5em;
-
-    @media(max-width: 1024px) {
-      margin-left: 0;
-    }
-  }
-}
 
 .beta {
   color: var(--color-alert-danger);
@@ -113,7 +132,7 @@ textarea {
   background-color: var(--color-base-light);
   background-clip: padding-box;
   border: 1px solid #ced4da;
-  border-radius: .25rem;
+  border-radius: var(--border-radius-small);
   transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
   margin-block: 0.4em;
 
@@ -132,22 +151,22 @@ form {
   input,
   select,
   textarea {
-    background-color: #272727;
-    border-color: #272727;
-    color: #d7d7d7;
+    background-color: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-base-mid);
     width: 100%;
 
     &:active {
 
       background-color: lighten(#272727, 10%);
-      border-color: #272727;
-      color: #d7d7d7;
+      border-color: var(--color-black);
+      color: var(--color-base-mid);
     }
 
     &:focus {
-      background-color: #272727;
+      background-color: var(--color-black);
       border-color: lighten(#272727, 5%);
-      color: #d7d7d7;
+      color: var(--color-base-mid);
     }
   }
 
@@ -155,7 +174,60 @@ form {
     margin: 0.4em;
     width: 100%;
   }
+
 }
+
+.select2-container.select2-container--default {
+  .select2-dropdown {
+    border-color: var(--color-black);
+  }
+
+  .select2-selection {
+    background-color: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-base-mid);
+    border-radius: var(--border-radius-small);
+  }
+
+  .select2-selection__rendered {
+    background-color: transparent;
+    border-color: var(--color-black);
+  }
+
+  .select2-results__options {
+    background-color: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-base-mid);
+  }
+
+  .select2-selection__clear {
+    color: var(--color-base-light);
+  }
+
+  input.select2-search__field {
+    color: var(--color-base-mid);
+  }
+
+  .select2-results__option.select2-results__option--highlighted,
+
+  .select2-results__option.select2-results__option--highlighted[aria-selected=true] {
+    background-color: var(--color-base-mid);
+    color: var(--color-base-dark);
+    font-weight: bold;
+  }
+
+
+  .select2-results__option[aria-selected="true"] {
+    background-color: var(--color-base-dark);
+    font-weight: bold;
+
+    &::before {
+      content: "• ";
+    }
+  }
+
+}
+
 
 label {
   margin-top: 1em;
@@ -203,21 +275,56 @@ label {
 }
 
 .sponsor-images {
-  text-align: center;
+  display: block;
 
-  img {
-    padding: 1rem;
+  a {
     background-color: var(--color-base-light);
     border-radius: var(--border-radius-tiny);
-
+    display: block;
     margin-inline: 1rem;
+    margin-block: 1rem;
+    text-align: center;
 
-    &:first-child {
-      margin-inline-start: 0;
-    }
 
-    &:last-child {
-      margin-inline-end: 0;
+    img {
+      padding: 1rem;
+      max-width: 100%;
+
     }
+  }
+
+  @media (min-width: 768px) {
+    align-items: stretch;
+    display: flex;
+
+    a {
+      align-items: center;
+      display: flex;
+      flex-grow: 1;
+      justify-content: center;
+
+      &:first-child {
+        margin-inline-start: 0;
+      }
+
+      &:last-child {
+        margin-inline-end: 0;
+      }
+    }
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+.well {
+  background-color: var(--color-card-surface);
+  padding: 1rem;
+  border-radius: var(--border-radius-small);
+  margin-bottom: 1em;
+
+  p:last-of-type {
+    margin-bottom: 0;
   }
 }

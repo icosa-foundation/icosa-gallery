@@ -1,5 +1,20 @@
 @import '../vendor/react-pro-sidebar/styles.scss';
 
+.toggler {
+  position: absolute;
+  z-index: 1;
+
+  &.toggle-close {
+    position: relative;
+  }
+
+  .toggleicon {
+    font-size: 1.25em;
+    cursor: pointer;
+    margin: 1em;
+  }
+}
+
 .sidenav {
   z-index: 100;
   height: 100vh;
@@ -7,10 +22,8 @@
 
   &.collapsed {
 
-    @media(max-width: 1024px) {
-      width: 0px;
-      min-width: 0px;
-    }
+    width: 0px;
+    min-width: 0px;
 
     .pro-sidebar-header {
       .toggler {
@@ -39,26 +52,20 @@
     }
   }
 
-  &.collapsed .hide-when-collapsed {
-    display: none;
-  }
-
-  &:not(.collapsed) .hide-when-open {
-    display: none;
-  }
-
-
   .pro-sidebar-inner {
     background: #323232;
   }
 
   .pro-menu {
+    padding-top: 0;
+    padding-bottom: 0;
+
     h3 {
       text-align: center;
       border-bottom: 1px solid #afafaf;
       margin: 0 0.5em 0.5em 0.5em;
       padding: 0.3em;
-      text-transform: uppercase;
+      font-size: 1.2rem;
     }
 
     .comingsoon {
@@ -87,43 +94,10 @@
     }
   }
 
-  .searchbar {
-    background: #DDD;
-    padding: 0.2em 0.2em;
-    font-weight: bold;
-    color: #000;
-    font-size: 1.3em;
-    border: 0;
-    border-radius: 0.3em;
-    width: 95%;
-    margin: .2em .2em;
-  }
-
-  .searchbutton {
-    background: #828282;
-    padding: 0.2em 0.2em;
-    font-weight: bold;
-    color: #ffffff;
-    font-size: 1.3em;
-    border: 0;
-    border-radius: 0.3em;
-    margin: .2em .2em;
-    width: 95%;
-  }
-
   .pro-sidebar-header {
     text-overflow: ellipsis;
     white-space: nowrap;
 
-    .toggler {
-      text-align: right;
-
-      .toggleicon {
-        font-size: 2em;
-        cursor: pointer;
-        margin: 0.2em 0.5em;
-      }
-    }
 
   }
 

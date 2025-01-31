@@ -1,10 +1,10 @@
 from typing import Any, List, Optional
 
+from django.db.models import Q
 from icosa.api.authentication import AuthBearer
+from icosa.api.exceptions import FilterException
 from ninja import Schema
 from ninja.pagination import PaginationBase
-
-from django.db.models import Q
 
 COMMON_ROUTER_SETTINGS = {
     "exclude_none": True,
@@ -34,9 +34,7 @@ class AssetPagination(PaginationBase):
 
     items_attribute: str = "assets"
 
-    def paginate_queryset(
-        self, queryset, pagination: Input, request, **params
-    ):
+    def paginate_queryset(self, queryset, pagination: Input, request, **params):
         try:
             page_size = (
                 int(pagination.pageSize)
@@ -78,22 +76,30 @@ class AssetPagination(PaginationBase):
 
 
 def build_format_q(formats: List) -> Q:
+    FILTERABLE_FORMATS = [
+        "TILT",
+        "BLOCKS",
+        "GLTF",
+        "GLTF1",
+        "GLTF2",
+        "OBJ",
+        "FBX",
+    ]
     q = Q()
-    if "TILT" in formats:
-        q &= Q(has_tilt=True)
-    if "BLOCKS" in formats:
-        q &= Q(has_blocks=True)
-    if "GLTF" in formats:
-        q &= Q(has_gltf_any=True)
-    if "GLTF1" in formats:
-        q &= Q(has_gltf1=True)
-    if "GLTF2" in formats:
-        q &= Q(has_gltf2=True)
-    if "OBJ" in formats:
-        q &= Q(has_obj=True)
-    if "FBX" in formats:
-        q &= Q(has_fbx=True)
-    return q
+    valid_q = False
+    for format in FILTERABLE_FORMATS:
+        if format in formats:
+            # Reliant on the fact that each of FILTERABLE_FORMATS has an
+            # associated has_<format> field in the db.
+            q &= Q(**{f"has_{format.lower()}": True})
+            valid_q = True
+
+    if valid_q:
+        return q
+    else:
+        raise FilterException(
+            f"Format filter not one of {', '.join(FILTERABLE_FORMATS)}"
+        )
 
 
 def get_django_user_from_auth_bearer(request):

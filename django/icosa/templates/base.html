@@ -11,7 +11,6 @@
     {% compress css %}
         <link rel="stylesheet" type="text/x-scss" href="{% static "scss/screen.scss" %}" />
     {% endcompress %}
-
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
     <title>{% if page_title %}{{ page_title }} | {% endif %}Icosa Gallery</title>
     <script src="/static/js/htmx.min.js"></script>
@@ -19,106 +18,24 @@
 </head>
 
 <body>
-<div id="root">
-    <div class="App">
+    <div class="app">
         {% block nav %}
-        {% if can_view_in_maintenance %}
-            {% include "partials/side_nav.html" %}
-        {% endif %}
+            {% if can_view_in_maintenance %}
+                {% include "partials/side_nav.html" %}
+            {% endif %}
         {% endblock nav %}
+        {% block banner %}{% endblock banner %}
+        {% block header %}
+            {% include "partials/header.html" %}
+        {% endblock header %}
         <main{% block mainattrs %}{% if not can_view_in_maintenance %} style="margin-left:0;"{% endif %}{% endblock mainattrs %}>
-            {% block banner %}{% endblock banner %}
-            {% block header %}
-                <header>
-                    <div class="container">
-                        <div class="row">
-                            <div class="d-block d-lg-none col">
-                                {% if can_view_in_maintenance %}
-                                    <h3>
-                                        {% fa_icon "solid" "bars" "toggleicon toggler" %}
-                                    </h3>
-                                {% endif %}
-                            </div>
-                            <div class="d-none d-lg-block col"></div>
-                            <div class="text-center col">
-                                <a class="logo" href="/">
-                                    <img
-                                        alt="logo"
-                                        src="{% static 'images/logo.png' %}"
-                                        width="156"
-                                        height="80"
-                                    >
-                                        {% if config.BETA_MODE %}<span class="beta">Beta</span>{% endif %}
-                                </a>
-                            </div>
-                            <div class="text-right col">
-                                {% if can_view_in_maintenance %}
-                                    <div>
-                                    {% if owner is not None %}
-                                        Welcome, <a href="/user/{{ owner.url }}">{{ owner.displayname }}</a>
-                                    {% else %}
-                                        <a href="{% url 'login' %}">Login / Register</a>
-                                    {% endif %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </header>
-            {% endblock header %}
             {% block content %}{% endblock content %}
-            {% block footer %}
-            <footer>
-                <div class="container">
-                    <div class="row">
-                        <div class="col-md-6">
-                        {% spaceless %}
-                            <nav>
-                                <ul>
-                                    <li>
-                                        © 2020-{% now "Y" %} Icosa Gallery
-                                    </li>
-                                    {% if can_view_in_maintenance %}
-                                    <li>
-                                        <a href="https://{{ settings.DEPLOYMENT_HOST_API }}{% url "api-1.0.0:openapi-view" %}">API Docs</a>
-                                    </li>
-                                    {% endif %}
-                                    <li>
-                                        <a href="/supporters">
-                                            Our supporters
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        {% endspaceless %}
-                        </div>
-                        <div class="col-md-6">
-                        {% spaceless %}
-                            <nav class="text-right">
-                                <ul>
-                                    {% if can_view_in_maintenance %}
-                                    <li>
-                                        <strong><a href="{% url 'artist_info' %}">Why is my work here?</a></strong>
-                                    </li>
-                                    {% endif %}
-                                    <li>
-                                        <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'terms' %}">Terms and Conditions</a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        {% endspaceless %}
-                        </div>
-                    </div>
-                </div>
-            </footer>
-            {% endblock footer %}
         </main>
+        {% block footer %}
+            {% include "partials/footer.html" %}
+        {% endblock footer %}
+        <script src="/static/js/bootstrap.min.js"></script>
     </div>
-</div>
-    <script src="/static/js/bootstrap.min.js"></script>
 </body>
 
 </html>
