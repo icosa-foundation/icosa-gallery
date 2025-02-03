@@ -5,7 +5,13 @@ from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
 from icosa.api.schema import AssetFinalizeData
 from icosa.helpers.file import upload_asset, upload_format
-from icosa.models import ASSET_STATE_FAILED, Asset, AssetOwner, PolyFormat
+from icosa.models import (
+    ASSET_STATE_COMPLETE,
+    ASSET_STATE_FAILED,
+    Asset,
+    AssetOwner,
+    PolyFormat,
+)
 from ninja import File
 from ninja.files import UploadedFile
 
@@ -82,5 +88,6 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
         format.triangle_count = data.triangulatedObjPolyCount
         format.save()
 
+    asset.state = ASSET_STATE_COMPLETE
     asset.remix_ids = getattr(data, "remixIds", None)
     asset.save()
