@@ -240,15 +240,27 @@ def add_thumbnail_to_asset(thumbnail, asset):
 
 def get_role_id_from_file(name: str, filetype: str) -> Optional[int]:
     filetype = filetype.upper()
+    # Only apply these OBJ rules if it's a Blocks asset. How we decide it's a
+    # blocks asset is TBD. And also at the callsite we might not yet know that
+    # it's a blocks file.
+    # TODO(james): If the OBJ is not from blocks, the default from other apps
+    # will probably be triangulated OBJ.
     if filetype == "OBJ":
         if name == "model-triangulated":
             return ORIGINAL_TRIANGULATED_OBJ_FORMAT
         if name == "model":
             return ORIGINAL_OBJ_FORMAT
+    # For Mike's original data, this need to read UPDATED_GLTF. Just scan that
+    # whole lot and change it.
+    #
+    # For new uploads from blocks don't send a gltf:
+    # For tilt, have a new role, TILT_NATIVE_GLTF, which behaves like
+    # UPDATED_GLTF currently.
     if filetype in ["GLTF", "GLTF2"]:
         return ORIGINAL_GLTF_FORMAT
     if filetype == "FBX":
         return ORIGINAL_FBX_FORMAT
+    # Find out why this isn't being applied to tilt files.
     if filetype == "TILT":
         return TILT_FORMAT
     if filetype == "BLOCKS":
