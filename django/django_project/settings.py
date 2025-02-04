@@ -392,7 +392,7 @@ def silky_perms(user):
     return user.is_superuser
 
 
-SILKY_PYTHON_PROFILER = os.environ.get("ENABLE_PROFILING", False)
+SILKY_PYTHON_PROFILER = os.environ.get("DJANGO_ENABLE_PROFILING", False)
 # Log only 50% of requests (enable and tweak this in high-load situations).
 # SILKY_INTERCEPT_PERCENT = 50
 SILKY_AUTHENTICATION = True  # User must login
