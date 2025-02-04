@@ -31,6 +31,7 @@ from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
+from silk.profiling.profiler import silk_profile
 
 from .schema import (
     AssetFilters,
@@ -374,6 +375,7 @@ def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
 )
 @paginate(AssetPagination)
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+@decorate_view(silk_profile(name="API all assets"))
 def get_assets(
     request,
     filters: AssetFilters = Query(...),
