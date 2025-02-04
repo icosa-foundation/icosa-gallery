@@ -111,19 +111,21 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.staticfiles",
     "django.contrib.messages",
+    "compressor",
     "constance",
     "constance.backends.database",
+    "corsheaders",
+    "honeypot",
+    "huey.contrib.djhuey",
     "icosa",
     "import_export",
-    "honeypot",
     "maintenance_mode",
-    "compressor",
-    "corsheaders",
-    "huey.contrib.djhuey",
+    "silk",
 ]
 
 MIDDLEWARE = [
     "django.middleware.gzip.GZipMiddleware",
+    "silk.middleware.SilkyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -382,6 +384,12 @@ MAINTENANCE_MODE_IGNORE_URLS = [
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
+
+# Silk settings
+
+SILKY_PYTHON_PROFILER = os.environ.get("ENABLE_PROFILING", False)
+# Log only 50% of requests (enable and tweak this in high-load situations).
+# SILKY_INTERCEPT_PERCENT = 50
 
 # Category settings
 #
