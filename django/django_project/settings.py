@@ -387,9 +387,17 @@ NINJA_PAGINATION_PER_PAGE = 20
 
 # Silk settings
 
+
+def silky_perms(user):
+    return user.is_superuser
+
+
 SILKY_PYTHON_PROFILER = os.environ.get("ENABLE_PROFILING", False)
 # Log only 50% of requests (enable and tweak this in high-load situations).
 # SILKY_INTERCEPT_PERCENT = 50
+SILKY_AUTHENTICATION = True  # User must login
+SILKY_AUTHORISATION = True  # User must have permissions
+SILKY_PERMISSIONS = silky_perms
 
 # Category settings
 #
