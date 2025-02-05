@@ -1,22 +1,20 @@
 import io
 import os
-import subprocess
 import zipfile
 from dataclasses import dataclass
-from pathlib import Path
 from typing import List, Optional
 
-from django.conf import settings
 from icosa.helpers.file import (
-    CONVERTER_EXE,
     add_thumbnail_to_asset,
-    process_main_file,
+    get_content_type,
     validate_file,
 )
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
     AssetOwner,
+    PolyFormat,
+    PolyResource,
 )
 from ninja import File
 from ninja.files import UploadedFile
@@ -93,19 +91,25 @@ def upload_api_asset(
         files = []
     upload_set = process_files(files)
     print(upload_set)
+
     main_files = []
+    sub_files = {
+        "GLB": [],  # All non-thumbnail images.
+        "GLTF": [],  # All GLB's files plus BIN files.
+        "OBJ": [],  # MTL files.
+        "FBX": [],  # FBM files.
+    }
+    asset_name = "Untitled Asset"
 
-    # main_files can be one of: tilt, glb, gltf, obj, fbx
-    file_tree = {}
-
-    # sub
-    sub_files = []
-    name = "Untitled Asset"
+    sub_file_map = {
+        "IMAGE": "GLB",
+        "BIN": "GLTF",
+        "MTL": "OBJ",
+        "FBM": "FBX",
+    }
 
     # 3. Create nested structure for roots and subs.
     # 4. Process manifest if it exists.
-
-    assert False
 
     for file in upload_set.files:
         splitext = os.path.splitext(file.name)
@@ -114,21 +118,29 @@ def upload_api_asset(
         if upload_details is not None:
             if upload_details.mainfile is True:
                 main_files.append(upload_details)
-                name = splitext[0]
+                asset_name = splitext[0]
             else:
-                sub_files.append(upload_details)
+                parent_resource_type = sub_file_map[upload_details.filetype]
+                sub_files[parent_resource_type].append(upload_details)
 
     # Begin upload process.
 
-    asset.name = name
+    asset.name = asset_name
     asset.save()
 
     for mainfile in main_files:
-        process_main_file(
+        type = mainfile.filetype
+        if type.startswith("GLTF"):
+            sub_files_list = sub_files["GLTF"] + sub_files["GLB"]
+        else:
+            try:
+                sub_files_list = sub_files[type]
+            except KeyError:
+                sub_files_list = []
+        make_formats(
             mainfile,
-            sub_files,
+            sub_files_list,
             asset,
-            None,
         )
 
     if upload_set.thumbnail:
@@ -137,3 +149,37 @@ def upload_api_asset(
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
     return asset
+
+
+def make_formats(mainfile, sub_files, asset):
+    # Main files determine folder
+    format_type = mainfile.filetype
+    file = mainfile.file
+    name = mainfile.file.name
+
+    format_data = {
+        "format_type": format_type,
+        "asset": asset,
+    }
+    format = PolyFormat.objects.create(**format_data)
+
+    resource_data = {
+        "file": file,
+        "is_root": True,
+        "asset": asset,
+        "format": format,
+        "contenttype": get_content_type(name),
+    }
+    PolyResource.objects.create(**resource_data)
+
+    for subfile in sub_files:
+        sub_resource_data = {
+            "file": subfile.file,
+            "format": format,
+            "is_root": False,
+            "asset": asset,
+            "contenttype": get_content_type(subfile.file.name),
+        }
+        PolyResource.objects.create(**sub_resource_data)
+
+    format.save()  # Triggers denorming on Format
