@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import zipfile
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ from icosa.helpers.format_roles import (
     GLB_FORMAT,
     ORIGINAL_FBX_FORMAT,
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+    ROLE_STR_TO_INT,
     TILT_FORMAT,
     TILT_NATIVE_GLTF,
     USER_SUPPLIED_GLTF,
@@ -45,7 +47,7 @@ TYPE_ROLE_MAP = {
 @dataclass
 class UploadSet:
     files: List[UploadedFile]
-    manifest: Optional[UploadedFile] = None
+    manifest: Optional[dict] = None
     thumbnail: Optional[UploadedFile] = None
 
 
@@ -89,7 +91,7 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
                         thumbnail = processed_file
                         continue
                     if manifest is None and filename.lower() == "manifest.json":
-                        manifest = processed_file
+                        manifest = json.load(processed_file.file)
                         continue
                     # Add the file to the list of unzipped files
                     # to process. Do not include the thumbnail or
@@ -158,13 +160,11 @@ def upload_api_asset(
             except KeyError:
                 sub_files_list = []
 
-        if type.startswith("GLTF"):
-            if is_tilt_upload:
-                role = TILT_NATIVE_GLTF
-            else:
-                role = USER_SUPPLIED_GLTF
-        else:
-            role = TYPE_ROLE_MAP.get(type, None)
+        role = get_role(
+            upload_set.manifest,
+            type,
+            is_tilt_upload,
+        )
 
         make_formats(
             mainfile,
@@ -214,3 +214,26 @@ def make_formats(mainfile, sub_files, asset, role=None):
         PolyResource.objects.create(**sub_resource_data)
 
     format.save()  # Triggers denorming on Format
+
+
+def get_role(
+    manifest: Optional[dict],
+    type: str,
+    override_for_tilt: bool = False,
+) -> str:
+    manifest_role = None
+    if manifest is not None:
+        role_str = manifest.get(type, "")
+        manifest_role = ROLE_STR_TO_INT.get(role_str, None)
+    if manifest_role is not None:
+        return manifest_role
+
+    if type.startswith("GLTF"):
+        if override_for_tilt:
+            role = TILT_NATIVE_GLTF
+        else:
+            role = USER_SUPPLIED_GLTF
+    else:
+        role = TYPE_ROLE_MAP.get(type, None)
+
+    return role

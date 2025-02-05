@@ -68,6 +68,8 @@ role_display = {
     1005: "POLYGONE_FBX_FORMAT",
 }
 
+ROLE_STR_TO_INT = {v: k for k, v in role_display.items()}
+
 EXTENSION_ROLE_MAP = {
     ".tilt": 1000,
     ".blocks": 1001,
