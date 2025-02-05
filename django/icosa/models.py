@@ -924,7 +924,10 @@ class PolyFormat(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        self.root_resource = self.polyresource_set.filter(is_root=True).first()
+        if self._state.adding is False:
+            # Only denorm fields when updating an existing model
+            resource = self.polyresource_set.filter(is_root=True).first()
+            self.root_resource = resource
         super().save(*args, **kwargs)
 
 
