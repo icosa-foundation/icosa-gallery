@@ -916,10 +916,16 @@ class PolyFormat(models.Model):
         blank=True,
         choices=FORMAT_ROLE_CHOICES,
     )
+    root_resource = models.ForeignKey(
+        "PolyResource",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
 
-    @property
-    def root_resource(self):
-        return self.polyresource_set.filter(is_root=True).first()
+    def save(self, *args, **kwargs):
+        self.root_resource = self.polyresource_set.filter(is_root=True).first()
+        super().save(*args, **kwargs)
 
 
 class PolyResource(models.Model):
