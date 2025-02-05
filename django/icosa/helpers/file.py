@@ -158,7 +158,6 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
 
 
 def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
-    is_first_format = True
     # Main files determine folder
     format_type = mainfile.filetype
     file = mainfile.file
@@ -185,8 +184,6 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
         "asset": asset,
     }
     format = PolyFormat.objects.create(**format_data)
-    if is_first_format:
-        is_first_format = False
 
     resource_data = {
         "file": file,
@@ -240,9 +237,6 @@ def add_thumbnail_to_asset(thumbnail, asset):
 
 def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
     filetype = filetype.upper()
-    # Only apply these OBJ rules if it's a Blocks asset. How we decide it's a
-    # blocks asset is TBD. And also at the callsite we might not yet know that
-    # it's a blocks file.
     # TODO(james): If the OBJ is not from blocks, the default from other apps
     # will probably be triangulated OBJ.
     if filetype == "OBJ":
@@ -250,15 +244,12 @@ def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
             return ORIGINAL_TRIANGULATED_OBJ_FORMAT
         if name == "model":
             return ORIGINAL_OBJ_FORMAT
-    # For new uploads from blocks ignore; they don't send a gltf.
     # For tilt, have a new role, TILT_NATIVE_GLTF, which behaves like
     # UPDATED_GLTF currently.
     if filetype in ["GLTF", "GLTF2"]:
         return ORIGINAL_GLTF_FORMAT
     if filetype == "FBX":
         return ORIGINAL_FBX_FORMAT
-    # Find out why this isn't being applied to tilt files.
-    # NOTE(james): It's because we don't use this func when uploading TILTs!
     if filetype == "TILT":
         return TILT_FORMAT
     if filetype == "BLOCKS":

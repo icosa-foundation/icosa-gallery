@@ -23,7 +23,7 @@ from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset, AssetOwner
 from icosa.tasks import (
     queue_blocks_upload_format,
     queue_finalize_asset,
-    queue_upload_asset,
+    queue_upload_api_asset,
 )
 from icosa.views.decorators import cache_per_user
 from ninja import File, Query, Router
@@ -297,13 +297,18 @@ def upload_new_assets(
         name="Untitled Asset",
     )
     if files is not None:
-        # TODO(james): Make this a completely different function/endpoint for
-        # TILT files.
-        queue_upload_asset(
+        from icosa.helpers.upload import upload_api_asset
+
+        upload_api_asset(
             user,
             asset,
             files,
         )
+        # queue_upload_api_asset(
+        #     user,
+        #     asset,
+        #     files,
+        # )
     return get_publish_url(request, asset)
 
 

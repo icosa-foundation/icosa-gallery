@@ -76,3 +76,4 @@ EXTENSION_ROLE_MAP = {
     ".obj": 1004,
     ".fbx": 1005,
 }
+FORMAT_ROLE_CHOICES = [(k, v) for k, v in role_display.items()]
