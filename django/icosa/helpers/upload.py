@@ -9,6 +9,14 @@ from icosa.helpers.file import (
     get_content_type,
     validate_file,
 )
+from icosa.helpers.format_roles import (
+    GLB_FORMAT,
+    ORIGINAL_FBX_FORMAT,
+    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+    TILT_FORMAT,
+    TILT_NATIVE_GLTF,
+    USER_SUPPLIED_GLTF,
+)
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
@@ -18,6 +26,20 @@ from icosa.models import (
 )
 from ninja import File
 from ninja.files import UploadedFile
+
+SUB_FILE_MAP = {
+    "IMAGE": "GLB",
+    "BIN": "GLTF",
+    "MTL": "OBJ",
+    "FBM": "FBX",
+}
+
+TYPE_ROLE_MAP = {
+    "TILT": TILT_FORMAT,
+    "OBJ": ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+    "FBX": ORIGINAL_FBX_FORMAT,
+    "GLB": GLB_FORMAT,
+}
 
 
 @dataclass
@@ -90,7 +112,6 @@ def upload_api_asset(
     if files is None:
         files = []
     upload_set = process_files(files)
-    print(upload_set)
 
     main_files = []
     sub_files = {
@@ -100,13 +121,6 @@ def upload_api_asset(
         "FBX": [],  # FBM files.
     }
     asset_name = "Untitled Asset"
-
-    sub_file_map = {
-        "IMAGE": "GLB",
-        "BIN": "GLTF",
-        "MTL": "OBJ",
-        "FBM": "FBX",
-    }
 
     # 3. Create nested structure for roots and subs.
     # 4. Process manifest if it exists.
@@ -120,13 +134,19 @@ def upload_api_asset(
                 main_files.append(upload_details)
                 asset_name = splitext[0]
             else:
-                parent_resource_type = sub_file_map[upload_details.filetype]
+                parent_resource_type = SUB_FILE_MAP[upload_details.filetype]
                 sub_files[parent_resource_type].append(upload_details)
 
     # Begin upload process.
 
     asset.name = asset_name
     asset.save()
+
+    is_tilt_upload = False
+    for mainfile in main_files:
+        if mainfile.filetype == "TILT":
+            is_tilt_upload = True
+            break
 
     for mainfile in main_files:
         type = mainfile.filetype
@@ -137,10 +157,20 @@ def upload_api_asset(
                 sub_files_list = sub_files[type]
             except KeyError:
                 sub_files_list = []
+
+        if type.startswith("GLTF"):
+            if is_tilt_upload:
+                role = TILT_NATIVE_GLTF
+            else:
+                role = USER_SUPPLIED_GLTF
+        else:
+            role = TYPE_ROLE_MAP.get(type, None)
+
         make_formats(
             mainfile,
             sub_files_list,
             asset,
+            role,
         )
 
     if upload_set.thumbnail:
@@ -151,7 +181,7 @@ def upload_api_asset(
     return asset
 
 
-def make_formats(mainfile, sub_files, asset):
+def make_formats(mainfile, sub_files, asset, role=None):
     # Main files determine folder
     format_type = mainfile.filetype
     file = mainfile.file
@@ -160,6 +190,7 @@ def make_formats(mainfile, sub_files, asset):
     format_data = {
         "format_type": format_type,
         "asset": asset,
+        "role": role,
     }
     format = PolyFormat.objects.create(**format_data)
 
