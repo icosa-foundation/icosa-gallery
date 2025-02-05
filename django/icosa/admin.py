@@ -75,7 +75,10 @@ class PolyFormatAdmin(ImportExportModelAdmin, ExportActionMixin):
 
     inlines = (PolyResourceInline,)
     list_filter = ("role",)
-    raw_id_fields = ["asset"]
+    raw_id_fields = [
+        "asset",
+        "root_resource",
+    ]
 
 
 @admin.register(Asset)

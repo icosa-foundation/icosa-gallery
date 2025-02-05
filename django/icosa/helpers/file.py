@@ -158,7 +158,6 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
 
 
 def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
-    is_first_format = True
     # Main files determine folder
     format_type = mainfile.filetype
     file = mainfile.file
@@ -185,8 +184,6 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
         "asset": asset,
     }
     format = PolyFormat.objects.create(**format_data)
-    if is_first_format:
-        is_first_format = False
 
     resource_data = {
         "file": file,
@@ -238,13 +235,17 @@ def add_thumbnail_to_asset(thumbnail, asset):
         asset.save()
 
 
-def get_role_id_from_file(name: str, filetype: str) -> Optional[int]:
+def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
     filetype = filetype.upper()
+    # TODO(james): If the OBJ is not from blocks, the default from other apps
+    # will probably be triangulated OBJ.
     if filetype == "OBJ":
         if name == "model-triangulated":
             return ORIGINAL_TRIANGULATED_OBJ_FORMAT
         if name == "model":
             return ORIGINAL_OBJ_FORMAT
+    # For tilt, have a new role, TILT_NATIVE_GLTF, which behaves like
+    # UPDATED_GLTF currently.
     if filetype in ["GLTF", "GLTF2"]:
         return ORIGINAL_GLTF_FORMAT
     if filetype == "FBX":
@@ -256,24 +257,30 @@ def get_role_id_from_file(name: str, filetype: str) -> Optional[int]:
     return None
 
 
-def get_role_id(f: UploadedFormat) -> Optional[int]:
+def get_blocks_role_id(f: UploadedFormat) -> Optional[int]:
     if f is None:
         return None
     filetype = f.filetype
     name = f.file.name.split(".")[0]
-    return get_role_id_from_file(name, filetype)
+    return get_blocks_role_id_from_file(name, filetype)
 
 
 def get_obj_non_triangulated(asset: Asset) -> Optional[PolyResource]:
-    return asset.polyresource_set.filter(is_root=True, format__role=1).first()
+    return asset.polyresource_set.filter(
+        is_root=True, format__role=ORIGINAL_OBJ_FORMAT
+    ).first()
 
 
 def get_obj_triangulated(asset: Asset) -> Optional[PolyResource]:
-    return asset.polyresource_set.filter(is_root=True, format__role=24).first()
+    return asset.polyresource_set.filter(
+        is_root=True, format__role=ORIGINAL_TRIANGULATED_OBJ_FORMAT
+    ).first()
 
 
 def get_gltf(asset: Asset) -> Optional[PolyResource]:
-    return asset.polyresource_set.filter(is_root=True, format__role=12).first()
+    return asset.polyresource_set.filter(
+        is_root=True, format__role=ORIGINAL_GLTF_FORMAT
+    ).first()
 
 
 def process_normally(asset: Asset, f: UploadedFormat):
@@ -289,7 +296,7 @@ def process_normally(asset: Asset, f: UploadedFormat):
         "asset": asset,
         "contenttype": get_content_type(f.file.name),
     }
-    resource_role = get_role_id(f)
+    resource_role = get_blocks_role_id(f)
     if resource_role is not None:
         format.role = resource_role
         format.save()
@@ -316,7 +323,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     if obj_non_triangulated is None:
         format_non_triangulated = PolyFormat.objects.create(
             **format_data,
-            role=1,
+            role=ORIGINAL_OBJ_FORMAT,
         )
         obj_non_triangulated = PolyResource.objects.create(
             format=format_non_triangulated, **resource_data
@@ -327,7 +334,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     if obj_triangulated is None:
         format_triangulated = PolyFormat.objects.create(
             **format_data,
-            role=24,
+            role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
         )
         obj_triangulated = PolyResource.objects.create(
             format=format_triangulated, **resource_data
@@ -360,7 +367,10 @@ def process_bin(asset: Asset, f: UploadedFormat):
             "format_type": format_type,
             "asset": asset,
         }
-        format = PolyFormat.objects.create(**format_data, role=12)
+        format = PolyFormat.objects.create(
+            **format_data,
+            role=ORIGINAL_GLTF_FORMAT,
+        )
         resource_data = {
             "file": None,
             "is_root": True,
@@ -383,7 +393,7 @@ def process_bin(asset: Asset, f: UploadedFormat):
 
 def process_root(asset: Asset, f: UploadedFormat):
     root = asset.polyresource_set.filter(
-        is_root=True, format__role=get_role_id(f), file=""
+        is_root=True, format__role=get_blocks_role_id(f), file=""
     ).first()
     if root is None:
         process_normally(asset, f)
@@ -392,7 +402,7 @@ def process_root(asset: Asset, f: UploadedFormat):
         root.save()
 
 
-def upload_format(
+def upload_blocks_format(
     current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
@@ -409,7 +419,7 @@ def upload_format(
 
     filetype = f.filetype
     existing_resource = asset.polyresource_set.filter(
-        format__role=get_role_id(f), file__endswith=f.file.name
+        format__role=get_blocks_role_id(f), file__endswith=f.file.name
     ).first()
 
     if existing_resource is not None:

@@ -18,6 +18,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
+    FORMAT_ROLE_CHOICES,
     GLB_FORMAT,
     ORIGINAL_FBX_FORMAT,
     ORIGINAL_GLTF_FORMAT,
@@ -28,9 +29,11 @@ from icosa.helpers.format_roles import (
     POLYGONE_GLTF_FORMAT,
     POLYGONE_OBJ_FORMAT,
     TILT_FORMAT,
+    TILT_NATIVE_GLTF,
     UPDATED_GLTF_FORMAT,
     USD_FORMAT,
     USDZ_FORMAT,
+    USER_SUPPLIED_GLTF,
 )
 
 from .helpers.snowflake import get_snowflake_timestamp
@@ -117,39 +120,6 @@ CATEGORY_CHOICES = [
 
 CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
 
-FORMAT_ROLE_CHOICES = [
-    (1, "Original OBJ File"),
-    (2, "Tilt File"),
-    (4, "Unknown GLTF File A"),
-    (6, "Original FBX File"),
-    (7, "Blocks File"),
-    (8, "USD File"),
-    (11, "HTML File"),
-    (12, "Original glTF File"),
-    (13, "Tour Creator Experience"),
-    (15, "JSON File"),
-    (16, "lullmodel File"),
-    (17, "sand File A"),
-    (18, "GLB File"),
-    (19, "sand File B"),
-    (20, "sandc File"),
-    (21, "pb File"),
-    (22, "Unknown GLTF File B"),
-    (24, "Original Triangulated OBJ File"),
-    (25, "JPG (Buggy)"),
-    (26, "USDZ File"),
-    (30, "Updated glTF File"),
-    (32, "Editor settings pb file"),
-    (35, "Unknown GLTF File C"),
-    (36, "Unknown GLB File A"),
-    (38, "Unknown GLB File B"),
-    (1000, "Polygone Tilt File"),
-    (1001, "Polygone Blocks File"),
-    (1002, "Polygone GLB File"),
-    (1003, "Polygone GLTF File"),
-    (1004, "Polygone OBJ File"),
-    (1005, "Polygone FBX File"),
-]
 
 WEB_UI_DOWNLOAD_COMPATIBLE = [
     ORIGINAL_OBJ_FORMAT,
@@ -164,6 +134,8 @@ WEB_UI_DOWNLOAD_COMPATIBLE = [
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
     USDZ_FORMAT,
     UPDATED_GLTF_FORMAT,
+    TILT_NATIVE_GLTF,
+    USER_SUPPLIED_GLTF,
 ]
 
 API_DOWNLOAD_COMPATIBLE = [
@@ -176,6 +148,8 @@ API_DOWNLOAD_COMPATIBLE = [
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
     USDZ_FORMAT,
     UPDATED_GLTF_FORMAT,
+    TILT_NATIVE_GLTF,
+    USER_SUPPLIED_GLTF,
 ]
 
 BLOCKS_VIEWABLE_TYPES = [
@@ -753,6 +727,14 @@ class Asset(models.Model):
         return file_list
 
     def get_all_downloadable_formats(self):
+        # Originally, Google Poly made these roles available for download:
+        # - Original FBX File
+        # - Original OBJ File
+        # - GLB File
+        # - Original Triangulated OBJ File
+        # - Original glTF File
+        # - USDZ File
+        # - Updated glTF File
         formats = {}
         if self.license == ALL_RIGHTS_RESERVED:
             return formats
@@ -939,10 +921,19 @@ class PolyFormat(models.Model):
         blank=True,
         choices=FORMAT_ROLE_CHOICES,
     )
+    root_resource = models.ForeignKey(
+        "PolyResource",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
 
-    @property
-    def root_resource(self):
-        return self.polyresource_set.filter(is_root=True).first()
+    def save(self, *args, **kwargs):
+        if self._state.adding is False:
+            # Only denorm fields when updating an existing model
+            resource = self.polyresource_set.filter(is_root=True).first()
+            self.root_resource = resource
+        super().save(*args, **kwargs)
 
 
 class PolyResource(models.Model):

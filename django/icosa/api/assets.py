@@ -21,9 +21,9 @@ from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset, AssetOwner
 from icosa.tasks import (
+    queue_blocks_upload_format,
     queue_finalize_asset,
-    queue_upload_asset,
-    queue_upload_format,
+    queue_upload_api_asset,
 )
 from icosa.views.decorators import cache_per_user
 from ninja import File, Query, Router
@@ -31,6 +31,7 @@ from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
+from silk.profiling.profiler import silk_profile
 
 from .schema import (
     AssetFilters,
@@ -172,8 +173,8 @@ def delete_asset(
     return 204
 
 
-# This endpoint is for internal OpenBrush use for now. It's more complex than
-# it needs to  be until OpenBrush can send the formats data in a zip or some
+# This endpoint is for internal Open Blocks use for now. It's more complex than
+# it needs to be until Open Blocks can send the formats data in a zip or some
 # other way.
 @router.post(
     "/{str:asset}/blocks_format",
@@ -184,7 +185,7 @@ def delete_asset(
     # need to be fixed.
 )
 @decorate_view(transaction.atomic)
-def add_asset_format(
+def add_blocks_asset_format(
     request,
     asset: str,
     files: Optional[List[UploadedFile]] = File(None),
@@ -198,7 +199,7 @@ def add_asset_format(
         try:
             print("FILES:")
             print(request.FILES)
-            queue_upload_format(user, asset, files)
+            queue_blocks_upload_format(user, asset, files)
         except HttpError:
             print("HEADERS:")
             print(request.headers)
@@ -217,7 +218,7 @@ def add_asset_format(
     auth=AuthBearer(),
     response={200: UploadJobSchemaOut},
     include_in_schema=False,  # TODO this route has a race condition with
-    # add_asset_format and will overwrite the last format uploaded. If this
+    # add_blocks_asset_format and will overwrite the last format uploaded. If this
     # route becomes public, this will probably need to be fixed.
 )
 @decorate_view(transaction.atomic)
@@ -296,11 +297,18 @@ def upload_new_assets(
         name="Untitled Asset",
     )
     if files is not None:
-        queue_upload_asset(
+        from icosa.helpers.upload import upload_api_asset
+
+        upload_api_asset(
             user,
             asset,
             files,
         )
+        # queue_upload_api_asset(
+        #     user,
+        #     asset,
+        #     files,
+        # )
     return get_publish_url(request, asset)
 
 
@@ -374,6 +382,7 @@ def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
 )
 @paginate(AssetPagination)
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+@decorate_view(silk_profile(name="API all assets"))
 def get_assets(
     request,
     filters: AssetFilters = Query(...),

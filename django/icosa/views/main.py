@@ -49,6 +49,7 @@ from icosa.models import (
     MastheadSection,
 )
 from icosa.tasks import queue_upload_asset
+from silk.profiling.profiler import silk_profile
 
 POLY_USER_URL = "4aEd8rQgKu2"
 
@@ -171,6 +172,7 @@ def landing_page(
     )
 
 
+@silk_profile(name="Home page")
 @never_cache
 def home(request):
     return landing_page(request)

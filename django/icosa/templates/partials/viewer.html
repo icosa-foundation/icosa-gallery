@@ -41,7 +41,7 @@
 
         let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", ""); // Remove suffix to avoid duplicating it
         url = url.replace(".gltf", "_%28GLTFupdated%29.gltf"); // Add suffix
-        let formatType = "gltf2";
+        let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
 
     {% else %}
 

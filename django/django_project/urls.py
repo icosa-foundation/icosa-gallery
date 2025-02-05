@@ -199,3 +199,5 @@ if getattr(settings, "DEBUG", False):
             name="debug_registration_email",
         ),
     ] + urlpatterns
+if settings.SILKY_PYTHON_PROFILER:
+    urlpatterns += [path("silk", include("silk.urls", namespace="silk"))]

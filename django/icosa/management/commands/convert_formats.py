@@ -1,16 +1,14 @@
 import os
 
-from icosa.helpers.file import get_content_type, get_role_id_from_file
-from icosa.models import Asset, PolyFormat, PolyResource
-
 from django.core.management.base import BaseCommand
 from django.db.models import Q
+from icosa.helpers.file import get_blocks_role_id_from_file, get_content_type
+from icosa.models import Asset, PolyFormat, PolyResource
 
 STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
 
 
 class Command(BaseCommand):
-
     help = """Extracts format json into concrete models and converts to poly
     format."""
 
@@ -29,9 +27,7 @@ class Command(BaseCommand):
                     "format_type": format_json["format"],
                     "asset": asset,
                 }
-                format, created = PolyFormat.objects.get_or_create(
-                    **format_data
-                )
+                format, created = PolyFormat.objects.get_or_create(**format_data)
                 if created:
                     file_path = format_json["url"].replace(
                         STORAGE_ROOT,
@@ -40,7 +36,7 @@ class Command(BaseCommand):
                     name_and_extension = os.path.splitext(file_path)
                     file_name = name_and_extension[0].lower()
                     extension = name_and_extension[1].lower().replace(".", "")
-                    role = get_role_id_from_file(file_name, extension)
+                    role = get_blocks_role_id_from_file(file_name, extension)
                     format.role = role
                     format.save()
 
