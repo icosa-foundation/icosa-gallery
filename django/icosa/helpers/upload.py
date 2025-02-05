@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from icosa.helpers.file import (
+    UploadedFormat,
     add_thumbnail_to_asset,
     get_content_type,
     validate_file,
@@ -162,7 +163,7 @@ def upload_api_asset(
 
         role = get_role(
             upload_set.manifest,
-            type,
+            mainfile,
             is_tilt_upload,
         )
 
@@ -218,16 +219,17 @@ def make_formats(mainfile, sub_files, asset, role=None):
 
 def get_role(
     manifest: Optional[dict],
-    type: str,
+    mainfile: UploadedFormat,
     override_for_tilt: bool = False,
 ) -> str:
     manifest_role = None
     if manifest is not None:
-        role_str = manifest.get(type, "")
+        role_str = manifest.get(mainfile.file.name, "")
         manifest_role = ROLE_STR_TO_INT.get(role_str, None)
     if manifest_role is not None:
         return manifest_role
 
+    type = mainfile.filetype
     if type.startswith("GLTF"):
         if override_for_tilt:
             role = TILT_NATIVE_GLTF
