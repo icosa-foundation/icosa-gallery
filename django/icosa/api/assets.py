@@ -36,7 +36,7 @@ from silk.profiling.profiler import silk_profile
 from .schema import (
     AssetFilters,
     AssetFinalizeData,
-    AssetSchemaOut,
+    AssetSchema,
     UploadJobSchemaOut,
     filter_complexity,
     filter_license,
@@ -145,7 +145,7 @@ def get_my_id_asset(
 
 @router.get(
     "/{str:asset}",
-    response=AssetSchemaOut,
+    response=AssetSchema,
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
@@ -238,7 +238,7 @@ def finalize_asset(
 @router.patch(
     "/{str:asset}/unpublish",
     auth=AuthBearer(),
-    response=AssetSchemaOut,
+    response=AssetSchema,
 )
 def unpublish_asset(
     request,
@@ -252,7 +252,7 @@ def unpublish_asset(
 
 @router.get(
     "/{str:userurl}/{str:asseturl}",
-    response=AssetSchemaOut,
+    response=AssetSchema,
 )
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def get_user_asset(
@@ -369,13 +369,13 @@ def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
 
 @router.get(
     "",
-    response=List[AssetSchemaOut],
+    response=List[AssetSchema],
     **COMMON_ROUTER_SETTINGS,
     url_name="asset_list",
 )
 @router.get(
     "/",
-    response=List[AssetSchemaOut],
+    response=List[AssetSchema],
     include_in_schema=False,
     **COMMON_ROUTER_SETTINGS,
     url_name="asset_list",

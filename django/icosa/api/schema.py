@@ -88,7 +88,7 @@ class AssetFormat(Schema):
         return format_complexity
 
 
-class _DBAsset(ModelSchema):
+class AssetSchema(ModelSchema):
     authorId: str = Field(None, alias=("owner.url"))
     authorName: str
     # authorUrl: str # TODO create API endpoints for user
@@ -178,16 +178,6 @@ class _DBAsset(ModelSchema):
     #         }
     #     params["colorSpace"] = presentationParams.get("colorSpace", None)
     #     return params
-
-
-class AssetSchemaIn(_DBAsset):
-    pass
-
-
-class AssetSchemaOut(_DBAsset):
-    # TODO: If this doesn't differ from AssetSchemaIn, we should probably
-    # remove inheritence.
-    pass
 
 
 class AssetPatchData(Schema):
