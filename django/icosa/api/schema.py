@@ -70,7 +70,7 @@ class AssetFormat(Schema):
 
     @staticmethod
     def resolve_root(obj):
-        return obj.polyresource_set.filter(is_root=True).first()
+        return obj.root_resource
 
     @staticmethod
     def resolve_resources(obj):
