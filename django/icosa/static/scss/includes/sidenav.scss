@@ -2,7 +2,12 @@
 
 .toggler {
   position: absolute;
-  z-index: 1;
+  z-index: 100;
+  background-color: var(--color-base-dark);
+  border-bottom-right-radius: var(--border-radius-large);
+  position: fixed;
+  top: 0;
+  left: 0;
 
   &.toggle-close {
     position: relative;
