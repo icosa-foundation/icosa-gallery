@@ -920,6 +920,7 @@ class PolyFormat(models.Model):
         "Resource",
         null=True,
         blank=True,
+        related_name="root_resources",
         on_delete=models.SET_NULL,
     )
 
