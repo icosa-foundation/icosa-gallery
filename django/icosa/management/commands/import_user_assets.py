@@ -10,7 +10,7 @@ from icosa.models import (
     FORMAT_ROLE_CHOICES,
     Asset,
     PolyFormat,
-    PolyResource,
+    Resource,
     Tag,
     User,
 )
@@ -122,7 +122,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
             "asset": asset,
             "contenttype": root_resource_json["contentType"],
         }
-        root_resource = PolyResource.objects.create(**root_resource_data)
+        root_resource = Resource.objects.create(**root_resource_data)
 
         role = EXTENSION_ROLE_MAP.get(extension)
         format.role = role
@@ -159,7 +159,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
                     "asset": asset,
                     "contenttype": resource_json["contentType"],
                 }
-                PolyResource.objects.create(**resource_data)
+                Resource.objects.create(**resource_data)
 
 
 class Command(BaseCommand):

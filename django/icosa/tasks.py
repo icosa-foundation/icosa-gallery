@@ -83,7 +83,7 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
 
     # Clean up formats with no root resource.
     # TODO(james): This can probably be done in one query
-    resources = asset.polyresource_set.filter(file="")
+    resources = asset.resource_set.filter(file="")
     format_pks = list(set([x.format.pk for x in resources]))
     formats = PolyFormat.objects.filter(pk__in=format_pks)
     formats.delete()

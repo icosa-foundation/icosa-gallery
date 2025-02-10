@@ -11,7 +11,7 @@ from icosa.models import (
     Oauth2Code,
     Oauth2Token,
     PolyFormat,
-    PolyResource,
+    Resource,
     Tag,
 )
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
@@ -22,8 +22,8 @@ class TagAdmin(ImportExportModelAdmin, ExportActionMixin):
     search_fields = ("name",)
 
 
-@admin.register(PolyResource)
-class PolyResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
+@admin.register(Resource)
+class ResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "id",
         "asset",
@@ -55,9 +55,9 @@ class PolyFormatInline(admin.TabularInline):
     )
 
 
-class PolyResourceInline(admin.TabularInline):
+class ResourceInline(admin.TabularInline):
     extra = 0
-    model = PolyResource
+    model = Resource
 
     fields = (
         "is_root",
@@ -73,7 +73,7 @@ class PolyFormatAdmin(ImportExportModelAdmin, ExportActionMixin):
         "format_type",
     )
 
-    inlines = (PolyResourceInline,)
+    inlines = (ResourceInline,)
     list_filter = ("role",)
     raw_id_fields = [
         "asset",

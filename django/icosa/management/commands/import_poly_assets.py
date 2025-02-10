@@ -14,7 +14,7 @@ from icosa.models import (
     FORMAT_ROLE_CHOICES,
     Asset,
     PolyFormat,
-    PolyResource,
+    Resource,
     Tag,
     User,
 )
@@ -155,7 +155,7 @@ def create_formats_from_scraped_data(
             "asset": asset,
             "contenttype": root_resource_json["contentType"],
         }
-        root_resource = PolyResource.objects.create(**root_resource_data)
+        root_resource = Resource.objects.create(**root_resource_data)
 
         role = EXTENSION_ROLE_MAP.get(extension)
         format.role = role
@@ -197,7 +197,7 @@ def create_formats_from_scraped_data(
                     "asset": asset,
                     "contenttype": resource_json["contentType"],
                 }
-                PolyResource.objects.create(**resource_data)
+                Resource.objects.create(**resource_data)
 
 
 def create_formats_from_archive_data(formats_json, asset):
@@ -236,7 +236,7 @@ def create_formats_from_archive_data(formats_json, asset):
             "contenttype": get_content_type(url),
         }
 
-        PolyResource.objects.create(**root_resource_data)
+        Resource.objects.create(**root_resource_data)
 
         role = FORMAT_ROLE_MAP[root_resource_json["role"]]
         if role is not None:
@@ -253,7 +253,7 @@ def create_formats_from_archive_data(formats_json, asset):
                     "asset": asset,
                     "contenttype": get_content_type(url),
                 }
-                PolyResource.objects.create(**resource_data)
+                Resource.objects.create(**resource_data)
             # If a format has many files associated with it (i.e. it has a
             # `resources` key), then we want to grab the archive url if we have
             # it so we can provide this in the download options for the user.

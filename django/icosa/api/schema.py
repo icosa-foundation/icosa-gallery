@@ -73,7 +73,7 @@ class AssetFormat(Schema):
 
     @staticmethod
     def resolve_resources(obj):
-        return obj.polyresource_set.filter(is_root=False)
+        return obj.resource_set.filter(is_root=False)
 
     @staticmethod
     def resolve_formatType(obj):

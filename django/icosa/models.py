@@ -447,10 +447,10 @@ class Asset(models.Model):
             # TODO Prefer some roles over others
             # TODO error handling
             obj_format = self.polyformat_set.filter(format_type="OBJ").first()
-            obj_resource = obj_format.polyresource_set.filter(
+            obj_resource = obj_format.resource_set.filter(
                 is_root=True,
             ).first()
-            mtl_resource = obj_format.polyresource_set.filter(
+            mtl_resource = obj_format.resource_set.filter(
                 is_root=False,
             ).first()
 
@@ -463,7 +463,7 @@ class Asset(models.Model):
                 }
 
         # Return early if we can grab a Polygone resource first
-        polygone_gltf = self.polyresource_set.filter(
+        polygone_gltf = self.resource_set.filter(
             is_root=True, format__role__in=[1002, 1003]
         ).first()
         if polygone_gltf:
@@ -474,9 +474,7 @@ class Asset(models.Model):
             }
 
         # Return early with either of the role-based formats we care about.
-        updated_gltf = self.polyresource_set.filter(
-            is_root=True, format__role=30
-        ).first()
+        updated_gltf = self.resource_set.filter(is_root=True, format__role=30).first()
         if updated_gltf:
             return {
                 "format": updated_gltf.format.format_type,
@@ -484,9 +482,7 @@ class Asset(models.Model):
                 "resource": updated_gltf,
             }
 
-        original_gltf = self.polyresource_set.filter(
-            is_root=True, format__role=12
-        ).first()
+        original_gltf = self.resource_set.filter(is_root=True, format__role=12).first()
         if original_gltf:
             return {
                 "format": original_gltf.format.format_type,
@@ -539,7 +535,7 @@ class Asset(models.Model):
         # If this resource has a file managed by Django storage, then it will
         # be viewable.
         if (
-            self.polyresource_set.filter(
+            self.resource_set.filter(
                 file__isnull=False,
             ).count()
             > 0
@@ -560,7 +556,7 @@ class Asset(models.Model):
             len(
                 [
                     x.external_url
-                    for x in self.polyresource_set.filter(
+                    for x in self.resource_set.filter(
                         external_url__isnull=False,
                     )
                     if x.external_url.startswith(allowed_sources)
@@ -573,9 +569,7 @@ class Asset(models.Model):
     def download_url(self):
         if self.license == ALL_RIGHTS_RESERVED or not self.license:
             return None
-        updated_gltf = self.polyresource_set.filter(
-            is_root=True, format__role=30
-        ).first()
+        updated_gltf = self.resource_set.filter(is_root=True, format__role=30).first()
 
         preferred_format = self.preferred_viewer_format
 
@@ -714,7 +708,7 @@ class Asset(models.Model):
         file_list = []
         if self.thumbnail:
             file_list.append(self.thumbnail.file.name)
-        for resource in self.polyresource_set.all():
+        for resource in self.resource_set.all():
             if resource.file:
                 file_list.append(resource.file.name)
         return file_list
@@ -766,7 +760,7 @@ class Asset(models.Model):
                 # file.
                 query = Q(external_url__isnull=False) & ~Q(external_url="")
                 query |= Q(file__isnull=False)
-                resources = format.polyresource_set.filter(query)
+                resources = format.resource_set.filter(query)
                 if format.role == POLYGONE_GLTF_FORMAT:
                     resource_data = {
                         "files_to_zip": [
@@ -793,7 +787,7 @@ class Asset(models.Model):
                         override_format = self.polyformat_set.get(
                             role=POLYGONE_GLTF_FORMAT
                         )
-                        override_resources = override_format.polyresource_set.all()
+                        override_resources = override_format.resource_set.all()
                         resource_data = {
                             "files_to_zip": [
                                 f"{STORAGE_PREFIX}{suffix(x.file.name)}"
@@ -923,7 +917,7 @@ class PolyFormat(models.Model):
         choices=FORMAT_ROLE_CHOICES,
     )
     root_resource = models.ForeignKey(
-        "PolyResource",
+        "Resource",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -932,7 +926,7 @@ class PolyFormat(models.Model):
     def save(self, *args, **kwargs):
         if self._state.adding is False:
             # Only denorm fields when updating an existing model
-            resource = self.polyresource_set.filter(is_root=True).first()
+            resource = self.resource_set.filter(is_root=True).first()
             self.root_resource = resource
         super().save(*args, **kwargs)
 
@@ -946,7 +940,7 @@ class PolyFormat(models.Model):
         ]
 
 
-class PolyResource(models.Model):
+class Resource(models.Model):
     is_root = models.BooleanField(default=False)
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
     format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
