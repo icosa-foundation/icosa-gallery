@@ -936,6 +936,15 @@ class PolyFormat(models.Model):
             self.root_resource = resource
         super().save(*args, **kwargs)
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "role",
+                ]
+            )
+        ]
+
 
 class PolyResource(models.Model):
     is_root = models.BooleanField(default=False)
