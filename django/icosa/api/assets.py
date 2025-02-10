@@ -354,6 +354,10 @@ def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
         Asset.objects.filter(q, keyword_q)
         .exclude(ex_q)
         .select_related("owner")
+        .prefetch_related(
+            "polyresource_set",
+            "polyformat_set",
+        )
         .distinct()
     )
 
