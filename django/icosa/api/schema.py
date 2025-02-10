@@ -2,13 +2,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated, List, Literal, Optional
 
+from django.db.models import Q
+from django.urls import reverse_lazy
 from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
-
-from django.db.models import Q
-from django.urls import reverse_lazy
 
 
 class LoginToken(Schema):
@@ -106,9 +105,7 @@ class _DBAsset(ModelSchema):
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     thumbnail: Optional[Thumbnail]
     triangleCount: int = Field(..., alias=("triangle_count"))
-    presentationParams: Optional[dict] = Field(
-        None, alias=("presentation_params")
-    )
+    presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
     license: Optional[str] = None
 
     class Config:
@@ -139,12 +136,7 @@ class _DBAsset(ModelSchema):
 
     @staticmethod
     def resolve_formats(obj, context):
-        return [
-            f
-            for f in obj.polyformat_set.filter(
-                role__in=API_DOWNLOAD_COMPATIBLE
-            )
-        ]
+        return [f for f in obj.polyformat_set.filter(role__in=API_DOWNLOAD_COMPATIBLE)]
 
     @staticmethod
     def resolve_tags(obj):
@@ -220,12 +212,8 @@ class OembedOut(Schema):
     type: Literal["rich"]
     version: Literal["1.0"]
     title: Optional[str] = None  # A text title, describing the resource.
-    author_name: Optional[str] = (
-        None  # The name of the author/owner of the resource.
-    )
-    author_url: Optional[str] = (
-        None  # A URL for the author/owner of the resource.
-    )
+    author_name: Optional[str] = None  # The name of the author/owner of the resource.
+    author_url: Optional[str] = None  # A URL for the author/owner of the resource.
     provider_name: Optional[str] = None  # The name of the resource provider.
     provider_url: Optional[str] = None  # The url of the resource provider.
     cache_age: Optional[str] = (
