@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, List, Literal, Optional
+from typing import List, Literal, Optional
 
 from django.db.models import Q
 from django.urls import reverse_lazy
