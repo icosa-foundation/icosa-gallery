@@ -3,6 +3,7 @@ import os
 import secrets
 from datetime import datetime
 
+from django.core.management.base import BaseCommand
 from icosa.helpers.file import is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
@@ -14,8 +15,6 @@ from icosa.models import (
     Tag,
     User,
 )
-
-from django.core.management.base import BaseCommand
 
 IMPORT_SOURCE = "google_poly"
 
@@ -98,9 +97,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
         )
         if format_json.get("formatComplexity", None) is not None:
             format_complexity_json = format_json["formatComplexity"]
-            format.triangle_count = format_complexity_json.get(
-                "triangleCount", None
-            )
+            format.triangle_count = format_complexity_json.get("triangleCount", None)
             format.lod_hint = format_complexity_json.get("lodHint", None)
             format.save()
 
@@ -149,7 +146,6 @@ def create_formats(directory, gltf2_data, formats_json, asset):
 
         if format_json.get("resources", None) is not None:
             for resource_json in format_json["resources"]:
-
                 file_path = resource_json["relativePath"]
 
                 resource_data = {
@@ -163,7 +159,6 @@ def create_formats(directory, gltf2_data, formats_json, asset):
 
 
 class Command(BaseCommand):
-
     help = "Imports poly json files from a local directory"
 
     def add_arguments(self, parser):

@@ -4,6 +4,7 @@ import secrets
 from datetime import datetime
 from pathlib import Path
 
+from django.core.management.base import BaseCommand
 from icosa.helpers.file import get_content_type, is_gltf2
 from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
 from icosa.helpers.snowflake import generate_snowflake
@@ -18,8 +19,6 @@ from icosa.models import (
     Tag,
     User,
 )
-
-from django.core.management.base import BaseCommand
 
 # IMPORT_SOURCE = "google_poly"
 IMPORT_SOURCE = "internet_archive"
@@ -119,9 +118,7 @@ def get_or_create_asset(directory, data, curated=False):
     )
 
 
-def create_formats_from_scraped_data(
-    directory, gltf2_data, formats_json, asset
-):
+def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset):
     done_thumbnail = False
     for format_json in formats_json:
         format = PolyFormat.objects.create(
@@ -130,9 +127,7 @@ def create_formats_from_scraped_data(
         )
         if format_json.get("formatComplexity", None) is not None:
             format_complexity_json = format_json["formatComplexity"]
-            format.triangle_count = format_complexity_json.get(
-                "triangleCount", None
-            )
+            format.triangle_count = format_complexity_json.get("triangleCount", None)
             format.lod_hint = format_complexity_json.get("lodHint", None)
             format.save()
 
@@ -187,7 +182,6 @@ def create_formats_from_scraped_data(
 
         if format_json.get("resources", None) is not None:
             for resource_json in format_json["resources"]:
-
                 file_path = resource_json["relativePath"]
 
                 resource_data = {
@@ -210,9 +204,7 @@ def create_formats_from_archive_data(formats_json, asset):
 
         if format_json.get("formatComplexity", None) is not None:
             format_complexity_json = format_json["formatComplexity"]
-            format.triangle_count = format_complexity_json.get(
-                "triangleCount", None
-            )
+            format.triangle_count = format_complexity_json.get("triangleCount", None)
             format.lod_hint = format_complexity_json.get("lodHint", None)
             format.save()
 
@@ -282,7 +274,6 @@ def dedup_scrape_formats(formats, asset_id):
 
 
 class Command(BaseCommand):
-
     help = "Imports poly json files from a local directory"
 
     def add_arguments(self, parser):
@@ -300,7 +291,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
         if options["download"]:
             get_json_from_b2(ASSETS_JSON_DIR)
             print(
@@ -357,9 +347,7 @@ class Command(BaseCommand):
 
                     else:
                         # Create a new Asset object with the data.
-                        full_path = os.path.join(
-                            ASSETS_JSON_DIR, asset_id, "data.json"
-                        )
+                        full_path = os.path.join(ASSETS_JSON_DIR, asset_id, "data.json")
                         with open(full_path) as f:
                             scrape_data = json.load(f)
                             scrape_formats = dedup_scrape_formats(
