@@ -350,7 +350,12 @@ def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
         | Q(last_reported_time__isnull=False)
     )
 
-    return Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+    return (
+        Asset.objects.filter(q, keyword_q)
+        .exclude(ex_q)
+        .select_related("owner")
+        .distinct()
+    )
 
 
 def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
