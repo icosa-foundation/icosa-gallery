@@ -24,7 +24,7 @@ from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
     AssetOwner,
-    PolyFormat,
+    Format,
     Resource,
 )
 from ninja import File
@@ -193,7 +193,7 @@ def make_formats(mainfile, sub_files, asset, role=None):
         "asset": asset,
         "role": role,
     }
-    format = PolyFormat.objects.create(**format_data)
+    format = Format.objects.create(**format_data)
 
     resource_data = {
         "file": file,

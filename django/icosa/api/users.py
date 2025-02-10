@@ -121,7 +121,7 @@ def get_me_assets(
         .exclude(ex_q)
         .distinct()
         .select_related("owner")
-        .prefetch_related("polyformat_set")
+        .prefetch_related("format_set")
         .prefetch_related("tags")
     )
     return assets

@@ -138,7 +138,7 @@ class AssetSchema(ModelSchema):
     def resolve_formats(obj, context):
         return [
             f
-            for f in obj.polyformat_set.filter(
+            for f in obj.format_set.filter(
                 role__in=API_DOWNLOAD_COMPATIBLE,
             )
         ]

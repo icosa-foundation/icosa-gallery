@@ -3,7 +3,7 @@ import os
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from icosa.helpers.file import get_blocks_role_id_from_file, get_content_type
-from icosa.models import Asset, PolyFormat, Resource
+from icosa.models import Asset, Format, Resource
 
 STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
 
@@ -27,7 +27,7 @@ class Command(BaseCommand):
                     "format_type": format_json["format"],
                     "asset": asset,
                 }
-                format, created = PolyFormat.objects.get_or_create(**format_data)
+                format, created = Format.objects.get_or_create(**format_data)
                 if created:
                     file_path = format_json["url"].replace(
                         STORAGE_ROOT,

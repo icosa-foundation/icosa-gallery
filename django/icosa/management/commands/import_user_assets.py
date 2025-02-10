@@ -10,7 +10,7 @@ from icosa.models import (
     CATEGORY_CHOICES,
     FORMAT_ROLE_CHOICES,
     Asset,
-    PolyFormat,
+    Format,
     Resource,
     Tag,
     User,
@@ -91,7 +91,7 @@ def update_or_create_asset(directory, data):
 def create_formats(directory, gltf2_data, formats_json, asset):
     done_thumbnail = False
     for format_json in formats_json:
-        format = PolyFormat.objects.create(
+        format = Format.objects.create(
             asset=asset,
             format_type=format_json["formatType"],
         )

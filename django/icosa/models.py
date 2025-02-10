@@ -446,7 +446,7 @@ class Asset(models.Model):
             # here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
-            obj_format = self.polyformat_set.filter(format_type="OBJ").first()
+            obj_format = self.format_set.filter(format_type="OBJ").first()
             obj_resource = obj_format.resource_set.filter(
                 is_root=True,
             ).first()
@@ -493,7 +493,7 @@ class Asset(models.Model):
         # If we didn't get any role-based formats, find the remaining formats
         # we care about and choose the "best" one of those.
         formats = {}
-        for format in self.polyformat_set.all():
+        for format in self.format_set.all():
             root = format.root_resource
             formats[format.format_type] = {
                 "format": format.format_type,
@@ -525,10 +525,7 @@ class Asset(models.Model):
 
     @property
     def has_viewable_format_types(self):
-        return (
-            self.polyformat_set.filter(format_type__in=VIEWABLE_FORMAT_TYPES).count()
-            > 0
-        )
+        return self.format_set.filter(format_type__in=VIEWABLE_FORMAT_TYPES).count() > 0
 
     @property
     def has_cors_allowed(self):
@@ -654,19 +651,19 @@ class Asset(models.Model):
     def denorm_format_types(self):
         if not self.pk:
             return
-        self.has_tilt = self.polyformat_set.filter(format_type="TILT").exists()
-        self.has_blocks = self.polyformat_set.filter(format_type="BLOCKS").exists()
-        self.has_gltf1 = self.polyformat_set.filter(format_type="GLTF").exists()
-        self.has_gltf2 = self.polyformat_set.filter(format_type="GLTF2").exists()
-        self.has_gltf_any = self.polyformat_set.filter(
+        self.has_tilt = self.format_set.filter(format_type="TILT").exists()
+        self.has_blocks = self.format_set.filter(format_type="BLOCKS").exists()
+        self.has_gltf1 = self.format_set.filter(format_type="GLTF").exists()
+        self.has_gltf2 = self.format_set.filter(format_type="GLTF2").exists()
+        self.has_gltf_any = self.format_set.filter(
             format_type__in=["GLTF", "GLTF2"]
         ).exists()
-        self.has_fbx = self.polyformat_set.filter(format_type="FBX").exists()
-        self.has_obj = self.polyformat_set.filter(format_type="OBJ").exists()
+        self.has_fbx = self.format_set.filter(format_type="FBX").exists()
+        self.has_obj = self.format_set.filter(format_type="OBJ").exists()
 
     def get_triangle_count(self):
         formats = {}
-        for format in self.polyformat_set.filter(triangle_count__gt=0):
+        for format in self.format_set.filter(triangle_count__gt=0):
             formats.setdefault(format.role, format.triangle_count)
         if POLYGONE_GLTF_FORMAT in formats.keys():
             return formats[POLYGONE_GLTF_FORMAT]
@@ -752,7 +749,7 @@ class Asset(models.Model):
             "Updated glTF File": "GLTF File",
         }
 
-        for format in self.polyformat_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
+        for format in self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
             if format.archive_url:
                 resource_data = {"archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"}
             else:
@@ -784,9 +781,7 @@ class Asset(models.Model):
                     # list of files as if the role was 1003 using our suffixed
                     # upload.
                     try:
-                        override_format = self.polyformat_set.get(
-                            role=POLYGONE_GLTF_FORMAT
-                        )
+                        override_format = self.format_set.get(role=POLYGONE_GLTF_FORMAT)
                         override_resources = override_format.resource_set.all()
                         resource_data = {
                             "files_to_zip": [
@@ -797,8 +792,8 @@ class Asset(models.Model):
                             "role": format.role,
                         }
                     except (
-                        PolyFormat.DoesNotExist,
-                        PolyFormat.MultipleObjectsReturned,
+                        Format.DoesNotExist,
+                        Format.MultipleObjectsReturned,
                     ):
                         pass
                 elif format.role == ORIGINAL_GLTF_FORMAT:
@@ -903,7 +898,7 @@ def format_upload_path(instance, filename):
     return f"{root}/{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
 
 
-class PolyFormat(models.Model):
+class Format(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
     archive_url = models.CharField(
@@ -944,7 +939,7 @@ class PolyFormat(models.Model):
 class Resource(models.Model):
     is_root = models.BooleanField(default=False)
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
-    format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
+    format = models.ForeignKey(Format, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
         null=True,

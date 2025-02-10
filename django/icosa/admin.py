@@ -5,12 +5,12 @@ from icosa.models import (
     Asset,
     AssetOwner,
     DeviceCode,
+    Format,
     HiddenMediaFileLog,
     MastheadSection,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
-    PolyFormat,
     Resource,
     Tag,
 )
@@ -43,9 +43,9 @@ class ResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
     ]
 
 
-class PolyFormatInline(admin.TabularInline):
+class FormatInline(admin.TabularInline):
     extra = 0
-    model = PolyFormat
+    model = Format
     show_change_link = True
 
     fields = (
@@ -66,8 +66,8 @@ class ResourceInline(admin.TabularInline):
     )
 
 
-@admin.register(PolyFormat)
-class PolyFormatAdmin(ImportExportModelAdmin, ExportActionMixin):
+@admin.register(Format)
+class FormatAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "asset",
         "format_type",
@@ -166,7 +166,7 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
         form.instance.save()
 
     filter_horizontal = ("tags",)
-    inlines = (PolyFormatInline,)
+    inlines = (FormatInline,)
     raw_id_fields = ["owner"]
 
 

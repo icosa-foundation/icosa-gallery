@@ -24,7 +24,7 @@ from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
     AssetOwner,
-    PolyFormat,
+    Format,
     Resource,
 )
 from ninja import File
@@ -183,7 +183,7 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
         "format_type": format_type,
         "asset": asset,
     }
-    format = PolyFormat.objects.create(**format_data)
+    format = Format.objects.create(**format_data)
 
     resource_data = {
         "file": file,
@@ -288,7 +288,7 @@ def process_normally(asset: Asset, f: UploadedFormat):
         "format_type": f.filetype,
         "asset": asset,
     }
-    format = PolyFormat.objects.create(**format_data)
+    format = Format.objects.create(**format_data)
     resource_data = {
         "file": f.file,
         "format": format,
@@ -321,7 +321,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
         "contenttype": "text/plain",
     }
     if obj_non_triangulated is None:
-        format_non_triangulated = PolyFormat.objects.create(
+        format_non_triangulated = Format.objects.create(
             **format_data,
             role=ORIGINAL_OBJ_FORMAT,
         )
@@ -332,7 +332,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
         format_non_triangulated = obj_non_triangulated.format
 
     if obj_triangulated is None:
-        format_triangulated = PolyFormat.objects.create(
+        format_triangulated = Format.objects.create(
             **format_data,
             role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
         )
@@ -367,7 +367,7 @@ def process_bin(asset: Asset, f: UploadedFormat):
             "format_type": format_type,
             "asset": asset,
         }
-        format = PolyFormat.objects.create(
+        format = Format.objects.create(
             **format_data,
             role=ORIGINAL_GLTF_FORMAT,
         )

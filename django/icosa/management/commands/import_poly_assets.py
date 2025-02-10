@@ -14,7 +14,7 @@ from icosa.models import (
     CATEGORY_CHOICES,
     FORMAT_ROLE_CHOICES,
     Asset,
-    PolyFormat,
+    Format,
     Resource,
     Tag,
     User,
@@ -121,7 +121,7 @@ def get_or_create_asset(directory, data, curated=False):
 def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset):
     done_thumbnail = False
     for format_json in formats_json:
-        format = PolyFormat.objects.create(
+        format = Format.objects.create(
             asset=asset,
             format_type=format_json["formatType"],
         )
@@ -197,7 +197,7 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
 def create_formats_from_archive_data(formats_json, asset):
     # done_thumbnail = False
     for format_json in formats_json:
-        format = PolyFormat.objects.create(
+        format = Format.objects.create(
             asset=asset,
             format_type=format_json["formatType"],
         )
