@@ -73,6 +73,7 @@ def get_me_assets(
     request,
     filters: UserAssetFilters = Query(...),
 ):
+    # TODO(james): Standardise this with /me/likedassets
     owner = AssetOwner.from_ninja_request(request)
     q = Q(
         owner=owner,
