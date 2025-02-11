@@ -4,7 +4,7 @@ from typing import List, Literal, Optional
 
 from django.db.models import Q
 from django.urls import reverse_lazy
-from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset
+from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
@@ -242,7 +242,7 @@ class Complexity(Enum):
 
 
 class FilterBase(Schema):
-    category: Optional[str] = None
+    category: Optional[Category] = None
     curated: bool = False
     format: List[str] = Field(None, alias="format")
     keywords: Optional[str] = None
