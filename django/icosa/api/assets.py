@@ -36,7 +36,8 @@ from silk.profiling.profiler import silk_profile
 from .schema import (
     AssetFilters,
     AssetFinalizeData,
-    AssetSchemaOut,
+    AssetSchema,
+    Order,
     UploadJobSchemaOut,
     filter_complexity,
     filter_license,
@@ -145,7 +146,7 @@ def get_my_id_asset(
 
 @router.get(
     "/{str:asset}",
-    response=AssetSchemaOut,
+    response=AssetSchema,
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
@@ -238,7 +239,7 @@ def finalize_asset(
 @router.patch(
     "/{str:asset}/unpublish",
     auth=AuthBearer(),
-    response=AssetSchemaOut,
+    response=AssetSchema,
 )
 def unpublish_asset(
     request,
@@ -252,7 +253,7 @@ def unpublish_asset(
 
 @router.get(
     "/{str:userurl}/{str:asseturl}",
-    response=AssetSchemaOut,
+    response=AssetSchema,
 )
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def get_user_asset(
@@ -350,17 +351,26 @@ def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
         | Q(last_reported_time__isnull=False)
     )
 
-    return Asset.objects.filter(q, keyword_q).exclude(ex_q).distinct()
+    return (
+        Asset.objects.filter(q, keyword_q)
+        .exclude(ex_q)
+        .select_related("owner")
+        .prefetch_related(
+            "resource_set",
+            "format_set",
+        )
+        .distinct()
+    )
 
 
-def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
-    if key == "NEWEST":
+def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
+    if key.value == "NEWEST":
         assets = assets.order_by("-create_time")
-    elif key == "OLDEST":
+    elif key.value == "OLDEST":
         assets = assets.order_by("create_time")
-    elif key == "BEST":
+    elif key.value == "BEST":
         assets = assets.order_by("-rank")
-    elif key == "TRIANGLECOUNT":
+    elif key.value == "TRIANGLECOUNT":
         assets = assets.order_by("-triangle_count")
     else:
         pass
@@ -369,13 +379,13 @@ def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
 
 @router.get(
     "",
-    response=List[AssetSchemaOut],
+    response=List[AssetSchema],
     **COMMON_ROUTER_SETTINGS,
     url_name="asset_list",
 )
 @router.get(
     "/",
-    response=List[AssetSchemaOut],
+    response=List[AssetSchema],
     include_in_schema=False,
     **COMMON_ROUTER_SETTINGS,
     url_name="asset_list",

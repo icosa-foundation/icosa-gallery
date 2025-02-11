@@ -11,7 +11,7 @@ from icosa.models import (
     ASSET_STATE_FAILED,
     Asset,
     AssetOwner,
-    PolyFormat,
+    Format,
 )
 from ninja import File
 from ninja.files import UploadedFile
@@ -83,21 +83,21 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
 
     # Clean up formats with no root resource.
     # TODO(james): This can probably be done in one query
-    resources = asset.polyresource_set.filter(file="")
+    resources = asset.resource_set.filter(file="")
     format_pks = list(set([x.format.pk for x in resources]))
-    formats = PolyFormat.objects.filter(pk__in=format_pks)
+    formats = Format.objects.filter(pk__in=format_pks)
     formats.delete()
 
     # Apply triangle counts to all formats and resources.
 
     non_tri_roles = [1, 7]  # Original OBJ, BLOCKS
 
-    non_triangulated_formats = asset.polyformat_set.filter(role__in=non_tri_roles)
+    non_triangulated_formats = asset.format_set.filter(role__in=non_tri_roles)
     for format in non_triangulated_formats:
         format.triangle_count = data.objPolyCount
         format.save()
 
-    triangulated_formats = asset.polyformat_set.exclude(role__in=non_tri_roles)
+    triangulated_formats = asset.format_set.exclude(role__in=non_tri_roles)
     for format in triangulated_formats:
         format.triangle_count = data.triangulatedObjPolyCount
         format.save()

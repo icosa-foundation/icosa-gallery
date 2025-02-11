@@ -12,8 +12,8 @@
         </div>
     {% else %}
         <a href="{% if can_edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}" role="presentation">
-            <div class="sketchimage"
-                style="background-image: url('{{ asset.get_thumbnail_url }}');">
+            <div class="sketchimage">
+                <img src="{{ asset.get_thumbnail_url }}">
             </div>
         </a>
     {% endif %}

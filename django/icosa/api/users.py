@@ -15,7 +15,7 @@ from ninja.pagination import paginate
 from .authentication import AuthBearer
 from .schema import (
     AssetFilters,
-    AssetSchemaOut,
+    AssetSchema,
     FullUserSchema,
     PatchUserSchema,
     UserAssetFilters,
@@ -66,7 +66,7 @@ def update_user(
 @router.get(
     "/me/assets",
     auth=AuthBearer(),
-    response=List[AssetSchemaOut],
+    response=List[AssetSchema],
     **COMMON_ROUTER_SETTINGS,
 )
 @paginate(AssetPagination)
@@ -121,7 +121,7 @@ def get_me_assets(
         .exclude(ex_q)
         .distinct()
         .select_related("owner")
-        .prefetch_related("polyformat_set")
+        .prefetch_related("format_set")
         .prefetch_related("tags")
     )
     return assets
@@ -130,7 +130,7 @@ def get_me_assets(
 @router.get(
     "/me/likedassets",
     auth=AuthBearer(),
-    response=List[AssetSchemaOut],
+    response=List[AssetSchema],
     **COMMON_ROUTER_SETTINGS,
 )
 @paginate(AssetPagination)

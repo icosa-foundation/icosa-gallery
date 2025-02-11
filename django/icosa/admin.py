@@ -5,13 +5,13 @@ from icosa.models import (
     Asset,
     AssetOwner,
     DeviceCode,
+    Format,
     HiddenMediaFileLog,
     MastheadSection,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
-    PolyFormat,
-    PolyResource,
+    Resource,
     Tag,
 )
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
@@ -22,8 +22,8 @@ class TagAdmin(ImportExportModelAdmin, ExportActionMixin):
     search_fields = ("name",)
 
 
-@admin.register(PolyResource)
-class PolyResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
+@admin.register(Resource)
+class ResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "id",
         "asset",
@@ -43,9 +43,9 @@ class PolyResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
     ]
 
 
-class PolyFormatInline(admin.TabularInline):
+class FormatInline(admin.TabularInline):
     extra = 0
-    model = PolyFormat
+    model = Format
     show_change_link = True
 
     fields = (
@@ -55,9 +55,9 @@ class PolyFormatInline(admin.TabularInline):
     )
 
 
-class PolyResourceInline(admin.TabularInline):
+class ResourceInline(admin.TabularInline):
     extra = 0
-    model = PolyResource
+    model = Resource
 
     fields = (
         "is_root",
@@ -66,14 +66,14 @@ class PolyResourceInline(admin.TabularInline):
     )
 
 
-@admin.register(PolyFormat)
-class PolyFormatAdmin(ImportExportModelAdmin, ExportActionMixin):
+@admin.register(Format)
+class FormatAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "asset",
         "format_type",
     )
 
-    inlines = (PolyResourceInline,)
+    inlines = (ResourceInline,)
     list_filter = ("role",)
     raw_id_fields = [
         "asset",
@@ -166,7 +166,7 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
         form.instance.save()
 
     filter_horizontal = ("tags",)
-    inlines = (PolyFormatInline,)
+    inlines = (FormatInline,)
     raw_id_fields = ["owner"]
 
 

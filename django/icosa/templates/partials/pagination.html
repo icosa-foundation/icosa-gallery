@@ -1,18 +1,27 @@
+{% load paginator_tags %}
 {% if assets.paginator.num_pages > 1 %}
     <div class="paginator text-center">
         <span class="step-links">
             {% if assets.has_previous %}
-                <a href="?page=1{% if search_query %}&s={{ search_query }}{% endif %}">&laquo; first</a>
-                <a href="?page={{ assets.previous_page_number }}{% if search_query %}&s={{ search_query }}{% endif %}">previous</a>
+                <a class="btn btn-xs btn-secondary" href="?page={{ assets.previous_page_number }}{% if search_query %}&s={{ search_query }}{% endif %}"><span class="sr-only">previous page</span>&lt;</a>
             {% endif %}
 
-            <span class="current">
-                Page {{ assets.number }} of {{ assets.paginator.num_pages }}.
-            </span>
+            {% get_custom_elided_page_range paginator assets.number as page_range %}
+            {% for i in page_range %}
+                {% if assets.number == i %}
+                    <span class="btn btn-xs no-pointer">{{ i }}</span>
+                {% else %}
+                    {% if i == paginator.ELLIPSIS %}
+                        {{ paginator.ELLIPSIS }}
+                    {% else %}
+                        <a class="btn btn-xs btn-secondary" href="?page={{ i }}{% if search_query %}&s={{ search_query }}{% endif %}">{{ i }}</a>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
 
             {% if assets.has_next %}
-                <a href="?page={{ assets.next_page_number }}{% if search_query %}&s={{ search_query }}{% endif %}">next</a>
-                <a href="?page={{ assets.paginator.num_pages }}{% if search_query %}&s={{ search_query }}{% endif %}">last &raquo;</a>
+                <a class="btn btn-xs btn-secondary" href="?page={{ assets.next_page_number }}{% if search_query %}&s={{ search_query }}{% endif %}"><span class="sr-only">next page </span>&gt;</a>
             {% endif %}
         </span>
     </div>

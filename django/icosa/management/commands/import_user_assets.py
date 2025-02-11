@@ -3,19 +3,18 @@ import os
 import secrets
 from datetime import datetime
 
+from django.core.management.base import BaseCommand
 from icosa.helpers.file import is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
     CATEGORY_CHOICES,
     FORMAT_ROLE_CHOICES,
     Asset,
-    PolyFormat,
-    PolyResource,
+    Format,
+    Resource,
     Tag,
     User,
 )
-
-from django.core.management.base import BaseCommand
 
 IMPORT_SOURCE = "google_poly"
 
@@ -92,15 +91,13 @@ def update_or_create_asset(directory, data):
 def create_formats(directory, gltf2_data, formats_json, asset):
     done_thumbnail = False
     for format_json in formats_json:
-        format = PolyFormat.objects.create(
+        format = Format.objects.create(
             asset=asset,
             format_type=format_json["formatType"],
         )
         if format_json.get("formatComplexity", None) is not None:
             format_complexity_json = format_json["formatComplexity"]
-            format.triangle_count = format_complexity_json.get(
-                "triangleCount", None
-            )
+            format.triangle_count = format_complexity_json.get("triangleCount", None)
             format.lod_hint = format_complexity_json.get("lodHint", None)
             format.save()
 
@@ -122,7 +119,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
             "asset": asset,
             "contenttype": root_resource_json["contentType"],
         }
-        root_resource = PolyResource.objects.create(**root_resource_data)
+        root_resource = Resource.objects.create(**root_resource_data)
 
         role = EXTENSION_ROLE_MAP.get(extension)
         format.role = role
@@ -149,7 +146,6 @@ def create_formats(directory, gltf2_data, formats_json, asset):
 
         if format_json.get("resources", None) is not None:
             for resource_json in format_json["resources"]:
-
                 file_path = resource_json["relativePath"]
 
                 resource_data = {
@@ -159,11 +155,10 @@ def create_formats(directory, gltf2_data, formats_json, asset):
                     "asset": asset,
                     "contenttype": resource_json["contentType"],
                 }
-                PolyResource.objects.create(**resource_data)
+                Resource.objects.create(**resource_data)
 
 
 class Command(BaseCommand):
-
     help = "Imports poly json files from a local directory"
 
     def add_arguments(self, parser):

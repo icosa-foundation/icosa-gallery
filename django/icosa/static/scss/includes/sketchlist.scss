@@ -23,15 +23,20 @@
 
     .sketchimage {
       aspect-ratio: 8/5;
-      border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
       color: #ffffff;
-      background-size: cover;
-      background-position: 50% 50%;
       transition: opacity 300ms ease;
 
       &:hover {
         opacity: 0.8;
         text-decoration: none;
+      }
+
+      img {
+        border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 50%;
+        width: 100%;
       }
 
     }
@@ -67,6 +72,10 @@
 
     }
 
+    a:hover {
+      color: var(--color-base-light);
+      text-decoration: underline;
+    }
 
   }
 }

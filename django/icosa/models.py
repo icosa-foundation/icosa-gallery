@@ -97,28 +97,30 @@ LICENSE_CHOICES = (
     + [RESERVED_LICENSE]
 )
 
-CATEGORY_CHOICES = [
-    ("MISCELLANEOUS", "Miscellaneous"),
-    ("ANIMALS", "Animals & Pets"),
-    ("ARCHITECTURE", "Architecture"),
-    ("ART", "Art"),
-    ("CULTURE", "Culture & Humanity"),
-    ("EVENTS", "Current Events"),
-    ("FOOD", "Food & Drink"),
-    ("HISTORY", "History"),
-    ("HOME", "Furniture & Home"),
-    ("NATURE", "Nature"),
-    ("OBJECTS", "Objects"),
-    ("PEOPLE", "People & Characters"),
-    ("PLACES", "Places & Scenes"),
-    ("SCIENCE", "Science"),
-    ("SPORTS", "Sports & Fitness"),
-    ("TECH", "Tools & Technology"),
-    ("TRANSPORT", "Transport"),
-    ("TRAVEL", "Travel & Leisure"),
-]
 
-CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
+class Category(models.TextChoices):
+    MISCELLANEOUS = "MISCELLANEOUS", "Miscellaneous"
+    ANIMALS = "ANIMALS", "Animals & Pets"
+    ARCHITECTURE = "ARCHITECTURE", "Architecture"
+    ART = "ART", "Art"
+    CULTURE = "CULTURE", "Culture & Humanity"
+    EVENTS = "EVENTS", "Current Events"
+    FOOD = "FOOD", "Food & Drink"
+    HISTORY = "HISTORY", "History"
+    HOME = "HOME", "Furniture & Home"
+    NATURE = "NATURE", "Nature"
+    OBJECTS = "OBJECTS", "Objects"
+    PEOPLE = "PEOPLE", "People & Characters"
+    PLACES = "PLACES", "Places & Scenes"
+    SCIENCE = "SCIENCE", "Science"
+    SPORTS = "SPORTS", "Sports & Fitness"
+    TECH = "TECH", "Tools & Technology"
+    TRANSPORT = "TRANSPORT", "Transport"
+    TRAVEL = "TRAVEL", "Travel & Leisure"
+
+
+CATEGORY_LABELS = [x[0] for x in Category.choices]
+CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in Category.choices}
 
 
 WEB_UI_DOWNLOAD_COMPATIBLE = [
@@ -394,7 +396,7 @@ class Asset(models.Model):
         max_length=255,
         null=True,
         blank=True,
-        choices=CATEGORY_CHOICES,
+        choices=Category.choices,
     )
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)
@@ -446,11 +448,11 @@ class Asset(models.Model):
             # here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
-            obj_format = self.polyformat_set.filter(format_type="OBJ").first()
-            obj_resource = obj_format.polyresource_set.filter(
+            obj_format = self.format_set.filter(format_type="OBJ").first()
+            obj_resource = obj_format.resource_set.filter(
                 is_root=True,
             ).first()
-            mtl_resource = obj_format.polyresource_set.filter(
+            mtl_resource = obj_format.resource_set.filter(
                 is_root=False,
             ).first()
 
@@ -463,7 +465,7 @@ class Asset(models.Model):
                 }
 
         # Return early if we can grab a Polygone resource first
-        polygone_gltf = self.polyresource_set.filter(
+        polygone_gltf = self.resource_set.filter(
             is_root=True, format__role__in=[1002, 1003]
         ).first()
         if polygone_gltf:
@@ -474,9 +476,7 @@ class Asset(models.Model):
             }
 
         # Return early with either of the role-based formats we care about.
-        updated_gltf = self.polyresource_set.filter(
-            is_root=True, format__role=30
-        ).first()
+        updated_gltf = self.resource_set.filter(is_root=True, format__role=30).first()
         if updated_gltf:
             return {
                 "format": updated_gltf.format.format_type,
@@ -484,9 +484,7 @@ class Asset(models.Model):
                 "resource": updated_gltf,
             }
 
-        original_gltf = self.polyresource_set.filter(
-            is_root=True, format__role=12
-        ).first()
+        original_gltf = self.resource_set.filter(is_root=True, format__role=12).first()
         if original_gltf:
             return {
                 "format": original_gltf.format.format_type,
@@ -497,7 +495,7 @@ class Asset(models.Model):
         # If we didn't get any role-based formats, find the remaining formats
         # we care about and choose the "best" one of those.
         formats = {}
-        for format in self.polyformat_set.all():
+        for format in self.format_set.all():
             root = format.root_resource
             formats[format.format_type] = {
                 "format": format.format_type,
@@ -529,17 +527,14 @@ class Asset(models.Model):
 
     @property
     def has_viewable_format_types(self):
-        return (
-            self.polyformat_set.filter(format_type__in=VIEWABLE_FORMAT_TYPES).count()
-            > 0
-        )
+        return self.format_set.filter(format_type__in=VIEWABLE_FORMAT_TYPES).count() > 0
 
     @property
     def has_cors_allowed(self):
         # If this resource has a file managed by Django storage, then it will
         # be viewable.
         if (
-            self.polyresource_set.filter(
+            self.resource_set.filter(
                 file__isnull=False,
             ).count()
             > 0
@@ -560,7 +555,7 @@ class Asset(models.Model):
             len(
                 [
                     x.external_url
-                    for x in self.polyresource_set.filter(
+                    for x in self.resource_set.filter(
                         external_url__isnull=False,
                     )
                     if x.external_url.startswith(allowed_sources)
@@ -573,9 +568,7 @@ class Asset(models.Model):
     def download_url(self):
         if self.license == ALL_RIGHTS_RESERVED or not self.license:
             return None
-        updated_gltf = self.polyresource_set.filter(
-            is_root=True, format__role=30
-        ).first()
+        updated_gltf = self.resource_set.filter(is_root=True, format__role=30).first()
 
         preferred_format = self.preferred_viewer_format
 
@@ -660,19 +653,19 @@ class Asset(models.Model):
     def denorm_format_types(self):
         if not self.pk:
             return
-        self.has_tilt = self.polyformat_set.filter(format_type="TILT").exists()
-        self.has_blocks = self.polyformat_set.filter(format_type="BLOCKS").exists()
-        self.has_gltf1 = self.polyformat_set.filter(format_type="GLTF").exists()
-        self.has_gltf2 = self.polyformat_set.filter(format_type="GLTF2").exists()
-        self.has_gltf_any = self.polyformat_set.filter(
+        self.has_tilt = self.format_set.filter(format_type="TILT").exists()
+        self.has_blocks = self.format_set.filter(format_type="BLOCKS").exists()
+        self.has_gltf1 = self.format_set.filter(format_type="GLTF").exists()
+        self.has_gltf2 = self.format_set.filter(format_type="GLTF2").exists()
+        self.has_gltf_any = self.format_set.filter(
             format_type__in=["GLTF", "GLTF2"]
         ).exists()
-        self.has_fbx = self.polyformat_set.filter(format_type="FBX").exists()
-        self.has_obj = self.polyformat_set.filter(format_type="OBJ").exists()
+        self.has_fbx = self.format_set.filter(format_type="FBX").exists()
+        self.has_obj = self.format_set.filter(format_type="OBJ").exists()
 
     def get_triangle_count(self):
         formats = {}
-        for format in self.polyformat_set.filter(triangle_count__gt=0):
+        for format in self.format_set.filter(triangle_count__gt=0):
             formats.setdefault(format.role, format.triangle_count)
         if POLYGONE_GLTF_FORMAT in formats.keys():
             return formats[POLYGONE_GLTF_FORMAT]
@@ -713,7 +706,7 @@ class Asset(models.Model):
         file_list = []
         if self.thumbnail:
             file_list.append(self.thumbnail.file.name)
-        for resource in self.polyresource_set.all():
+        for resource in self.resource_set.all():
             if resource.file:
                 file_list.append(resource.file.name)
         return file_list
@@ -757,7 +750,7 @@ class Asset(models.Model):
             "Updated glTF File": "GLTF File",
         }
 
-        for format in self.polyformat_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
+        for format in self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
             if format.archive_url:
                 resource_data = {"archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"}
             else:
@@ -765,7 +758,7 @@ class Asset(models.Model):
                 # file.
                 query = Q(external_url__isnull=False) & ~Q(external_url="")
                 query |= Q(file__isnull=False)
-                resources = format.polyresource_set.filter(query)
+                resources = format.resource_set.filter(query)
                 if format.role == POLYGONE_GLTF_FORMAT:
                     resource_data = {
                         "files_to_zip": [
@@ -789,10 +782,8 @@ class Asset(models.Model):
                     # list of files as if the role was 1003 using our suffixed
                     # upload.
                     try:
-                        override_format = self.polyformat_set.get(
-                            role=POLYGONE_GLTF_FORMAT
-                        )
-                        override_resources = override_format.polyresource_set.all()
+                        override_format = self.format_set.get(role=POLYGONE_GLTF_FORMAT)
+                        override_resources = override_format.resource_set.all()
                         resource_data = {
                             "files_to_zip": [
                                 f"{STORAGE_PREFIX}{suffix(x.file.name)}"
@@ -802,8 +793,8 @@ class Asset(models.Model):
                             "role": format.role,
                         }
                     except (
-                        PolyFormat.DoesNotExist,
-                        PolyFormat.MultipleObjectsReturned,
+                        Format.DoesNotExist,
+                        Format.MultipleObjectsReturned,
                     ):
                         pass
                 elif format.role == ORIGINAL_GLTF_FORMAT:
@@ -878,7 +869,26 @@ class Asset(models.Model):
                     "is_viewer_compatible",
                     "visibility",
                 ]
-            )
+            ),
+            models.Index(
+                fields=[
+                    "likes",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "owner",
+                ]
+            ),
+            # Index for paginator
+            models.Index(
+                fields=[
+                    "is_viewer_compatible",
+                    "last_reported_time",
+                    "visibility",
+                    "license",
+                ]
+            ),
         ]
 
 
@@ -908,7 +918,7 @@ def format_upload_path(instance, filename):
     return f"{root}/{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
 
 
-class PolyFormat(models.Model):
+class Format(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
     archive_url = models.CharField(
@@ -922,24 +932,34 @@ class PolyFormat(models.Model):
         choices=FORMAT_ROLE_CHOICES,
     )
     root_resource = models.ForeignKey(
-        "PolyResource",
+        "Resource",
         null=True,
         blank=True,
+        related_name="root_formats",
         on_delete=models.SET_NULL,
     )
 
     def save(self, *args, **kwargs):
         if self._state.adding is False:
             # Only denorm fields when updating an existing model
-            resource = self.polyresource_set.filter(is_root=True).first()
+            resource = self.resource_set.filter(is_root=True).first()
             self.root_resource = resource
         super().save(*args, **kwargs)
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "role",
+                ]
+            )
+        ]
 
-class PolyResource(models.Model):
+
+class Resource(models.Model):
     is_root = models.BooleanField(default=False)
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
-    format = models.ForeignKey(PolyFormat, on_delete=models.CASCADE)
+    format = models.ForeignKey(Format, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
         null=True,

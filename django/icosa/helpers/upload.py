@@ -24,8 +24,8 @@ from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
     AssetOwner,
-    PolyFormat,
-    PolyResource,
+    Format,
+    Resource,
 )
 from ninja import File
 from ninja.files import UploadedFile
@@ -193,7 +193,7 @@ def make_formats(mainfile, sub_files, asset, role=None):
         "asset": asset,
         "role": role,
     }
-    format = PolyFormat.objects.create(**format_data)
+    format = Format.objects.create(**format_data)
 
     resource_data = {
         "file": file,
@@ -202,7 +202,7 @@ def make_formats(mainfile, sub_files, asset, role=None):
         "format": format,
         "contenttype": get_content_type(name),
     }
-    PolyResource.objects.create(**resource_data)
+    Resource.objects.create(**resource_data)
 
     for subfile in sub_files:
         sub_resource_data = {
@@ -212,7 +212,7 @@ def make_formats(mainfile, sub_files, asset, role=None):
             "asset": asset,
             "contenttype": get_content_type(subfile.file.name),
         }
-        PolyResource.objects.create(**sub_resource_data)
+        Resource.objects.create(**sub_resource_data)
 
     format.save()  # Triggers denorming on Format
 

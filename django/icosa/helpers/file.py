@@ -24,8 +24,8 @@ from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
     AssetOwner,
-    PolyFormat,
-    PolyResource,
+    Format,
+    Resource,
 )
 from ninja import File
 from ninja.errors import HttpError
@@ -183,7 +183,7 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
         "format_type": format_type,
         "asset": asset,
     }
-    format = PolyFormat.objects.create(**format_data)
+    format = Format.objects.create(**format_data)
 
     resource_data = {
         "file": file,
@@ -192,7 +192,7 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
         "format": format,
         "contenttype": get_content_type(name),
     }
-    PolyResource.objects.create(**resource_data)
+    Resource.objects.create(**resource_data)
 
     for subfile in sub_files:
         # Horrendous check for supposedly compatible subfiles. can
@@ -218,7 +218,7 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
                 "asset": asset,
                 "contenttype": get_content_type(subfile.file.name),
             }
-            PolyResource.objects.create(**sub_resource_data)
+            Resource.objects.create(**sub_resource_data)
 
 
 def add_thumbnail_to_asset(thumbnail, asset):
@@ -265,20 +265,20 @@ def get_blocks_role_id(f: UploadedFormat) -> Optional[int]:
     return get_blocks_role_id_from_file(name, filetype)
 
 
-def get_obj_non_triangulated(asset: Asset) -> Optional[PolyResource]:
-    return asset.polyresource_set.filter(
+def get_obj_non_triangulated(asset: Asset) -> Optional[Resource]:
+    return asset.resource_set.filter(
         is_root=True, format__role=ORIGINAL_OBJ_FORMAT
     ).first()
 
 
-def get_obj_triangulated(asset: Asset) -> Optional[PolyResource]:
-    return asset.polyresource_set.filter(
+def get_obj_triangulated(asset: Asset) -> Optional[Resource]:
+    return asset.resource_set.filter(
         is_root=True, format__role=ORIGINAL_TRIANGULATED_OBJ_FORMAT
     ).first()
 
 
-def get_gltf(asset: Asset) -> Optional[PolyResource]:
-    return asset.polyresource_set.filter(
+def get_gltf(asset: Asset) -> Optional[Resource]:
+    return asset.resource_set.filter(
         is_root=True, format__role=ORIGINAL_GLTF_FORMAT
     ).first()
 
@@ -288,7 +288,7 @@ def process_normally(asset: Asset, f: UploadedFormat):
         "format_type": f.filetype,
         "asset": asset,
     }
-    format = PolyFormat.objects.create(**format_data)
+    format = Format.objects.create(**format_data)
     resource_data = {
         "file": f.file,
         "format": format,
@@ -301,7 +301,7 @@ def process_normally(asset: Asset, f: UploadedFormat):
         format.role = resource_role
         format.save()
 
-    PolyResource.objects.create(**resource_data)
+    Resource.objects.create(**resource_data)
 
 
 def process_mtl(asset: Asset, f: UploadedFormat):
@@ -321,22 +321,22 @@ def process_mtl(asset: Asset, f: UploadedFormat):
         "contenttype": "text/plain",
     }
     if obj_non_triangulated is None:
-        format_non_triangulated = PolyFormat.objects.create(
+        format_non_triangulated = Format.objects.create(
             **format_data,
             role=ORIGINAL_OBJ_FORMAT,
         )
-        obj_non_triangulated = PolyResource.objects.create(
+        obj_non_triangulated = Resource.objects.create(
             format=format_non_triangulated, **resource_data
         )
     else:
         format_non_triangulated = obj_non_triangulated.format
 
     if obj_triangulated is None:
-        format_triangulated = PolyFormat.objects.create(
+        format_triangulated = Format.objects.create(
             **format_data,
             role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
         )
-        obj_triangulated = PolyResource.objects.create(
+        obj_triangulated = Resource.objects.create(
             format=format_triangulated, **resource_data
         )
     else:
@@ -349,8 +349,8 @@ def process_mtl(asset: Asset, f: UploadedFormat):
         "asset": asset,
         "contenttype": get_content_type(f.file.name),
     }
-    PolyResource.objects.create(format=format_non_triangulated, **resource_data)
-    PolyResource.objects.create(format=format_triangulated, **resource_data)
+    Resource.objects.create(format=format_non_triangulated, **resource_data)
+    Resource.objects.create(format=format_triangulated, **resource_data)
 
 
 def process_bin(asset: Asset, f: UploadedFormat):
@@ -367,7 +367,7 @@ def process_bin(asset: Asset, f: UploadedFormat):
             "format_type": format_type,
             "asset": asset,
         }
-        format = PolyFormat.objects.create(
+        format = Format.objects.create(
             **format_data,
             role=ORIGINAL_GLTF_FORMAT,
         )
@@ -377,7 +377,7 @@ def process_bin(asset: Asset, f: UploadedFormat):
             "asset": asset,
             "contenttype": "application/gltf+json",
         }
-        gltf = PolyResource.objects.create(format=format, **resource_data)
+        gltf = Resource.objects.create(format=format, **resource_data)
     else:
         format = gltf.format
     # Finally, create the duplicate BIN resource and assign it to the format.
@@ -388,11 +388,11 @@ def process_bin(asset: Asset, f: UploadedFormat):
         "format": format,
         "contenttype": get_content_type(f.file.name),
     }
-    PolyResource.objects.create(**resource_data)
+    Resource.objects.create(**resource_data)
 
 
 def process_root(asset: Asset, f: UploadedFormat):
-    root = asset.polyresource_set.filter(
+    root = asset.resource_set.filter(
         is_root=True, format__role=get_blocks_role_id(f), file=""
     ).first()
     if root is None:
@@ -418,7 +418,7 @@ def upload_blocks_format(
         raise HttpError(422, "Invalid file.")
 
     filetype = f.filetype
-    existing_resource = asset.polyresource_set.filter(
+    existing_resource = asset.resource_set.filter(
         format__role=get_blocks_role_id(f), file__endswith=f.file.name
     ).first()
 

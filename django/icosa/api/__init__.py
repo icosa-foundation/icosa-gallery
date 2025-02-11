@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 from django.db.models import Q
 from icosa.api.authentication import AuthBearer
 from icosa.api.exceptions import FilterException
+from icosa.api.schema import FormatFilter
 from ninja import Schema
 from ninja.pagination import PaginationBase
 
@@ -34,7 +35,13 @@ class AssetPagination(PaginationBase):
 
     items_attribute: str = "assets"
 
-    def paginate_queryset(self, queryset, pagination: Input, request, **params):
+    def paginate_queryset(
+        self,
+        queryset,
+        pagination: Input,
+        request,
+        **params,
+    ):
         try:
             page_size = (
                 int(pagination.pageSize)
@@ -58,7 +65,7 @@ class AssetPagination(PaginationBase):
 
         offset = (page_token - 1) * page_size
         count = self._items_count(queryset)
-        if type(queryset) == list:
+        if type(queryset) is list:
             queryset_count = len(queryset)
         else:
             queryset_count = queryset.count()
@@ -76,30 +83,19 @@ class AssetPagination(PaginationBase):
 
 
 def build_format_q(formats: List) -> Q:
-    FILTERABLE_FORMATS = [
-        "TILT",
-        "BLOCKS",
-        "GLTF",
-        "GLTF1",
-        "GLTF2",
-        "OBJ",
-        "FBX",
-    ]
     q = Q()
     valid_q = False
-    for format in FILTERABLE_FORMATS:
-        if format in formats:
-            # Reliant on the fact that each of FILTERABLE_FORMATS has an
-            # associated has_<format> field in the db.
-            q &= Q(**{f"has_{format.lower()}": True})
-            valid_q = True
+    for format in formats:
+        # Reliant on the fact that each of FILTERABLE_FORMATS has an
+        # associated has_<format> field in the db.
+        q &= Q(**{f"has_{format.value.lower()}": True})
+        valid_q = True
 
     if valid_q:
         return q
     else:
-        raise FilterException(
-            f"Format filter not one of {', '.join(FILTERABLE_FORMATS)}"
-        )
+        choices = ", ".join([x.value for x in FormatFilter])
+        raise FilterException(f"Format filter not one of {choices}")
 
 
 def get_django_user_from_auth_bearer(request):

@@ -1,14 +1,36 @@
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, List, Literal, Optional
+from typing import List, Literal, Optional
 
-from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset
+from django.db.models import Q
+from django.urls import reverse_lazy
+from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
 
-from django.db.models import Q
-from django.urls import reverse_lazy
+
+class Complexity(Enum):
+    COMPLEX = "COMPLEX"
+    MEDIUM = "MEDIUM"
+    SIMPLE = "SIMPLE"
+
+
+class FormatFilter(Enum):
+    TILT = "TILT"
+    BLOCKS = "BLOCKS"
+    GLTF = "GLTF"
+    GLTF1 = "GLTF1"
+    GLTF2 = "GLTF2"
+    OBJ = "OBJ"
+    FBX = "FBX"
+
+
+class Order(Enum):
+    NEWEST = "NEWEST"
+    OLDEST = "OLDEST"
+    BEST = "BEST"
+    TRIANGLE_COUNT = "TRIANGLE_COUNT"
 
 
 class LoginToken(Schema):
@@ -70,11 +92,11 @@ class AssetFormat(Schema):
 
     @staticmethod
     def resolve_root(obj):
-        return obj.polyresource_set.filter(is_root=True).first()
+        return obj.root_resource
 
     @staticmethod
     def resolve_resources(obj):
-        return obj.polyresource_set.filter(is_root=False)
+        return obj.resource_set.filter(is_root=False)
 
     @staticmethod
     def resolve_formatType(obj):
@@ -89,7 +111,7 @@ class AssetFormat(Schema):
         return format_complexity
 
 
-class _DBAsset(ModelSchema):
+class AssetSchema(ModelSchema):
     authorId: str = Field(None, alias=("owner.url"))
     authorName: str
     # authorUrl: str # TODO create API endpoints for user
@@ -106,9 +128,7 @@ class _DBAsset(ModelSchema):
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     thumbnail: Optional[Thumbnail]
     triangleCount: int = Field(..., alias=("triangle_count"))
-    presentationParams: Optional[dict] = Field(
-        None, alias=("presentation_params")
-    )
+    presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
     license: Optional[str] = None
 
     class Config:
@@ -141,8 +161,8 @@ class _DBAsset(ModelSchema):
     def resolve_formats(obj, context):
         return [
             f
-            for f in obj.polyformat_set.filter(
-                role__in=API_DOWNLOAD_COMPATIBLE
+            for f in obj.format_set.filter(
+                role__in=API_DOWNLOAD_COMPATIBLE,
             )
         ]
 
@@ -188,16 +208,6 @@ class _DBAsset(ModelSchema):
     #     return params
 
 
-class AssetSchemaIn(_DBAsset):
-    pass
-
-
-class AssetSchemaOut(_DBAsset):
-    # TODO: If this doesn't differ from AssetSchemaIn, we should probably
-    # remove inheritence.
-    pass
-
-
 class AssetPatchData(Schema):
     name: Optional[str]
     url: Optional[str]
@@ -220,12 +230,8 @@ class OembedOut(Schema):
     type: Literal["rich"]
     version: Literal["1.0"]
     title: Optional[str] = None  # A text title, describing the resource.
-    author_name: Optional[str] = (
-        None  # The name of the author/owner of the resource.
-    )
-    author_url: Optional[str] = (
-        None  # A URL for the author/owner of the resource.
-    )
+    author_name: Optional[str] = None  # The name of the author/owner of the resource.
+    author_url: Optional[str] = None  # A URL for the author/owner of the resource.
     provider_name: Optional[str] = None  # The name of the resource provider.
     provider_url: Optional[str] = None  # The url of the resource provider.
     cache_age: Optional[str] = (
@@ -252,22 +258,16 @@ class OembedOut(Schema):
     height: int
 
 
-class Complexity(Enum):
-    COMPLEX = "COMPLEX"
-    MEDIUM = "MEDIUM"
-    SIMPLE = "SIMPLE"
-
-
 class FilterBase(Schema):
-    category: Optional[str] = None
+    category: Optional[Category] = None
     curated: bool = False
-    format: List[str] = Field(None, alias="format")
+    format: Optional[List[FormatFilter]] = None
     keywords: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
     tag: List[str] = Field(None, alias="tag")
-    orderBy: Optional[str] = None
-    order_by: Optional[str] = None
+    orderBy: Optional[Order] = None
+    order_by: Optional[Order] = None
     maxComplexity: Optional[Complexity] = None
     triangleCountMin: Optional[int] = None
     triangleCountMax: Optional[int] = None
