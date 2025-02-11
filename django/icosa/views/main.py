@@ -40,6 +40,7 @@ from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ASSET_STATE_BARE,
     ASSET_STATE_UPLOADING,
+    CATEGORY_LABEL_MAP,
     CATEGORY_LABELS,
     PRIVATE,
     PUBLIC,
@@ -250,7 +251,7 @@ def category(request, category):
         category=category_label,
         curated=True,
     )
-    category_name = settings.ASSET_CATEGORY_LABEL_MAP.get(category)
+    category_name = CATEGORY_LABEL_MAP.get(category)
     return landing_page(
         request,
         assets,
