@@ -10,6 +10,22 @@ from ninja.errors import HttpError
 from pydantic import EmailStr
 
 
+class Complexity(Enum):
+    COMPLEX = "COMPLEX"
+    MEDIUM = "MEDIUM"
+    SIMPLE = "SIMPLE"
+
+
+class FormatFilter(Enum):
+    TILT = "TILT"
+    BLOCKS = "BLOCKS"
+    GLTF = "GLTF"
+    GLTF1 = "GLTF1"
+    GLTF2 = "GLTF2"
+    OBJ = "OBJ"
+    FBX = "FBX"
+
+
 class LoginToken(Schema):
     access_token: str
     token_type: str
@@ -233,22 +249,6 @@ class OembedOut(Schema):
     html: str
     width: int
     height: int
-
-
-class Complexity(Enum):
-    COMPLEX = "COMPLEX"
-    MEDIUM = "MEDIUM"
-    SIMPLE = "SIMPLE"
-
-
-class FormatFilter(Enum):
-    TILT = "TILT"
-    BLOCKS = "BLOCKS"
-    GLTF = "GLTF"
-    GLTF1 = "GLTF1"
-    GLTF2 = "GLTF2"
-    OBJ = "OBJ"
-    FBX = "FBX"
 
 
 class FilterBase(Schema):
