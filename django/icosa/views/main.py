@@ -98,7 +98,7 @@ def landing_page(
         is_viewer_compatible=True,
         curated=True,
         last_reported_time__isnull=True,
-    ),
+    ).select_related("owner"),
     show_masthead=True,
     heading=None,
     heading_link=None,
