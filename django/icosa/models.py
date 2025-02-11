@@ -419,6 +419,7 @@ class Asset(models.Model):
     triangle_count = models.PositiveIntegerField(default=0)
     search_text = models.TextField(null=True, blank=True)
     is_viewer_compatible = models.BooleanField(default=False)
+    last_liked_time = models.DateTimeField(null=True, blank=True)
 
     has_tilt = models.BooleanField(default=False)
     has_blocks = models.BooleanField(default=False)
@@ -690,6 +691,11 @@ class Asset(models.Model):
     def denorm_triangle_count(self):
         self.triangle_count = self.get_triangle_count()
 
+    def denorm_liked_time(self):
+        last_liked = self.ownerassetlike_set.order_by("-date_liked").first()
+        if last_liked is not None:
+            self.last_liked_time = last_liked.date_liked
+
     def get_updated_rank(self):
         rank = (self.likes + self.historical_likes + 1) * LIKES_WEIGHT
         rank += (self.views + self.historical_views) * VIEWS_WEIGHT
@@ -860,6 +866,7 @@ class Asset(models.Model):
             self.is_viewer_compatible = self.calc_is_viewable()
             self.denorm_format_types()
             self.denorm_triangle_count()
+            self.denorm_liked_time()
         super().save(*args, **kwargs)
 
     class Meta:

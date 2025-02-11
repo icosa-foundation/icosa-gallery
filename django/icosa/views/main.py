@@ -792,6 +792,7 @@ def toggle_like(request):
         owner.likes.remove(asset)
     else:
         owner.likes.add(asset)
+        asset.save()  # Triggers denorming of asset liked time.
     template = "main/tags/like_button.html"
     context = {
         "is_liked": not is_liked,
