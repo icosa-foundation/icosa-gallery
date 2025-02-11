@@ -55,9 +55,9 @@ POLY_USER_URL = "4aEd8rQgKu2"
 
 # TODO(james): not sure how to decide on a decent rank. As of writing, our
 # top-ranked asset is at 80459.
-HERO_TOP_RANK = 10000
-HERO_CACHE_SECONDS = 10
-HERO_CACHE_PREFIX = "heroes"
+MASTHEAD_TOP_RANK = 10000
+MASTHEAD_CACHE_SECONDS = 10
+MASTHEAD_CACHE_PREFIX = "mastheads"
 
 
 def user_can_view_asset(
@@ -99,7 +99,7 @@ def landing_page(
         curated=True,
         last_reported_time__isnull=True,
     ),
-    show_hero=True,
+    show_masthead=True,
     heading=None,
     heading_link=None,
     is_explore_heading=False,
@@ -107,7 +107,7 @@ def landing_page(
     # Inspects this landing page function's caller's name so we don't have
     # to worry about passing in unique values for each landing page's cache
     # key. Neglecting to use - or repeating another - cache key has the subtle
-    # effect of showing unrelated heroes.
+    # effect of showing unrelated mastheads.
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
     landing_page_fn_name = calframe[1][3]
@@ -126,38 +126,40 @@ def landing_page(
     except ValueError:
         page_number = 0
 
-    # Only show the hero if we're on page 1 of a lister.
-    # If show_hero is false, keep it that way.
-    if show_hero is True and (page_number is None or page_number < 2):
-        # The heroes query is slow, but we still want a rotating list on every
-        # page load. Cache a list of heroes and choose one at random each time.
-        cache_key = f"{HERO_CACHE_PREFIX}-{landing_page_fn_name}"
+    # Only show the masthead if we're on page 1 of a lister.
+    # If show_masthead is false, keep it that way.
+    if show_masthead is True and (page_number is None or page_number < 2):
+        # The mastheads query is slow, but we still want a rotating list on
+        # every page load. Cache a list of mastheads and choose one at random
+        # each time.
+        cache_key = f"{MASTHEAD_CACHE_PREFIX}-{landing_page_fn_name}"
         if cache.get(cache_key):
-            heroes = cache.get(cache_key)
+            mastheads = cache.get(cache_key)
         else:
-            heroes = list(MastheadSection.objects.all())
+            mastheads = list(MastheadSection.objects.all())
 
             cache.set(
-                f"{HERO_CACHE_PREFIX}-{landing_page_fn_name}",
-                heroes,
-                HERO_CACHE_SECONDS,
+                f"{MASTHEAD_CACHE_PREFIX}-{landing_page_fn_name}",
+                mastheads,
+                MASTHEAD_CACHE_SECONDS,
             )
     else:
-        heroes = []
-    hero = random.choice(heroes) if heroes else None
+        mastheads = []
+    masthead = random.choice(mastheads) if mastheads else None
 
-    # Our cached hero might have been made private since caching it. This query
-    # is still quicker than filtering all possible heroes by visibility and
-    # should only result in a missing hero on rare occasions.
-    if hero is not None and not hero.visibility == PUBLIC:
-        hero = None
+    # Our cached masthead might have been made private since caching it.
+    # This query is still quicker than filtering all possible mastheads
+    # by visibility and should only result in a missing masthead on rare
+    # occasions.
+    if masthead is not None and not masthead.visibility == PUBLIC:
+        masthead = None
 
     paginator = Paginator(assets.order_by("-rank"), settings.PAGINATION_PER_PAGE)
     assets = paginator.get_page(page_number)
     page_title = f"Exploring {heading}" if is_explore_heading else heading
     context = {
         "assets": assets,
-        "hero": hero,
+        "masthead": masthead,
         "page_number": page_number,
         "heading": heading,
         "heading_link": heading_link,
@@ -191,7 +193,7 @@ def home_openbrush(request):
         heading="Open Brush",
         heading_link="https://openbrush.app",
         is_explore_heading=True,
-        show_hero=False,
+        show_masthead=False,
     )
 
 
@@ -209,7 +211,7 @@ def home_blocks(request):
         heading="Open Blocks",
         heading_link="https://openblocks.app",
         is_explore_heading=True,
-        show_hero=True,
+        show_masthead=True,
     )
 
 
@@ -234,7 +236,7 @@ def home_other(request):
     return landing_page(
         request,
         assets,
-        show_hero=True,
+        show_masthead=True,
         heading="""stuff not on /blocks or /openbrush""",
     )
 
@@ -252,7 +254,7 @@ def category(request, category):
     return landing_page(
         request,
         assets,
-        show_hero=False,
+        show_masthead=False,
         heading=f"Exploring: {category_name}",
     )
 
