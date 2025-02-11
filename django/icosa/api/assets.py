@@ -37,6 +37,7 @@ from .schema import (
     AssetFilters,
     AssetFinalizeData,
     AssetSchema,
+    Order,
     UploadJobSchemaOut,
     filter_complexity,
     filter_license,
@@ -362,14 +363,14 @@ def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
     )
 
 
-def sort_assets(key: str, assets: QuerySet[Asset]) -> QuerySet[Asset]:
-    if key == "NEWEST":
+def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
+    if key.value == "NEWEST":
         assets = assets.order_by("-create_time")
-    elif key == "OLDEST":
+    elif key.value == "OLDEST":
         assets = assets.order_by("create_time")
-    elif key == "BEST":
+    elif key.value == "BEST":
         assets = assets.order_by("-rank")
-    elif key == "TRIANGLECOUNT":
+    elif key.value == "TRIANGLECOUNT":
         assets = assets.order_by("-triangle_count")
     else:
         pass

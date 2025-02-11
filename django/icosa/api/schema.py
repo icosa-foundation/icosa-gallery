@@ -26,6 +26,13 @@ class FormatFilter(Enum):
     FBX = "FBX"
 
 
+class Order(Enum):
+    NEWEST = "NEWEST"
+    OLDEST = "OLDEST"
+    BEST = "BEST"
+    TRIANGLE_COUNT = "TRIANGLE_COUNT"
+
+
 class LoginToken(Schema):
     access_token: str
     token_type: str
@@ -259,8 +266,8 @@ class FilterBase(Schema):
     name: Optional[str] = None
     description: Optional[str] = None
     tag: List[str] = Field(None, alias="tag")
-    orderBy: Optional[str] = None
-    order_by: Optional[str] = None
+    orderBy: Optional[Order] = None
+    order_by: Optional[Order] = None
     maxComplexity: Optional[Complexity] = None
     triangleCountMin: Optional[int] = None
     triangleCountMax: Optional[int] = None
