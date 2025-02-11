@@ -868,7 +868,26 @@ class Asset(models.Model):
                     "is_viewer_compatible",
                     "visibility",
                 ]
-            )
+            ),
+            models.Index(
+                fields=[
+                    "likes",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "owner",
+                ]
+            ),
+            # Index for paginator
+            models.Index(
+                fields=[
+                    "is_viewer_compatible",
+                    "last_reported_time",
+                    "visibility",
+                    "license",
+                ]
+            ),
         ]
 
 
