@@ -128,8 +128,7 @@ def landing_page(
 
     # Only show the hero if we're on page 1 of a lister.
     # If show_hero is false, keep it that way.
-    show_hero = show_hero is True and (page_number is None or page_number < 2)
-    if show_hero is True:
+    if show_hero is True and (page_number is None or page_number < 2):
         # The heroes query is slow, but we still want a rotating list on every
         # page load. Cache a list of heroes and choose one at random each time.
         cache_key = f"{HERO_CACHE_PREFIX}-{landing_page_fn_name}"
