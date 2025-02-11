@@ -166,6 +166,7 @@ def landing_page(
         "heading_link": heading_link,
         "is_explore_heading": is_explore_heading,
         "page_title": page_title,
+        "paginator": paginator,
     }
     return render(
         request,
@@ -309,6 +310,7 @@ def uploads(request):
         "assets": assets,
         "form": form,
         "page_title": "My Uploads",
+        "paginator": paginator,
     }
     return render(
         request,
@@ -340,6 +342,7 @@ def user_show(request, user_url):
         "user": owner,
         "assets": assets,
         "page_title": owner.displayname,
+        "paginator": paginator,
     }
     return render(
         request,
@@ -365,6 +368,7 @@ def my_likes(request):
         "user": owner,
         "assets": assets,
         "page_title": "My likes",
+        "paginator": paginator,
     }
     return render(
         request,
@@ -758,6 +762,7 @@ def search(request):
         "result_count": asset_objs.count(),
         "search_query": query,
         "page_title": f"Search for {query}",
+        "paginator": paginator,
     }
     return render(
         request,
