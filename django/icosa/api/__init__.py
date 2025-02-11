@@ -35,7 +35,13 @@ class AssetPagination(PaginationBase):
 
     items_attribute: str = "assets"
 
-    def paginate_queryset(self, queryset, pagination: Input, request, **params):
+    def paginate_queryset(
+        self,
+        queryset,
+        pagination: Input,
+        request,
+        **params,
+    ):
         try:
             page_size = (
                 int(pagination.pageSize)
@@ -59,7 +65,7 @@ class AssetPagination(PaginationBase):
 
         offset = (page_token - 1) * page_size
         count = self._items_count(queryset)
-        if type(queryset) == list:
+        if type(queryset) is list:
             queryset_count = len(queryset)
         else:
             queryset_count = queryset.count()
