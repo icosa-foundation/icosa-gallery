@@ -31,6 +31,7 @@ class Order(Enum):
     OLDEST = "OLDEST"
     BEST = "BEST"
     TRIANGLE_COUNT = "TRIANGLE_COUNT"
+    LIKED_TIME = "LIKED_TIME"
 
 
 class LoginToken(Schema):

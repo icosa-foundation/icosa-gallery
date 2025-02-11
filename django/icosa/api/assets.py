@@ -5,7 +5,7 @@ from typing import List, NoReturn, Optional
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
@@ -372,6 +372,8 @@ def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
         assets = assets.order_by("-rank")
     elif key.value == "TRIANGLECOUNT":
         assets = assets.order_by("-triangle_count")
+    elif key.value == "LIKED_TIME":
+        assets = assets.order_by(F("last_liked_time").desc(nulls_last=True))
     else:
         pass
     return assets
