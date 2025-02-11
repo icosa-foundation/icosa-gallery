@@ -241,10 +241,20 @@ class Complexity(Enum):
     SIMPLE = "SIMPLE"
 
 
+class FormatFilter(Enum):
+    TILT = "TILT"
+    BLOCKS = "BLOCKS"
+    GLTF = "GLTF"
+    GLTF1 = "GLTF1"
+    GLTF2 = "GLTF2"
+    OBJ = "OBJ"
+    FBX = "FBX"
+
+
 class FilterBase(Schema):
     category: Optional[Category] = None
     curated: bool = False
-    format: List[str] = Field(None, alias="format")
+    format: Optional[List[FormatFilter]] = None
     keywords: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
