@@ -111,6 +111,11 @@ urlpatterns = [
         name="asset_downloads",
     ),
     path(
+        "log_download/<str:asset_url>",
+        main_views.asset_log_download,
+        name="asset_log_download",
+    ),
+    path(
         "status/<str:asset_url>",
         main_views.asset_status,
         name="asset_status",

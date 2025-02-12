@@ -16,13 +16,13 @@
                     <h3>{{ format }}</h3>
                     {% if resources.archive_url  %}
                         <p>
-                            <a href="{{ resources.archive_url }}" class="btn btn-primary btn-sm">
+                            <a data-log-download href="{{ resources.archive_url }}" class="btn btn-primary btn-sm">
                                 {% fa_icon "solid" "download" %} Download
                             </a>
                         </p>
                     {% elif resources.file %}
                         <p>
-                            <a href="{{ resources.file }}" class="btn btn-primary btn-sm">
+                            <a data-log-download href="{{ resources.file }}" class="btn btn-primary btn-sm">
                                 {% fa_icon "solid" "download" %} Download
                             </a>
                         </p>
@@ -30,6 +30,7 @@
                         {% if resources.files_to_zip %}
                         <p>
                             <a
+                                data-log-download
                                 href="javascript:void(0);"
                                 class="btn btn-primary btn-sm zip-btn"
                                 data-file="{% for file in resources.files_to_zip %}{{ file }}{% if not forloop.last %},{% endif %}{% endfor %}"
@@ -41,6 +42,7 @@
                         {% if resources.files_to_zip_with_suffix %}
                         <p>
                             <a
+                                data-log-download
                                 href="javascript:void(0);"
                                 class="btn btn-primary btn-sm zip-btn"
                                 data-file="{% for file in resources.files_to_zip_with_suffix %}{{ file }}{% if not forloop.last %},{% endif %}{% endfor %}"
@@ -57,6 +59,7 @@
                 {% endfor %}
             </div>
         </div>
+        {% csrf_token %}
     </div>
 <script src="{% static 'js/jszip.min.js' %}?v=0"></script>
 <script>
@@ -87,9 +90,29 @@
         fetchAndZipFiles(fileNames);
         this.nextSibling.style.display = "inline";
     }
+
+    function incrementDownloads(event) {
+        let linkDest = event.currentTarget;
+        event.preventDefault();
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const request = new Request(
+            "{% url 'asset_log_download' asset_url=asset.url %}",
+            {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                mode: 'same-origin'
+            }
+        );
+        fetch(request).then(function(response) {
+            window.location = linkDest;
+        });
+    }
     
     for (const button of document.querySelectorAll(".zip-btn")) {
         button.addEventListener("click", handleDownload, false);
+    };
+    for (const el of document.querySelectorAll("a[data-log-download]")) {
+        el.addEventListener("click", incrementDownloads);
     };
 </script>
 </div>
