@@ -309,9 +309,6 @@ class AssetOwner(models.Model):
     def __str__(self):
         return self.displayname
 
-    class Meta:
-        db_table = "users"
-
 
 class Tag(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -870,7 +867,6 @@ class Asset(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        db_table = "assets"
         indexes = [
             models.Index(
                 fields=[
@@ -1056,9 +1052,6 @@ class DeviceCode(models.Model):
     def __str__(self):
         return f"{self.devicecode}: {self.expiry}"
 
-    class Meta:
-        db_table = "devicecodes"
-
 
 class Oauth2Client(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -1067,9 +1060,6 @@ class Oauth2Client(models.Model):
     client_id_issued_at = models.IntegerField(default=0)
     client_secret_expires_at = models.IntegerField(default=0)
     client_metadata = models.TextField(blank=True, null=True)
-
-    class Meta:
-        db_table = "oauth2_client"
 
 
 class Oauth2Code(models.Model):
@@ -1085,9 +1075,6 @@ class Oauth2Code(models.Model):
     scope = models.TextField(blank=True, null=True)
     nonce = models.TextField(blank=True, null=True)
 
-    class Meta:
-        db_table = "oauth2_code"
-
 
 class Oauth2Token(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -1101,9 +1088,6 @@ class Oauth2Token(models.Model):
     access_token_revoked_at = models.IntegerField(default=0)
     refresh_token_revoked_at = models.IntegerField(default=0)
     expires_in = models.IntegerField(default=0)
-
-    class Meta:
-        db_table = "oauth2_token"
 
 
 class HiddenMediaFileLog(models.Model):
