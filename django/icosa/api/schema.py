@@ -45,6 +45,8 @@ class Order(Enum):
     LIKED_TIME_DESC = "-LIKED_TIME"
     LIKES_ASC = "LIKES"
     LIKES_DESC = "-LIKES"
+    DOWNLOADS_ASC = "DOWNLOADS"
+    DOWNLOADS_DESC = "-DOWNLOADS"
     DISPLAY_NAME_ASC = "DISPLAY_NAME"
     DISPLAY_NAME_DESC = "-DISPLAY_NAME"
     AUTHOR_NAME_ASC = "AUTHOR_NAME"
@@ -65,6 +67,8 @@ ORDER_FIELD_MAP = {
     "-LIKED_TIME": ("last_liked_time", SortDirection.ASC),
     "LIKES": ("likes", SortDirection.DESC),
     "-LIKES": ("likes", SortDirection.ASC),
+    "DOWNLOADS": ("downloads", SortDirection.DESC),
+    "-DOWNLOADS": ("downloads", SortDirection.ASC),
     "DISPLAY_NAME": ("name", SortDirection.DESC),
     "-DISPLAY_NAME": ("name", SortDirection.ASC),
     "AUTHOR_NAME": ("owner__displayname", SortDirection.DESC),
