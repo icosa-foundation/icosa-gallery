@@ -34,10 +34,12 @@ from ninja.pagination import paginate
 from silk.profiling.profiler import silk_profile
 
 from .schema import (
+    ORDER_FIELD_MAP,
     AssetFilters,
     AssetFinalizeData,
     AssetSchema,
     Order,
+    SortDirection,
     UploadJobSchemaOut,
     filter_complexity,
     filter_license,
@@ -364,18 +366,12 @@ def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
 
 
 def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
-    if key.value == "NEWEST":
-        assets = assets.order_by("-create_time")
-    elif key.value == "OLDEST":
-        assets = assets.order_by("create_time")
-    elif key.value == "BEST":
-        assets = assets.order_by("-rank")
-    elif key.value == "TRIANGLECOUNT":
-        assets = assets.order_by("-triangle_count")
-    elif key.value == "LIKED_TIME":
-        assets = assets.order_by(F("last_liked_time").desc(nulls_last=True))
-    else:
-        pass
+    (sort_key, sort_direction) = ORDER_FIELD_MAP.get(key.value)
+
+    if sort_direction == SortDirection.DESC:
+        assets = assets.order_by(F(sort_key).desc(nulls_last=True))
+    if sort_direction == SortDirection.ASC:
+        assets = assets.order_by(F(sort_key).asc(nulls_last=True))
     return assets
 
 
