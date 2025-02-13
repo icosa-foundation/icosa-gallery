@@ -800,7 +800,7 @@ class Asset(models.Model):
                         Format.DoesNotExist,
                         Format.MultipleObjectsReturned,
                     ):
-                        pass
+                        resource_data = {}
                 elif format.role == ORIGINAL_GLTF_FORMAT:
                     # If we hit this branch, we have a format which doesn't
                     # have an archive url, but also doesn't have local files.
