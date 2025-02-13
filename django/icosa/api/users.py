@@ -145,7 +145,7 @@ def get_me_likedassets(
     q = Q(
         visibility__in=[PUBLIC, UNLISTED],
     )
-    q |= Q(visibility__in=[PRIVATE, UNLISTED], asset__owner=owner)
+    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
 
     try:
         assets = filter_assets(filters, assets, q)
