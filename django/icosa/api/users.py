@@ -139,11 +139,13 @@ def get_me_likedassets(
     filters: AssetFilters = Query(...),
 ):
     owner = AssetOwner.from_ninja_request(request)
-    assets = owner.likedassets.all().select_related("resource")
+    assets = Asset.objects.filter(
+        id__in=owner.likedassets.all().values_list("asset__id", flat=True)
+    ).prefetch_related("resource_set")
     q = Q(
-        asset__visibility__in=[PUBLIC, UNLISTED],
+        visibility__in=[PUBLIC, UNLISTED],
     )
-    q |= Q(asset__visibility__in=[PRIVATE, UNLISTED], asset__owner=owner)
+    q |= Q(visibility__in=[PRIVATE, UNLISTED], asset__owner=owner)
 
     try:
         assets = filter_assets(filters, assets, q)
