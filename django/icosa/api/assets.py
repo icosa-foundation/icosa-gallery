@@ -315,7 +315,10 @@ def upload_new_assets(
     return get_publish_url(request, asset)
 
 
-def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
+def filter_assets(
+    filters: AssetFilters,
+    assets: QuerySet[Asset] = Asset.objects.all(),
+) -> QuerySet[Asset]:
     q = Q(
         visibility=PUBLIC,
         # imported=True,
@@ -354,7 +357,7 @@ def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
     )
 
     return (
-        Asset.objects.filter(q, keyword_q)
+        assets.filter(q, keyword_q)
         .exclude(ex_q)
         .select_related("owner")
         .prefetch_related(
