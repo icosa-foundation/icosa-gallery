@@ -146,7 +146,7 @@ def get_me_likedassets(
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
 
     try:
-        assets = filter_assets(filters, assets)
+        assets = filter_assets(filters, assets, q)
     except FilterException as err:
         raise HttpError(400, f"{err}")
 

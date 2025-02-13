@@ -318,12 +318,8 @@ def upload_new_assets(
 def filter_assets(
     filters: AssetFilters,
     assets: QuerySet[Asset] = Asset.objects.all(),
+    q: Q = Q(visibility=PUBLIC),
 ) -> QuerySet[Asset]:
-    q = Q(
-        visibility=PUBLIC,
-        # imported=True,
-    )
-
     if filters.tag:
         q &= Q(tags__name__in=filters.tag)
     if filters.category:
