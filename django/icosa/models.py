@@ -822,10 +822,11 @@ class Asset(models.Model):
                     else:
                         resource_data = {}
 
-            format_name = format_name_override_map.get(
-                format.get_role_display(), format.get_role_display()
-            )
-            formats.setdefault(format_name, resource_data)
+            if resource_data:
+                format_name = format_name_override_map.get(
+                    format.get_role_display(), format.get_role_display()
+                )
+                formats.setdefault(format_name, resource_data)
         return OrderedDict(sorted(formats.items(), key=lambda x: x[0].lower()))
 
     def hide_media(self):
