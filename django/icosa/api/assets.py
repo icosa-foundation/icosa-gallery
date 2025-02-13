@@ -395,6 +395,7 @@ def get_assets(
     request,
     filters: AssetFilters = Query(...),
 ):
+    print("getting assets")
     try:
         assets = filter_assets(filters)
     except FilterException as err:
