@@ -263,11 +263,17 @@ class AssetOwner(models.Model):
     def get_absolute_url(self):
         return f"/user/{self.url}"
 
-    def set_password(self, password):
-        salt = bcrypt.gensalt(10)
-        hashed_password = bcrypt.hashpw(password.encode(), salt)
-        self.password = hashed_password
-        self.save()
+    def set_password(self, raw_password):
+        if raw_password:
+            salt = bcrypt.gensalt(10)
+            hashedpw = bcrypt.hashpw(raw_password.encode(), salt)
+
+            self.password = hashedpw
+            self.update_access_token()
+            self.save
+            if self.django_user:
+                self.django_user.set_password(raw_password)
+                self.django_user.save()
 
     @staticmethod
     def generate_device_code(length=5):
