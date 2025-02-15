@@ -263,11 +263,17 @@ class AssetOwner(models.Model):
     def get_absolute_url(self):
         return f"/user/{self.url}"
 
-    def set_password(self, password):
-        salt = bcrypt.gensalt(10)
-        hashed_password = bcrypt.hashpw(password.encode(), salt)
-        self.password = hashed_password
-        self.save()
+    def set_password(self, raw_password):
+        if raw_password:
+            salt = bcrypt.gensalt(10)
+            hashedpw = bcrypt.hashpw(raw_password.encode(), salt)
+
+            self.password = hashedpw
+            self.update_access_token()
+            self.save
+            if self.django_user:
+                self.django_user.set_password(raw_password)
+                self.django_user.save()
 
     @staticmethod
     def generate_device_code(length=5):
@@ -308,9 +314,6 @@ class AssetOwner(models.Model):
 
     def __str__(self):
         return self.displayname
-
-    class Meta:
-        db_table = "users"
 
 
 class Tag(models.Model):
@@ -419,6 +422,7 @@ class Asset(models.Model):
     triangle_count = models.PositiveIntegerField(default=0)
     search_text = models.TextField(null=True, blank=True)
     is_viewer_compatible = models.BooleanField(default=False)
+    last_liked_time = models.DateTimeField(null=True, blank=True)
 
     has_tilt = models.BooleanField(default=False)
     has_blocks = models.BooleanField(default=False)
@@ -690,6 +694,11 @@ class Asset(models.Model):
     def denorm_triangle_count(self):
         self.triangle_count = self.get_triangle_count()
 
+    def denorm_liked_time(self):
+        last_liked = self.ownerassetlike_set.order_by("-date_liked").first()
+        if last_liked is not None:
+            self.last_liked_time = last_liked.date_liked
+
     def get_updated_rank(self):
         rank = (self.likes + self.historical_likes + 1) * LIKES_WEIGHT
         rank += (self.views + self.historical_views) * VIEWS_WEIGHT
@@ -796,7 +805,7 @@ class Asset(models.Model):
                         Format.DoesNotExist,
                         Format.MultipleObjectsReturned,
                     ):
-                        pass
+                        resource_data = {}
                 elif format.role == ORIGINAL_GLTF_FORMAT:
                     # If we hit this branch, we have a format which doesn't
                     # have an archive url, but also doesn't have local files.
@@ -818,10 +827,11 @@ class Asset(models.Model):
                     else:
                         resource_data = {}
 
-            format_name = format_name_override_map.get(
-                format.get_role_display(), format.get_role_display()
-            )
-            formats.setdefault(format_name, resource_data)
+            if resource_data:
+                format_name = format_name_override_map.get(
+                    format.get_role_display(), format.get_role_display()
+                )
+                formats.setdefault(format_name, resource_data)
         return OrderedDict(sorted(formats.items(), key=lambda x: x[0].lower()))
 
     def hide_media(self):
@@ -859,10 +869,10 @@ class Asset(models.Model):
             self.is_viewer_compatible = self.calc_is_viewable()
             self.denorm_format_types()
             self.denorm_triangle_count()
+            self.denorm_liked_time()
         super().save(*args, **kwargs)
 
     class Meta:
-        db_table = "assets"
         indexes = [
             models.Index(
                 fields=[
@@ -1048,9 +1058,6 @@ class DeviceCode(models.Model):
     def __str__(self):
         return f"{self.devicecode}: {self.expiry}"
 
-    class Meta:
-        db_table = "devicecodes"
-
 
 class Oauth2Client(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -1059,9 +1066,6 @@ class Oauth2Client(models.Model):
     client_id_issued_at = models.IntegerField(default=0)
     client_secret_expires_at = models.IntegerField(default=0)
     client_metadata = models.TextField(blank=True, null=True)
-
-    class Meta:
-        db_table = "oauth2_client"
 
 
 class Oauth2Code(models.Model):
@@ -1077,9 +1081,6 @@ class Oauth2Code(models.Model):
     scope = models.TextField(blank=True, null=True)
     nonce = models.TextField(blank=True, null=True)
 
-    class Meta:
-        db_table = "oauth2_code"
-
 
 class Oauth2Token(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -1093,9 +1094,6 @@ class Oauth2Token(models.Model):
     access_token_revoked_at = models.IntegerField(default=0)
     refresh_token_revoked_at = models.IntegerField(default=0)
     expires_in = models.IntegerField(default=0)
-
-    class Meta:
-        db_table = "oauth2_token"
 
 
 class HiddenMediaFileLog(models.Model):

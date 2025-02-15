@@ -472,6 +472,18 @@ def asset_downloads(request, asset_url):
     )
 
 
+@never_cache
+def asset_log_download(request, asset_url):
+    if request.method == "POST":
+        asset = get_object_or_404(Asset, url=asset_url)
+        asset.downloads += 1
+        asset.save()
+
+        return HttpResponse("ok")
+    else:
+        return HttpResponseNotAllowed(["POST"])
+
+
 @login_required
 @never_cache
 def asset_status(request, asset_url):
@@ -792,6 +804,7 @@ def toggle_like(request):
         owner.likes.remove(asset)
     else:
         owner.likes.add(asset)
+        asset.save()  # Triggers denorming of asset liked time.
     template = "main/tags/like_button.html"
     context = {
         "is_liked": not is_liked,

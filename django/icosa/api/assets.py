@@ -5,7 +5,7 @@ from typing import List, NoReturn, Optional
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
@@ -34,10 +34,12 @@ from ninja.pagination import paginate
 from silk.profiling.profiler import silk_profile
 
 from .schema import (
+    ORDER_FIELD_MAP,
     AssetFilters,
     AssetFinalizeData,
     AssetSchema,
     Order,
+    SortDirection,
     UploadJobSchemaOut,
     filter_complexity,
     filter_license,
@@ -313,12 +315,11 @@ def upload_new_assets(
     return get_publish_url(request, asset)
 
 
-def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
-    q = Q(
-        visibility=PUBLIC,
-        # imported=True,
-    )
-
+def filter_assets(
+    filters: AssetFilters,
+    assets: QuerySet[Asset] = Asset.objects.all(),
+    q: Q = Q(visibility=PUBLIC),
+) -> QuerySet[Asset]:
     if filters.tag:
         q &= Q(tags__name__in=filters.tag)
     if filters.category:
@@ -352,7 +353,7 @@ def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
     )
 
     return (
-        Asset.objects.filter(q, keyword_q)
+        assets.filter(q, keyword_q)
         .exclude(ex_q)
         .select_related("owner")
         .prefetch_related(
@@ -364,16 +365,12 @@ def filter_assets(filters: AssetFilters) -> QuerySet[Asset]:
 
 
 def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
-    if key.value == "NEWEST":
-        assets = assets.order_by("-create_time")
-    elif key.value == "OLDEST":
-        assets = assets.order_by("create_time")
-    elif key.value == "BEST":
-        assets = assets.order_by("-rank")
-    elif key.value == "TRIANGLECOUNT":
-        assets = assets.order_by("-triangle_count")
-    else:
-        pass
+    (sort_key, sort_direction) = ORDER_FIELD_MAP.get(key.value)
+
+    if sort_direction == SortDirection.DESC:
+        assets = assets.order_by(F(sort_key).desc(nulls_last=True))
+    if sort_direction == SortDirection.ASC:
+        assets = assets.order_by(F(sort_key).asc(nulls_last=True))
     return assets
 
 

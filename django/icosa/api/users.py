@@ -7,6 +7,8 @@ from icosa.api import (
     AssetPagination,
     build_format_q,
 )
+from icosa.api.assets import filter_assets, sort_assets
+from icosa.api.exceptions import FilterException
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetOwner, Tag
 from ninja import Query, Router
 from ninja.errors import HttpError
@@ -19,9 +21,6 @@ from .schema import (
     FullUserSchema,
     PatchUserSchema,
     UserAssetFilters,
-    filter_complexity,
-    filter_license,
-    filter_triangle_count,
     get_keyword_q,
 )
 
@@ -74,6 +73,7 @@ def get_me_assets(
     request,
     filters: UserAssetFilters = Query(...),
 ):
+    # TODO(james): Standardise this with /me/likedassets
     owner = AssetOwner.from_ninja_request(request)
     q = Q(
         owner=owner,
@@ -139,66 +139,20 @@ def get_me_likedassets(
     filters: AssetFilters = Query(...),
 ):
     owner = AssetOwner.from_ninja_request(request)
-    liked_assets = owner.likedassets.all()
+    assets = Asset.objects.filter(
+        id__in=owner.likedassets.all().values_list("asset__id", flat=True)
+    ).prefetch_related("resource_set")
     q = Q(
         visibility__in=[PUBLIC, UNLISTED],
     )
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
 
-    if filters.format:
-        q &= build_format_q(filters.format)
-
-    if filters.orderBy and filters.orderBy == "LIKED_TIME":
-        liked_assets = liked_assets.order_by("-date_liked")
-
-    # Get the ordered IDs for sorting later, if we need to. We can't use
-    # `owner.likes.all` because we need the timestamp of when the asset was
-    # liked.
-    liked_ids = list(liked_assets.values_list("asset__pk", flat=True))
-    q &= Q(pk__in=liked_ids)
-
-    if filters.tag:
-        tags = Tag.objects.filter(name__in=filters.tag)
-        q &= Q(tags__in=tags)
-    if filters.category:
-        category_str = filters.category.upper()
-        category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
-        q &= Q(category__iexact=category_str)
-    if filters.license:
-        q &= filter_license(filters.license)
-    q &= filter_complexity(filters)
-    q &= filter_triangle_count(filters)
-    if filters.curated:
-        q &= Q(curated=True)
-    if filters.name:
-        q &= Q(name__icontains=filters.name)
-    if filters.description:
-        q &= Q(description__icontains=filters.description)
-    author_name = filters.authorName or filters.author_name or None
-    if author_name is not None:
-        q &= Q(owner__displayname__icontains=author_name)
-    # TODO: orderBy
     try:
-        keyword_q = get_keyword_q(filters)
-        q &= keyword_q
-    except HttpError:
-        raise
-
-    assets = Asset.objects.filter(q)
+        assets = filter_assets(filters, assets, q)
+    except FilterException as err:
+        raise HttpError(400, f"{err}")
 
     if filters.orderBy:
-        if filters.orderBy == "LIKED_TIME":
-            # Sort the assets by order of liked ID. Slow, but
-            # database-agnostic. Postgres and MySql have different ways to do
-            # this, and we'd need to use the `extra` params in our query, which
-            # are database-specific.
-            assets = sorted(assets, key=lambda i: liked_ids.index(i.pk))
-        elif filters.orderBy == "NEWEST":
-            assets = assets.order_by("-create_time")
-        elif filters.orderBy == "OLDEST":
-            assets = assets.order_by("create_time")
-        elif filters.orderBy == "BEST":
-            assets = assets.order_by("-rank")
-        else:
-            pass
+        assets = sort_assets(filters.orderBy, assets)
+
     return assets

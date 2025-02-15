@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum
+from enum import Enum, auto
 from typing import List, Literal, Optional
 
 from django.db.models import Q
@@ -26,11 +26,54 @@ class FormatFilter(Enum):
     FBX = "FBX"
 
 
+class SortDirection(Enum):
+    DESC = auto()
+    ASC = auto()
+
+
 class Order(Enum):
     NEWEST = "NEWEST"
     OLDEST = "OLDEST"
     BEST = "BEST"
-    TRIANGLE_COUNT = "TRIANGLE_COUNT"
+    CREATE_TIME_ASC = "CREATE_TIME"
+    CREATE_TIME_DESC = "-CREATE_TIME"
+    UPDATE_TIME_ASC = "UPDATE_TIME"
+    UPDATE_TIME_DESC = "-UPDATE_TIME"
+    TRIANGLE_COUNT_ASC = "TRIANGLE_COUNT"
+    TRIANGLE_COUNT_DESC = "-TRIANGLE_COUNT"
+    LIKED_TIME_ASC = "LIKED_TIME"
+    LIKED_TIME_DESC = "-LIKED_TIME"
+    LIKES_ASC = "LIKES"
+    LIKES_DESC = "-LIKES"
+    DOWNLOADS_ASC = "DOWNLOADS"
+    DOWNLOADS_DESC = "-DOWNLOADS"
+    DISPLAY_NAME_ASC = "DISPLAY_NAME"
+    DISPLAY_NAME_DESC = "-DISPLAY_NAME"
+    AUTHOR_NAME_ASC = "AUTHOR_NAME"
+    AUTHOR_NAME_DESC = "-AUTHOR_NAME"
+
+
+ORDER_FIELD_MAP = {
+    "NEWEST": ("create_time", SortDirection.DESC),
+    "OLDEST": ("create_time", SortDirection.ASC),
+    "BEST": ("rank", SortDirection.DESC),
+    "CREATE_TIME": ("create_time", SortDirection.DESC),
+    "-CREATE_TIME": ("create_time", SortDirection.ASC),
+    "UPDATE_TIME": ("update_time", SortDirection.DESC),
+    "-UPDATE_TIME": ("update_time", SortDirection.ASC),
+    "TRIANGLE_COUNT": ("triangle_count", SortDirection.DESC),
+    "-TRIANGLE_COUNT": ("triangle_count", SortDirection.ASC),
+    "LIKED_TIME": ("last_liked_time", SortDirection.DESC),
+    "-LIKED_TIME": ("last_liked_time", SortDirection.ASC),
+    "LIKES": ("likes", SortDirection.DESC),
+    "-LIKES": ("likes", SortDirection.ASC),
+    "DOWNLOADS": ("downloads", SortDirection.DESC),
+    "-DOWNLOADS": ("downloads", SortDirection.ASC),
+    "DISPLAY_NAME": ("name", SortDirection.DESC),
+    "-DISPLAY_NAME": ("name", SortDirection.ASC),
+    "AUTHOR_NAME": ("owner__displayname", SortDirection.DESC),
+    "-AUTHOR_NAME": ("owner__displayname", SortDirection.ASC),
+}
 
 
 class LoginToken(Schema):
