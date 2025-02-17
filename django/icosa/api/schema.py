@@ -8,6 +8,7 @@ from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
+from pydantic.json_schema import SkipJsonSchema
 
 
 class Complexity(Enum):
@@ -302,22 +303,36 @@ class OembedOut(Schema):
 
 
 class FilterBase(Schema):
-    category: Optional[Category] = None
-    curated: bool = False
-    format: Optional[List[FormatFilter]] = None
-    keywords: Optional[str] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    tag: List[str] = Field(None, alias="tag")
-    orderBy: Optional[Order] = None
-    order_by: Optional[Order] = None
-    maxComplexity: Optional[Complexity] = None
+    category: Optional[Category] = Field(default=None, example="ANIMALS")
+    curated: bool = Field(default=False)
+    format: Optional[List[FormatFilter]] = Field(
+        default=None, description="Filter by format"
+    )
+    keywords: Optional[str] = Field(default=None)
+    name: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
+    tag: List[str] = Field(default=None, alias="tag")
+    orderBy: Optional[Order] = Field(
+        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
+        # it has `example`, which also accepts a list, but does not render it
+        # nicely at all.
+        # See: https://github.com/vitalik/django-ninja/issues/1342
+        # example=[
+        #     "LIKES (most first)",
+        #     "-LIKES (least first)",
+        # ],
+        default=None,
+    )
+    order_by: SkipJsonSchema[Optional[Order]] = Field(
+        default=None
+    )  # For backwards compatibility
+    maxComplexity: Optional[Complexity] = Field(default=None)
     triangleCountMin: Optional[int] = None
     triangleCountMax: Optional[int] = None
 
 
 class AssetFilters(FilterBase):
-    authorName: Optional[str] = None
+    authorName: SkipJsonSchema[Optional[str]] = None
     author_name: Optional[str] = None
     license: Optional[str] = None
 
