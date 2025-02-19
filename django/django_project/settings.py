@@ -398,7 +398,15 @@ def get_profile_intercept():
         if DEBUG:
             percent = 100
         percent = 1
-        percent = os.environ.get("DJANGO_PROFILING_INTERCEPT_PERCENT", percent)
+        try:
+            percent = int(
+                os.environ.get(
+                    "DJANGO_PROFILING_INTERCEPT_PERCENT",
+                    percent,
+                )
+            )
+        except ValueError:
+            pass
     return percent
 
 
