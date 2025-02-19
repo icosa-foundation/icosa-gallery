@@ -130,17 +130,13 @@ class FormatComplexity(Schema):
 
 class AssetFormat(Schema):
     root: Optional[AssetResource]
-    resources: Optional[List[AssetResource]]
+    resources: Optional[List[AssetResource]] = Field(None, alias="resource_set")
     formatComplexity: FormatComplexity
     formatType: str
 
     @staticmethod
     def resolve_root(obj):
         return obj.root_resource
-
-    @staticmethod
-    def resolve_resources(obj):
-        return obj.resource_set.filter(is_root=False)
 
     @staticmethod
     def resolve_formatType(obj):
