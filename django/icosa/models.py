@@ -235,7 +235,7 @@ class AssetOwner(models.Model):
     def from_django_user(cls, user: DjangoUser) -> Optional[Self]:
         try:
             instance = cls.objects.get(django_user=user)
-        except cls.DoesNotExist:
+        except (cls.DoesNotExist, TypeError):
             instance = None
         return instance
 
