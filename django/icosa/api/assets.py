@@ -318,6 +318,7 @@ def upload_new_assets(
 def filter_assets(
     filters: AssetFilters,
     assets: QuerySet[Asset] = Asset.objects.all().prefetch_related(
+        "format_set",
         "resource_set",
     ),
     q: Q = Q(visibility=PUBLIC),
