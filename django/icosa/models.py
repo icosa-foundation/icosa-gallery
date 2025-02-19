@@ -3,7 +3,7 @@ import secrets
 import string
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import Self
+from typing import Optional, Self
 
 import bcrypt
 import jwt
@@ -232,33 +232,16 @@ class AssetOwner(models.Model):
         return instance
 
     @classmethod
-    def from_django_request(cls, request):
-        instance = None
-        if getattr(request.user, "email", None):
-            try:
-                instance = cls.objects.get(django_user=request.user)
-            except cls.DoesNotExist:
-                pass
+    def from_django_user(cls, user: DjangoUser) -> Optional[Self]:
+        try:
+            instance = cls.objects.get(django_user=user)
+        except cls.DoesNotExist:
+            instance = None
         return instance
 
     @classmethod
-    def from_django_user(cls, user: DjangoUser) -> Self:
-        instance = None
-        if getattr(user, "email", None):
-            try:
-                instance = cls.objects.get(django_user=user)
-            except cls.DoesNotExist:
-                pass
-        return instance
-
-    def to_django_user(self):
-        instance = None
-        if getattr(self, "email", None):
-            try:
-                instance = DjangoUser.objects.get(email=self.email)
-            except DjangoUser.DoesNotExist:
-                pass
-        return instance
+    def from_django_request(cls, request) -> Optional[Self]:
+        return cls.from_django_user(request.user)
 
     def get_absolute_url(self):
         return f"/user/{self.url}"
