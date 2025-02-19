@@ -88,6 +88,8 @@ def build_format_q(formats: List) -> Q:
     for format in formats:
         # Reliant on the fact that each of FILTERABLE_FORMATS has an
         # associated has_<format> field in the db.
+        if format == "GLTF":
+            format = "GLTF_ANY"
         q &= Q(**{f"has_{format.value.lower()}": True})
         valid_q = True
 
