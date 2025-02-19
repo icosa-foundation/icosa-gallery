@@ -144,9 +144,6 @@ def get_me_likedassets(
     owner = AssetOwner.from_ninja_request(request)
     assets = Asset.objects.filter(
         id__in=owner.likedassets.all().values_list("asset__id", flat=True)
-    ).prefetch_related(
-        "format_set",
-        "resource_set",
     )
     q = Q(
         visibility__in=[PUBLIC, UNLISTED],

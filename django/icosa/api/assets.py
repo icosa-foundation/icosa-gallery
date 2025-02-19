@@ -31,7 +31,6 @@ from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
-from silk.profiling.profiler import silk_profile
 
 from .schema import (
     ORDER_FIELD_MAP,
@@ -317,10 +316,7 @@ def upload_new_assets(
 
 def filter_assets(
     filters: AssetFilters,
-    assets: QuerySet[Asset] = Asset.objects.all().prefetch_related(
-        "format_set",
-        "resource_set",
-    ),
+    assets: QuerySet[Asset] = None,
     q: Q = Q(visibility=PUBLIC),
 ) -> QuerySet[Asset]:
     if filters.tag:
@@ -355,7 +351,15 @@ def filter_assets(
         | Q(last_reported_time__isnull=False)
     )
 
-    return (
+    # Debug tests:
+    # from django.db import connection, reset_queries
+
+    # reset_queries()
+
+    if assets is None:
+        assets = Asset.objects.all()
+
+    assets = (
         assets.filter(q, keyword_q)
         .exclude(ex_q)
         .select_related("owner")
@@ -365,6 +369,13 @@ def filter_assets(
         )
         .distinct()
     )
+    # Debug tests:
+    # print(assets.explain())
+    # _ = list(assets)
+    # print(connection.queries)
+    # print(len(connection.queries))
+
+    return assets
 
 
 def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
@@ -392,7 +403,6 @@ def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
 )
 @paginate(AssetPagination)
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
-@decorate_view(silk_profile(name="API all assets"))
 def get_assets(
     request,
     filters: AssetFilters = Query(...),
