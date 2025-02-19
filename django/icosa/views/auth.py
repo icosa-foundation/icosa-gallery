@@ -205,6 +205,8 @@ def register(request):
             )
             user.is_active = False
             user.save()
+            owner.django_user = user
+            owner.save()
 
             send_registration_email(
                 request, user, owner, to_email=form.cleaned_data.get("email")
