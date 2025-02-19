@@ -317,7 +317,9 @@ def upload_new_assets(
 
 def filter_assets(
     filters: AssetFilters,
-    assets: QuerySet[Asset] = Asset.objects.all(),
+    assets: QuerySet[Asset] = Asset.objects.all().prefetch_related(
+        "resource_set",
+    ),
     q: Q = Q(visibility=PUBLIC),
 ) -> QuerySet[Asset]:
     if filters.tag:
