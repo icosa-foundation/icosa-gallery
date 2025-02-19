@@ -161,7 +161,6 @@ def landing_page(
     context = {
         "assets": assets,
         "masthead": masthead,
-        "page_number": page_number,
         "heading": heading,
         "heading_link": heading_link,
         "is_explore_heading": is_explore_heading,
