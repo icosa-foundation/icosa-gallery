@@ -444,7 +444,7 @@ class Asset(models.Model):
 
             if obj_resource:
                 return {
-                    "format": obj_resource.format.format_type,
+                    "format": obj_format.format_type,
                     "url": obj_resource.internal_url_or_none,
                     "materialUrl": mtl_resource.url,
                     "resource": obj_resource,
@@ -461,7 +461,7 @@ class Asset(models.Model):
 
         if polygone_gltf:
             return {
-                "format": polygone_gltf.format.format_type,
+                "format": format.format_type,
                 "url": polygone_gltf.internal_url_or_none,
                 "resource": polygone_gltf,
             }
@@ -477,7 +477,7 @@ class Asset(models.Model):
 
         if updated_gltf:
             return {
-                "format": updated_gltf.format.format_type,
+                "format": format.format_type,
                 "url": updated_gltf.internal_url_or_none,
                 "resource": updated_gltf,
             }
@@ -492,7 +492,7 @@ class Asset(models.Model):
 
         if original_gltf:
             return {
-                "format": original_gltf.format.format_type,
+                "format": format.format_type,
                 "url": original_gltf.internal_url_or_none,
                 "resource": original_gltf,
             }
@@ -775,7 +775,11 @@ class Asset(models.Model):
                 # file.
                 query = Q(external_url__isnull=False) & ~Q(external_url="")
                 query |= Q(file__isnull=False)
-                resources = format.resource_set.filter(query)
+                resources = list(format.resource_set.filter(query))
+                format_root = format.root_resource
+                if format_root is not None:
+                    if format_root.file or format_root.external_url:
+                        resources.append(format_root)
                 if format.role == POLYGONE_GLTF_FORMAT:
                     resource_data = {
                         "files_to_zip": [
@@ -823,7 +827,7 @@ class Asset(models.Model):
                     # we can resolve this.
                     continue
                 else:
-                    resource = resources.first()
+                    resource = resources[0]
                     if resource.file:
                         storage = settings.DJANGO_STORAGE_URL
                         bucket = settings.DJANGO_STORAGE_BUCKET_NAME
