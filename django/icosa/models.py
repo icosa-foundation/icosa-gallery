@@ -940,7 +940,7 @@ def format_upload_path(instance, filename):
         # This is a root resource. TODO(james): implement a get_format method
         # that can handle this for us.
         format = instance.root_formats.first()
-    asset = format.asset
+    asset = instance.asset
     ext = filename.split(".")[-1]
     if instance.format is None:  # proxy test for if this is a root resource.
         name = f"model.{ext}"

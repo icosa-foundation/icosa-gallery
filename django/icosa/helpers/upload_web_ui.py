@@ -9,15 +9,17 @@ from django.conf import settings
 from icosa.helpers.file import (
     IMAGE_REGEX,
     UploadedFormat,
-    process_main_file,
+    get_content_type,
     validate_file,
 )
 from icosa.helpers.format_roles import USER_SUPPLIED_GLTF
-from icosa.helpers.upload import TYPE_ROLE_MAP, make_formats
+from icosa.helpers.upload import TYPE_ROLE_MAP
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
     AssetOwner,
+    Format,
+    Resource,
 )
 from ninja import File
 from ninja.files import UploadedFile
@@ -33,6 +35,13 @@ VALID_WEB_FORMAT_TYPES = [
     "glb",
     "gltf",
     "bin",
+    "jpeg",
+    "jpg",
+    "tif",
+    "tiff",
+    "png",
+    "webp",
+    "bmp",
 ]
 
 
@@ -152,6 +161,51 @@ def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
     return unzipped_files
 
 
+def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
+    # Main files determine folder
+    format_type = mainfile.filetype
+    name = mainfile.file.name
+    file = mainfile.file
+    if (
+        format_type == "GLTF"
+        and gltf_to_convert is not None
+        and os.path.exists(gltf_to_convert)
+    ):
+        format_type = "GLB"
+        name = f"{os.path.splitext(name)[0]}.glb"
+        with open(gltf_to_convert, "rb") as f:
+            file = UploadedFile(
+                name=name,
+                file=io.BytesIO(f.read()),
+            )
+
+    format_data = {
+        "format_type": format_type,
+        "asset": asset,
+        "role": role,
+    }
+    format = Format.objects.create(**format_data)
+
+    root_resource_data = {
+        "asset": asset,
+        "contenttype": get_content_type(name),
+    }
+    root_resource = Resource.objects.create(**root_resource_data)
+    format.root_resource = root_resource
+    format.save()
+    root_resource.file = file
+    root_resource.save()
+
+    for subfile in sub_files:
+        sub_resource_data = {
+            "file": subfile.file,
+            "format": format,
+            "asset": asset,
+            "contenttype": get_content_type(subfile.file.name),
+        }
+        Resource.objects.create(**sub_resource_data)
+
+
 def upload(
     current_user: AssetOwner,
     asset: Asset,
@@ -173,18 +227,17 @@ def upload(
     asset_dir = os.path.join("/tmp/", f"{asset.id}")
 
     for file in unzipped_files:
-        print(file)
         splitext = os.path.splitext(file.name)
         ext = splitext[1].lower().replace(".", "")
-        if ext not in VALID_WEB_FORMAT_TYPES or not IMAGE_REGEX.match(ext):
+        if ext not in VALID_WEB_FORMAT_TYPES:
             # validate_file will accept more than we want, so filter out types
             # we are not accepting from users here.
             continue
+
         valid_file = validate_file(file, ext)
         if valid_file is None:
             continue
 
-        print(valid_file)
         # TODO(james): This code will break in mysterious ways if we receive
         # more than one set of gltf/bin files and don't process the right bin
         # with the right gltf.
@@ -215,9 +268,7 @@ def upload(
     asset.name = asset_name
     asset.save()
 
-    print("processing mainfiles....................")
     for mainfile in main_files:
-        print(mainfile)
         type = mainfile.filetype
         if type.startswith("GLTF"):
             sub_files_list = sub_files["GLTF"] + sub_files["GLB"]
@@ -232,13 +283,8 @@ def upload(
             mainfile,
             sub_files_list,
             asset,
-            role,
-        )
-        process_main_file(
-            mainfile,
-            sub_files,
-            asset,
             converted_gltf_path,
+            role,
         )
 
     clean_up_conversion(
