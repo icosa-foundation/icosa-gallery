@@ -4,8 +4,9 @@ from django.utils import timezone
 from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
 from icosa.api.schema import AssetFinalizeData
-from icosa.helpers.file import upload_asset, upload_blocks_format
+from icosa.helpers.file import upload_blocks_format
 from icosa.helpers.upload import upload_api_asset
+from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     ASSET_STATE_FAILED,
@@ -39,12 +40,12 @@ def handle_upload_error(task, exc):
 
 
 @db_task()
-def queue_upload_asset(
+def queue_upload_asset_web_ui(
     current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
-    upload_asset(
+    upload(
         current_user,
         asset,
         files,

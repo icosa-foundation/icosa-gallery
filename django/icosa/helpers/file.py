@@ -21,7 +21,6 @@ from icosa.helpers.format_roles import (
     TILT_FORMAT,
 )
 from icosa.models import (
-    ASSET_STATE_COMPLETE,
     Asset,
     AssetOwner,
     Format,
@@ -33,8 +32,6 @@ from ninja.files import UploadedFile
 from PIL import Image
 
 default_storage = get_storage_class()()
-
-CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
 
 
 ASSET_NOT_FOUND = HttpError(404, "Asset not found.")
@@ -470,163 +467,6 @@ def upload_blocks_format(
         process_normally(asset, f)
 
     return asset
-
-
-def upload_asset(
-    current_user: AssetOwner,
-    asset: Asset,
-    files: Optional[List[UploadedFile]] = File(None),
-):
-    # We need to see one of: tilt, glb, gltf, obj, fbx
-    main_files = []
-    sub_files = []
-    name = "Untitled Asset"
-    thumbnail = None
-
-    unzipped_files = []
-    if files is None:
-        files = []
-    for file in files:
-        # Handle thumbnail included in the zip
-        # How do we handle multiple thumbnails? Currently non-zip thumbnails
-        # take priority
-        if thumbnail is None and file.name.lower() in [
-            "thumbnail.png",
-            "thumbnail.jpg",
-        ]:
-            thumbnail = file
-        elif file.name.endswith(".zip"):
-            # Read the file as a ZIP file
-            with zipfile.ZipFile(io.BytesIO(file.read())) as zip_file:
-                # Iterate over each file in the ZIP
-                for zip_info in zip_file.infolist():
-                    # Skip directories
-                    if zip_info.is_dir():
-                        continue
-                    # Read the file contents
-                    with zip_file.open(zip_info) as extracted_file:
-                        # Create a new UploadedFile object
-                        content = extracted_file.read()
-                        processed_file = UploadedFile(
-                            name=zip_info.filename,
-                            file=io.BytesIO(content),
-                        )
-                        unzipped_files.append(processed_file)
-                        if thumbnail is None and zip_info.filename.lower() in [
-                            "thumbnail.png",
-                            "thumbnail.jpg",
-                        ]:
-                            thumbnail = processed_file
-        else:
-            unzipped_files.append(file)
-
-    gltf_to_convert = None
-    bin_for_conversion = None
-    asset_dir = os.path.join("/tmp/", f"{asset.id}")
-    for file in unzipped_files:
-        splitext = os.path.splitext(file.name)
-        extension = splitext[1].lower().replace(".", "")
-        upload_details = validate_file(file, extension)
-        if upload_details is not None:
-            if upload_details.filetype in ["GLTF", "BIN"]:
-                # Save the file for later conversion.
-                file = upload_details.file
-                Path(asset_dir).mkdir(parents=True, exist_ok=True)
-                path = os.path.join(asset_dir, file.name)
-                with open(path, "wb") as f_out:
-                    for chunk in file.chunks():
-                        f_out.write(chunk)
-                    upload_details.file.seek(0)
-                    if upload_details.filetype == "BIN":
-                        bin_for_conversion = (
-                            path,
-                            file.name,
-                        )
-                    if upload_details.filetype == "GLTF":
-                        gltf_to_convert = (
-                            path,
-                            file.name,
-                        )
-
-            if upload_details.mainfile is True:
-                main_files.append(upload_details)
-                name = splitext[0]
-            else:
-                sub_files.append(upload_details)
-
-    converted_gltf_path = None
-    if gltf_to_convert is not None and bin_for_conversion is not None:
-        Path(os.path.join(asset_dir, "converted")).mkdir(parents=True, exist_ok=True)
-        name, extension = os.path.splitext(gltf_to_convert[1])
-        out_path = os.path.join(asset_dir, "converted", f"{name}.glb")
-        data = Path(gltf_to_convert[0]).read_text()
-        shader_dummy_path = os.path.join(settings.STATIC_ROOT, "shader_dummy")
-        Path(gltf_to_convert[0]).write_text(
-            data.replace("https://vr.google.com/shaders/w/", shader_dummy_path)
-        )
-        subprocess.run(
-            [
-                "node",
-                CONVERTER_EXE,
-                "-i",
-                gltf_to_convert[0],
-                "-o",
-                out_path,
-                "--keepUnusedElements",
-                "--binary",
-            ]
-        )
-        converted_gltf_path = out_path
-
-    # Begin upload process.
-
-    asset.name = name
-    asset.save()
-
-    for mainfile in main_files:
-        process_main_file(
-            mainfile,
-            sub_files,
-            asset,
-            converted_gltf_path,
-        )
-
-    # Clean up temp files.
-    # TODO(james) missing_ok might squash genuine errors where the file should
-    # exist.
-    if gltf_to_convert is not None:
-        Path.unlink(gltf_to_convert[0], missing_ok=True)
-    if bin_for_conversion is not None:
-        Path.unlink(bin_for_conversion[0], missing_ok=True)
-    if converted_gltf_path is not None:
-        Path.unlink(converted_gltf_path, missing_ok=True)
-    try:
-        Path.rmdir(os.path.join(asset_dir, "converted"))
-    except FileNotFoundError:
-        pass
-    try:
-        Path.rmdir(os.path.join(asset_dir))
-    except FileNotFoundError:
-        pass
-
-    if thumbnail:
-        add_thumbnail_to_asset(thumbnail, asset)
-
-    asset.state = ASSET_STATE_COMPLETE
-    asset.save()
-    return asset
-
-
-def upload_thumbnail(
-    thumbnail: UploadedFile,
-    asset: Asset,
-):
-    splitnames = thumbnail.name.split(".")
-    extension = splitnames[-1].lower()
-    if not IMAGE_REGEX.match(extension):
-        raise HttpError(415, "Thumbnail must be png or jpg")
-
-    add_thumbnail_to_asset(thumbnail, asset)
 
 
 def b64_to_img(b64_image: str) -> InMemoryUploadedFile:

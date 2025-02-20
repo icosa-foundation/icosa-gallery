@@ -953,7 +953,6 @@ class Format(models.Model):
         blank=True,
         choices=FORMAT_ROLE_CHOICES,
     )
-
     root_resource = models.ForeignKey(
         "Resource",
         null=True,
@@ -961,6 +960,8 @@ class Format(models.Model):
         related_name="root_formats",
         on_delete=models.SET_NULL,
     )
+    is_preferred_for_viewer = models.BooleanField(default=False)
+    is_preferred_for_download = models.BooleanField(default=False)
 
     class Meta:
         indexes = [

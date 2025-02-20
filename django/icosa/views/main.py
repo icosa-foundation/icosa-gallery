@@ -34,8 +34,9 @@ from icosa.forms import (
     UserSettingsForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
-from icosa.helpers.file import b64_to_img, upload_asset
+from icosa.helpers.file import b64_to_img
 from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ASSET_STATE_BARE,
@@ -49,7 +50,7 @@ from icosa.models import (
     AssetOwner,
     MastheadSection,
 )
-from icosa.tasks import queue_upload_asset
+from icosa.tasks import queue_upload_asset_web_ui
 from silk.profiling.profiler import silk_profile
 
 POLY_USER_URL = "4aEd8rQgKu2"
@@ -278,13 +279,13 @@ def uploads(request):
                 state=ASSET_STATE_UPLOADING,
             )
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                queue_upload_asset(
+                queue_upload_asset_web_ui(
                     current_user=user,
                     asset=asset,
                     files=[request.FILES["file"]],
                 )
             else:
-                upload_asset(
+                upload(
                     user,
                     asset,
                     [request.FILES["file"]],
