@@ -929,6 +929,10 @@ class OwnerAssetLike(models.Model):
 def format_upload_path(instance, filename):
     root = settings.MEDIA_ROOT
     format = instance.format
+    if format is None:
+        # This is a root resource. TODO(james): implement a get_format method
+        # that can handle this for us.
+        format = instance.root_formats.first()
     asset = format.asset
     ext = filename.split(".")[-1]
     if instance.format is None:  # proxy test for if this is a root resource.
