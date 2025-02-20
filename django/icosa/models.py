@@ -969,7 +969,6 @@ class Format(models.Model):
 
 
 class Resource(models.Model):
-    is_root = models.BooleanField(default=False)
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
     format = models.ForeignKey(Format, null=True, blank=True, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
