@@ -125,9 +125,6 @@ def upload_api_asset(
     }
     asset_name = "Untitled Asset"
 
-    # 3. Create nested structure for roots and subs.
-    # 4. Process manifest if it exists.
-
     for file in upload_set.files:
         splitext = os.path.splitext(file.name)
         extension = splitext[1].lower().replace(".", "")
