@@ -114,12 +114,11 @@ def create_formats(directory, gltf2_data, formats_json, asset):
 
         root_resource_data = {
             "file": f"poly/{directory}/{file_path}",
-            "is_root": True,
-            "format": format,
             "asset": asset,
             "contenttype": root_resource_json["contentType"],
         }
         root_resource = Resource.objects.create(**root_resource_data)
+        format.root_resource = root_resource
 
         role = EXTENSION_ROLE_MAP.get(extension)
         format.role = role
@@ -150,7 +149,6 @@ def create_formats(directory, gltf2_data, formats_json, asset):
 
                 resource_data = {
                     "file": f"poly/{directory}/{file_path}",
-                    "is_root": False,
                     "format": format,
                     "asset": asset,
                     "contenttype": resource_json["contentType"],

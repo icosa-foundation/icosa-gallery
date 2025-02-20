@@ -187,12 +187,11 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
 
     resource_data = {
         "file": file,
-        "is_root": True,
         "asset": asset,
-        "format": format,
         "contenttype": get_content_type(name),
     }
-    Resource.objects.create(**resource_data)
+    root_resource = Resource.objects.create(**resource_data)
+    format.root_resource = root_resource
 
     for subfile in sub_files:
         # Horrendous check for supposedly compatible subfiles. can
@@ -214,7 +213,6 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
             sub_resource_data = {
                 "file": subfile.file,
                 "format": format,
-                "is_root": False,
                 "asset": asset,
                 "contenttype": get_content_type(subfile.file.name),
             }
@@ -266,21 +264,36 @@ def get_blocks_role_id(f: UploadedFormat) -> Optional[int]:
 
 
 def get_obj_non_triangulated(asset: Asset) -> Optional[Resource]:
-    return asset.resource_set.filter(
-        is_root=True, format__role=ORIGINAL_OBJ_FORMAT
+    resource = None
+    format = asset.format_set.filter(
+        root_resource__isnull=False,
+        role=ORIGINAL_OBJ_FORMAT,
     ).first()
+    if format:
+        resource = format.root_resource
+    return resource
 
 
 def get_obj_triangulated(asset: Asset) -> Optional[Resource]:
-    return asset.resource_set.filter(
-        is_root=True, format__role=ORIGINAL_TRIANGULATED_OBJ_FORMAT
+    resource = None
+    format = asset.format_set.filter(
+        root_resource__isnull=False,
+        role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
     ).first()
+    if format:
+        resource = format.root_resource
+    return resource
 
 
 def get_gltf(asset: Asset) -> Optional[Resource]:
-    return asset.resource_set.filter(
-        is_root=True, format__role=ORIGINAL_GLTF_FORMAT
+    resource = None
+    format = asset.format_set.filter(
+        root_resource__isnull=False,
+        role=ORIGINAL_GLTF_FORMAT,
     ).first()
+    if format:
+        resource = format.root_resource
+    return resource
 
 
 def process_normally(asset: Asset, f: UploadedFormat):
@@ -289,19 +302,28 @@ def process_normally(asset: Asset, f: UploadedFormat):
         "asset": asset,
     }
     format = Format.objects.create(**format_data)
-    resource_data = {
-        "file": f.file,
-        "format": format,
-        "is_root": f.mainfile,
-        "asset": asset,
-        "contenttype": get_content_type(f.file.name),
-    }
+
+    if f.mainfile:
+        root_resource_data = {
+            "file": f.file,
+            "asset": asset,
+            "contenttype": get_content_type(f.file.name),
+        }
+        root_resource = Resource.objects.create(**root_resource_data)
+        format.root_resource = root_resource
+    else:
+        resource_data = {
+            "file": f.file,
+            "format": format,
+            "asset": asset,
+            "contenttype": get_content_type(f.file.name),
+        }
+        Resource.objects.create(**resource_data)
+
     resource_role = get_blocks_role_id(f)
     if resource_role is not None:
         format.role = resource_role
         format.save()
-
-    Resource.objects.create(**resource_data)
 
 
 def process_mtl(asset: Asset, f: UploadedFormat):
@@ -316,7 +338,6 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     }
     resource_data = {
         "file": None,
-        "is_root": True,
         "asset": asset,
         "contenttype": "text/plain",
     }
@@ -325,27 +346,30 @@ def process_mtl(asset: Asset, f: UploadedFormat):
             **format_data,
             role=ORIGINAL_OBJ_FORMAT,
         )
-        obj_non_triangulated = Resource.objects.create(
-            format=format_non_triangulated, **resource_data
-        )
+        obj_non_triangulated = Resource.objects.create(**resource_data)
+        format.root_resource = obj_non_triangulated
+        format.save()
     else:
-        format_non_triangulated = obj_non_triangulated.format
+        format_non_triangulated = Format.objects.filter(
+            root_resource=obj_non_triangulated,
+        ).first()
 
     if obj_triangulated is None:
         format_triangulated = Format.objects.create(
             **format_data,
             role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
         )
-        obj_triangulated = Resource.objects.create(
-            format=format_triangulated, **resource_data
-        )
+        obj_triangulated = Resource.objects.create(**resource_data)
+        format.root_resource = obj_triangulated
+        format.save()
     else:
-        format_triangulated = obj_triangulated.format
+        format_triangulated = Format.objects.filter(
+            root_resource=obj_triangulated,
+        )
     # Finally, create the duplicate MTL resources and assign them to the right
     # formats.
     resource_data = {
         "file": f.file,
-        "is_root": False,
         "asset": asset,
         "contenttype": get_content_type(f.file.name),
     }
@@ -373,17 +397,17 @@ def process_bin(asset: Asset, f: UploadedFormat):
         )
         resource_data = {
             "file": None,
-            "is_root": True,
             "asset": asset,
             "contenttype": "application/gltf+json",
         }
-        gltf = Resource.objects.create(format=format, **resource_data)
+        gltf = Resource.objects.create(**resource_data)
+        format.root_resource = gltf
+        format.save()
     else:
-        format = gltf.format
+        format = Format.objects.filter(root_resource=gltf).first()
     # Finally, create the duplicate BIN resource and assign it to the format.
     resource_data = {
         "file": f.file,
-        "is_root": False,
         "asset": asset,
         "format": format,
         "contenttype": get_content_type(f.file.name),
@@ -392,9 +416,14 @@ def process_bin(asset: Asset, f: UploadedFormat):
 
 
 def process_root(asset: Asset, f: UploadedFormat):
-    root = asset.resource_set.filter(
-        is_root=True, format__role=get_blocks_role_id(f), file=""
+    root = None
+    format = asset.format_set.filter(
+        root_resource__isnull=False,
+        role=get_blocks_role_id(f),
     ).first()
+    if format and format.root_resource.file == "":
+        root = format.root_resource
+
     if root is None:
         process_normally(asset, f)
     else:

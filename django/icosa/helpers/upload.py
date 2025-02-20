@@ -195,26 +195,23 @@ def make_formats(mainfile, sub_files, asset, role=None):
     }
     format = Format.objects.create(**format_data)
 
-    resource_data = {
+    root_resource_data = {
         "file": file,
-        "is_root": True,
         "asset": asset,
-        "format": format,
         "contenttype": get_content_type(name),
     }
-    Resource.objects.create(**resource_data)
+    root_resource = Resource.objects.create(**root_resource_data)
+    format.root_resource = root_resource
+    format.save()
 
     for subfile in sub_files:
         sub_resource_data = {
             "file": subfile.file,
             "format": format,
-            "is_root": False,
             "asset": asset,
             "contenttype": get_content_type(subfile.file.name),
         }
         Resource.objects.create(**sub_resource_data)
-
-    format.save()  # Triggers denorming on Format
 
 
 def get_role(

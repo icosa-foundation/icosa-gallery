@@ -28,14 +28,10 @@ class ResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
         "id",
         "asset",
         "file",
-        "is_root",
         "contenttype",
     )
 
-    list_filter = (
-        "is_root",
-        "contenttype",
-    )
+    list_filter = ("contenttype",)
     search_fields = ("file",)
     raw_id_fields = [
         "asset",
@@ -60,7 +56,6 @@ class ResourceInline(admin.TabularInline):
     model = Resource
 
     fields = (
-        "is_root",
         "file",
         "external_url",
     )

@@ -435,13 +435,12 @@ class Asset(models.Model):
             # here: self.is_blocks and not self.has_gltf2:
             # TODO Prefer some roles over others
             # TODO error handling
-            obj_format = self.format_set.filter(format_type="OBJ").first()
-            obj_resource = obj_format.resource_set.filter(
-                is_root=True,
+            obj_format = self.format_set.filter(
+                format_type="OBJ",
+                root_resource__isnull=False,
             ).first()
-            mtl_resource = obj_format.resource_set.filter(
-                is_root=False,
-            ).first()
+            obj_resource = obj_format.root_resource
+            mtl_resource = obj_format.resource_set.first()
 
             if obj_resource:
                 return {
@@ -452,9 +451,14 @@ class Asset(models.Model):
                 }
 
         # Return early if we can grab a Polygone resource first
-        polygone_gltf = self.resource_set.filter(
-            is_root=True, format__role__in=[1002, 1003]
+        polygone_gltf = None
+        format = self.format_set.filter(
+            role__in=[1002, 1003],
+            root_resource__isnull=False,
         ).first()
+        if format:
+            polygone_gltf = format.root_resource
+
         if polygone_gltf:
             return {
                 "format": polygone_gltf.format.format_type,
@@ -463,7 +467,14 @@ class Asset(models.Model):
             }
 
         # Return early with either of the role-based formats we care about.
-        updated_gltf = self.resource_set.filter(is_root=True, format__role=30).first()
+        updated_gltf = None
+        format = self.format_set.filter(
+            root_resource__isnull=False,
+            role=30,
+        ).first()
+        if format:
+            updated_gltf = format.root_resource
+
         if updated_gltf:
             return {
                 "format": updated_gltf.format.format_type,
@@ -471,7 +482,14 @@ class Asset(models.Model):
                 "resource": updated_gltf,
             }
 
-        original_gltf = self.resource_set.filter(is_root=True, format__role=12).first()
+        original_gltf = None
+        format = self.format_set.filter(
+            root_resource__isnull=False,
+            role=12,
+        ).first()
+        if format:
+            original_gltf = format.root_resource
+
         if original_gltf:
             return {
                 "format": original_gltf.format.format_type,
@@ -555,7 +573,13 @@ class Asset(models.Model):
     def download_url(self):
         if self.license == ALL_RIGHTS_RESERVED or not self.license:
             return None
-        updated_gltf = self.resource_set.filter(is_root=True, format__role=30).first()
+        updated_gltf = None
+        format = self.format_set.filter(
+            root_resource__isnull=False,
+            role=30,
+        ).first()
+        if format:
+            updated_gltf = format.root_resource
 
         preferred_format = self.preferred_viewer_format
 
@@ -903,7 +927,7 @@ def format_upload_path(instance, filename):
     format = instance.format
     asset = format.asset
     ext = filename.split(".")[-1]
-    if instance.is_root:
+    if instance.format is None:  # proxy test for if this is a root resource.
         name = f"model.{ext}"
     if ext == "obj" and instance.format.role == ORIGINAL_TRIANGULATED_OBJ_FORMAT:
         name = f"model-triangulated.{ext}"
@@ -925,6 +949,7 @@ class Format(models.Model):
         blank=True,
         choices=FORMAT_ROLE_CHOICES,
     )
+
     root_resource = models.ForeignKey(
         "Resource",
         null=True,
@@ -932,13 +957,6 @@ class Format(models.Model):
         related_name="root_formats",
         on_delete=models.SET_NULL,
     )
-
-    def save(self, *args, **kwargs):
-        if self._state.adding is False:
-            # Only denorm fields when updating an existing model
-            resource = self.resource_set.filter(is_root=True).first()
-            self.root_resource = resource
-        super().save(*args, **kwargs)
 
     class Meta:
         indexes = [
@@ -953,7 +971,7 @@ class Format(models.Model):
 class Resource(models.Model):
     is_root = models.BooleanField(default=False)
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
-    format = models.ForeignKey(Format, on_delete=models.CASCADE)
+    format = models.ForeignKey(Format, null=True, blank=True, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
         null=True,

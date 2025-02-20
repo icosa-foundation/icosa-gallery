@@ -42,12 +42,12 @@ class Command(BaseCommand):
 
                     root_resource_data = {
                         "file": file_path,
-                        "is_root": True,
                         "asset": asset,
-                        "format": format,
                         "contenttype": get_content_type(file_path),
                     }
-                    Resource.objects.create(**root_resource_data)
+                    root_resource = Resource.objects.create(**root_resource_data)
+                    format.root_resource = root_resource
+                    format.save()
 
                     if asset.thumbnail and done_thumbnail is False:
                         asset.thumbnail_contenttype = get_content_type(
@@ -63,7 +63,6 @@ class Command(BaseCommand):
                                     STORAGE_ROOT,
                                     "",
                                 ),
-                                "is_root": False,
                                 "asset": asset,
                                 "format": format,
                                 "contenttype": get_content_type(file_path),
