@@ -366,7 +366,7 @@ HUEY = {
 # calls the same code in userland. ENABLE_TASK_QUEUE is useful for excluding
 # huey from the code path entirely.
 
-ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", True)
+ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", False)
 
 # Maintenance Mode settings
 

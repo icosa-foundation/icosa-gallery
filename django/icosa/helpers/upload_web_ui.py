@@ -6,7 +6,14 @@ from pathlib import Path
 from typing import List, Optional
 
 from django.conf import settings
-from icosa.helpers.file import process_main_file, validate_file
+from icosa.helpers.file import (
+    IMAGE_REGEX,
+    UploadedFormat,
+    process_main_file,
+    validate_file,
+)
+from icosa.helpers.format_roles import USER_SUPPLIED_GLTF
+from icosa.helpers.upload import TYPE_ROLE_MAP, make_formats
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
@@ -16,6 +23,40 @@ from ninja import File
 from ninja.files import UploadedFile
 
 CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
+
+SUB_FILE_MAP = {
+    "IMAGE": "GLB",
+    "BIN": "GLTF",
+}
+
+VALID_WEB_FORMAT_TYPES = [
+    "glb",
+    "gltf",
+    "bin",
+]
+
+
+def get_role(mainfile: UploadedFormat) -> str:
+    type = mainfile.filetype
+    if type.startswith("GLTF"):
+        role = USER_SUPPLIED_GLTF
+    else:
+        role = TYPE_ROLE_MAP.get(type, None)
+    return role
+
+
+def write_files_to_convert(in_file, asset_dir):
+    file = in_file.file
+    Path(asset_dir).mkdir(parents=True, exist_ok=True)
+    path = os.path.join(asset_dir, file.name)
+    with open(path, "wb") as f_out:
+        for chunk in file.chunks():
+            f_out.write(chunk)
+        in_file.file.seek(0)
+        return (
+            path,
+            file.name,
+        )
 
 
 def convert_gltf(gltf_file, bin_file, asset_dir):
@@ -78,82 +119,121 @@ def clean_up_conversion(gltf_file, bin_file, gltf_path, asset_dir):
         pass
 
 
+def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
+    unzipped_files = []
+    for file in files:
+        if not file.name.endswith(".zip"):
+            # No further processing needed, though really we are not expecting
+            # extra files outside of a zip.
+            unzipped_files.append(file)
+            continue
+
+        # Read the file as a ZIP file
+        with zipfile.ZipFile(io.BytesIO(file.read())) as zip_file:
+            # Iterate over each file in the ZIP
+            for zip_info in zip_file.infolist():
+                # Skip directories
+                if zip_info.is_dir():
+                    continue
+                # Read the file contents
+                with zip_file.open(zip_info) as extracted_file:
+                    # Create a new UploadedFile object
+                    content = extracted_file.read()
+                    filename = zip_info.filename
+                    processed_file = UploadedFile(
+                        name=filename,
+                        file=io.BytesIO(content),
+                    )
+                    # Add the file to the list of unzipped files
+                    # to process. Do not include the thumbnail or
+                    # manifest.
+                    unzipped_files.append(processed_file)
+
+    return unzipped_files
+
+
 def upload(
     current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    # We need to see one of: glb or gltf, preferring glb.
     main_files = []
-    sub_files = []
-    name = "Untitled Asset"
+    # We need to see one of: glb or gltf, preferring glb. We are ignoring
+    sub_files = {
+        "GLB": [],  # All non-thumbnail images.
+        "GLTF": [],  # All GLB's files plus BIN files.
+    }
+    asset_name = "Untitled Asset"
 
-    unzipped_files = []
     if files is None:
         files = []
-    for file in files:
-        if file.name.endswith(".zip"):
-            # Read the file as a ZIP file
-            with zipfile.ZipFile(io.BytesIO(file.read())) as zip_file:
-                # Iterate over each file in the ZIP
-                for zip_info in zip_file.infolist():
-                    # Skip directories
-                    if zip_info.is_dir():
-                        continue
-                    # Read the file contents
-                    with zip_file.open(zip_info) as extracted_file:
-                        # Create a new UploadedFile object
-                        content = extracted_file.read()
-                        processed_file = UploadedFile(
-                            name=zip_info.filename,
-                            file=io.BytesIO(content),
-                        )
-                        unzipped_files.append(processed_file)
-        else:
-            unzipped_files.append(file)
+    unzipped_files = process_files(files)
 
-    gltf_to_convert = bin_for_conversion = None
+    gltf_to_convert = bin_to_convert = None
     asset_dir = os.path.join("/tmp/", f"{asset.id}")
 
     for file in unzipped_files:
+        print(file)
         splitext = os.path.splitext(file.name)
-        extension = splitext[1].lower().replace(".", "")
-        upload_details = validate_file(file, extension)
-        if upload_details is not None:
-            if upload_details.filetype in ["GLTF", "BIN"]:
-                # Save the file for later conversion.
-                file = upload_details.file
-                Path(asset_dir).mkdir(parents=True, exist_ok=True)
-                path = os.path.join(asset_dir, file.name)
-                with open(path, "wb") as f_out:
-                    for chunk in file.chunks():
-                        f_out.write(chunk)
-                    upload_details.file.seek(0)
-                    if upload_details.filetype == "BIN":
-                        bin_for_conversion = (
-                            path,
-                            file.name,
-                        )
-                    if upload_details.filetype == "GLTF":
-                        gltf_to_convert = (
-                            path,
-                            file.name,
-                        )
+        ext = splitext[1].lower().replace(".", "")
+        if ext not in VALID_WEB_FORMAT_TYPES or not IMAGE_REGEX.match(ext):
+            # validate_file will accept more than we want, so filter out types
+            # we are not accepting from users here.
+            continue
+        valid_file = validate_file(file, ext)
+        if valid_file is None:
+            continue
 
-            # TODO(james): this is wrong; each main file needs its own unique
-            # set of subfiles.
-            if upload_details.mainfile is True:
-                main_files.append(upload_details)
-                name = splitext[0]
-            else:
-                sub_files.append(upload_details)
+        print(valid_file)
+        # TODO(james): This code will break in mysterious ways if we receive
+        # more than one set of gltf/bin files and don't process the right bin
+        # with the right gltf.
+        if valid_file.filetype == "BIN" and bin_to_convert is None:
+            bin_to_convert = write_files_to_convert(
+                valid_file,
+                asset_dir,
+            )
+        if valid_file.filetype == "GLTF" and gltf_to_convert is None:
+            gltf_to_convert = write_files_to_convert(
+                valid_file,
+                asset_dir,
+            )
 
-    converted_gltf_path = convert_gltf(gltf_to_convert)
+        if valid_file.mainfile is True:
+            main_files.append(valid_file)
+            asset_name = splitext[0]
+        else:
+            parent_resource_type = SUB_FILE_MAP[valid_file.filetype]
+            sub_files[parent_resource_type].append(valid_file)
 
-    asset.name = name
+    converted_gltf_path = convert_gltf(
+        gltf_to_convert,
+        bin_to_convert,
+        asset_dir,
+    )
+
+    asset.name = asset_name
     asset.save()
 
+    print("processing mainfiles....................")
     for mainfile in main_files:
+        print(mainfile)
+        type = mainfile.filetype
+        if type.startswith("GLTF"):
+            sub_files_list = sub_files["GLTF"] + sub_files["GLB"]
+        else:
+            try:
+                sub_files_list = sub_files[type]
+            except KeyError:
+                sub_files_list = []
+
+        role = get_role(mainfile)
+        make_formats(
+            mainfile,
+            sub_files_list,
+            asset,
+            role,
+        )
         process_main_file(
             mainfile,
             sub_files,
@@ -163,7 +243,7 @@ def upload(
 
     clean_up_conversion(
         gltf_to_convert,
-        bin_for_conversion,
+        bin_to_convert,
         converted_gltf_path,
         asset_dir,
     )
