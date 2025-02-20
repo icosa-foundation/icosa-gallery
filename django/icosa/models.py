@@ -804,7 +804,7 @@ class Asset(models.Model):
                     # upload.
                     try:
                         override_format = self.format_set.get(role=POLYGONE_GLTF_FORMAT)
-                        override_resources = override_format.resource_set.all()
+                        override_resources = list(override_format.resource_set.all())
                         override_format_root = override_format.root_resource
                         if override_format_root is not None:
                             if (
