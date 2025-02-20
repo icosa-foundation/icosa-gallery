@@ -805,6 +805,13 @@ class Asset(models.Model):
                     try:
                         override_format = self.format_set.get(role=POLYGONE_GLTF_FORMAT)
                         override_resources = override_format.resource_set.all()
+                        override_format_root = override_format.root_resource
+                        if override_format_root is not None:
+                            if (
+                                override_format_root.file
+                                or override_format_root.external_url
+                            ):
+                                override_resources.append(override_format_root)
                         resource_data = {
                             "files_to_zip": [
                                 f"{STORAGE_PREFIX}{suffix(x.file.name)}"
