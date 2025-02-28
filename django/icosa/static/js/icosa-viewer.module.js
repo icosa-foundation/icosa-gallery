@@ -51815,6 +51815,12 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.initFog();
         this.initLights();
         this.initCameras();
+        // Compensate for insanely large models
+        let radius = this.overrides?.geometryData?.stats?.radius;
+        if (radius > 10000) {
+            let scale = 1 / radius;
+            this.loadedModel.scale.set(scale, scale, scale);
+        }
         this.scene.add(this.loadedModel);
     }
     static lookupEnvironment(guid) {
