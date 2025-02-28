@@ -51708,12 +51708,12 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
                         if (inputSource.handedness === "left") {
                             // Rotation (left thumbstick x)
                             if (Math.abs(axes[2]) > 0.8 && Math.abs(previousLeftThumbstickX) <= 0.8) {
-                                if (axes[2] > 0) viewer1.cameraRig.rotation.y -= snapAngle;
+                                if (axes[2] < 0) viewer1.cameraRig.rotation.y -= snapAngle;
                                 else viewer1.cameraRig.rotation.y += snapAngle;
                             }
                             previousLeftThumbstickX = axes[2];
                             // Up/down position left thumbstick y)
-                            if (Math.abs(axes[3]) > 0.3) viewer1.cameraRig.position.y += axes[3] * moveSpeed;
+                            if (Math.abs(axes[3]) > 0.5) viewer1.cameraRig.position.y += axes[3] * moveSpeed;
                         }
                         if (inputSource.handedness === "right") // Movement (right thumbstick)
                         {
