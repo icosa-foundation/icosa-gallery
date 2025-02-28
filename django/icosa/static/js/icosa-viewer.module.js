@@ -51730,7 +51730,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
                         if (inputSource.handedness === "right") {
                             // Rotation (right thumbstick x)
                             if (Math.abs(axes[2]) > 0.8 && Math.abs(previousLeftThumbstickX) <= 0.8) {
-                                if (axes[2] < 0) viewer1.cameraRig.rotation.y -= $ea01ff4a5048cd08$exports.MathUtils.degToRad(snapAngle);
+                                if (axes[2] > 0) viewer1.cameraRig.rotation.y -= $ea01ff4a5048cd08$exports.MathUtils.degToRad(snapAngle);
                                 else viewer1.cameraRig.rotation.y += $ea01ff4a5048cd08$exports.MathUtils.degToRad(snapAngle);
                             }
                             previousLeftThumbstickX = axes[2];
