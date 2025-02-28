@@ -51819,7 +51819,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         let radius = this.overrides?.geometryData?.stats?.radius;
         if (radius > 10000) {
             let scale = 1 / radius; // Unit scale
-            scale += 100; // Add a little extra
+            scale *= 100; // Add a little extra
             this.loadedModel.scale.set(scale, scale, scale);
         }
         this.scene.add(this.loadedModel);
