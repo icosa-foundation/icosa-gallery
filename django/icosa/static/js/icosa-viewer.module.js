@@ -50067,7 +50067,7 @@ class $a970d3af3e0e453f$var$GLTFParser {
                 // According to COLLADA spec...
                 // aspectRatio = xfov / yfov
                 var xfov = yfov * aspectRatio;
-                var _camera = new (0, $ea01ff4a5048cd08$export$74e4ae24825f68d7)(Math.radToDeg(xfov), aspectRatio, camera.perspective.znear || 1, camera.perspective.zfar || 2e6);
+                var _camera = new (0, $ea01ff4a5048cd08$export$74e4ae24825f68d7)($ea01ff4a5048cd08$export$6a7ef315a0d1ef07.radToDeg(xfov), aspectRatio, camera.perspective.znear || 1, camera.perspective.zfar || 2e6);
                 if (camera.name !== undefined) _camera.name = camera.name;
                 if (camera.extras) _camera.userData = camera.extras;
                 return _camera;
@@ -51606,6 +51606,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.brushPath = new URL("brushes/", assetBaseUrl);
         this.environmentPath = new URL("environments/", assetBaseUrl);
         this.texturePath = new URL("textures/", assetBaseUrl);
+        this.defaultBackgroundColor = new $ea01ff4a5048cd08$exports.Color(0x000000);
         this.tiltLoader = new (0, $55489216125af3e6$export$36ca96fcead4fad7)(manager);
         this.tiltLoader.setBrushPath(this.brushPath.toString());
         this.objLoader = new (0, $21fa36e3a39b221c$export$7ae31604ad04b4a7)(manager);
@@ -51642,6 +51643,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             };
             return null;
         }
+        this.cameraRig = new $ea01ff4a5048cd08$exports.Group();
         let controller0;
         let controller1;
         let controllerGrip0;
@@ -51728,8 +51730,8 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
                         if (inputSource.handedness === "right") {
                             // Rotation (right thumbstick x)
                             if (Math.abs(axes[2]) > 0.8 && Math.abs(previousLeftThumbstickX) <= 0.8) {
-                                if (axes[2] < 0) viewer1.cameraRig.rotation.y -= snapAngle;
-                                else viewer1.cameraRig.rotation.y += snapAngle;
+                                if (axes[2] < 0) viewer1.cameraRig.rotation.y -= $ea01ff4a5048cd08$exports.MathUtils.degToRad(snapAngle);
+                                else viewer1.cameraRig.rotation.y += $ea01ff4a5048cd08$exports.MathUtils.degToRad(snapAngle);
                             }
                             previousLeftThumbstickX = axes[2];
                             // Up/down position right thumbstick y)
