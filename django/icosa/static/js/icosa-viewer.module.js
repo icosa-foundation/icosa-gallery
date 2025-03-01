@@ -51815,14 +51815,23 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.initFog();
         this.initLights();
         this.initCameras();
+        // TODO - this doesn't work
         // Compensate for insanely large models
-        let radius = this.overrides?.geometryData?.stats?.radius;
-        if (radius > 10000) {
-            let scale = 1 / radius; // Unit scale
-            scale *= 100; // Add a little extra
-            this.loadedModel.scale.set(scale, scale, scale);
-        }
+        // let radius = this.overrides?.geometryData?.stats?.radius;
+        // if (radius > 10000) {
+        //     let scale = 1 / radius; // Unit scale
+        //     scale *= 100; // Add a little extra
+        //     this.loadedModel.scale.set(scale, scale, scale);
+        // }
         this.scene.add(this.loadedModel);
+    }
+    toggleTreeView(root) {
+        if (root.childElementCount == 0) {
+            this.createTreeView(this.scene, root);
+            root.style.display = "none";
+        }
+        if (root.style.display === "block") root.style.display = "none";
+        else if (root.style.display === "none") root.style.display = "block";
     }
     static lookupEnvironment(guid) {
         return ({
@@ -53471,6 +53480,55 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         cameraDir.normalize();
         let newTarget = cameraPos.clone().add(cameraDir);
         this.cameraControls.setTarget(newTarget.x, newTarget.y, newTarget.z, true);
+    }
+    createTreeView(model, root) {
+        const treeView = root;
+        if (!treeView) {
+            console.error("Tree view container not found");
+            return;
+        }
+        treeView.innerHTML = "";
+        if (model) this.createTreeViewNode(model, treeView);
+        else console.error("Model not loaded");
+    }
+    createTreeViewNode(object, parentElement) {
+        const nodeElement = document.createElement("div");
+        nodeElement.classList.add("tree-node");
+        nodeElement.style.marginLeft = "5px";
+        const contentElement = document.createElement("div");
+        contentElement.classList.add("tree-content");
+        const toggleButton = document.createElement("span");
+        toggleButton.classList.add("toggle-btn");
+        toggleButton.textContent = object.children && object.children.length > 0 ? "\u25B6" : " ";
+        toggleButton.addEventListener("click", ()=>{
+            nodeElement.classList.toggle("expanded");
+            toggleButton.textContent = nodeElement.classList.contains("expanded") ? "\u25BC" : "\u25B6";
+        });
+        const visibilityCheckbox = document.createElement("input");
+        visibilityCheckbox.type = "checkbox";
+        visibilityCheckbox.checked = object.visible;
+        visibilityCheckbox.addEventListener("change", ()=>{
+            object.visible = visibilityCheckbox.checked;
+        });
+        const label = document.createElement("span");
+        label.textContent = object.name || object.type;
+        label.style.marginLeft = "5px";
+        contentElement.appendChild(toggleButton);
+        contentElement.appendChild(visibilityCheckbox);
+        contentElement.appendChild(label);
+        label.addEventListener("click", ()=>{
+            console.log(object);
+        });
+        nodeElement.appendChild(contentElement);
+        if (object.children && object.children.length > 0) {
+            const childrenContainer = document.createElement("div");
+            childrenContainer.classList.add("children");
+            nodeElement.appendChild(childrenContainer);
+            object.children.forEach((child)=>{
+                this.createTreeViewNode(child, childrenContainer);
+            });
+        }
+        parentElement.appendChild(nodeElement);
     }
 }
 
