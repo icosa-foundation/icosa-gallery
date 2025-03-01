@@ -12,6 +12,12 @@
     }
 </style>
 <style>
+    #icosa-wrapper {
+        display: flex;
+    }
+    #icosa-viewer {
+        flex-grow: 1;
+    }
     #tree-view {
         padding: 10px;
         background-color: rgba(0,0,0,0.25);
@@ -21,6 +27,9 @@
         box-shadow: -2px 0 5px rgba(0,0,0,0.1);
         z-index: 10;
         display: none;
+        width: 250px;
+        overflow-y: auto;
+        flex-shrink: 0;
     }
     .tree-node {
         margin: 5px 0;
@@ -41,6 +50,9 @@
     }
     #tree-view .expanded > .children {
         display: block;
+    }
+    #tree-view .toggle-btn input[type="checkbox"] {
+        display: inline;
     }
 </style>
 <script type="importmap" class="es6_modules_map">
