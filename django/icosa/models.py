@@ -974,6 +974,17 @@ class Format(models.Model):
     is_preferred_for_viewer = models.BooleanField(default=False)
     is_preferred_for_download = models.BooleanField(default=False)
 
+    def add_root_resource(self, resource):
+        if not resource.format:
+            from icosa.api.exceptions import RootResourceException
+
+            raise RootResourceException(
+                "Resource must have a format associated with it."
+            )
+        self.root_resource = resource
+        resource.format = None
+        resource.save()
+
     class Meta:
         indexes = [
             models.Index(

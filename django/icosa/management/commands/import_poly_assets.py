@@ -146,11 +146,12 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
         root_resource_data = {
             "file": f"poly/{directory}/{file_path}",
             "asset": asset,
+            "format": format,
             "contenttype": root_resource_json["contentType"],
         }
         root_resource = Resource.objects.create(**root_resource_data)
 
-        format.root_resource = root_resource
+        format.add_root_resource(root_resource)
         role = EXTENSION_ROLE_MAP.get(extension)
         format.role = role
         format.save()
@@ -221,13 +222,14 @@ def create_formats_from_archive_data(formats_json, asset):
         root_resource_data = {
             "external_url": f"https://web.archive.org/web/{url}",
             "asset": asset,
+            "format": format,
             "contenttype": get_content_type(url),
         }
 
         root_resource = Resource.objects.create(**root_resource_data)
 
         role = FORMAT_ROLE_MAP[root_resource_json["role"]]
-        format.root_resource = root_resource
+        format.add_root_resource(root_resource)
         format.role = role
         format.save()
 

@@ -195,10 +195,11 @@ def make_formats(mainfile, sub_files, asset, role=None):
     root_resource_data = {
         "file": file,
         "asset": asset,
+        "format": format,
         "contenttype": get_content_type(name),
     }
     root_resource = Resource.objects.create(**root_resource_data)
-    format.root_resource = root_resource
+    format.add_root_resource(root_resource)
     format.save()
 
     for subfile in sub_files:

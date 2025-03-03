@@ -185,10 +185,11 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
     resource_data = {
         "file": file,
         "asset": asset,
+        "format": format,
         "contenttype": get_content_type(name),
     }
     root_resource = Resource.objects.create(**resource_data)
-    format.root_resource = root_resource
+    format.add_root_resource(root_resource)
 
     for subfile in sub_files:
         # Horrendous check for supposedly compatible subfiles. can
@@ -304,10 +305,11 @@ def process_normally(asset: Asset, f: UploadedFormat):
         root_resource_data = {
             "file": f.file,
             "asset": asset,
+            "format": format,
             "contenttype": get_content_type(f.file.name),
         }
         root_resource = Resource.objects.create(**root_resource_data)
-        format.root_resource = root_resource
+        format.add_root_resource(root_resource)
     else:
         resource_data = {
             "file": f.file,
@@ -336,6 +338,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     resource_data = {
         "file": None,
         "asset": asset,
+        "format": format,
         "contenttype": "text/plain",
     }
     if obj_non_triangulated is None:
@@ -344,7 +347,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
             role=ORIGINAL_OBJ_FORMAT,
         )
         obj_non_triangulated = Resource.objects.create(**resource_data)
-        format.root_resource = obj_non_triangulated
+        format.add_root_resource(obj_non_triangulated)
         format.save()
     else:
         format_non_triangulated = Format.objects.filter(
@@ -357,7 +360,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
             role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
         )
         obj_triangulated = Resource.objects.create(**resource_data)
-        format.root_resource = obj_triangulated
+        format.add_root_resource(obj_triangulated)
         format.save()
     else:
         format_triangulated = Format.objects.filter(
@@ -395,10 +398,11 @@ def process_bin(asset: Asset, f: UploadedFormat):
         resource_data = {
             "file": None,
             "asset": asset,
+            "format": format,
             "contenttype": "application/gltf+json",
         }
         gltf = Resource.objects.create(**resource_data)
-        format.root_resource = gltf
+        format.add_root_resource(gltf)
         format.save()
     else:
         format = Format.objects.filter(root_resource=gltf).first()
