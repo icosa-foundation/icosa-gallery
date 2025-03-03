@@ -439,9 +439,10 @@ class Asset(models.Model):
         return get_snowflake_timestamp(self.id)
 
     def handle_blocks_preferred_format(self):
-        # TODO(james): This handler is specific to data collected from blocks. We should
-        # use this logic to populate the database with the correct information. But
-        # for now, we don't know this method is 100% correct, so I'm leaving this here.
+        # TODO(james): This handler is specific to data collected from blocks.
+        # We should use this logic to populate the database with the correct
+        # information. But for now, we don't know this method is 100% correct,
+        # so I'm leaving this here.
         if not self.has_gltf2:
             # There are some issues with displaying GLTF1 files from Blocks
             # so we have to return an OBJ and its associated MTL.
