@@ -89,9 +89,8 @@
 
     {% if not asset.has_tilt and not override_suffix and not format_override %}
 
-        let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", ""); // Remove suffix to avoid duplicating it
-        url = url.replace(".gltf", "_%28GLTFupdated%29.gltf"); // Add suffix
         let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+        let url = "{{ asset.preferred_viewer_format.url }}";
 
     {% else %}
 

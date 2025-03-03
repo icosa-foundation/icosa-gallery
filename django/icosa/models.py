@@ -97,6 +97,19 @@ LICENSE_CHOICES = (
     + [RESERVED_LICENSE]
 )
 
+ARCHIVE_PREFIX = "https://web.archive.org/web/"
+STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
+
+
+def suffix(name):
+    if name is None:
+        return None
+    if name.endswith(".gltf"):
+        return "".join(
+            [f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]]
+        )
+    return name
+
 
 class Category(models.TextChoices):
     MISCELLANEOUS = "MISCELLANEOUS", "Miscellaneous"
@@ -425,16 +438,13 @@ class Asset(models.Model):
     def timestamp(self):
         return get_snowflake_timestamp(self.id)
 
-    @property
-    def _preferred_viewer_format(self):
-        # Return early with an obj if we know the asset is a blocks file.
-        # There are some issues with displaying GLTF files from Blocks so we
-        # have to return an OBJ and its associated MTL.
-        # TODO we now force updated gltf in the template instead of obj
-        if False:
-            # here: self.is_blocks and not self.has_gltf2:
-            # TODO Prefer some roles over others
-            # TODO error handling
+    def handle_blocks_preferred_format(self):
+        # TODO(james): This handler is specific to data collected from blocks. We should
+        # use this logic to populate the database with the correct information. But
+        # for now, we don't know this method is 100% correct, so I'm leaving this here.
+        if not self.has_gltf2:
+            # There are some issues with displaying GLTF1 files from Blocks
+            # so we have to return an OBJ and its associated MTL.
             obj_format = self.format_set.filter(
                 format_type="OBJ",
                 root_resource__isnull=False,
@@ -442,13 +452,41 @@ class Asset(models.Model):
             obj_resource = obj_format.root_resource
             mtl_resource = obj_format.resource_set.first()
 
-            if obj_resource:
-                return {
-                    "format": obj_format.format_type,
-                    "url": obj_resource.internal_url_or_none,
-                    "materialUrl": mtl_resource.url,
-                    "resource": obj_resource,
-                }
+            if not obj_resource:
+                # TODO: If we fail to find an obj, do we want to handle this
+                # with an error?
+                return None
+            return {
+                "format": obj_format.format_type,
+                "url": obj_resource.internal_url_or_none,
+                "materialUrl": mtl_resource.url,
+                "resource": obj_resource,
+            }
+        # We have a gltf2, but we must currently return the suffixed version we
+        # have in storage; the non-suffixed version currently does not work.
+        blocks_format = self.format_set.filter(format_type="GLTF2").first()
+        blocks_resource = None
+        if blocks_format is not None:
+            blocks_resource = blocks_format.root_resource
+        if blocks_format is None or blocks_resource is None:
+            # TODO: If we fail to find a gltf2, do we want to handle this with
+            # an error?
+            return None
+        filename = blocks_resource.url
+        if filename is None:
+            return None
+        filename = f"poly/{self.url}/{filename.split('/')[-1]}"
+        url = f"{STORAGE_PREFIX}{suffix(filename)}"
+        return {
+            "format": blocks_format.format_type,
+            "url": url,
+            "resource": blocks_resource,
+        }
+
+    @property
+    def _preferred_viewer_format(self):
+        if self.has_blocks:
+            return self.handle_blocks_preferred_format()
 
         # Return early if we can grab a Polygone resource first
         polygone_gltf = None
@@ -748,18 +786,6 @@ class Asset(models.Model):
         formats = {}
         if self.license == ALL_RIGHTS_RESERVED:
             return formats
-
-        def suffix(name):
-            if name.endswith(".gltf"):
-                return "".join(
-                    [f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]]
-                )
-            return name
-
-        ARCHIVE_PREFIX = "https://web.archive.org/web/"
-        STORAGE_PREFIX = (
-            f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
-        )
 
         format_name_override_map = {
             "Original OBJ File": "OBJ File",
