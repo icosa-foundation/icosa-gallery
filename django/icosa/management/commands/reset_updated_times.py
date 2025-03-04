@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import datetime
 
 from django.core.management.base import BaseCommand
@@ -14,18 +13,15 @@ def set_asset_update_time(asset_id, data):
         f"Importing {asset_id}                 ",
         end="\r",
     )
-    # Calling update() does not update the auto_now_* fields, where calling
-    # save() would.
-    asset = Asset.objects.filter(url=asset_id)
-    if asset:
-        pass  # dry-run for now
-        # asset.update(
-        #     update_time=datetime.fromisoformat(
-        #         data["updateTime"].replace("Z", "+00:00")
-        #     )
-        # )
-    else:
+    try:
+        asset = Asset.objects.get(url=asset_id)
+    except Asset.DoesNotExist:
         print(f"Not found: {asset_id}")
+    if asset:
+        asset.update_time = datetime.fromisoformat(
+            data["updateTime"].replace("Z", "+00:00")
+        )
+        asset.save(update_timestamps=False)
 
 
 class Command(BaseCommand):
