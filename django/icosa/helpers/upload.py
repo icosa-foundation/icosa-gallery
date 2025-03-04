@@ -140,7 +140,7 @@ def upload_api_asset(
     # Begin upload process.
 
     asset.name = asset_name
-    asset.save()
+    asset.save(update_timestamps=False)
 
     is_tilt_upload = False
     for mainfile in main_files:
@@ -175,7 +175,7 @@ def upload_api_asset(
         add_thumbnail_to_asset(upload_set.thumbnail, asset)
 
     asset.state = ASSET_STATE_COMPLETE
-    asset.save()
+    asset.save(update_timestamps=False)
     return asset
 
 

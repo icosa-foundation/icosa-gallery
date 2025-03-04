@@ -54,7 +54,7 @@ class Command(BaseCommand):
                         asset.thumbnail_contenttype = get_content_type(
                             asset.thumbnail.name
                         )
-                        asset.save()
+                        asset.save(update_timestamps=False)
                         done_thumbnail = True
 
                     if format_json.get("subfiles", None) is not None:

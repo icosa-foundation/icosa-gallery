@@ -136,7 +136,7 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
         if not done_thumbnail:
             asset.thumbnail = f"poly/{directory}/thumbnail.png"
             asset.thumbnail_contenttype = "image/png"
-            asset.save()
+            asset.save(update_timestamps=False)
             done_thumbnail = True
         root_resource_json = format_json["root"]
 
@@ -215,7 +215,7 @@ def create_formats_from_archive_data(formats_json, asset):
         # if not done_thumbnail:
         #     asset.thumbnail = f"poly/{directory}/thumbnail.png"
         #     asset.thumbnail_contenttype = "image/png"
-        #     asset.save()
+        #     asset.save(update_timestamps=False)
         # done_thumbnail = True
         root_resource_json = format_json["root"]
         url = root_resource_json["url"]
@@ -407,7 +407,7 @@ def handle_asset(
 
             # Re-save the asset to trigger model
             # validation.
-            asset.save()
+            asset.save(update_timestamps=False)
     else:
         with open("./invalid_assets.log", "a") as log:
             log.write(f"{asset_id}\n")

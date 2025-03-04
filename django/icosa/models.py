@@ -15,6 +15,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.format_roles import (
@@ -390,8 +391,8 @@ class Asset(models.Model):
         blank=True,
         null=True,
     )
-    create_time = models.DateTimeField(auto_now_add=True)
-    update_time = models.DateTimeField(auto_now=True)
+    create_time = models.DateTimeField()
+    update_time = models.DateTimeField()
     license = models.CharField(
         max_length=50, null=True, blank=True, choices=LICENSE_CHOICES
     )
@@ -771,7 +772,7 @@ class Asset(models.Model):
     def inc_views_and_rank(self):
         self.views += 1
         self.rank = self.get_updated_rank()
-        self.save()
+        self.save(update_timestamps=False)
 
     def get_all_file_names(self):
         file_list = []
@@ -923,7 +924,12 @@ class Asset(models.Model):
                 pass
 
     def save(self, *args, **kwargs):
-        if self._state.adding is False:
+        update_timestamps = kwargs.pop("update_timestamps", True)
+        now = timezone.now()
+        if self._state.adding:
+            if update_timestamps:
+                self.create_time = now
+        else:
             # Only denorm fields when updating an existing model
             self.rank = self.get_updated_rank()
             self.update_search_text()
@@ -931,6 +937,8 @@ class Asset(models.Model):
             self.denorm_format_types()
             self.denorm_triangle_count()
             self.denorm_liked_time()
+            if update_timestamps:
+                self.update_time = now
         super().save(*args, **kwargs)
 
     class Meta:

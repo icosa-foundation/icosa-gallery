@@ -29,7 +29,7 @@ def handle_upload_error(task, exc):
     user = task.kwargs.pop("current_user")
 
     asset.state = ASSET_STATE_FAILED
-    asset.save()
+    asset.save(update_timestamps=False)
 
     # TODO, instead of writing to a log file, we need to write to some kind of
     # user-facing error log. The design for this needs to be decided. E.g. how
@@ -105,4 +105,4 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
 
     asset.state = ASSET_STATE_COMPLETE
     asset.remix_ids = getattr(data, "remixIds", None)
-    asset.save()
+    asset.save(update_timestamps=False)

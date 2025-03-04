@@ -419,7 +419,7 @@ def make_asset_thumbnail(request, asset_url):
         image_file = b64_to_img(b64_image)
 
         asset.preview_image = image_file
-        asset.save()
+        asset.save(update_timestamps=False)
         body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
 
         return HttpResponse(mark_safe(body))
@@ -480,7 +480,7 @@ def asset_log_download(request, asset_url):
     if request.method == "POST":
         asset = get_object_or_404(Asset, url=asset_url)
         asset.downloads += 1
-        asset.save()
+        asset.save(update_timestamps=False)
 
         return HttpResponse("ok")
     else:
@@ -602,7 +602,7 @@ def report_asset(request, asset_url):
                 reporter = AssetOwner.from_django_user(reporter)
                 reporter_email = reporter.email
                 asset.last_reported_by = reporter
-            asset.save()
+            asset.save(update_timestamps=False)
             current_site = get_current_site(request)
             mail_subject = "An Icosa asset has been reported"
             to_email = getattr(settings, "ADMIN_EMAIL", None)
@@ -811,7 +811,8 @@ def toggle_like(request):
         owner.likes.remove(asset)
     else:
         owner.likes.add(asset)
-        asset.save()  # Triggers denorming of asset liked time.
+        # Triggers denorming of asset liked time, but not update_time.
+        asset.save(update_timestamps=False)
     template = "main/tags/like_button.html"
     context = {
         "is_liked": not is_liked,

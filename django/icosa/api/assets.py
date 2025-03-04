@@ -211,7 +211,7 @@ def add_blocks_asset_format(
     else:
         raise HttpError(415, "Unsupported content type.")
 
-    asset.save()
+    asset.save(update_timestamps=False)
     return get_publish_url(request, asset)
 
 
