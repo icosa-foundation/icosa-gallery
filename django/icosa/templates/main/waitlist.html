@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load honeypot %}
+
+{% block content %}
+    <div class="container text-page">
+        <div class="row">
+            <div class="col-lg-6 offset-lg-3">
+                <h2>{{ page_title }}</h2>
+                {% if success %}
+                    <p>Thanks! We'll notify you when registration is open.</p>
+                {% else %}
+                    <p>Please enter your email address to be notified when registration is open.</p>
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        {% render_honeypot_field %}
+                        {% for field in form %}
+                            <p>
+                                {{ field.label_tag }}
+                                {% if field.errors %}
+                                    {{ field.errors }}
+                                {% endif %}
+                                {{ field }}
+                            </p>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                    <p><small>By submitting this form you agree for us to send you an email once you can register for this site. We promise not to share your email with anyone else. For more details, review our <a href="{% url 'privacy_policy' %}">Privacy Policy</a></small></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}

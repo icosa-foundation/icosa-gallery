@@ -1184,3 +1184,16 @@ class HiddenMediaFileLog(models.Model):
 
     def __str__(self):
         return f"{self.original_asset_id}: {self.file_name}"
+
+
+class WaitlistEntry(models.Model):
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.email}"
+
+    class Meta:
+        verbose_name_plural = "Waitlist entries"
+        ordering = ("-create_time",)

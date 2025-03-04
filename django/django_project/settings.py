@@ -284,6 +284,16 @@ CONSTANCE_CONFIG = {
         "Comma-separated list of domains who have set their CORS to allow fetching from this site's domain.",
         str,
     ),
+    "SIGNUP_OPEN": (
+        True,
+        "Enables the registration form.",
+        bool,
+    ),
+    "WAITLIST_IF_SIGNUP_CLOSED": (
+        False,
+        "If Signup Open is False, this will enable the waitlist functionality. Does nothing if Signup Open is True.",
+        bool,
+    ),
 }
 
 # Debug Toolbar settings

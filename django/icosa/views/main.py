@@ -2,6 +2,7 @@ import inspect
 import random
 import secrets
 
+from constance import config
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -32,6 +33,7 @@ from icosa.forms import (
     AssetSettingsForm,
     AssetUploadForm,
     UserSettingsForm,
+    WaitlistForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img
@@ -49,6 +51,7 @@ from icosa.models import (
     Asset,
     AssetOwner,
     MastheadSection,
+    WaitlistEntry,
 )
 from icosa.tasks import queue_upload_asset_web_ui
 from silk.profiling.profiler import silk_profile
@@ -813,6 +816,36 @@ def toggle_like(request):
     context = {
         "is_liked": not is_liked,
         "asset_url": asset.url,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@check_honeypot
+def waitlist(request):
+    template = "main/waitlist.html"
+    if not config.WAITLIST_IF_SIGNUP_CLOSED and not config.SIGNUP_OPEN:
+        raise Http404()
+
+    success = False
+    if request.method == "GET":
+        form = WaitlistForm()
+    elif request.method == "POST":
+        # Assuming that the form is posted via htmx, so we are returning
+        # a partial.
+        form = WaitlistForm(request.POST)
+        if form.is_valid():
+            WaitlistEntry.objects.get_or_create(email=form.cleaned_data.get("email"))
+            success = True
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "form": form,
+        "page_title": "Join the waitlist",
+        "success": success,
     }
     return render(
         request,

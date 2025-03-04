@@ -157,6 +157,7 @@ urlpatterns = [
     path("licenses", main_views.licenses, name="licenses"),
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
+    path("waitlist", main_views.waitlist, name="waitlist"),
     # autocomplete views
     path(
         "tag-autocomplete",

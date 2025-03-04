@@ -21,7 +21,15 @@
                     {% if owner is not None %}
                         Welcome, <a href="/user/{{ owner.url }}">{{ owner.displayname }}</a>
                     {% else %}
-                        <a href="{% url 'login' %}">Login / Register</a>
+                        {% if config.SIGNUP_OPEN %}
+                            <a href="{% url 'login' %}">Login / Register</a>
+                        {% else %}
+                            {% if config.WAITLIST_IF_SIGNUP_CLOSED %}
+                                <a href="{% url 'login' %}">Login / Register Interest</a>
+                            {% else %}
+                                <a href="{% url 'login' %}">Login</a>
+                            {% endif %}
+                        {% endif %}
                     {% endif %}
                     </div>
                 {% endif %}

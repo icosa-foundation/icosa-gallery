@@ -13,6 +13,7 @@ from icosa.models import (
     V4_CC_LICENSES,
     Asset,
     AssetOwner,
+    WaitlistEntry,
 )
 
 ARTIST_QUERY_SUBJECT_CHOICES = [
@@ -268,3 +269,12 @@ class ArtistQueryForm(forms.Form):
         widget=forms.TextInput(),
         required=True,
     )
+
+
+class WaitlistForm(forms.ModelForm):
+    class Meta:
+        model = WaitlistEntry
+
+        fields = [
+            "email",
+        ]
