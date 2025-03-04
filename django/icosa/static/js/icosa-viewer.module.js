@@ -51822,9 +51822,9 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         if (radius > LIMIT) {
             let excess = radius - LIMIT;
             this.loadedModel.scale.divideScalar(excess);
+            this.scene.add(this.loadedModel);
             this.frameScene();
-        }
-        this.scene.add(this.loadedModel);
+        } else this.scene.add(this.loadedModel);
     }
     toggleTreeView(root) {
         if (root.childElementCount == 0) {
