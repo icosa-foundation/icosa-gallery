@@ -285,7 +285,7 @@ CONSTANCE_CONFIG = {
         str,
     ),
     "SIGNUP_OPEN": (
-        True,
+        False,
         "Enables the registration form.",
         bool,
     ),
