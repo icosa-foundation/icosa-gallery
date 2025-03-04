@@ -1,13 +1,11 @@
 import json
 import os
 
-from icosa.models import Asset
-
 from django.core.management.base import BaseCommand
+from icosa.models import Asset
 
 
 class Command(BaseCommand):
-
     help = """Swaps Assets' hard-coded storage bucket references from Google
     Cloud Platform to Backblaze B2"""
 
@@ -19,9 +17,7 @@ class Command(BaseCommand):
             return
 
         assets_with_formats = Asset.objects.filter(formats__icontains=GCP_URL)
-        assets_with_thumbnails = Asset.objects.filter(
-            thumbnail__icontains=GCP_URL
-        )
+        assets_with_thumbnails = Asset.objects.filter(thumbnail__icontains=GCP_URL)
 
         for asset in assets_with_formats:
             format_str = json.dumps(asset.formats)
