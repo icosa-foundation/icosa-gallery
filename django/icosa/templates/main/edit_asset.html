@@ -13,6 +13,7 @@
     </div>
     <div class="editor">
         <div class="sketcheditor container">
+            {% if asset.is_editable %}
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 {% for field in form %}
@@ -56,6 +57,9 @@
                 <button type="submit" class="btn btn-primary">Save</button>
                 <a href="{% url 'uploads' %}" class="btn btn-secondary">Cancel</a>
             </form>
+            {% else %}
+            <p>You can't edit this asset.</p>
+            {% endif %}
             <p>
               <button href="javascript:void(0);" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">Delete</button>
             </p>

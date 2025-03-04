@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 import string
 from collections import OrderedDict
@@ -87,6 +88,10 @@ RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
 CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES] + [
     x[0] for x in V4_CC_LICENSE_CHOICES
 ]
+
+REMIX_REGEX = re.compile("(^.*BY_[0-9]_|CREATIVE_COMMONS_0)")
+
+CC_REMIX_LICENCES = [x for x in CC_LICENSES if REMIX_REGEX.match(x)]
 
 LICENSE_CHOICES = (
     [
@@ -429,6 +434,16 @@ class Asset(models.Model):
     has_obj = models.BooleanField(default=False)
 
     rank = models.FloatField(default=0)
+
+    @property
+    def is_editable(self):
+        # Once a permissable license has been chosen, and the asset is
+        # available for use in other models, we cannot allow changing anything
+        # about it. Doing so would allow abuse.
+        return (
+            self.visibility not in [PUBLIC, UNLISTED]
+            and self.license not in CC_REMIX_LICENCES
+        )
 
     @property
     def slug(self):
