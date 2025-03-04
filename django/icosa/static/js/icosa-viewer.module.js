@@ -51821,9 +51821,10 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         let radius = this.overrides?.geometryData?.stats?.radius;
         if (radius > LIMIT) {
             let excess = radius - LIMIT;
-            this.loadedModel.scale.divideScalar(excess);
-            this.scene.add(this.loadedModel);
-            this.frameScene();
+            let sceneNode = this.scene.add(this.loadedModel);
+            sceneNode.scale.divideScalar(excess);
+            // Reframe the scaled scene
+            this.frameNode(sceneNode);
         } else this.scene.add(this.loadedModel);
     }
     toggleTreeView(root) {
@@ -53455,23 +53456,31 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.scene.background = this.defaultBackgroundColor;
     }
     frameScene() {
-        let box;
-        if (this.selectedNode == null) box = this.modelBoundingBox;
-        else box = new $ea01ff4a5048cd08$exports.Box3().setFromObject(this.selectedNode);
-        // Setup camera to center model
-        if (box != undefined) {
-            const boxSize = box.getSize(new $ea01ff4a5048cd08$exports.Vector3()).length();
-            const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
-            this.cameraControls.minDistance = boxSize * 0.01;
-            this.cameraControls.maxDistance = boxSize * 10;
-            const midDistance = this.cameraControls.minDistance + (boxSize - this.cameraControls.minDistance) / 2;
-            this.cameraControls.setTarget(boxCenter.x, boxCenter.y, boxCenter.z);
-            let sphere = new $ea01ff4a5048cd08$exports.Sphere();
-            box.getBoundingSphere(sphere);
-            let fullDistance = sphere.radius * 1.75;
-            this.cameraControls.dollyTo(fullDistance, true);
-            this.cameraControls.saveState();
+        if (this.selectedNode != null) // If a node is selected in the treeview, frame that
+        this.frameNode(this.selectedNode);
+        else if (this.modelBoundingBox != null) // This should be the bounding box of the loaded model itself
+        this.frameBox(this.modelBoundingBox);
+        else {
+            // Fall back to framing the whole scene
+            let box = new $ea01ff4a5048cd08$exports.Box3().setFromObject(this.scene);
+            this.frameBox(box);
         }
+    }
+    frameNode(node) {
+        this.frameBox(new $ea01ff4a5048cd08$exports.Box3().setFromObject(node));
+    }
+    frameBox(box) {
+        const boxSize = box.getSize(new $ea01ff4a5048cd08$exports.Vector3()).length();
+        const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
+        this.cameraControls.minDistance = boxSize * 0.01;
+        this.cameraControls.maxDistance = boxSize * 10;
+        const midDistance = this.cameraControls.minDistance + (boxSize - this.cameraControls.minDistance) / 2;
+        this.cameraControls.setTarget(boxCenter.x, boxCenter.y, boxCenter.z);
+        let sphere = new $ea01ff4a5048cd08$exports.Sphere();
+        box.getBoundingSphere(sphere);
+        let fullDistance = sphere.radius * 1.75;
+        this.cameraControls.dollyTo(fullDistance, true);
+        this.cameraControls.saveState();
     }
     levelCamera() {
         // Sets the camera target so that the camera is looking forward and level
