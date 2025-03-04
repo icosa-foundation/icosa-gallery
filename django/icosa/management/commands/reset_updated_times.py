@@ -15,13 +15,12 @@ def set_asset_update_time(asset_id, data):
     )
     try:
         asset = Asset.objects.get(url=asset_id)
-    except Asset.DoesNotExist:
-        print(f"Not found: {asset_id}")
-    if asset:
         asset.update_time = datetime.fromisoformat(
             data["updateTime"].replace("Z", "+00:00")
         )
         asset.save(update_timestamps=False)
+    except Asset.DoesNotExist:
+        print(f"Not found: {asset_id}")
 
 
 class Command(BaseCommand):
@@ -46,4 +45,4 @@ class Command(BaseCommand):
                 asset_id = data["assetId"]
                 set_asset_update_time(asset_id, data)
 
-    print("Finished                                  ")
+        print("Finished                                  ")
