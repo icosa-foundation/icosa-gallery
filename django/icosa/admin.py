@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
     AssetOwner,
+    BulkSaveLog,
     DeviceCode,
     Format,
     HiddenMediaFileLog,
@@ -264,6 +265,19 @@ class WaitlistEntryAdmin(ImportExportModelAdmin, ExportActionMixin):
         "create_time",
     )
     search_fields = ("email",)
+
+
+@admin.register(BulkSaveLog)
+class BulkSaveLogAdmin(admin.ModelAdmin):
+    list_display = ("create_time", "finish_status")
+    readonly_fields = (
+        "create_time",
+        "update_time",
+        "finish_time",
+        "finish_status",
+    )
+
+    list_filter = ("finish_status",)
 
 
 @admin.register(HiddenMediaFileLog)

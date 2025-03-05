@@ -1205,3 +1205,28 @@ class WaitlistEntry(models.Model):
     class Meta:
         verbose_name_plural = "Waitlist entries"
         ordering = ("-create_time",)
+
+
+class BulkSaveLog(models.Model):
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    KILLED = "KILLED"
+    RESUMED = "RESUMED"
+
+    BULK_SAVE_STATUS_CHOICES = [
+        (SUCCEEDED, "Succeeded"),
+        (FAILED, "Failed"),
+        (KILLED, "Killed"),
+        (RESUMED, "Resumed"),
+    ]
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+    finish_time = models.DateTimeField(null=True, blank=True)
+    finish_status = models.CharField(
+        max_length=9,
+        null=True,
+        blank=True,
+        choices=BULK_SAVE_STATUS_CHOICES,
+    )
+    kill_sig = models.BooleanField(default=False)
+    last_id = models.BigIntegerField(null=True, blank=True)
