@@ -510,15 +510,12 @@ def edit_asset(request, asset_url):
     template = "main/edit_asset.html"
     owner = AssetOwner.from_django_user(request.user)
     asset = get_object_or_404(Asset, owner=owner, url=asset_url)
-    # is_editable needs to be assigned before updating the asset again with
-    # form data.
-    is_editable = asset.is_editable
 
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
     elif request.method == "POST":
         form = AssetSettingsForm(request.POST, request.FILES, instance=asset)
-        if form.is_valid() and is_editable:
+        if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse("uploads"))
     else:

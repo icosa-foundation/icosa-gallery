@@ -437,7 +437,7 @@ class Asset(models.Model):
     rank = models.FloatField(default=0)
 
     @property
-    def is_editable(self):
+    def model_is_editable(self):
         # Once a permissable license has been chosen, and the asset is
         # available for use in other models, we cannot allow changing anything
         # about it. Doing so would allow abuse.
