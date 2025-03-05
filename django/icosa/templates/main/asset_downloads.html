@@ -7,23 +7,24 @@
 {% block content %}
 <div class="sketch-info container">
     <div class="row">
-        <div class="col">
+        <div class="col col-lg-6 offset-lg-3">
             <div>
                 <h2>
                     Downloads for: {{ asset.name }}
                 </h2>
+                <p>Choose from the below formats in which to download this model.</p>
+                <p>This list is currently experimental and you might run into issues with some formats. Those marked "(alternative)" might work better for you if the original format type fails.</p>
                 {% for format, resources in downloadable_formats.items %}
-                    <h3>{{ format }}</h3>
                     {% if resources.archive_url  %}
                         <p>
-                            <a data-log-download href="{{ resources.archive_url }}" class="btn btn-primary btn-sm">
-                                {% fa_icon "solid" "download" %} Download
+                            <a data-log-download href="{{ resources.archive_url }}">
+                                {% fa_icon "solid" "download" %} {{ format }}
                             </a>
                         </p>
                     {% elif resources.file %}
                         <p>
-                            <a data-log-download href="{{ resources.file }}" class="btn btn-primary btn-sm">
-                                {% fa_icon "solid" "download" %} Download
+                            <a data-log-download href="{{ resources.file }}">
+                                {% fa_icon "solid" "download" %} {{ format }} 
                             </a>
                         </p>
                     {% else %}
@@ -32,10 +33,9 @@
                             <a
                                 data-log-download
                                 href="javascript:void(0);"
-                                class="btn btn-primary btn-sm zip-btn"
                                 data-file="{% for file in resources.files_to_zip %}{{ file }}{% if not forloop.last %},{% endif %}{% endfor %}"
                             >
-                                {% fa_icon "solid" "download" %} Download
+                                {% fa_icon "solid" "download" %} {{ format }}
                             </a><span class="download-spinner" style="display:none;margin-inline-start:1em;">{% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Processing files</span>
                         </p>
                         {% endif %}
@@ -44,11 +44,10 @@
                             <a
                                 data-log-download
                                 href="javascript:void(0);"
-                                class="btn btn-primary btn-sm zip-btn"
                                 data-file="{% for file in resources.files_to_zip_with_suffix %}{{ file }}{% if not forloop.last %},{% endif %}{% endfor %}"
                             >
 
-                                {% fa_icon "solid" "download" %} Download alternative
+                                {% fa_icon "solid" "download" %} {{ format }} (alternative)
                             </a><span class="download-spinner" style="display:none;margin-inline-start:1em;">{% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Processing files</span>
                         </p>
                         {% endif %}

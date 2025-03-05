@@ -397,7 +397,7 @@ def asset_view(request, asset_url):
         "asset_files": asset.get_all_absolute_file_names(),
         "override_suffix": override_suffix,
         "format_override": format_override,
-        "downloadable_formats": asset.get_all_downloadable_formats(),
+        "downloadable_formats": bool(asset.get_all_downloadable_formats()),
         "page_title": asset.name,
     }
     return render(

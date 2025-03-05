@@ -30,6 +30,7 @@ from icosa.helpers.format_roles import (
     POLYGONE_GLB_FORMAT,
     POLYGONE_GLTF_FORMAT,
     POLYGONE_OBJ_FORMAT,
+    PRETTY_FORMATS,
     TILT_FORMAT,
     TILT_NATIVE_GLTF,
     UPDATED_GLTF_FORMAT,
@@ -804,12 +805,6 @@ class Asset(models.Model):
         if self.license == ALL_RIGHTS_RESERVED:
             return formats
 
-        format_name_override_map = {
-            "Original OBJ File": "OBJ File",
-            "Original Triangulated OBJ File": "Triangulated OBJ File",
-            "Updated glTF File": "GLTF File",
-        }
-
         for format in self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
             if format.archive_url:
                 resource_data = {"archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"}
@@ -890,11 +885,17 @@ class Asset(models.Model):
                         resource_data = {}
 
             if resource_data:
-                format_name = format_name_override_map.get(
+                format_name = PRETTY_FORMATS.get(
                     format.get_role_display(), format.get_role_display()
                 )
                 formats.setdefault(format_name, resource_data)
-        return OrderedDict(sorted(formats.items(), key=lambda x: x[0].lower()))
+        formats = OrderedDict(
+            sorted(
+                formats.items(),
+                key=lambda x: x[0].lower(),
+            )
+        )
+        return formats
 
     def hide_media(self):
         """For B2, at least, call `hide` on each item from
