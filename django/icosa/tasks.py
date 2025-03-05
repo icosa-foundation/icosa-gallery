@@ -135,7 +135,8 @@ def save_all_assets(
     for asset in assets.order_by("pk").iterator(chunk_size=1000):
         save_log.refresh_from_db()
         if save_log.kill_sig is True or save_log.finish_status == BulkSaveLog.FAILED:
-            save_log.finish_status = BulkSaveLog.KILLED
+            if not save_log.finish_status == BulkSaveLog.FAILED:
+                save_log.finish_status = BulkSaveLog.KILLED
             save_log.finish_time = timezone.now()
             save_log.save()
             if verbose:
