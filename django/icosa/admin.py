@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from icosa.models import (
@@ -304,3 +306,17 @@ class Oauth2CodeAdmin(ImportExportModelAdmin, ExportActionMixin):
 @admin.register(Oauth2Token)
 class Oauth2TokenAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass
+
+
+class UserAdmin(OriginalUserAdmin):
+    actions = [
+        "make_not_staff",
+    ]
+
+    @admin.action(description="Mark selected users as not staff")
+    def make_not_staff(modeladmin, request, queryset):
+        queryset.update(is_staff=False)
+
+
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
