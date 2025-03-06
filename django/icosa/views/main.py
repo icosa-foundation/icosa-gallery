@@ -850,6 +850,7 @@ def toggle_like(request):
     )
 
 
+@never_cache
 def waitlist(request):
     template = "main/waitlist.html"
     if not config.WAITLIST_IF_SIGNUP_CLOSED and not config.SIGNUP_OPEN:
