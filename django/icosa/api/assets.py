@@ -246,10 +246,16 @@ def unpublish_asset(
     request,
     asset: int,
 ):
-    asset = get_my_id_asset(request, asset)
-    asset.visibility = "PRIVATE"
-    asset.save()
-    return asset
+    if asset.model_is_editable:
+        asset = get_my_id_asset(request, asset)
+        asset.visibility = "PRIVATE"
+        asset.save()
+        return asset
+    else:
+        raise HttpError(
+            400,
+            "Cannot make this work private; it was previously public and has a Creative Commons licence.",
+        )
 
 
 @router.get(
