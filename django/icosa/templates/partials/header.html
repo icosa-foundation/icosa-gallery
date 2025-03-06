@@ -19,7 +19,7 @@
                 {% if can_view_in_maintenance %}
                     <div class="user-info">
                     {% if owner is not None %}
-                        Welcome, <a href="/user/{{ owner.url }}">{{ owner.displayname }}</a>
+                        Welcome, <a href="/uploads">{{ owner.displayname }}</a>
                     {% else %}
                         {% if config.SIGNUP_OPEN %}
                             <a href="{% url 'login' %}">Login / Register</a>
