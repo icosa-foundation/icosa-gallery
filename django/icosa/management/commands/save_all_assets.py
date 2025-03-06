@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from icosa.models import BulkSaveLog
 from icosa.tasks import queue_save_all_assets, save_all_assets
 
@@ -32,7 +33,10 @@ class Command(BaseCommand):
         if options["kill"]:
             if verbose:
                 print("Setting kill flag for all bulk save jobs.")
-            BulkSaveLog.objects.all().update(kill_sig=True)
+            BulkSaveLog.objects.all().update(
+                kill_sig=True,
+                finish_time=timezone.now(),
+            )
             return
         if options["background"]:
             queue_save_all_assets(resume=resume)

@@ -119,6 +119,11 @@ def save_all_assets(
         save_log = BulkSaveLog.objects.filter(
             finish_status=BulkSaveLog.KILLED,
         ).last()
+    elif bool(BulkSaveLog.objects.filter(finish_time=None).count()):
+        print(
+            "It appears there are already save jobs running. Please wait for them to finish or kill them first with --kill."
+        )
+        return
 
     if save_log is None:
         save_log = BulkSaveLog.objects.create()
