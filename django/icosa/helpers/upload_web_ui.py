@@ -267,7 +267,7 @@ def upload(
     )
 
     asset.name = asset_name
-    asset.save()
+    asset.save(update_timestamps=False)
 
     for mainfile in main_files:
         type = mainfile.filetype
@@ -296,5 +296,5 @@ def upload(
     )
 
     asset.state = ASSET_STATE_COMPLETE
-    asset.save()
+    asset.save(update_timestamps=False)
     return asset

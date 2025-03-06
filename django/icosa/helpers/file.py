@@ -228,7 +228,7 @@ def add_thumbnail_to_asset(thumbnail, asset):
         asset.thumbnail_contenttype = get_content_type(
             thumbnail_upload_details.file.name
         )
-        asset.save()
+        asset.save(update_timestamps=False)
 
 
 def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
@@ -466,7 +466,7 @@ def upload_blocks_format(
         asset.thumbnail_contenttype = get_content_type(f.file.name)
         # We save outside of this function too. Saving here is more explicit,
         # but might reduce perf.
-        asset.save()
+        asset.save(update_timestamps=False)
     else:
         process_normally(asset, f)
 

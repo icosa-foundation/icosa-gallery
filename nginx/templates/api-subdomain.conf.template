@@ -79,5 +79,7 @@ server {
     listen 8000 default_server;
     listen [::]:8000 default_server;
     server_name _;
-    return 444; #CONNECTION CLOSED WITHOUT RESPONSE
+    location / {
+        return 444; # CONNECTION CLOSED WITHOUT RESPONSE
+    }
 }

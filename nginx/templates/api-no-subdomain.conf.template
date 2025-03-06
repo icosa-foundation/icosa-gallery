@@ -24,5 +24,7 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
-    return 444;
+    location / {
+        return 444; # CONNECTION CLOSED WITHOUT RESPONSE
+    }
 }

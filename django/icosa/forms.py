@@ -78,6 +78,11 @@ class AssetSettingsForm(forms.ModelForm):
                     ("ALL_RIGHTS_RESERVED", "All rights reserved"),
                 ]
             )
+        if not self.instance.model_is_editable:
+            self.fields["visibility"].choices = (
+                ("PUBLIC", "Public"),
+                ("UNLISTED", "Unlisted"),
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -85,8 +90,29 @@ class AssetSettingsForm(forms.ModelForm):
         visibility = cleaned_data.get("visibility")
         if visibility in ["PUBLIC", "UNLISTED"] and not license:
             self.add_error("license", "Please add a CC License.")
+        if not self.instance.model_is_editable and visibility == "PRIVATE":
+            self.add_error(
+                "visibility",
+                "You cannot make this model private because you have published this work under a CC license.",
+            )
+
+        for field in self.fields:
+            if field not in self.editable_fields and field in self.changed_data:
+                self.add_error(
+                    field,
+                    "You cannot modify this field because this work is not private and has a CC license.",
+                )
 
     thumbnail = forms.FileField(required=False, widget=CustomImageInput)
+
+    editable_fields = [
+        "name",
+        "description",
+        "thumbnail",
+        "category",
+        "visibility",
+        "tags",
+    ]
 
     class Meta:
         model = Asset

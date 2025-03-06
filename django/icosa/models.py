@@ -15,10 +15,12 @@ from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
+    DOWNLOADABLE_FORMAT_NAMES,
     FORMAT_ROLE_CHOICES,
     GLB_FORMAT,
     ORIGINAL_FBX_FORMAT,
@@ -390,8 +392,8 @@ class Asset(models.Model):
         blank=True,
         null=True,
     )
-    create_time = models.DateTimeField(auto_now_add=True)
-    update_time = models.DateTimeField(auto_now=True)
+    create_time = models.DateTimeField()
+    update_time = models.DateTimeField()
     license = models.CharField(
         max_length=50, null=True, blank=True, choices=LICENSE_CHOICES
     )
@@ -436,13 +438,13 @@ class Asset(models.Model):
     rank = models.FloatField(default=0)
 
     @property
-    def is_editable(self):
+    def model_is_editable(self):
         # Once a permissable license has been chosen, and the asset is
         # available for use in other models, we cannot allow changing anything
         # about it. Doing so would allow abuse.
         return (
             self.visibility not in [PUBLIC, UNLISTED]
-            and self.license not in CC_REMIX_LICENCES
+            and self.license != ALL_RIGHTS_RESERVED
         )
 
     @property
@@ -771,7 +773,7 @@ class Asset(models.Model):
     def inc_views_and_rank(self):
         self.views += 1
         self.rank = self.get_updated_rank()
-        self.save()
+        self.save(update_timestamps=False)
 
     def get_all_file_names(self):
         file_list = []
@@ -802,12 +804,6 @@ class Asset(models.Model):
         formats = {}
         if self.license == ALL_RIGHTS_RESERVED:
             return formats
-
-        format_name_override_map = {
-            "Original OBJ File": "OBJ File",
-            "Original Triangulated OBJ File": "Triangulated OBJ File",
-            "Updated glTF File": "GLTF File",
-        }
 
         for format in self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
             if format.archive_url:
@@ -889,11 +885,17 @@ class Asset(models.Model):
                         resource_data = {}
 
             if resource_data:
-                format_name = format_name_override_map.get(
+                format_name = DOWNLOADABLE_FORMAT_NAMES.get(
                     format.get_role_display(), format.get_role_display()
                 )
                 formats.setdefault(format_name, resource_data)
-        return OrderedDict(sorted(formats.items(), key=lambda x: x[0].lower()))
+        formats = OrderedDict(
+            sorted(
+                formats.items(),
+                key=lambda x: x[0].lower(),
+            )
+        )
+        return formats
 
     def hide_media(self):
         """For B2, at least, call `hide` on each item from
@@ -923,7 +925,12 @@ class Asset(models.Model):
                 pass
 
     def save(self, *args, **kwargs):
-        if self._state.adding is False:
+        update_timestamps = kwargs.pop("update_timestamps", True)
+        now = timezone.now()
+        if self._state.adding:
+            if update_timestamps:
+                self.create_time = now
+        else:
             # Only denorm fields when updating an existing model
             self.rank = self.get_updated_rank()
             self.update_search_text()
@@ -931,6 +938,8 @@ class Asset(models.Model):
             self.denorm_format_types()
             self.denorm_triangle_count()
             self.denorm_liked_time()
+            if update_timestamps:
+                self.update_time = now
         super().save(*args, **kwargs)
 
     class Meta:
@@ -1184,3 +1193,28 @@ class HiddenMediaFileLog(models.Model):
 
     def __str__(self):
         return f"{self.original_asset_id}: {self.file_name}"
+
+
+class BulkSaveLog(models.Model):
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    KILLED = "KILLED"
+    RESUMED = "RESUMED"
+
+    BULK_SAVE_STATUS_CHOICES = [
+        (SUCCEEDED, "Succeeded"),
+        (FAILED, "Failed"),
+        (KILLED, "Killed"),
+        (RESUMED, "Resumed"),
+    ]
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+    finish_time = models.DateTimeField(null=True, blank=True)
+    finish_status = models.CharField(
+        max_length=9,
+        null=True,
+        blank=True,
+        choices=BULK_SAVE_STATUS_CHOICES,
+    )
+    kill_sig = models.BooleanField(default=False)
+    last_id = models.BigIntegerField(null=True, blank=True)

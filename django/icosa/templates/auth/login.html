@@ -3,9 +3,10 @@
     <div class="loginuser container">
         <div class="row">
             <div class="text-center col">
-                <h2>LOG IN</h2>
+                <h2>Log In</h2>
             </div>
         </div>
+        {% if config.SIGNUP_OPEN %}
         <div class="row">
             <div class="text-center col">
                 <div class="login-container container">
@@ -13,9 +14,6 @@
                         <div class="col-md-8 col-12 offset-md-2">
                             {% if error %}
                                 <div role="alert" class="fade alert alert-danger show">{{ error }}</div>
-                            {% endif %}
-                            {% if config.BETA_MODE %}
-                                {% include 'partials/login_notice.html' %}
                             {% endif %}
                             <form class="form-inline" action="{% url 'login' %}" method="post">
                                 {% csrf_token %}
@@ -45,16 +43,21 @@
                                 <br>
                                 <button type="submit" class="btn btn-primary">Log in</button>
                             </form>
+                            <a href="{% url 'password_reset' %}">Forgot Password?</a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
         <div class="row">
-            <div class="text-center col">
-                <a href="{% url 'password_reset' %}">Forgot Password?</a>
+            <div class="col-lg-6 offset-lg-3">
                 <br>
-                <a href="/register">Register a new account</a>
+                {% if config.SIGNUP_OPEN %}
+                    <a href="/register">Register a new account</a>
+                {% else %}
+                    {% include "partials/login_notice.html" %}
+                {% endif %}
             </div>
         </div>
     </div>

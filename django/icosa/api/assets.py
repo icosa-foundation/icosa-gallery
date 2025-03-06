@@ -2,6 +2,7 @@ import re
 import secrets
 from typing import List, NoReturn, Optional
 
+from constance import config
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
@@ -211,7 +212,7 @@ def add_blocks_asset_format(
     else:
         raise HttpError(415, "Unsupported content type.")
 
-    asset.save()
+    asset.save(update_timestamps=False)
     return get_publish_url(request, asset)
 
 
@@ -246,10 +247,16 @@ def unpublish_asset(
     request,
     asset: int,
 ):
-    asset = get_my_id_asset(request, asset)
-    asset.visibility = "PRIVATE"
-    asset.save()
-    return asset
+    if asset.model_is_editable:
+        asset = get_my_id_asset(request, asset)
+        asset.visibility = "PRIVATE"
+        asset.save()
+        return asset
+    else:
+        raise HttpError(
+            400,
+            "Cannot make this work private; it was previously public and has a Creative Commons licence.",
+        )
 
 
 @router.get(
@@ -345,11 +352,14 @@ def filter_assets(
     q &= filter_complexity(filters)
     q &= filter_triangle_count(filters)
 
-    ex_q = (
-        Q(license__isnull=True)
-        | Q(license=ALL_RIGHTS_RESERVED)
-        | Q(last_reported_time__isnull=False)
-    )
+    if config.HIDE_REPORTED_ASSETS:
+        ex_q = (
+            Q(license__isnull=True)
+            | Q(license=ALL_RIGHTS_RESERVED)
+            | Q(last_reported_time__isnull=False)
+        )
+    else:
+        ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
 
     # Debug tests:
     # from django.db import connection, reset_queries

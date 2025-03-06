@@ -104,8 +104,9 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 INSTALLED_APPS = [
     "dal",
     "dal_select2",
-    "django.contrib.admin",
     "django.contrib.auth",
+    "icosa",
+    "django.contrib.admin",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.sites",
@@ -117,7 +118,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "honeypot",
     "huey.contrib.djhuey",
-    "icosa",
     "import_export",
     "maintenance_mode",
     "silk",
@@ -283,6 +283,21 @@ CONSTANCE_CONFIG = {
         "",
         "Comma-separated list of domains who have set their CORS to allow fetching from this site's domain.",
         str,
+    ),
+    "HIDE_REPORTED_ASSETS": (
+        True,
+        "Assets that have been reported are removed from lister pages.",
+        bool,
+    ),
+    "SIGNUP_OPEN": (
+        False,
+        "Enables the registration form.",
+        bool,
+    ),
+    "WAITLIST_IF_SIGNUP_CLOSED": (
+        False,
+        "If Signup Open is False, this will enable the waitlist functionality. Does nothing if Signup Open is True.",
+        bool,
     ),
 }
 

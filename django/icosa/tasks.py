@@ -1,3 +1,4 @@
+import time
 from typing import List, Optional
 
 from django.utils import timezone
@@ -12,6 +13,7 @@ from icosa.models import (
     ASSET_STATE_FAILED,
     Asset,
     AssetOwner,
+    BulkSaveLog,
     Format,
 )
 from ninja import File
@@ -29,7 +31,7 @@ def handle_upload_error(task, exc):
     user = task.kwargs.pop("current_user")
 
     asset.state = ASSET_STATE_FAILED
-    asset.save()
+    asset.save(update_timestamps=False)
 
     # TODO, instead of writing to a log file, we need to write to some kind of
     # user-facing error log. The design for this needs to be decided. E.g. how
@@ -105,4 +107,66 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
 
     asset.state = ASSET_STATE_COMPLETE
     asset.remix_ids = getattr(data, "remixIds", None)
-    asset.save()
+    asset.save(update_timestamps=False)
+
+
+def save_all_assets(
+    resume: bool = False,
+    verbose: bool = False,
+):
+    save_log = None
+    if resume:
+        save_log = BulkSaveLog.objects.filter(
+            finish_status=BulkSaveLog.KILLED,
+        ).last()
+    elif bool(BulkSaveLog.objects.filter(finish_time=None).count()):
+        print(
+            "It appears there are already save jobs running. Please wait for them to finish or kill them first with --kill."
+        )
+        return
+
+    if save_log is None:
+        save_log = BulkSaveLog.objects.create()
+    else:
+        save_log.finish_status = BulkSaveLog.RESUMED
+        save_log.kill_sig = False
+        save_log.save()
+
+    if save_log.last_id:
+        assets = Asset.objects.filter(pk__gt=save_log.last_id)
+    else:
+        assets = Asset.objects.all()
+
+    for asset in assets.order_by("pk").iterator(chunk_size=1000):
+        save_log.refresh_from_db()
+        if save_log.kill_sig is True or save_log.finish_status == BulkSaveLog.FAILED:
+            if not save_log.finish_status == BulkSaveLog.FAILED:
+                save_log.finish_status = BulkSaveLog.KILLED
+            save_log.finish_time = timezone.now()
+            save_log.save()
+            if verbose:
+                print(f"Process killed. Last updated: {save_log.last_id}")
+            return
+        try:
+            asset.save(update_timestamps=False)
+            if verbose:
+                print(f"Saved Asset {asset.id}\t", end="\r")
+            save_log.last_id = asset.id
+            save_log.save(update_fields=["update_time", "last_id"])
+            time.sleep(1)
+        except Exception:
+            save_log.finish_status = BulkSaveLog.FAILED
+            save_log.finish_time = timezone.now()
+            save_log.save()
+            return
+
+    save_log.finish_status = BulkSaveLog.SUCCEEDED
+    save_log.finish_time = timezone.now()
+    save_log.save()
+
+
+@db_task()
+def queue_save_all_assets(
+    resume: bool = False,
+):
+    save_all_assets(resume)
