@@ -607,6 +607,7 @@ def report_asset(request, asset_url):
                 message = render_to_string(
                     "emails/report_asset_email.html",
                     {
+                        "asset": asset,
                         "request": request,
                         "reporter": reporter_email,
                         "reason": form.cleaned_data["reason_for_reporting"],
