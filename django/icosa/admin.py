@@ -14,7 +14,6 @@ from icosa.models import (
     Oauth2Token,
     Resource,
     Tag,
-    WaitlistEntry,
 )
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
 
@@ -253,19 +252,6 @@ class MastheadSectionAdmin(ImportExportModelAdmin, ExportActionMixin):
 
     _thumbnail_image.short_description = "Thumbnail"
     _thumbnail_image.allow_tags = True
-
-
-@admin.register(WaitlistEntry)
-class WaitlistEntryAdmin(ImportExportModelAdmin, ExportActionMixin):
-    list_display = (
-        "email",
-        "create_time",
-    )
-    readonly_fields = (
-        "email",
-        "create_time",
-    )
-    search_fields = ("email",)
 
 
 @admin.register(BulkSaveLog)
