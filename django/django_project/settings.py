@@ -104,6 +104,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 INSTALLED_APPS = [
     "dal",
     "dal_select2",
+    "icosa",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -117,7 +118,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "honeypot",
     "huey.contrib.djhuey",
-    "icosa",
     "import_export",
     "maintenance_mode",
     "silk",
