@@ -20,6 +20,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
+    DOWNLOADABLE_FORMAT_NAMES,
     FORMAT_ROLE_CHOICES,
     GLB_FORMAT,
     ORIGINAL_FBX_FORMAT,
@@ -30,7 +31,6 @@ from icosa.helpers.format_roles import (
     POLYGONE_GLB_FORMAT,
     POLYGONE_GLTF_FORMAT,
     POLYGONE_OBJ_FORMAT,
-    PRETTY_FORMATS,
     TILT_FORMAT,
     TILT_NATIVE_GLTF,
     UPDATED_GLTF_FORMAT,
@@ -885,7 +885,7 @@ class Asset(models.Model):
                         resource_data = {}
 
             if resource_data:
-                format_name = PRETTY_FORMATS.get(
+                format_name = DOWNLOADABLE_FORMAT_NAMES.get(
                     format.get_role_display(), format.get_role_display()
                 )
                 formats.setdefault(format_name, resource_data)

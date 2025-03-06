@@ -80,12 +80,12 @@ EXTENSION_ROLE_MAP = {
 }
 FORMAT_ROLE_CHOICES = [(k, v) for k, v in role_display.items()]
 
-PRETTY_FORMATS = {
+DOWNLOADABLE_FORMAT_NAMES = {
     "ORIGINAL_OBJ_FORMAT": "obj",
-    "TILT_FORMAT": "tilt",
+    "TILT_FORMAT": "native tilt",
     "UNKNOWN_GLTF_FORMAT_A": "unknown gltf a",
     "ORIGINAL_FBX_FORMAT": "original fbx",
-    "BLOCKS_FORMAT": "blocks",
+    "BLOCKS_FORMAT": "native blocks",
     "USD_FORMAT": "usd",
     "HTML_FORMAT": "html",
     "ORIGINAL_GLTF_FORMAT": "original gltf",
