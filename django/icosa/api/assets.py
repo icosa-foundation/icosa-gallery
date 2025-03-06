@@ -2,6 +2,7 @@ import re
 import secrets
 from typing import List, NoReturn, Optional
 
+from constance import config
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
@@ -351,11 +352,14 @@ def filter_assets(
     q &= filter_complexity(filters)
     q &= filter_triangle_count(filters)
 
-    ex_q = (
-        Q(license__isnull=True)
-        | Q(license=ALL_RIGHTS_RESERVED)
-        | Q(last_reported_time__isnull=False)
-    )
+    if config.HIDE_REPORTED_ASSETS:
+        ex_q = (
+            Q(license__isnull=True)
+            | Q(license=ALL_RIGHTS_RESERVED)
+            | Q(last_reported_time__isnull=False)
+        )
+    else:
+        ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
 
     # Debug tests:
     # from django.db import connection, reset_queries

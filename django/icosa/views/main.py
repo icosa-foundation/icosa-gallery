@@ -62,6 +62,20 @@ MASTHEAD_TOP_RANK = 10000
 MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
 
+if config.HIDE_REPORTED_ASSETS:
+    DEFAULT_Q = Q(
+        visibility=PUBLIC,
+        is_viewer_compatible=True,
+        curated=True,
+        last_reported_time__isnull=True,
+    )
+else:
+    DEFAULT_Q = Q(
+        visibility=PUBLIC,
+        is_viewer_compatible=True,
+        curated=True,
+    )
+
 
 def user_can_view_asset(
     user: DjangoUser,
@@ -96,12 +110,7 @@ def div_by_zero(request):
 
 def landing_page(
     request,
-    assets=Asset.objects.filter(
-        visibility=PUBLIC,
-        is_viewer_compatible=True,
-        curated=True,
-        last_reported_time__isnull=True,
-    ).select_related("owner"),
+    assets=Asset.objects.filter(DEFAULT_Q).select_related("owner"),
     show_masthead=True,
     heading=None,
     heading_link=None,
@@ -221,11 +230,17 @@ def home_blocks(request):
 @user_passes_test(lambda u: u.is_superuser)
 @never_cache
 def home_other(request):
-    home_q = Q(
-        is_viewer_compatible=True,
-        curated=True,
-        last_reported_time__isnull=True,
-    )
+    if config.HIDE_REPORTED_ASSETS:
+        home_q = Q(
+            is_viewer_compatible=True,
+            curated=True,
+            last_reported_time__isnull=True,
+        )
+    else:
+        home_q = Q(
+            is_viewer_compatible=True,
+            curated=True,
+        )
     poly_by_google_q = Q(owner__url=POLY_USER_URL)
     only_blocks_q = Q(has_blocks=True, curated=True)
     blocks_q = poly_by_google_q | only_blocks_q
@@ -753,11 +768,17 @@ def search(request):
     query = request.GET.get("s")
     template = "main/search.html"
 
-    q = Q(
-        visibility=PUBLIC,
-        is_viewer_compatible=True,
-        last_reported_time__isnull=True,
-    )
+    if config.HIDE_REPORTED_ASSETS:
+        q = Q(
+            visibility=PUBLIC,
+            is_viewer_compatible=True,
+            last_reported_time__isnull=True,
+        )
+    else:
+        q = Q(
+            visibility=PUBLIC,
+            is_viewer_compatible=True,
+        )
 
     if query is not None:
         q &= Q(search_text__icontains=query)

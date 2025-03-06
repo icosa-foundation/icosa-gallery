@@ -284,6 +284,11 @@ CONSTANCE_CONFIG = {
         "Comma-separated list of domains who have set their CORS to allow fetching from this site's domain.",
         str,
     ),
+    "HIDE_REPORTED_ASSETS": (
+        True,
+        "Assets that have been reported are removed from lister pages.",
+        bool,
+    ),
     "SIGNUP_OPEN": (
         False,
         "Enables the registration form.",
