@@ -764,6 +764,14 @@ def privacy_policy(request):
     )
 
 
+def about(request):
+    return template_view(
+        request,
+        "main/about.html",
+        "About Icosa Gallery",
+    )
+
+
 def search(request):
     query = request.GET.get("s")
     template = "main/search.html"

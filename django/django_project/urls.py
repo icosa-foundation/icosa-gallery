@@ -147,6 +147,7 @@ urlpatterns = [
     ),
     path("search", main_views.search, name="search"),
     path("settings", main_views.user_settings, name="settings"),
+    path("about", main_views.about, name="about"),
     path("terms", main_views.terms, name="terms"),
     path(
         "information-for-artists-and-creators",
