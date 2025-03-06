@@ -116,6 +116,7 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
         "license",
         "category",
         "state",
+        "last_reported_time",
     )
     readonly_fields = (
         "rank",
