@@ -390,10 +390,11 @@ MAINTENANCE_MODE_IGNORE_STAFF = True
 MAINTENANCE_MODE_IGNORE_URLS = [
     "/admin/",
     "/device/",
-    "/v1/",
+    "/health",
     "/privacy-policy",
     "/terms",
     "/supporters",
+    "/v1/",
 ]
 
 # Ninja settings
