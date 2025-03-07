@@ -108,6 +108,11 @@ def div_by_zero(request):
     1 / 0
 
 
+@never_cache
+def health(request):
+    return HttpResponse("ok")
+
+
 def landing_page(
     request,
     assets=Asset.objects.filter(DEFAULT_Q).select_related("owner"),
