@@ -56,7 +56,7 @@ You can alternatively choose to run the api at a subdomain of the main site, e.g
 #### If you wish to use the single-domain configuration:
 
 ``` bash
-ln -s nginx/templates/api-no-subdomain.conf.template nginx/templates/default.conf.template
+ln -s nginx/templates/api-no-subdomain.conf.template nginx/default.conf.template
 ```
 
 And edit the following values in your `.env` file:
@@ -69,7 +69,7 @@ DEPLOYMENT_HOST_API=example.com
 #### If you wish to run the api at a subdomain:
 
 ``` bash
-ln -s nginx/templates/api-subdomain.conf.template nginx/templates/default.conf.template
+ln -s nginx/templates/api-subdomain.conf.template nginx/default.conf.template
 ```
 
 And edit the following values in your `.env` file:
