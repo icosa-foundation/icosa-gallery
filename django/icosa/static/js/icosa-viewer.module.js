@@ -43393,10 +43393,9 @@ class $2700ada9f878d4f8$export$d1c1e163c7960c6 {
             if (window.isSecureContext === false) {
                 message.href = document.location.href.replace(/^http:/, "https:");
                 message.innerHTML = "WEBXR NEEDS HTTPS"; // TODO Improve message
-            } else {
-                message.href = "https://immersiveweb.dev/";
-                message.innerHTML = "WEBXR NOT AVAILABLE";
-            }
+            } else // message.href = 'https://immersiveweb.dev/';
+            // message.innerHTML = 'WEBXR NOT AVAILABLE';
+            message.style = "display: none";
             message.style.left = "calc(50% - 90px)";
             message.style.width = "180px";
             message.style.textDecoration = "none";
