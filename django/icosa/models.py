@@ -393,7 +393,7 @@ class Asset(models.Model):
         null=True,
     )
     create_time = models.DateTimeField()
-    update_time = models.DateTimeField()
+    update_time = models.DateTimeField(null=True, blank=True)
     license = models.CharField(
         max_length=50, null=True, blank=True, choices=LICENSE_CHOICES
     )
