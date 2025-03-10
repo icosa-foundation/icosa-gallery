@@ -365,7 +365,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     else:
         format_triangulated = Format.objects.filter(
             root_resource=obj_triangulated,
-        )
+        ).first()
     # Finally, create the duplicate MTL resources and assign them to the right
     # formats.
     resource_data = {
