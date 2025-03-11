@@ -809,17 +809,10 @@ class Asset(models.Model):
                 # The second criteria is met if the resource's remote host is
                 # in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
                 if len(resources) > 1:
-                    if format.role in [
-                        POLYGONE_GLTF_FORMAT,
-                        UPDATED_GLTF_FORMAT,
-                        ORIGINAL_GLTF_FORMAT,
-                    ]:
-                        resource_data = format.get_resource_data_by_role(
-                            resources,
-                            format.role,
-                        )
-                    else:
-                        resource_data = format.get_resource_data(resources)
+                    resource_data = format.get_resource_data_by_role(
+                        resources,
+                        format.role,
+                    )
                 # If there is only one resource, there is no need to create
                 # a zip file; we can offer our local file, or a link to the
                 # external host.
@@ -1024,6 +1017,10 @@ class Format(models.Model):
 
     def get_resource_data_by_role(self, resources, role):
         if self.role == POLYGONE_GLTF_FORMAT:
+            # If we hit this branch, we are not clear on if all gltf files work
+            # correctly. Try both the original data we ingested and include
+            # the suffixed data which attempts to fix any errors. Add some
+            # supporting text to make it clear to the user this is the case.
             resource_data = {
                 "files_to_zip": [
                     f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file
@@ -1063,14 +1060,8 @@ class Format(models.Model):
                 Format.MultipleObjectsReturned,
             ):
                 resource_data = {}
-        elif self.role == ORIGINAL_GLTF_FORMAT:
-            # If we hit this branch, we have a format which doesn't
-            # have an archive url, but also doesn't have local files.
-            # At time of writing, we can't create a zip on the client
-            # from the archive.org urls because of CORS. We also don't
-            # have the suffixed version to hand. Skip this format until
-            # we can resolve this.
-            resource_data = {}
+        else:
+            resource_data = self.get_resource_data(resources)
         return resource_data
 
     class Meta:
