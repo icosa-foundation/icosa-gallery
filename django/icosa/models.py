@@ -1000,7 +1000,7 @@ class Format(models.Model):
         return resources
 
     def get_resource_data(self, resources):
-        if all([x.is_cors_allowed for x in resources]):
+        if all([x.is_cors_allowed and x.remote_host for x in resources]):
             external_files = [x.external_url for x in resources if x.external_url]
             local_files = [
                 f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file
