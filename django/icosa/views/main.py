@@ -527,6 +527,10 @@ def edit_asset(request, asset_url):
     template = "main/edit_asset.html"
     owner = AssetOwner.from_django_user(request.user)
     asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+    # We need to disconnect the editable state from the form during validation.
+    # Without this, if the form contains errors, some fields that need
+    # correction cannot be edited.
+    is_editable = asset.model_is_editable
 
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
@@ -537,8 +541,10 @@ def edit_asset(request, asset_url):
             return HttpResponseRedirect(reverse("uploads"))
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
+
     context = {
         "asset": asset,
+        "is_editable": is_editable,
         "form": form,
         "page_title": f"Edit {asset.name}",
     }

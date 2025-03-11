@@ -97,7 +97,11 @@ class AssetSettingsForm(forms.ModelForm):
             )
 
         for field in self.fields:
-            if field not in self.editable_fields and field in self.changed_data:
+            if (
+                not self.instance.model_is_editable
+                and field not in self.editable_fields
+                and field in self.changed_data
+            ):
                 self.add_error(
                     field,
                     "You cannot modify this field because this work is not private and has a CC license.",

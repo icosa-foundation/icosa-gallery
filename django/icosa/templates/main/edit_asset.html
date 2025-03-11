@@ -17,7 +17,7 @@
                 {% csrf_token %}
                 {% for field in form %}
                     <div>
-                        {% if asset.model_is_editable %}
+                        {% if is_editable %}
                             {% include "partials/edit_asset_field.html" %}
                         {% else %}
                             {% if field.name in form.editable_fields %}
