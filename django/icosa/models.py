@@ -1132,6 +1132,8 @@ class Resource(models.Model):
         else:
             allowed_sources = tuple([])
         if self.remote_host is None:
+            # Local files (those served by Django storages) are always
+            # considered cors-friendly.
             return True
         return self.remote_host in allowed_sources
 
