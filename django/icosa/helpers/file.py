@@ -87,7 +87,7 @@ class UploadedFormat:
 def is_gltf2(file) -> bool:
     parser = ijson.parse(file, multiple_values=True)
     for prefix, event, value in parser:
-        if (value, event) == ("buffers", "map_key"):
+        if (prefix, event) == ("buffers", "map_key"):
             # We are mapping a dictionary at the key `buffers`, which means
             # this is gltf1.
             return False
