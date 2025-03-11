@@ -72,7 +72,10 @@ class FormatAdmin(ImportExportModelAdmin, ExportActionMixin):
     )
 
     inlines = (ResourceInline,)
-    list_filter = ("role",)
+    list_filter = (
+        "role",
+        "format_type",
+    )
     raw_id_fields = [
         "asset",
         "root_resource",
