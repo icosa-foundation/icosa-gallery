@@ -156,7 +156,7 @@ class AssetSchema(ModelSchema):
     name: str
     description: Optional[str]
     createTime: datetime = Field(..., alias=("create_time"))
-    updateTime: datetime = Field(..., alias=("update_time"))
+    updateTime: Optional[datetime] = Field(..., alias=("update_time"))
     url: Optional[str]
     assetId: str
     formats: List[AssetFormat]
