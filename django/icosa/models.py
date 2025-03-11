@@ -5,6 +5,7 @@ import string
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from typing import Optional, Self
+from urllib.parse import urlparse
 
 import bcrypt
 import jwt
@@ -145,10 +146,7 @@ CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in Category.choices}
 
 WEB_UI_DOWNLOAD_COMPATIBLE = [
     ORIGINAL_OBJ_FORMAT,
-    # We should offer TILT, but they don't all have an archive URL for the main
-    # format and we can't build a zip on the client from individual archive
-    # URLS owing to CORS.
-    # TILT_FORMAT,
+    TILT_FORMAT,
     ORIGINAL_FBX_FORMAT,
     BLOCKS_FORMAT,
     USD_FORMAT,
@@ -592,7 +590,7 @@ class Asset(models.Model):
 
     @property
     def has_cors_allowed(self):
-        # If this resource has a file managed by Django storage, then it will
+        # If this asset has a file managed by Django storage, then it will
         # be viewable.
         if (
             self.resource_set.filter(
@@ -605,25 +603,14 @@ class Asset(models.Model):
         # If any resource does not have a file managed by Django storage, check
         # if any of the externally-hosted files' sources have been allowed by
         # the site admin in django constance settings.
-        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
-            allowed_sources = tuple(
-                [x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")]
-            )
-        else:
-            allowed_sources = tuple([])
-
-        return (
-            len(
-                [
-                    x.external_url
-                    for x in self.resource_set.filter(
-                        external_url__isnull=False,
-                    )
-                    if x.external_url.startswith(allowed_sources)
-                ]
-            )
-            > 0
-        )
+        is_allowed = False
+        for resource in self.resource_set.filter(
+            external_url__isnull=False,
+        ):
+            if resource.is_cors_allowed:
+                is_allowed = True
+                break
+        return is_allowed
 
     @property
     def download_url(self):
@@ -784,14 +771,6 @@ class Asset(models.Model):
                 file_list.append(resource.file.name)
         return file_list
 
-    def get_all_absolute_file_names(self):
-        file_list = []
-        for name in self.get_all_file_names():
-            file_list.append(
-                f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{name}"
-            )
-        return file_list
-
     def get_all_downloadable_formats(self):
         # Originally, Google Poly made these roles available for download:
         # - Original FBX File
@@ -803,74 +782,47 @@ class Asset(models.Model):
         # - Updated glTF File
         formats = {}
         if self.license == ALL_RIGHTS_RESERVED:
+            # We do not provide any downloads for assets with restrictive
+            # licenses.
             return formats
 
-        for format in self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
+        for format in self.format_set.filter(
+            role__in=WEB_UI_DOWNLOAD_COMPATIBLE,
+        ):
+            # If the format in its entirety is on a remote host, just provide
+            # the link to that.
             if format.archive_url:
                 resource_data = {"archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"}
             else:
                 # Query all resources which have either an external url or a
-                # file.
+                # file. Ignoring resources which have neither.
                 query = Q(external_url__isnull=False) & ~Q(external_url="")
                 query |= Q(file__isnull=False)
-                resources = list(format.resource_set.filter(query))
-                format_root = format.root_resource
-                if format_root is not None:
-                    if format_root.file or format_root.external_url:
-                        resources.append(format_root)
-                if format.role == POLYGONE_GLTF_FORMAT:
-                    resource_data = {
-                        "files_to_zip": [
-                            f"{STORAGE_PREFIX}{x.file.name}"
-                            for x in resources
-                            if x.file
-                        ],
-                        "files_to_zip_with_suffix": [
-                            f"{STORAGE_PREFIX}{suffix(x.file.name)}"
-                            for x in resources
-                            if x.file
-                        ],
-                        "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
-                        "role": format.role,
-                    }
-                elif format.role == UPDATED_GLTF_FORMAT:
-                    # If we hit this branch, we have a format which doesn't
-                    # have an archive url, but also doesn't have local files.
-                    # At time of writing, we can't create a zip on the client
-                    # from the archive.org urls because of CORS. So compile a
-                    # list of files as if the role was 1003 using our suffixed
-                    # upload.
-                    try:
-                        override_format = self.format_set.get(role=POLYGONE_GLTF_FORMAT)
-                        override_resources = list(override_format.resource_set.all())
-                        override_format_root = override_format.root_resource
-                        if override_format_root is not None:
-                            if (
-                                override_format_root.file
-                                or override_format_root.external_url
-                            ):
-                                override_resources.append(override_format_root)
-                        resource_data = {
-                            "files_to_zip": [
-                                f"{STORAGE_PREFIX}{suffix(x.file.name)}"
-                                for x in override_resources
-                                if x.file
-                            ],
-                            "role": format.role,
-                        }
-                    except (
-                        Format.DoesNotExist,
-                        Format.MultipleObjectsReturned,
-                    ):
-                        resource_data = {}
-                elif format.role == ORIGINAL_GLTF_FORMAT:
-                    # If we hit this branch, we have a format which doesn't
-                    # have an archive url, but also doesn't have local files.
-                    # At time of writing, we can't create a zip on the client
-                    # from the archive.org urls because of CORS. We also don't
-                    # have the suffixed version to hand. Skip this format until
-                    # we can resolve this.
-                    continue
+                resources = format.get_all_resources(query)
+
+                # If there is more than one resource, this means we need to
+                # create a zip file of it on the client. We can only do this
+                # if either:
+                # a) the resource is hosted by Django
+                # b) all the resources we need to zip are accessible because
+                #    they are on the CORS allow list.
+                # The second criteria is met if the resource's remote host is
+                # in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
+                if len(resources) > 1:
+                    if format.role in [
+                        POLYGONE_GLTF_FORMAT,
+                        UPDATED_GLTF_FORMAT,
+                        ORIGINAL_GLTF_FORMAT,
+                    ]:
+                        resource_data = format.get_resource_data_by_role(
+                            resources,
+                            format.role,
+                        )
+                    else:
+                        resource_data = format.get_resource_data(resources)
+                # If there is only one resource, there is no need to create
+                # a zip file; we can offer our local file, or a link to the
+                # external host.
                 else:
                     resource = resources[0]
                     if resource.file:
@@ -888,6 +840,9 @@ class Asset(models.Model):
                 format_name = DOWNLOADABLE_FORMAT_NAMES.get(
                     format.get_role_display(), format.get_role_display()
                 )
+                # TODO: Currently, we only offer the first format per role
+                # that we find. This might be a mistake. Should we include all
+                # duplicate roles?
                 formats.setdefault(format_name, resource_data)
         formats = OrderedDict(
             sorted(
@@ -1036,6 +991,88 @@ class Format(models.Model):
         resource.format = None
         resource.save()
 
+    def get_all_resources(self, query: Q = Q()):
+        resources = self.resource_set.filter(query)
+        # We can only union on another queryset, even though we just want one
+        # instance.
+        root_resources = Resource.objects.filter(pk=self.root_resource.pk)
+        resources = resources.union(root_resources)
+        return resources
+
+    def get_resource_data(self, resources):
+        if all([x.is_cors_allowed for x in resources]):
+            external_files = [x.external_url for x in resources if x.external_url]
+            local_files = [
+                f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file
+            ]
+            resource_data = {
+                "files_to_zip": external_files + local_files,
+                "role": self.role,
+            }
+        elif all([x.file for x in resources]):
+            resource_data = {
+                "files_to_zip": [
+                    f"{STORAGE_PREFIX}{suffix(x.file.name)}"
+                    for x in resources
+                    if x.file
+                ],
+                "role": self.role,
+            }
+        else:
+            resource_data = {}
+        return resource_data
+
+    def get_resource_data_by_role(self, resources, role):
+        if self.role == POLYGONE_GLTF_FORMAT:
+            resource_data = {
+                "files_to_zip": [
+                    f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file
+                ],
+                "files_to_zip_with_suffix": [
+                    f"{STORAGE_PREFIX}{suffix(x.file.name)}"
+                    for x in resources
+                    if x.file
+                ],
+                "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
+                "role": self.role,
+            }
+        elif self.role == UPDATED_GLTF_FORMAT:
+            # If we hit this branch, we have a format which doesn't
+            # have an archive url, but also doesn't have local files.
+            # At time of writing, we can't create a zip on the client
+            # from the archive.org urls because of CORS. So compile a
+            # list of files as if the role was 1003 using our suffixed
+            # upload.
+            try:
+                override_format = self.asset.format_set.get(role=POLYGONE_GLTF_FORMAT)
+                override_resources = list(override_format.resource_set.all())
+                override_format_root = override_format.root_resource
+                if override_format_root is not None:
+                    if override_format_root.file or override_format_root.external_url:
+                        override_resources.append(override_format_root)
+                resource_data = {
+                    "files_to_zip": [
+                        f"{STORAGE_PREFIX}{suffix(x.file.name)}"
+                        for x in override_resources
+                        if x.file
+                    ],
+                    "role": self.role,
+                }
+            except (
+                Format.DoesNotExist,
+                Format.MultipleObjectsReturned,
+            ):
+                resource_data = {}
+        elif self.role == ORIGINAL_GLTF_FORMAT:
+            # If we hit this branch, we have a format which doesn't
+            # have an archive url, but also doesn't have local files.
+            # At time of writing, we can't create a zip on the client
+            # from the archive.org urls because of CORS. We also don't
+            # have the suffixed version to hand. Skip this format until
+            # we can resolve this.
+            resource_data = {}
+        return resource_data
+
     class Meta:
         indexes = [
             models.Index(
@@ -1087,6 +1124,25 @@ class Resource(models.Model):
     @property
     def content_type(self):
         return self.file.content_type if self.file else self.contenttype
+
+    @property
+    def remote_host(self):
+        if self.external_url:
+            return urlparse(self.external_url).netloc
+        else:
+            return None
+
+    @property
+    def is_cors_allowed(self):
+        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
+            allowed_sources = tuple(
+                [x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")]
+            )
+        else:
+            allowed_sources = tuple([])
+        if self.remote_host is None:
+            return True
+        return self.remote_host in allowed_sources
 
 
 def masthead_image_upload_path(instance, filename):

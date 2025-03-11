@@ -412,7 +412,6 @@ def asset_view(request, asset_url):
         "request_user": AssetOwner.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
-        "asset_files": asset.get_all_absolute_file_names(),
         "override_suffix": override_suffix,
         "format_override": format_override,
         "downloadable_formats": bool(asset.get_all_downloadable_formats()),
