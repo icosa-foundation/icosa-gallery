@@ -2,6 +2,7 @@ import secrets
 from typing import Optional
 
 import bcrypt
+from constance import config
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
@@ -119,7 +120,7 @@ def custom_login(request):
     if not request.user.is_anonymous:
         return HttpResponseRedirect(reverse("home"))
 
-    if request.method == "POST":
+    if request.method == "POST" and config.SIGNUP_OPEN:
         username = request.POST.get("username", None)
         password = request.POST.get("password", None)
         # Creating the error response up front is slower for the happy path,
@@ -205,6 +206,8 @@ def register(request):
             )
             user.is_active = False
             user.save()
+            owner.django_user = user
+            owner.save()
 
             send_registration_email(
                 request, user, owner, to_email=form.cleaned_data.get("email")

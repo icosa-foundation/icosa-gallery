@@ -2,6 +2,7 @@ import re
 import secrets
 from typing import List, NoReturn, Optional
 
+from constance import config
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
@@ -31,7 +32,6 @@ from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
-from silk.profiling.profiler import silk_profile
 
 from .schema import (
     ORDER_FIELD_MAP,
@@ -212,7 +212,7 @@ def add_blocks_asset_format(
     else:
         raise HttpError(415, "Unsupported content type.")
 
-    asset.save()
+    asset.save(update_timestamps=False)
     return get_publish_url(request, asset)
 
 
@@ -247,10 +247,16 @@ def unpublish_asset(
     request,
     asset: int,
 ):
-    asset = get_my_id_asset(request, asset)
-    asset.visibility = "PRIVATE"
-    asset.save()
-    return asset
+    if asset.model_is_editable:
+        asset = get_my_id_asset(request, asset)
+        asset.visibility = "PRIVATE"
+        asset.save()
+        return asset
+    else:
+        raise HttpError(
+            400,
+            "Cannot make this work private; it was previously public and has a Creative Commons licence.",
+        )
 
 
 @router.get(
@@ -317,7 +323,7 @@ def upload_new_assets(
 
 def filter_assets(
     filters: AssetFilters,
-    assets: QuerySet[Asset] = Asset.objects.all(),
+    assets: QuerySet[Asset] = None,
     q: Q = Q(visibility=PUBLIC),
 ) -> QuerySet[Asset]:
     if filters.tag:
@@ -346,13 +352,24 @@ def filter_assets(
     q &= filter_complexity(filters)
     q &= filter_triangle_count(filters)
 
-    ex_q = (
-        Q(license__isnull=True)
-        | Q(license=ALL_RIGHTS_RESERVED)
-        | Q(last_reported_time__isnull=False)
-    )
+    if config.HIDE_REPORTED_ASSETS:
+        ex_q = (
+            Q(license__isnull=True)
+            | Q(license=ALL_RIGHTS_RESERVED)
+            | Q(last_reported_time__isnull=False)
+        )
+    else:
+        ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
 
-    return (
+    # Debug tests:
+    # from django.db import connection, reset_queries
+
+    # reset_queries()
+
+    if assets is None:
+        assets = Asset.objects.all()
+
+    assets = (
         assets.filter(q, keyword_q)
         .exclude(ex_q)
         .select_related("owner")
@@ -362,6 +379,13 @@ def filter_assets(
         )
         .distinct()
     )
+    # Debug tests:
+    # print(assets.explain())
+    # _ = list(assets)
+    # print(connection.queries)
+    # print(len(connection.queries))
+
+    return assets
 
 
 def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
@@ -389,7 +413,6 @@ def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
 )
 @paginate(AssetPagination)
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
-@decorate_view(silk_profile(name="API all assets"))
 def get_assets(
     request,
     filters: AssetFilters = Query(...),

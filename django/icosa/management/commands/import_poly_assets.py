@@ -136,7 +136,7 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
         if not done_thumbnail:
             asset.thumbnail = f"poly/{directory}/thumbnail.png"
             asset.thumbnail_contenttype = "image/png"
-            asset.save()
+            asset.save(update_timestamps=False)
             done_thumbnail = True
         root_resource_json = format_json["root"]
 
@@ -145,13 +145,13 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
 
         root_resource_data = {
             "file": f"poly/{directory}/{file_path}",
-            "is_root": True,
-            "format": format,
             "asset": asset,
+            "format": format,
             "contenttype": root_resource_json["contentType"],
         }
         root_resource = Resource.objects.create(**root_resource_data)
 
+        format.add_root_resource(root_resource)
         role = EXTENSION_ROLE_MAP.get(extension)
         format.role = role
         format.save()
@@ -186,7 +186,6 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
 
                 resource_data = {
                     "file": f"poly/{directory}/{file_path}",
-                    "is_root": False,
                     "format": format,
                     "asset": asset,
                     "contenttype": resource_json["contentType"],
@@ -216,31 +215,29 @@ def create_formats_from_archive_data(formats_json, asset):
         # if not done_thumbnail:
         #     asset.thumbnail = f"poly/{directory}/thumbnail.png"
         #     asset.thumbnail_contenttype = "image/png"
-        #     asset.save()
+        #     asset.save(update_timestamps=False)
         # done_thumbnail = True
         root_resource_json = format_json["root"]
         url = root_resource_json["url"]
         root_resource_data = {
             "external_url": f"https://web.archive.org/web/{url}",
-            "is_root": True,
-            "format": format,
             "asset": asset,
+            "format": format,
             "contenttype": get_content_type(url),
         }
 
-        Resource.objects.create(**root_resource_data)
+        root_resource = Resource.objects.create(**root_resource_data)
 
         role = FORMAT_ROLE_MAP[root_resource_json["role"]]
-        if role is not None:
-            format.role = role
-            format.save()
+        format.add_root_resource(root_resource)
+        format.role = role
+        format.save()
 
         if format_json.get("resources", None) is not None:
             for resource_json in format_json["resources"]:
                 url = resource_json["url"]
                 resource_data = {
                     "external_url": f"https://web.archive.org/web/{url}",
-                    "is_root": False,
                     "format": format,
                     "asset": asset,
                     "contenttype": get_content_type(url),
@@ -410,7 +407,7 @@ def handle_asset(
 
             # Re-save the asset to trigger model
             # validation.
-            asset.save()
+            asset.save(update_timestamps=False)
     else:
         with open("./invalid_assets.log", "a") as log:
             log.write(f"{asset_id}\n")

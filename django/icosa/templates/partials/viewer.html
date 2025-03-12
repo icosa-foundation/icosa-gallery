@@ -11,6 +11,56 @@
         right: 0;
     }
 </style>
+<style>
+    #icosa-wrapper {
+        display: flex;
+    }
+    #icosa-viewer {
+        flex-grow: 1;
+    }
+    #tree-view {
+        padding: 10px;
+        background-color: rgba(0,0,0,0.25);
+        color: white;
+        font-size: 11px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        z-index: 10;
+        display: none;
+        width: 250px;
+        overflow-y: auto;
+        flex-shrink: 0;
+    }
+    .tree-node {
+        margin: 5px 0;
+        white-space: nowrap;
+    }
+    .tree-content {
+        align-items: center;
+    }
+    #tree-view .toggle-btn {
+        display: inline-block;
+        cursor: pointer;
+        width: 10px;
+        text-align: center;
+        margin-right: 5px;
+    }
+    #tree-view .children {
+        margin-left: 10px;
+        display: none;
+    }
+    #tree-view .selected {
+        background-color: rgba(255,255,255,0.5);
+        color: black;
+    }
+    #tree-view .expanded > .children {
+        display: block;
+    }
+    #tree-view input[type="checkbox"] {
+        display: inline;
+        margin: 0;
+    }
+</style>
 <script type="importmap" class="es6_modules_map">
     {
         "imports": {
@@ -39,9 +89,8 @@
 
     {% if not asset.has_tilt and not override_suffix and not format_override %}
 
-        let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", ""); // Remove suffix to avoid duplicating it
-        url = url.replace(".gltf", "_%28GLTFupdated%29.gltf"); // Add suffix
         let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+        let url = "{{ asset.preferred_viewer_format.url }}";
 
     {% else %}
 
@@ -102,6 +151,7 @@
     gui.close();
 
     const guiParams = {
+        toggleTreeView: () => viewer.toggleTreeView(document.getElementById('tree-view')),
         toggleEnvironment: () => viewer.environmentObject && (viewer.environmentObject.visible = !viewer.environmentObject.visible),
         toggleSky: () => viewer.skyObject && (viewer.skyObject.visible = !viewer.skyObject.visible),
         levelCamera: () => {
@@ -119,6 +169,7 @@
         }
     };
 
+    const toggleTreeView = gui.add(guiParams, 'toggleTreeView').name("Toggle Hierarchy");
     const toggleEnvironmentControl = gui.add(guiParams, 'toggleEnvironment').name("Toggle Environment");
     const toggleSkyControl = gui.add(guiParams, 'toggleSky').name("Toggle Sky");
     const levelCameraControl = gui.add(guiParams, 'levelCamera').name("Level Camera");

@@ -104,8 +104,9 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 INSTALLED_APPS = [
     "dal",
     "dal_select2",
-    "django.contrib.admin",
     "django.contrib.auth",
+    "icosa",
+    "django.contrib.admin",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.sites",
@@ -118,7 +119,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "honeypot",
     "huey.contrib.djhuey",
-    "icosa",
     "import_export",
     "maintenance_mode",
     "silk",
@@ -292,6 +292,21 @@ CONSTANCE_CONFIG = {
         "Comma-separated list of domains who have set their CORS to allow fetching from this site's domain.",
         str,
     ),
+    "HIDE_REPORTED_ASSETS": (
+        True,
+        "Assets that have been reported are removed from lister pages.",
+        bool,
+    ),
+    "SIGNUP_OPEN": (
+        False,
+        "Enables the registration form.",
+        bool,
+    ),
+    "WAITLIST_IF_SIGNUP_CLOSED": (
+        False,
+        "If Signup Open is False, this will enable the waitlist functionality. Does nothing if Signup Open is True.",
+        bool,
+    ),
 }
 
 # Debug Toolbar settings
@@ -374,7 +389,7 @@ HUEY = {
 # calls the same code in userland. ENABLE_TASK_QUEUE is useful for excluding
 # huey from the code path entirely.
 
-ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", True)
+ENABLE_TASK_QUEUE = os.environ.get("DJANGO_ENABLE_TASK_QUEUE", False)
 
 # Maintenance Mode settings
 
@@ -383,10 +398,11 @@ MAINTENANCE_MODE_IGNORE_STAFF = True
 MAINTENANCE_MODE_IGNORE_URLS = [
     "/admin/",
     "/device/",
-    "/v1/",
+    "/health",
     "/privacy-policy",
     "/terms",
     "/supporters",
+    "/v1/",
 ]
 
 # Ninja settings
@@ -400,9 +416,26 @@ def silky_perms(user):
     return user.is_superuser
 
 
+def get_profile_intercept():
+    percent = 0
+    if os.environ.get("DJANGO_ENABLE_PROFILING", False):
+        if DEBUG:
+            percent = 100
+        percent = 1
+        try:
+            percent = int(
+                os.environ.get(
+                    "DJANGO_PROFILING_INTERCEPT_PERCENT",
+                    percent,
+                )
+            )
+        except ValueError:
+            pass
+    return percent
+
+
 SILKY_PYTHON_PROFILER = os.environ.get("DJANGO_ENABLE_PROFILING", False)
-# Log only 50% of requests (enable and tweak this in high-load situations).
-# SILKY_INTERCEPT_PERCENT = 50
+SILKY_INTERCEPT_PERCENT = get_profile_intercept()
 SILKY_AUTHENTICATION = True  # User must login
 SILKY_AUTHORISATION = True  # User must have permissions
 SILKY_PERMISSIONS = silky_perms

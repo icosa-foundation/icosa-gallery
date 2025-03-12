@@ -56,6 +56,7 @@ api.add_router("users", users_router, tags=["Users"])
 
 urlpatterns = [
     path("div_by_zero", main_views.div_by_zero, name="div_by_zero"),
+    path("health", main_views.health, name="health"),
     path("admin_tools/", include("admin_tools.urls")),
     path("admin/", admin.site.urls),
     # Auth views
@@ -154,6 +155,7 @@ urlpatterns = [
     ),
     path("search", main_views.search, name="search"),
     path("settings", main_views.user_settings, name="settings"),
+    path("about", main_views.about, name="about"),
     path("terms", main_views.terms, name="terms"),
     path(
         "information-for-artists-and-creators",
@@ -164,6 +166,7 @@ urlpatterns = [
     path("licenses", main_views.licenses, name="licenses"),
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
+    path("waitlist", main_views.waitlist, name="waitlist"),
     # autocomplete views
     path(
         "tag-autocomplete",

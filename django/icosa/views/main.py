@@ -2,6 +2,7 @@ import inspect
 import random
 import secrets
 
+from constance import config
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -34,8 +35,9 @@ from icosa.forms import (
     UserSettingsForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
-from icosa.helpers.file import b64_to_img, upload_asset
+from icosa.helpers.file import b64_to_img
 from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ASSET_STATE_BARE,
@@ -49,7 +51,7 @@ from icosa.models import (
     AssetOwner,
     MastheadSection,
 )
-from icosa.tasks import queue_upload_asset
+from icosa.tasks import queue_upload_asset_web_ui
 from silk.profiling.profiler import silk_profile
 
 POLY_USER_URL = "4aEd8rQgKu2"
@@ -59,6 +61,20 @@ POLY_USER_URL = "4aEd8rQgKu2"
 MASTHEAD_TOP_RANK = 10000
 MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
+
+if config.HIDE_REPORTED_ASSETS:
+    DEFAULT_Q = Q(
+        visibility=PUBLIC,
+        is_viewer_compatible=True,
+        curated=True,
+        last_reported_time__isnull=True,
+    )
+else:
+    DEFAULT_Q = Q(
+        visibility=PUBLIC,
+        is_viewer_compatible=True,
+        curated=True,
+    )
 
 
 def user_can_view_asset(
@@ -92,14 +108,14 @@ def div_by_zero(request):
     1 / 0
 
 
+@never_cache
+def health(request):
+    return HttpResponse("ok")
+
+
 def landing_page(
     request,
-    assets=Asset.objects.filter(
-        visibility=PUBLIC,
-        is_viewer_compatible=True,
-        curated=True,
-        last_reported_time__isnull=True,
-    ).select_related("owner"),
+    assets=Asset.objects.filter(DEFAULT_Q).select_related("owner"),
     show_masthead=True,
     heading=None,
     heading_link=None,
@@ -161,7 +177,6 @@ def landing_page(
     context = {
         "assets": assets,
         "masthead": masthead,
-        "page_number": page_number,
         "heading": heading,
         "heading_link": heading_link,
         "is_explore_heading": is_explore_heading,
@@ -220,11 +235,17 @@ def home_blocks(request):
 @user_passes_test(lambda u: u.is_superuser)
 @never_cache
 def home_other(request):
-    home_q = Q(
-        is_viewer_compatible=True,
-        curated=True,
-        last_reported_time__isnull=True,
-    )
+    if config.HIDE_REPORTED_ASSETS:
+        home_q = Q(
+            is_viewer_compatible=True,
+            curated=True,
+            last_reported_time__isnull=True,
+        )
+    else:
+        home_q = Q(
+            is_viewer_compatible=True,
+            curated=True,
+        )
     poly_by_google_q = Q(owner__url=POLY_USER_URL)
     only_blocks_q = Q(has_blocks=True, curated=True)
     blocks_q = poly_by_google_q | only_blocks_q
@@ -279,13 +300,13 @@ def uploads(request):
                 state=ASSET_STATE_UPLOADING,
             )
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                queue_upload_asset(
+                queue_upload_asset_web_ui(
                     current_user=user,
                     asset=asset,
                     files=[request.FILES["file"]],
                 )
             else:
-                upload_asset(
+                upload(
                     user,
                     asset,
                     [request.FILES["file"]],
@@ -391,10 +412,9 @@ def asset_view(request, asset_url):
         "request_user": AssetOwner.from_django_user(request.user),
         "user": asset.owner,
         "asset": asset,
-        "asset_files": asset.get_all_absolute_file_names(),
         "override_suffix": override_suffix,
         "format_override": format_override,
-        "downloadable_formats": asset.get_all_downloadable_formats(),
+        "downloadable_formats": bool(asset.get_all_downloadable_formats()),
         "page_title": asset.name,
     }
     return render(
@@ -416,7 +436,7 @@ def make_asset_thumbnail(request, asset_url):
         image_file = b64_to_img(b64_image)
 
         asset.preview_image = image_file
-        asset.save()
+        asset.save(update_timestamps=False)
         body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
 
         return HttpResponse(mark_safe(body))
@@ -477,7 +497,7 @@ def asset_log_download(request, asset_url):
     if request.method == "POST":
         asset = get_object_or_404(Asset, url=asset_url)
         asset.downloads += 1
-        asset.save()
+        asset.save(update_timestamps=False)
 
         return HttpResponse("ok")
     else:
@@ -507,6 +527,11 @@ def edit_asset(request, asset_url):
     template = "main/edit_asset.html"
     owner = AssetOwner.from_django_user(request.user)
     asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+    # We need to disconnect the editable state from the form during validation.
+    # Without this, if the form contains errors, some fields that need
+    # correction cannot be edited.
+    is_editable = asset.model_is_editable
+
     if request.method == "GET":
         form = AssetSettingsForm(instance=asset)
     elif request.method == "POST":
@@ -516,8 +541,10 @@ def edit_asset(request, asset_url):
             return HttpResponseRedirect(reverse("uploads"))
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
+
     context = {
         "asset": asset,
+        "is_editable": is_editable,
         "form": form,
         "page_title": f"Edit {asset.name}",
     }
@@ -595,7 +622,7 @@ def report_asset(request, asset_url):
                 reporter = AssetOwner.from_django_user(reporter)
                 reporter_email = reporter.email
                 asset.last_reported_by = reporter
-            asset.save()
+            asset.save(update_timestamps=False)
             current_site = get_current_site(request)
             mail_subject = "An Icosa asset has been reported"
             to_email = getattr(settings, "ADMIN_EMAIL", None)
@@ -603,6 +630,7 @@ def report_asset(request, asset_url):
                 message = render_to_string(
                     "emails/report_asset_email.html",
                     {
+                        "asset": asset,
                         "request": request,
                         "reporter": reporter_email,
                         "reason": form.cleaned_data["reason_for_reporting"],
@@ -746,15 +774,29 @@ def privacy_policy(request):
     )
 
 
+def about(request):
+    return template_view(
+        request,
+        "main/about.html",
+        "About Icosa Gallery",
+    )
+
+
 def search(request):
     query = request.GET.get("s")
     template = "main/search.html"
 
-    q = Q(
-        visibility=PUBLIC,
-        is_viewer_compatible=True,
-        last_reported_time__isnull=True,
-    )
+    if config.HIDE_REPORTED_ASSETS:
+        q = Q(
+            visibility=PUBLIC,
+            is_viewer_compatible=True,
+            last_reported_time__isnull=True,
+        )
+    else:
+        q = Q(
+            visibility=PUBLIC,
+            is_viewer_compatible=True,
+        )
 
     if query is not None:
         q &= Q(search_text__icontains=query)
@@ -804,12 +846,30 @@ def toggle_like(request):
         owner.likes.remove(asset)
     else:
         owner.likes.add(asset)
-        asset.save()  # Triggers denorming of asset liked time.
+        # Triggers denorming of asset liked time, but not update_time.
+        asset.save(update_timestamps=False)
     template = "main/tags/like_button.html"
     context = {
         "is_liked": not is_liked,
         "asset_url": asset.url,
     }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@never_cache
+def waitlist(request):
+    template = "main/waitlist.html"
+    if not config.WAITLIST_IF_SIGNUP_CLOSED and not config.SIGNUP_OPEN:
+        raise Http404()
+
+    context = {
+        "page_title": "Join the waitlist",
+    }
+
     return render(
         request,
         template,

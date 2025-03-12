@@ -1,9 +1,12 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
     AssetOwner,
+    BulkSaveLog,
     DeviceCode,
     Format,
     HiddenMediaFileLog,
@@ -28,14 +31,10 @@ class ResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
         "id",
         "asset",
         "file",
-        "is_root",
         "contenttype",
     )
 
-    list_filter = (
-        "is_root",
-        "contenttype",
-    )
+    list_filter = ("contenttype",)
     search_fields = ("file",)
     raw_id_fields = [
         "asset",
@@ -60,7 +59,6 @@ class ResourceInline(admin.TabularInline):
     model = Resource
 
     fields = (
-        "is_root",
         "file",
         "external_url",
     )
@@ -74,7 +72,10 @@ class FormatAdmin(ImportExportModelAdmin, ExportActionMixin):
     )
 
     inlines = (ResourceInline,)
-    list_filter = ("role",)
+    list_filter = (
+        "role",
+        "format_type",
+    )
     raw_id_fields = [
         "asset",
         "root_resource",
@@ -119,6 +120,7 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
         "license",
         "category",
         "state",
+        "last_reported_time",
     )
     readonly_fields = (
         "rank",
@@ -257,6 +259,19 @@ class MastheadSectionAdmin(ImportExportModelAdmin, ExportActionMixin):
     _thumbnail_image.allow_tags = True
 
 
+@admin.register(BulkSaveLog)
+class BulkSaveLogAdmin(admin.ModelAdmin):
+    list_display = ("create_time", "finish_status")
+    readonly_fields = (
+        "create_time",
+        "update_time",
+        "finish_time",
+        "finish_status",
+    )
+
+    list_filter = ("finish_status",)
+
+
 @admin.register(HiddenMediaFileLog)
 class HiddenMediaFileLogAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
@@ -294,3 +309,17 @@ class Oauth2CodeAdmin(ImportExportModelAdmin, ExportActionMixin):
 @admin.register(Oauth2Token)
 class Oauth2TokenAdmin(ImportExportModelAdmin, ExportActionMixin):
     pass
+
+
+class UserAdmin(OriginalUserAdmin):
+    actions = [
+        "make_not_staff",
+    ]
+
+    @admin.action(description="Mark selected users as not staff")
+    def make_not_staff(modeladmin, request, queryset):
+        queryset.update(is_staff=False)
+
+
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)

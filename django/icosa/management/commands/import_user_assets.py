@@ -105,7 +105,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
         if not done_thumbnail:
             asset.thumbnail = f"poly/{directory}/thumbnail.png"
             asset.thumbnail_contenttype = "image/png"
-            asset.save()
+            asset.save(update_timestamps=False)
         done_thumbnail = True
         root_resource_json = format_json["root"]
 
@@ -114,12 +114,12 @@ def create_formats(directory, gltf2_data, formats_json, asset):
 
         root_resource_data = {
             "file": f"poly/{directory}/{file_path}",
-            "is_root": True,
-            "format": format,
             "asset": asset,
+            "format": format,
             "contenttype": root_resource_json["contentType"],
         }
         root_resource = Resource.objects.create(**root_resource_data)
+        format.add_root_resource(root_resource)
 
         role = EXTENSION_ROLE_MAP.get(extension)
         format.role = role
@@ -150,7 +150,6 @@ def create_formats(directory, gltf2_data, formats_json, asset):
 
                 resource_data = {
                     "file": f"poly/{directory}/{file_path}",
-                    "is_root": False,
                     "format": format,
                     "asset": asset,
                     "contenttype": resource_json["contentType"],
@@ -213,6 +212,6 @@ class Command(BaseCommand):
 
                         # Re-save the asset to trigger model
                         # validation.
-                        asset.save()
+                        asset.save(update_timestamps=False)
 
         print("Finished                                  ")

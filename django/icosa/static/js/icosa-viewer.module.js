@@ -43393,10 +43393,9 @@ class $2700ada9f878d4f8$export$d1c1e163c7960c6 {
             if (window.isSecureContext === false) {
                 message.href = document.location.href.replace(/^http:/, "https:");
                 message.innerHTML = "WEBXR NEEDS HTTPS"; // TODO Improve message
-            } else {
-                message.href = "https://immersiveweb.dev/";
-                message.innerHTML = "WEBXR NOT AVAILABLE";
-            }
+            } else // message.href = 'https://immersiveweb.dev/';
+            // message.innerHTML = 'WEBXR NOT AVAILABLE';
+            message.style = "display: none";
             message.style.left = "calc(50% - 90px)";
             message.style.width = "180px";
             message.style.textDecoration = "none";
@@ -51644,6 +51643,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
             return null;
         }
         this.cameraRig = new $ea01ff4a5048cd08$exports.Group();
+        this.selectedNode = null;
         let controller0;
         let controller1;
         let controllerGrip0;
@@ -51816,12 +51816,23 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.initLights();
         this.initCameras();
         // Compensate for insanely large models
+        const LIMIT = 100000;
         let radius = this.overrides?.geometryData?.stats?.radius;
-        if (radius > 10000) {
-            let scale = 1 / radius;
-            this.loadedModel.scale.set(scale, scale, scale);
+        if (radius > LIMIT) {
+            let excess = radius - LIMIT;
+            let sceneNode = this.scene.add(this.loadedModel);
+            sceneNode.scale.divideScalar(excess);
+            // Reframe the scaled scene
+            this.frameNode(sceneNode);
+        } else this.scene.add(this.loadedModel);
+    }
+    toggleTreeView(root) {
+        if (root.childElementCount == 0) {
+            this.createTreeView(this.scene, root);
+            root.style.display = "none";
         }
-        this.scene.add(this.loadedModel);
+        if (root.style.display === "block") root.style.display = "none";
+        else if (root.style.display === "none") root.style.display = "block";
     }
     static lookupEnvironment(guid) {
         return ({
@@ -53444,21 +53455,31 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         this.scene.background = this.defaultBackgroundColor;
     }
     frameScene() {
-        // Setup camera to center model
-        const box = this.modelBoundingBox;
-        if (box != undefined) {
-            const boxSize = box.getSize(new $ea01ff4a5048cd08$exports.Vector3()).length();
-            const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
-            this.cameraControls.minDistance = boxSize * 0.01;
-            this.cameraControls.maxDistance = boxSize * 10;
-            const midDistance = this.cameraControls.minDistance + (boxSize - this.cameraControls.minDistance) / 2;
-            this.cameraControls.setTarget(boxCenter.x, boxCenter.y, boxCenter.z);
-            let sphere = new $ea01ff4a5048cd08$exports.Sphere();
-            box.getBoundingSphere(sphere);
-            let fullDistance = sphere.radius * 1.75;
-            this.cameraControls.dollyTo(fullDistance, true);
-            this.cameraControls.saveState();
+        if (this.selectedNode != null) // If a node is selected in the treeview, frame that
+        this.frameNode(this.selectedNode);
+        else if (this.modelBoundingBox != null) // This should be the bounding box of the loaded model itself
+        this.frameBox(this.modelBoundingBox);
+        else {
+            // Fall back to framing the whole scene
+            let box = new $ea01ff4a5048cd08$exports.Box3().setFromObject(this.scene);
+            this.frameBox(box);
         }
+    }
+    frameNode(node) {
+        this.frameBox(new $ea01ff4a5048cd08$exports.Box3().setFromObject(node));
+    }
+    frameBox(box) {
+        const boxSize = box.getSize(new $ea01ff4a5048cd08$exports.Vector3()).length();
+        const boxCenter = box.getCenter(new $ea01ff4a5048cd08$exports.Vector3());
+        this.cameraControls.minDistance = boxSize * 0.01;
+        this.cameraControls.maxDistance = boxSize * 10;
+        const midDistance = this.cameraControls.minDistance + (boxSize - this.cameraControls.minDistance) / 2;
+        this.cameraControls.setTarget(boxCenter.x, boxCenter.y, boxCenter.z);
+        let sphere = new $ea01ff4a5048cd08$exports.Sphere();
+        box.getBoundingSphere(sphere);
+        let fullDistance = sphere.radius * 1.75;
+        this.cameraControls.dollyTo(fullDistance, true);
+        this.cameraControls.saveState();
     }
     levelCamera() {
         // Sets the camera target so that the camera is looking forward and level
@@ -53470,6 +53491,68 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         cameraDir.normalize();
         let newTarget = cameraPos.clone().add(cameraDir);
         this.cameraControls.setTarget(newTarget.x, newTarget.y, newTarget.z, true);
+    }
+    createTreeView(model, root) {
+        const treeView = root;
+        if (!treeView) {
+            console.error("Tree view container not found");
+            return;
+        }
+        treeView.innerHTML = "";
+        if (model) this.createTreeViewNode(model, treeView);
+        else console.error("Model not loaded");
+    }
+    createTreeViewNode(object, parentElement) {
+        const nodeElement = document.createElement("div");
+        nodeElement.classList.add("tree-node");
+        nodeElement.style.marginLeft = "5px";
+        const contentElement = document.createElement("div");
+        contentElement.classList.add("tree-content");
+        const toggleButton = document.createElement("span");
+        toggleButton.classList.add("toggle-btn");
+        toggleButton.textContent = object.children && object.children.length > 0 ? "\u25B6" : " ";
+        toggleButton.addEventListener("click", ()=>{
+            nodeElement.classList.toggle("expanded");
+            toggleButton.textContent = nodeElement.classList.contains("expanded") ? "\u25BC" : "\u25B6";
+        });
+        const visibilityCheckbox = document.createElement("input");
+        visibilityCheckbox.type = "checkbox";
+        visibilityCheckbox.checked = object.visible;
+        visibilityCheckbox.addEventListener("change", ()=>{
+            object.visible = visibilityCheckbox.checked;
+        });
+        const label = document.createElement("span");
+        label.classList.add("label");
+        label.textContent = object.name || object.type;
+        label.style.marginLeft = "5px";
+        contentElement.appendChild(toggleButton);
+        contentElement.appendChild(visibilityCheckbox);
+        contentElement.appendChild(label);
+        label.addEventListener("click", ()=>{
+            let wasSelected = label.classList.contains("selected");
+            document.querySelectorAll(".tree-node").forEach((node)=>{
+                const label = node.querySelector(".label");
+                if (label) label.classList.remove("selected");
+            });
+            if (wasSelected) {
+                label.classList.remove("selected");
+                this.selectedNode = null;
+            } else {
+                label.classList.add("selected");
+                this.selectedNode = object;
+            }
+            console.log(object);
+        });
+        nodeElement.appendChild(contentElement);
+        if (object.children && object.children.length > 0) {
+            const childrenContainer = document.createElement("div");
+            childrenContainer.classList.add("children");
+            nodeElement.appendChild(childrenContainer);
+            object.children.forEach((child)=>{
+                this.createTreeViewNode(child, childrenContainer);
+            });
+        }
+        parentElement.appendChild(nodeElement);
     }
 }
 

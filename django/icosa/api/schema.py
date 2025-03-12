@@ -8,6 +8,7 @@ from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
+from pydantic.json_schema import SkipJsonSchema
 
 
 class Complexity(Enum):
@@ -128,22 +129,16 @@ class FormatComplexity(Schema):
 
 
 class AssetFormat(Schema):
-    root: Optional[AssetResource]
-    resources: Optional[List[AssetResource]]
+    root: Optional[AssetResource] = Field(
+        None,
+        alias="root_resource",
+    )
+    resources: Optional[List[AssetResource]] = Field(
+        None,
+        alias="resource_set",
+    )
     formatComplexity: FormatComplexity
-    formatType: str
-
-    @staticmethod
-    def resolve_root(obj):
-        return obj.root_resource
-
-    @staticmethod
-    def resolve_resources(obj):
-        return obj.resource_set.filter(is_root=False)
-
-    @staticmethod
-    def resolve_formatType(obj):
-        return obj.format_type
+    formatType: str = Field(None, alias="format_type")
 
     @staticmethod
     def resolve_formatComplexity(obj):
@@ -161,7 +156,7 @@ class AssetSchema(ModelSchema):
     name: str
     description: Optional[str]
     createTime: datetime = Field(..., alias=("create_time"))
-    updateTime: datetime = Field(..., alias=("update_time"))
+    updateTime: Optional[datetime] = Field(..., alias=("update_time"))
     url: Optional[str]
     assetId: str
     formats: List[AssetFormat]
@@ -302,22 +297,36 @@ class OembedOut(Schema):
 
 
 class FilterBase(Schema):
-    category: Optional[Category] = None
-    curated: bool = False
-    format: Optional[List[FormatFilter]] = None
-    keywords: Optional[str] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    tag: List[str] = Field(None, alias="tag")
-    orderBy: Optional[Order] = None
-    order_by: Optional[Order] = None
-    maxComplexity: Optional[Complexity] = None
+    category: Optional[Category] = Field(default=None, example="ANIMALS")
+    curated: bool = Field(default=False)
+    format: Optional[List[FormatFilter]] = Field(
+        default=None, description="Filter by format"
+    )
+    keywords: Optional[str] = Field(default=None)
+    name: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
+    tag: List[str] = Field(default=None, alias="tag")
+    orderBy: Optional[Order] = Field(
+        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
+        # it has `example`, which also accepts a list, but does not render it
+        # nicely at all.
+        # See: https://github.com/vitalik/django-ninja/issues/1342
+        # example=[
+        #     "LIKES (most first)",
+        #     "-LIKES (least first)",
+        # ],
+        default=None,
+    )
+    order_by: SkipJsonSchema[Optional[Order]] = Field(
+        default=None
+    )  # For backwards compatibility
+    maxComplexity: Optional[Complexity] = Field(default=None)
     triangleCountMin: Optional[int] = None
     triangleCountMax: Optional[int] = None
 
 
 class AssetFilters(FilterBase):
-    authorName: Optional[str] = None
+    authorName: SkipJsonSchema[Optional[str]] = None
     author_name: Optional[str] = None
     license: Optional[str] = None
 

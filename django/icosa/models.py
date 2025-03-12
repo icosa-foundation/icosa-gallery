@@ -1,9 +1,11 @@
 import os
+import re
 import secrets
 import string
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import Self
+from typing import Optional, Self
+from urllib.parse import urlparse
 
 import bcrypt
 import jwt
@@ -14,10 +16,12 @@ from django.contrib.auth.models import User as DjangoUser
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
+    DOWNLOADABLE_FORMAT_NAMES,
     FORMAT_ROLE_CHOICES,
     GLB_FORMAT,
     ORIGINAL_FBX_FORMAT,
@@ -88,6 +92,10 @@ CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES] + [
     x[0] for x in V4_CC_LICENSE_CHOICES
 ]
 
+REMIX_REGEX = re.compile("(^.*BY_[0-9]_|CREATIVE_COMMONS_0)")
+
+CC_REMIX_LICENCES = [x for x in CC_LICENSES if REMIX_REGEX.match(x)]
+
 LICENSE_CHOICES = (
     [
         ("", "No license chosen"),
@@ -96,6 +104,19 @@ LICENSE_CHOICES = (
     + V4_CC_LICENSE_CHOICES
     + [RESERVED_LICENSE]
 )
+
+ARCHIVE_PREFIX = "https://web.archive.org/web/"
+STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
+
+
+def suffix(name):
+    if name is None:
+        return None
+    if name.endswith(".gltf"):
+        return "".join(
+            [f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]]
+        )
+    return name
 
 
 class Category(models.TextChoices):
@@ -125,10 +146,7 @@ CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in Category.choices}
 
 WEB_UI_DOWNLOAD_COMPATIBLE = [
     ORIGINAL_OBJ_FORMAT,
-    # We should offer TILT, but they don't all have an archive URL for the main
-    # format and we can't build a zip on the client from individual archive
-    # URLS owing to CORS.
-    # TILT_FORMAT,
+    TILT_FORMAT,
     ORIGINAL_FBX_FORMAT,
     BLOCKS_FORMAT,
     USD_FORMAT,
@@ -232,33 +250,16 @@ class AssetOwner(models.Model):
         return instance
 
     @classmethod
-    def from_django_request(cls, request):
-        instance = None
-        if getattr(request.user, "email", None):
-            try:
-                instance = cls.objects.get(django_user=request.user)
-            except cls.DoesNotExist:
-                pass
+    def from_django_user(cls, user: DjangoUser) -> Optional[Self]:
+        try:
+            instance = cls.objects.get(django_user=user)
+        except (cls.DoesNotExist, TypeError):
+            instance = None
         return instance
 
     @classmethod
-    def from_django_user(cls, user: DjangoUser) -> Self:
-        instance = None
-        if getattr(user, "email", None):
-            try:
-                instance = cls.objects.get(django_user=user)
-            except cls.DoesNotExist:
-                pass
-        return instance
-
-    def to_django_user(self):
-        instance = None
-        if getattr(self, "email", None):
-            try:
-                instance = DjangoUser.objects.get(email=self.email)
-            except DjangoUser.DoesNotExist:
-                pass
-        return instance
+    def from_django_request(cls, request) -> Optional[Self]:
+        return cls.from_django_user(request.user)
 
     def get_absolute_url(self):
         return f"/user/{self.url}"
@@ -389,8 +390,8 @@ class Asset(models.Model):
         blank=True,
         null=True,
     )
-    create_time = models.DateTimeField(auto_now_add=True)
-    update_time = models.DateTimeField(auto_now=True)
+    create_time = models.DateTimeField()
+    update_time = models.DateTimeField(null=True, blank=True)
     license = models.CharField(
         max_length=50, null=True, blank=True, choices=LICENSE_CHOICES
     )
@@ -435,6 +436,16 @@ class Asset(models.Model):
     rank = models.FloatField(default=0)
 
     @property
+    def model_is_editable(self):
+        # Once a permissable license has been chosen, and the asset is
+        # available for use in other models, we cannot allow changing anything
+        # about it. Doing so would allow abuse.
+        return (
+            self.visibility not in [PUBLIC, UNLISTED]
+            and self.license != ALL_RIGHTS_RESERVED
+        )
+
+    @property
     def slug(self):
         return slugify(self.name)
 
@@ -442,56 +453,100 @@ class Asset(models.Model):
     def timestamp(self):
         return get_snowflake_timestamp(self.id)
 
+    def handle_blocks_preferred_format(self):
+        # TODO(james): This handler is specific to data collected from blocks.
+        # We should use this logic to populate the database with the correct
+        # information. But for now, we don't know this method is 100% correct,
+        # so I'm leaving this here.
+        if not self.has_gltf2:
+            # There are some issues with displaying GLTF1 files from Blocks
+            # so we have to return an OBJ and its associated MTL.
+            obj_format = self.format_set.filter(
+                format_type="OBJ",
+                root_resource__isnull=False,
+            ).first()
+            obj_resource = obj_format.root_resource
+            mtl_resource = obj_format.resource_set.first()
+
+            if not obj_resource:
+                # TODO: If we fail to find an obj, do we want to handle this
+                # with an error?
+                return None
+            return {
+                "format": obj_format.format_type,
+                "url": obj_resource.internal_url_or_none,
+                "materialUrl": mtl_resource.url,
+                "resource": obj_resource,
+            }
+        # We have a gltf2, but we must currently return the suffixed version we
+        # have in storage; the non-suffixed version currently does not work.
+        blocks_format = self.format_set.filter(format_type="GLTF2").first()
+        blocks_resource = None
+        if blocks_format is not None:
+            blocks_resource = blocks_format.root_resource
+        if blocks_format is None or blocks_resource is None:
+            # TODO: If we fail to find a gltf2, do we want to handle this with
+            # an error?
+            return None
+        filename = blocks_resource.url
+        if filename is None:
+            return None
+        filename = f"poly/{self.url}/{filename.split('/')[-1]}"
+        url = f"{STORAGE_PREFIX}{suffix(filename)}"
+        return {
+            "format": blocks_format.format_type,
+            "url": url,
+            "resource": blocks_resource,
+        }
+
     @property
     def _preferred_viewer_format(self):
-        # Return early with an obj if we know the asset is a blocks file.
-        # There are some issues with displaying GLTF files from Blocks so we
-        # have to return an OBJ and its associated MTL.
-        # TODO we now force updated gltf in the template instead of obj
-        if False:
-            # here: self.is_blocks and not self.has_gltf2:
-            # TODO Prefer some roles over others
-            # TODO error handling
-            obj_format = self.format_set.filter(format_type="OBJ").first()
-            obj_resource = obj_format.resource_set.filter(
-                is_root=True,
-            ).first()
-            mtl_resource = obj_format.resource_set.filter(
-                is_root=False,
-            ).first()
-
-            if obj_resource:
-                return {
-                    "format": obj_resource.format.format_type,
-                    "url": obj_resource.internal_url_or_none,
-                    "materialUrl": mtl_resource.url,
-                    "resource": obj_resource,
-                }
+        if self.has_blocks:
+            return self.handle_blocks_preferred_format()
 
         # Return early if we can grab a Polygone resource first
-        polygone_gltf = self.resource_set.filter(
-            is_root=True, format__role__in=[1002, 1003]
+        polygone_gltf = None
+        format = self.format_set.filter(
+            role__in=[1002, 1003],
+            root_resource__isnull=False,
         ).first()
+        if format:
+            polygone_gltf = format.root_resource
+
         if polygone_gltf:
             return {
-                "format": polygone_gltf.format.format_type,
+                "format": format.format_type,
                 "url": polygone_gltf.internal_url_or_none,
                 "resource": polygone_gltf,
             }
 
         # Return early with either of the role-based formats we care about.
-        updated_gltf = self.resource_set.filter(is_root=True, format__role=30).first()
+        updated_gltf = None
+        format = self.format_set.filter(
+            root_resource__isnull=False,
+            role=30,
+        ).first()
+        if format:
+            updated_gltf = format.root_resource
+
         if updated_gltf:
             return {
-                "format": updated_gltf.format.format_type,
+                "format": format.format_type,
                 "url": updated_gltf.internal_url_or_none,
                 "resource": updated_gltf,
             }
 
-        original_gltf = self.resource_set.filter(is_root=True, format__role=12).first()
+        original_gltf = None
+        format = self.format_set.filter(
+            root_resource__isnull=False,
+            role=12,
+        ).first()
+        if format:
+            original_gltf = format.root_resource
+
         if original_gltf:
             return {
-                "format": original_gltf.format.format_type,
+                "format": format.format_type,
                 "url": original_gltf.internal_url_or_none,
                 "resource": original_gltf,
             }
@@ -535,7 +590,7 @@ class Asset(models.Model):
 
     @property
     def has_cors_allowed(self):
-        # If this resource has a file managed by Django storage, then it will
+        # If this asset has a file managed by Django storage, then it will
         # be viewable.
         if (
             self.resource_set.filter(
@@ -548,31 +603,26 @@ class Asset(models.Model):
         # If any resource does not have a file managed by Django storage, check
         # if any of the externally-hosted files' sources have been allowed by
         # the site admin in django constance settings.
-        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
-            allowed_sources = tuple(
-                [x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")]
-            )
-        else:
-            allowed_sources = tuple([])
-
-        return (
-            len(
-                [
-                    x.external_url
-                    for x in self.resource_set.filter(
-                        external_url__isnull=False,
-                    )
-                    if x.external_url.startswith(allowed_sources)
-                ]
-            )
-            > 0
-        )
+        is_allowed = False
+        for resource in self.resource_set.filter(
+            external_url__isnull=False,
+        ):
+            if resource.is_cors_allowed:
+                is_allowed = True
+                break
+        return is_allowed
 
     @property
     def download_url(self):
         if self.license == ALL_RIGHTS_RESERVED or not self.license:
             return None
-        updated_gltf = self.resource_set.filter(is_root=True, format__role=30).first()
+        updated_gltf = None
+        format = self.format_set.filter(
+            root_resource__isnull=False,
+            role=30,
+        ).first()
+        if format:
+            updated_gltf = format.root_resource
 
         preferred_format = self.preferred_viewer_format
 
@@ -709,7 +759,7 @@ class Asset(models.Model):
         self.views += 1
         self.rank = self.get_updated_rank()
         if save:
-            self.save()
+            self.save(update_timestamps=False)
 
     def get_all_file_names(self):
         file_list = []
@@ -718,14 +768,6 @@ class Asset(models.Model):
         for resource in self.resource_set.all():
             if resource.file:
                 file_list.append(resource.file.name)
-        return file_list
-
-    def get_all_absolute_file_names(self):
-        file_list = []
-        for name in self.get_all_file_names():
-            file_list.append(
-                f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/{name}"
-            )
         return file_list
 
     def get_all_downloadable_formats(self):
@@ -739,83 +781,42 @@ class Asset(models.Model):
         # - Updated glTF File
         formats = {}
         if self.license == ALL_RIGHTS_RESERVED:
+            # We do not provide any downloads for assets with restrictive
+            # licenses.
             return formats
 
-        def suffix(name):
-            if name.endswith(".gltf"):
-                return "".join(
-                    [f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]]
-                )
-            return name
-
-        ARCHIVE_PREFIX = "https://web.archive.org/web/"
-        STORAGE_PREFIX = (
-            f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
-        )
-
-        format_name_override_map = {
-            "Original OBJ File": "OBJ File",
-            "Original Triangulated OBJ File": "Triangulated OBJ File",
-            "Updated glTF File": "GLTF File",
-        }
-
-        for format in self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE):
+        for format in self.format_set.filter(
+            role__in=WEB_UI_DOWNLOAD_COMPATIBLE,
+        ):
+            # If the format in its entirety is on a remote host, just provide
+            # the link to that.
             if format.archive_url:
                 resource_data = {"archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"}
             else:
                 # Query all resources which have either an external url or a
-                # file.
+                # file. Ignoring resources which have neither.
                 query = Q(external_url__isnull=False) & ~Q(external_url="")
                 query |= Q(file__isnull=False)
-                resources = format.resource_set.filter(query)
-                if format.role == POLYGONE_GLTF_FORMAT:
-                    resource_data = {
-                        "files_to_zip": [
-                            f"{STORAGE_PREFIX}{x.file.name}"
-                            for x in resources
-                            if x.file
-                        ],
-                        "files_to_zip_with_suffix": [
-                            f"{STORAGE_PREFIX}{suffix(x.file.name)}"
-                            for x in resources
-                            if x.file
-                        ],
-                        "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
-                        "role": format.role,
-                    }
-                elif format.role == UPDATED_GLTF_FORMAT:
-                    # If we hit this branch, we have a format which doesn't
-                    # have an archive url, but also doesn't have local files.
-                    # At time of writing, we can't create a zip on the client
-                    # from the archive.org urls because of CORS. So compile a
-                    # list of files as if the role was 1003 using our suffixed
-                    # upload.
-                    try:
-                        override_format = self.format_set.get(role=POLYGONE_GLTF_FORMAT)
-                        override_resources = override_format.resource_set.all()
-                        resource_data = {
-                            "files_to_zip": [
-                                f"{STORAGE_PREFIX}{suffix(x.file.name)}"
-                                for x in override_resources
-                                if x.file
-                            ],
-                            "role": format.role,
-                        }
-                    except (
-                        Format.DoesNotExist,
-                        Format.MultipleObjectsReturned,
-                    ):
-                        resource_data = {}
-                elif format.role == ORIGINAL_GLTF_FORMAT:
-                    # If we hit this branch, we have a format which doesn't
-                    # have an archive url, but also doesn't have local files.
-                    # At time of writing, we can't create a zip on the client
-                    # from the archive.org urls because of CORS. We also don't
-                    # have the suffixed version to hand. Skip this format until
-                    # we can resolve this.
-                    continue
+                resources = format.get_all_resources(query)
+
+                # If there is more than one resource, this means we need to
+                # create a zip file of it on the client. We can only do this
+                # if either:
+                # a) the resource is hosted by Django
+                # b) all the resources we need to zip are accessible because
+                #    they are on the CORS allow list.
+                # The second criteria is met if the resource's remote host is
+                # in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
+                if len(resources) > 1:
+                    resource_data = format.get_resource_data_by_role(
+                        resources,
+                        format.role,
+                    )
+                # If there is only one resource, there is no need to create
+                # a zip file; we can offer our local file, or a link to the
+                # external host.
                 else:
-                    resource = resources.first()
+                    resource = resources[0]
                     if resource.file:
                         storage = settings.DJANGO_STORAGE_URL
                         bucket = settings.DJANGO_STORAGE_BUCKET_NAME
@@ -828,11 +829,20 @@ class Asset(models.Model):
                         resource_data = {}
 
             if resource_data:
-                format_name = format_name_override_map.get(
+                format_name = DOWNLOADABLE_FORMAT_NAMES.get(
                     format.get_role_display(), format.get_role_display()
                 )
+                # TODO: Currently, we only offer the first format per role
+                # that we find. This might be a mistake. Should we include all
+                # duplicate roles?
                 formats.setdefault(format_name, resource_data)
-        return OrderedDict(sorted(formats.items(), key=lambda x: x[0].lower()))
+        formats = OrderedDict(
+            sorted(
+                formats.items(),
+                key=lambda x: x[0].lower(),
+            )
+        )
+        return formats
 
     def hide_media(self):
         """For B2, at least, call `hide` on each item from
@@ -862,7 +872,12 @@ class Asset(models.Model):
                 pass
 
     def save(self, *args, **kwargs):
-        if self._state.adding is False:
+        update_timestamps = kwargs.pop("update_timestamps", True)
+        now = timezone.now()
+        if self._state.adding:
+            if update_timestamps:
+                self.create_time = now
+        else:
             # Only denorm fields when updating an existing model
             self.rank = self.get_updated_rank()
             self.update_search_text()
@@ -870,6 +885,8 @@ class Asset(models.Model):
             self.denorm_format_types()
             self.denorm_triangle_count()
             self.denorm_liked_time()
+            if update_timestamps:
+                self.update_time = now
         super().save(*args, **kwargs)
 
     class Meta:
@@ -917,9 +934,13 @@ class OwnerAssetLike(models.Model):
 def format_upload_path(instance, filename):
     root = settings.MEDIA_ROOT
     format = instance.format
-    asset = format.asset
+    if format is None:
+        # This is a root resource. TODO(james): implement a get_format method
+        # that can handle this for us.
+        format = instance.root_formats.first()
+    asset = instance.asset
     ext = filename.split(".")[-1]
-    if instance.is_root:
+    if instance.format is None:  # proxy test for if this is a root resource.
         name = f"model.{ext}"
     if ext == "obj" and instance.format.role == ORIGINAL_TRIANGULATED_OBJ_FORMAT:
         name = f"model-triangulated.{ext}"
@@ -948,13 +969,99 @@ class Format(models.Model):
         related_name="root_formats",
         on_delete=models.SET_NULL,
     )
+    is_preferred_for_viewer = models.BooleanField(default=False)
+    is_preferred_for_download = models.BooleanField(default=False)
 
-    def save(self, *args, **kwargs):
-        if self._state.adding is False:
-            # Only denorm fields when updating an existing model
-            resource = self.resource_set.filter(is_root=True).first()
-            self.root_resource = resource
-        super().save(*args, **kwargs)
+    def add_root_resource(self, resource):
+        if not resource.format:
+            from icosa.api.exceptions import RootResourceException
+
+            raise RootResourceException(
+                "Resource must have a format associated with it."
+            )
+        self.root_resource = resource
+        resource.format = None
+        resource.save()
+
+    def get_all_resources(self, query: Q = Q()):
+        resources = self.resource_set.filter(query)
+        # We can only union on another queryset, even though we just want one
+        # instance.
+        root_resources = Resource.objects.filter(pk=self.root_resource.pk)
+        resources = resources.union(root_resources)
+        return resources
+
+    def get_resource_data(self, resources):
+        if all([x.is_cors_allowed and x.remote_host for x in resources]):
+            external_files = [x.external_url for x in resources if x.external_url]
+            local_files = [
+                f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file
+            ]
+            resource_data = {
+                "files_to_zip": external_files + local_files,
+                "role": self.role,
+            }
+        elif all([x.file for x in resources]):
+            resource_data = {
+                "files_to_zip": [
+                    f"{STORAGE_PREFIX}{suffix(x.file.name)}"
+                    for x in resources
+                    if x.file
+                ],
+                "role": self.role,
+            }
+        else:
+            resource_data = {}
+        return resource_data
+
+    def get_resource_data_by_role(self, resources, role):
+        if self.role == POLYGONE_GLTF_FORMAT:
+            # If we hit this branch, we are not clear on if all gltf files work
+            # correctly. Try both the original data we ingested and include
+            # the suffixed data which attempts to fix any errors. Add some
+            # supporting text to make it clear to the user this is the case.
+            resource_data = {
+                "files_to_zip": [
+                    f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file
+                ],
+                "files_to_zip_with_suffix": [
+                    f"{STORAGE_PREFIX}{suffix(x.file.name)}"
+                    for x in resources
+                    if x.file
+                ],
+                "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
+                "role": self.role,
+            }
+        elif self.role == UPDATED_GLTF_FORMAT:
+            # If we hit this branch, we have a format which doesn't
+            # have an archive url, but also doesn't have local files.
+            # At time of writing, we can't create a zip on the client
+            # from the archive.org urls because of CORS. So compile a
+            # list of files as if the role was 1003 using our suffixed
+            # upload.
+            try:
+                override_format = self.asset.format_set.get(role=POLYGONE_GLTF_FORMAT)
+                override_resources = list(override_format.resource_set.all())
+                override_format_root = override_format.root_resource
+                if override_format_root is not None:
+                    if override_format_root.file or override_format_root.external_url:
+                        override_resources.append(override_format_root)
+                resource_data = {
+                    "files_to_zip": [
+                        f"{STORAGE_PREFIX}{suffix(x.file.name)}"
+                        for x in override_resources
+                        if x.file
+                    ],
+                    "role": self.role,
+                }
+            except (
+                Format.DoesNotExist,
+                Format.MultipleObjectsReturned,
+            ):
+                resource_data = {}
+        else:
+            resource_data = self.get_resource_data(resources)
+        return resource_data
 
     class Meta:
         indexes = [
@@ -967,9 +1074,8 @@ class Format(models.Model):
 
 
 class Resource(models.Model):
-    is_root = models.BooleanField(default=False)
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
-    format = models.ForeignKey(Format, on_delete=models.CASCADE)
+    format = models.ForeignKey(Format, null=True, blank=True, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
     file = models.FileField(
         null=True,
@@ -1008,6 +1114,27 @@ class Resource(models.Model):
     @property
     def content_type(self):
         return self.file.content_type if self.file else self.contenttype
+
+    @property
+    def remote_host(self):
+        if self.external_url:
+            return urlparse(self.external_url).netloc
+        else:
+            return None
+
+    @property
+    def is_cors_allowed(self):
+        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
+            allowed_sources = tuple(
+                [x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")]
+            )
+        else:
+            allowed_sources = tuple([])
+        if self.remote_host is None:
+            # Local files (those served by Django storages) are always
+            # considered cors-friendly.
+            return True
+        return self.remote_host in allowed_sources
 
 
 def masthead_image_upload_path(instance, filename):
@@ -1114,3 +1241,28 @@ class HiddenMediaFileLog(models.Model):
 
     def __str__(self):
         return f"{self.original_asset_id}: {self.file_name}"
+
+
+class BulkSaveLog(models.Model):
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    KILLED = "KILLED"
+    RESUMED = "RESUMED"
+
+    BULK_SAVE_STATUS_CHOICES = [
+        (SUCCEEDED, "Succeeded"),
+        (FAILED, "Failed"),
+        (KILLED, "Killed"),
+        (RESUMED, "Resumed"),
+    ]
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+    finish_time = models.DateTimeField(null=True, blank=True)
+    finish_status = models.CharField(
+        max_length=9,
+        null=True,
+        blank=True,
+        choices=BULK_SAVE_STATUS_CHOICES,
+    )
+    kill_sig = models.BooleanField(default=False)
+    last_id = models.BigIntegerField(null=True, blank=True)

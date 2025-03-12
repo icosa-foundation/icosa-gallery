@@ -105,7 +105,7 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
     )
 
 
-# TODO(james): once this function and upload_api_asset have stabilised, the
+# TODO(james): once this function and upload_asset have stabilised, the
 # common parts should be abstracted out to reduce duplication.
 def upload_api_asset(
     current_user: AssetOwner,
@@ -125,9 +125,6 @@ def upload_api_asset(
     }
     asset_name = "Untitled Asset"
 
-    # 3. Create nested structure for roots and subs.
-    # 4. Process manifest if it exists.
-
     for file in upload_set.files:
         splitext = os.path.splitext(file.name)
         extension = splitext[1].lower().replace(".", "")
@@ -143,7 +140,7 @@ def upload_api_asset(
     # Begin upload process.
 
     asset.name = asset_name
-    asset.save()
+    asset.save(update_timestamps=False)
 
     is_tilt_upload = False
     for mainfile in main_files:
@@ -178,7 +175,7 @@ def upload_api_asset(
         add_thumbnail_to_asset(upload_set.thumbnail, asset)
 
     asset.state = ASSET_STATE_COMPLETE
-    asset.save()
+    asset.save(update_timestamps=False)
     return asset
 
 
@@ -195,26 +192,24 @@ def make_formats(mainfile, sub_files, asset, role=None):
     }
     format = Format.objects.create(**format_data)
 
-    resource_data = {
+    root_resource_data = {
         "file": file,
-        "is_root": True,
         "asset": asset,
         "format": format,
         "contenttype": get_content_type(name),
     }
-    Resource.objects.create(**resource_data)
+    root_resource = Resource.objects.create(**root_resource_data)
+    format.add_root_resource(root_resource)
+    format.save()
 
     for subfile in sub_files:
         sub_resource_data = {
             "file": subfile.file,
             "format": format,
-            "is_root": False,
             "asset": asset,
             "contenttype": get_content_type(subfile.file.name),
         }
         Resource.objects.create(**sub_resource_data)
-
-    format.save()  # Triggers denorming on Format
 
 
 def get_role(
