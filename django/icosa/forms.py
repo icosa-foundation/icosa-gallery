@@ -119,7 +119,6 @@ class AssetEditForm(forms.ModelForm):
         "thumbnail_override_data",
         "category",
         "visibility",
-        "license",
         "tags",
     ]
 

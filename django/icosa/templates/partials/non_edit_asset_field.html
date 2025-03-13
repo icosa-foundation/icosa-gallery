@@ -3,4 +3,5 @@
     <p>{{ form.instance.get_license_display }}</p>
 {% else %}
     <p>{{ field.value }}</p>
+    <input type="hidden" name="{{ field.name}}" value="{{ field.value }}">
 {% endif %}
