@@ -17,17 +17,19 @@
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 {% for field in form %}
-                    <div class="field-group">
-                        {% if is_editable %}
-                            {% include "partials/edit_asset_field.html" %}
-                        {% else %}
-                            {% if field.name in form.editable_fields %}
+                    {% if field.name != "thumbnail_override" %}
+                        <div class="field-group">
+                            {% if is_editable %}
                                 {% include "partials/edit_asset_field.html" %}
                             {% else %}
-                                {% include "partials/non_edit_asset_field.html" %}
+                                {% if field.name in form.editable_fields %}
+                                    {% include "partials/edit_asset_field.html" %}
+                                {% else %}
+                                    {% include "partials/non_edit_asset_field.html" %}
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
-                    </div>
+                        </div>
+                    {% endif %}
                 {% endfor %}
                 <button type="submit" class="btn btn-primary">Save</button>
                 <a href="{% url 'uploads' %}" class="btn btn-secondary">Cancel</a>

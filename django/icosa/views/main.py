@@ -537,8 +537,18 @@ def edit_asset(request, asset_url):
     elif request.method == "POST":
         form = AssetEditForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
-            form.save()
+            asset = form.save(commit=False)
+            override_thumbnail = request.POST.get("thumbnail_override", False)
+            thumbnail_override_image = request.POST.get(
+                "thumbnail_override_image", None
+            )
+            if override_thumbnail and thumbnail_override_image:
+                image_file = b64_to_img(thumbnail_override_image)
+                asset.thumbnail = image_file
+            asset.save(update_timestamps=False)
             return HttpResponseRedirect(reverse("uploads"))
+        else:
+            print(form.errors)
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
