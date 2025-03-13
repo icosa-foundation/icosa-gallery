@@ -74,6 +74,10 @@
         if (el.checked === true) {
             let data = viewer.captureThumbnail(1280, 720);
             thumbnailOverrideInput.value = data;
+            // // Debug for thumbnail generation:
+            // let image = document.createElement("img");
+            // image.src = data;
+            // document.body.appendChild(image);
         } else {
             thumbnailOverrideInput.value = null;
         }
