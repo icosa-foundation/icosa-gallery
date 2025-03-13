@@ -29,8 +29,8 @@ from honeypot.decorators import check_honeypot
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
+    AssetEditForm,
     AssetReportForm,
-    AssetSettingsForm,
     AssetUploadForm,
     UserSettingsForm,
 )
@@ -533,9 +533,9 @@ def edit_asset(request, asset_url):
     is_editable = asset.model_is_editable
 
     if request.method == "GET":
-        form = AssetSettingsForm(instance=asset)
+        form = AssetEditForm(instance=asset)
     elif request.method == "POST":
-        form = AssetSettingsForm(request.POST, request.FILES, instance=asset)
+        form = AssetEditForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse("uploads"))
@@ -584,9 +584,9 @@ def publish_asset(request, asset_url):
     if request.user != asset.owner.django_user:
         raise Http404()
     if request.method == "GET":
-        form = AssetSettingsForm(instance=asset)
+        form = AssetEditForm(instance=asset)
     elif request.method == "POST":
-        form = AssetSettingsForm(request.POST, request.FILES, instance=asset)
+        form = AssetEditForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse("uploads"))

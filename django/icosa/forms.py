@@ -47,7 +47,7 @@ class AssetReportForm(forms.Form):
     )
 
 
-class AssetSettingsForm(forms.ModelForm):
+class AssetEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
