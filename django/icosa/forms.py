@@ -53,6 +53,8 @@ class AssetEditForm(forms.ModelForm):
         self.fields["name"].required = True
         license_value = self["license"].value()
 
+        self.fields["thumbnail_override"] = forms.BooleanField()
+
         #  CC licenses are non-revokable, but are upgradeable. If the license
         # is cc but not in our current menu of options, they can upgrade and so
         # should be able to choose a different one.
@@ -113,6 +115,8 @@ class AssetEditForm(forms.ModelForm):
         "name",
         "description",
         "thumbnail",
+        "thumbnail_override",
+        "thumbnail_override_data",
         "category",
         "visibility",
         "tags",

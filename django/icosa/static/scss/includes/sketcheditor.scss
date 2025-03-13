@@ -8,6 +8,7 @@
     }
   }
 
+
   .nav-tabs {
     justify-content: center;
   }
@@ -21,7 +22,24 @@
 
   }
 
+
   form {
     width: 100%;
+
+    .field-group {
+      padding: 1rem;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: var(--border-radius-small);
+      margin-bottom: 1rem;
+
+      label {
+        margin-top: 0;
+      }
+    }
+
+    #id_thumbnail_override:checked+.thumbnail-widget {
+      display: none;
+    }
   }
+
 }
