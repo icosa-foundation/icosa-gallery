@@ -440,10 +440,13 @@ class Asset(models.Model):
         # Once a permissable license has been chosen, and the asset is
         # available for use in other models, we cannot allow changing anything
         # about it. Doing so would allow abuse.
-        return (
-            self.visibility not in [PUBLIC, UNLISTED]
-            and self.license == ALL_RIGHTS_RESERVED
-        )
+        is_editable = True
+        if (
+            self.visibility in [PUBLIC, UNLISTED]
+            and self.license != ALL_RIGHTS_RESERVED
+        ):
+            is_editable = False
+        return is_editable
 
     @property
     def slug(self):
