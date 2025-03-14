@@ -31,6 +31,11 @@ body {
 
   >main {
     flex-grow: 1;
+    margin-top: var(--header-height);
+
+    @media (max-width: 768px) {
+      margin-top: 0;
+    }
   }
 
   >header,

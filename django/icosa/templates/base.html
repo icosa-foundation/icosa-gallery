@@ -19,16 +19,14 @@
 
 <body>
     <div class="app">
-        {% block nav %}
-            {% if can_view_in_maintenance %}
-                {% include "partials/side_nav.html" %}
-            {% endif %}
-        {% endblock nav %}
         {% block banner %}{% endblock banner %}
         {% block header %}
             {% include "partials/header.html" %}
         {% endblock header %}
-        <main{% block mainattrs %}{% if not can_view_in_maintenance %} style="margin-left:0;"{% endif %}{% endblock mainattrs %}>
+        {% if can_view_in_maintenance %}
+            {% include "partials/side_nav.html" %}
+        {% endif %}
+        <main>
             {% block content %}{% endblock content %}
         </main>
         {% block footer %}
