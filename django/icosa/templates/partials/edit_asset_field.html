@@ -18,6 +18,7 @@
         <label for="thumbnail_override">Use current viewport as the thumbnail:</label>
         <input class="input-inline" type="checkbox" name="thumbnail_override" id="id_thumbnail_override">
         <img class="img-preview" src="{{ asset.thumbnail.url }}" id="thumbnail_override_preview">
+        <a href="javascript:void(0)" id="thumbnail_override_refresh">Update</a>
         {{ field }}
     </div>
 {% else %}

@@ -67,20 +67,26 @@
 <script type="text/javascript" src="/static/admin/js/vendor/jquery/jquery.min.js"></script>
 <script>
     let thumbnailOverrideTrigger = document.querySelector("input[name='thumbnail_override']");
+    let thumbnailOverrideRefresh = document.querySelector("#thumbnail_override_refresh");
     let thumbnailOverrideInput = document.querySelector("input[name='thumbnail_override_image']");
     let thumbnailSpinner = document.querySelector("#thumbnail-spinner");
+    let thumbnailPreview = document.querySelector("#thumbnail_override_preview");
+    function updateThumbnail() {
+        let data = viewer.captureThumbnail(1280, 720);
+        thumbnailOverrideInput.value = data;
+        thumbnailPreview.src = data;
+    }
     function handleThumbnail(event) {
         let el = event.target;
         if (el.checked === true) {
-            let data = viewer.captureThumbnail(1280, 720);
-            thumbnailOverrideInput.value = data;
-            document.querySelector("#thumbnail_override_preview").src = data;
+            updateThumbnail();
         } else {
             thumbnailOverrideInput.value = null;
         }
         return false;
     }
     thumbnailOverrideTrigger.addEventListener('input', handleThumbnail, false);
+    thumbnailOverrideRefresh.addEventListener('click', updateThumbnail, false);
 </script>
 {{ form.media }}
 {% include "partials/viewer.html" %}

@@ -43,14 +43,22 @@
         &+img.img-preview {
           display: inline-block;
 
-          &+.thumbnail-widget {
-            display: none;
+          &+#thumbnail_override_refresh {
+            display: inline;
+
+            &+.thumbnail-widget {
+              display: none;
+            }
           }
         }
       }
 
       &+img.img-preview {
         display: none;
+
+        &+#thumbnail_override_refresh {
+          display: none;
+        }
       }
     }
   }
