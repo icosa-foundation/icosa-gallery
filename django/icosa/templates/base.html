@@ -19,10 +19,10 @@
 
 <body>
     <div class="app">
-        {% block banner %}{% endblock banner %}
         {% block header %}
             {% include "partials/header.html" %}
         {% endblock header %}
+        {% block banner %}{% endblock banner %}
         {% if can_view_in_maintenance %}
             {% include "partials/side_nav.html" %}
         {% endif %}
