@@ -37,8 +37,21 @@
       }
     }
 
-    #id_thumbnail_override:checked+.thumbnail-widget {
-      display: none;
+    #id_thumbnail_override {
+      &:checked {
+
+        &+img.img-preview {
+          display: inline-block;
+
+          &+.thumbnail-widget {
+            display: none;
+          }
+        }
+      }
+
+      &+img.img-preview {
+        display: none;
+      }
     }
   }
 

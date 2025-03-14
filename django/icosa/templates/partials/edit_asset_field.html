@@ -15,10 +15,9 @@
 {% if field.name == "thumbnail" %}
     <div>
         <input type="hidden" name="thumbnail_override_image">
-        {% comment %}
         <label for="thumbnail_override">Use current viewport as the thumbnail:</label>
         <input class="input-inline" type="checkbox" name="thumbnail_override" id="id_thumbnail_override">
-        {% endcomment %}
+        <img class="img-preview" src="{{ asset.thumbnail.url }}" id="thumbnail_override_preview">
         {{ field }}
     </div>
 {% else %}
