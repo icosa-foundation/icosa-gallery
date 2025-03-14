@@ -442,7 +442,7 @@ class Asset(models.Model):
         # about it. Doing so would allow abuse.
         return (
             self.visibility not in [PUBLIC, UNLISTED]
-            and self.license != ALL_RIGHTS_RESERVED
+            and self.license == ALL_RIGHTS_RESERVED
         )
 
     @property
