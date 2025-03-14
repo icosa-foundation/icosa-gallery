@@ -16,6 +16,7 @@
         <div class="sketcheditor container">
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
+                {{ form.errors }}
                 {% for field in form %}
                     {% if field.name != "thumbnail_override" %}
                         <div class="field-group">
