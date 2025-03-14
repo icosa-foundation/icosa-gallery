@@ -42,7 +42,7 @@
         </h4>
         <p class="sketch-byline">
             <a href="{% url 'user_show' user_url=asset.owner.url %}">{{ asset.owner.displayname }}</a>
-            &bull; {{ asset.timestamp|date:"d/m/Y" }}
+            {% if owner_details %}&bull; {{ asset.timestamp|date:"d/m/Y" }}{% endif %}
         </p>
         {% if owner_details %}
             <p><small>Visibility: {{ asset.get_visibility_display }}<br>
