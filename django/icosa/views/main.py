@@ -62,19 +62,27 @@ MASTHEAD_TOP_RANK = 10000
 MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
 
-if config.HIDE_REPORTED_ASSETS:
-    DEFAULT_Q = Q(
-        visibility=PUBLIC,
-        is_viewer_compatible=True,
-        curated=True,
-        last_reported_time__isnull=True,
-    )
-else:
-    DEFAULT_Q = Q(
-        visibility=PUBLIC,
-        is_viewer_compatible=True,
-        curated=True,
-    )
+def get_default_q():
+    try:
+        if config.HIDE_REPORTED_ASSETS:
+            return Q(
+                visibility=PUBLIC,
+                is_viewer_compatible=True,
+                curated=True,
+                last_reported_time__isnull=True,
+            )
+        return Q(
+            visibility=PUBLIC,
+            is_viewer_compatible=True,
+            curated=True,
+        )
+    except:
+        return Q(
+            visibility=PUBLIC,
+            is_viewer_compatible=True,
+            curated=True,
+            last_reported_time__isnull=True,
+        )
 
 
 def user_can_view_asset(
@@ -115,7 +123,7 @@ def health(request):
 
 def landing_page(
     request,
-    assets=Asset.objects.filter(DEFAULT_Q).select_related("owner"),
+    assets=Asset.objects.filter(get_default_q()).select_related("owner"),
     show_masthead=True,
     heading=None,
     heading_link=None,
