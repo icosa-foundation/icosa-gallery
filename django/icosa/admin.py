@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
-from django.contrib.auth.models import User
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -17,6 +16,7 @@ from icosa.models import (
     Oauth2Token,
     Resource,
     Tag,
+    User,
 )
 from import_export.admin import ExportMixin
 
@@ -375,5 +375,4 @@ class UserAdmin(OriginalUserAdmin):
         queryset.update(is_staff=False)
 
 
-admin.site.unregister(User)
 admin.site.register(User, UserAdmin)

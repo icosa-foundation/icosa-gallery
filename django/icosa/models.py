@@ -12,7 +12,7 @@ import jwt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 from constance import config
 from django.conf import settings
-from django.contrib.auth.models import User as DjangoUser
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
@@ -188,6 +188,11 @@ ASSET_STATE_CHOICES = [
 ]
 
 
+class User(AbstractUser):
+    class Meta:
+        db_table = 'auth_user'
+
+
 class AssetOwner(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.CharField("User Name / URL", max_length=255, unique=True)
@@ -209,7 +214,7 @@ class AssetOwner(models.Model):
     imported = models.BooleanField(default=False)
     is_claimed = models.BooleanField(default=True)
     django_user = models.ForeignKey(
-        DjangoUser,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -233,7 +238,7 @@ class AssetOwner(models.Model):
         return instance
 
     @classmethod
-    def from_django_user(cls, user: DjangoUser) -> Optional[Self]:
+    def from_django_user(cls, user: settings.AUTH_USER_MODEL) -> Optional[Self]:
         try:
             instance = cls.objects.get(django_user=user)
         except (cls.DoesNotExist, TypeError):
