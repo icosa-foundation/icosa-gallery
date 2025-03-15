@@ -12,9 +12,9 @@ from icosa.models import (
     ASSET_STATE_COMPLETE,
     ASSET_STATE_FAILED,
     Asset,
-    AssetOwner,
     BulkSaveLog,
     Format,
+    User,
 )
 from ninja import File
 from ninja.files import UploadedFile
@@ -43,7 +43,7 @@ def handle_upload_error(task, exc):
 
 @db_task()
 def queue_upload_asset_web_ui(
-    current_user: AssetOwner,
+    current_user: User, #TODO: change to User
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
@@ -56,7 +56,7 @@ def queue_upload_asset_web_ui(
 
 @db_task()
 def queue_upload_api_asset(
-    current_user: AssetOwner,
+    current_user: User, #TODO: change to User
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
@@ -69,12 +69,11 @@ def queue_upload_api_asset(
 
 @on_commit_task()
 def queue_blocks_upload_format(
-    current_user: AssetOwner,
+    current_user: User,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
     upload_blocks_format(
-        current_user,
         asset,
         files,
     )
