@@ -189,23 +189,31 @@ ASSET_STATE_CHOICES = [
 
 
 class User(AbstractUser):
-    class Meta:
-        db_table = 'auth_user'
+    displayname = models.CharField("Display Name", max_length=255)
+    likes = models.ManyToManyField(
+        "Asset",
+        through="UserLike",
+        blank=True,
+    )
+    
+    @staticmethod
+    def generate_device_code(length=5):
+        # Define a string of characters to exclude
+        exclude = "I1O0"
+        characters = "".join(
+            set(string.ascii_uppercase + string.digits) - set(exclude),
+        )
+        return "".join(secrets.choice(characters) for i in range(length))
+
 
 
 class AssetOwner(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.CharField("User Name / URL", max_length=255, unique=True)
     email = models.EmailField(max_length=255, null=True, blank=True)
-    password = models.BinaryField()
     displayname = models.CharField("Display Name", max_length=255)
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
-    likes = models.ManyToManyField(
-        "Asset",
-        through="OwnerAssetLike",
-        blank=True,
-    )
     access_token = models.CharField(
         max_length=255,
         null=True,
@@ -252,26 +260,6 @@ class AssetOwner(models.Model):
     def get_absolute_url(self):
         return f"/user/{self.url}"
 
-    def set_password(self, raw_password):
-        if raw_password:
-            salt = bcrypt.gensalt(10)
-            hashedpw = bcrypt.hashpw(raw_password.encode(), salt)
-
-            self.password = hashedpw
-            self.update_access_token()
-            self.save
-            if self.django_user:
-                self.django_user.set_password(raw_password)
-                self.django_user.save()
-
-    @staticmethod
-    def generate_device_code(length=5):
-        # Define a string of characters to exclude
-        exclude = "I1O0"
-        characters = "".join(
-            set(string.ascii_uppercase + string.digits) - set(exclude),
-        )
-        return "".join(secrets.choice(characters) for i in range(length))
 
     @staticmethod
     def generate_access_token(*, data: dict, expires_delta: timedelta = None):
@@ -743,7 +731,7 @@ class Asset(models.Model):
         self.triangle_count = self.get_triangle_count()
 
     def denorm_liked_time(self):
-        last_liked = self.ownerassetlike_set.order_by("-date_liked").first()
+        last_liked = self.userlike_set.order_by("-date_liked").first()
         if last_liked is not None:
             self.last_liked_time = last_liked.date_liked
 
@@ -913,8 +901,10 @@ class Asset(models.Model):
         ]
 
 
-class OwnerAssetLike(models.Model):
-    user = models.ForeignKey(AssetOwner, on_delete=models.CASCADE, related_name="likedassets")
+class UserLike(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="likedassets"
+    )
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date_liked = models.DateTimeField(auto_now_add=True)
 
@@ -1146,7 +1136,7 @@ class MastheadSection(models.Model):
 
 class DeviceCode(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(AssetOwner, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     devicecode = models.CharField(max_length=6)
     expiry = models.DateTimeField()
 

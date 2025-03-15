@@ -288,6 +288,70 @@ def category(request, category):
     )
 
 
+@login_required
+@never_cache
+def uploads(request):
+    template = "main/manage_uploads.html"
+
+    user = request.user
+    if request.method == "POST":
+        form = AssetUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            job_snowflake = generate_snowflake()
+            asset_token = secrets.token_urlsafe(8)
+            #TODO: create asset owner
+            assetOwner, _ = AssetOwner.objects.get_or_create(
+                displayname=user.username,
+                email=user.email,
+                django_user=user,
+            )
+            asset = Asset.objects.create(
+                id=job_snowflake,
+                url=asset_token,
+                owner=assetOwner,
+                state=ASSET_STATE_UPLOADING,
+            )
+            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                queue_upload_asset_web_ui(
+                    current_user=user,
+                    asset=asset,
+                    files=[request.FILES["file"]],
+                )
+            else:
+                upload(
+                    user,
+                    asset,
+                    [request.FILES["file"]],
+                )
+            messages.add_message(request, messages.INFO, "Your upload has started.")
+            return HttpResponseRedirect(reverse("uploads"))
+    elif request.method == "GET":
+        form = AssetUploadForm()
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+
+    asset_objs = (
+        Asset.objects.filter(owner=user)
+        .exclude(state=ASSET_STATE_BARE)
+        .order_by("-create_time")
+    )
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
+
+    context = {
+        "assets": assets,
+        "form": form,
+        "page_title": "My Uploads",
+        "paginator": paginator,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
 @never_cache
 def user_show(request, user_url):
     template = "main/user_show.html"
@@ -324,17 +388,17 @@ def user_show(request, user_url):
 def my_likes(request):
     template = "main/likes.html"
 
-    owner = AssetOwner.from_django_request(request)
+    user = request.user
     q = Q(visibility__in=[PUBLIC, UNLISTED])
-    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
+    q |= Q(visibility__in=[PRIVATE, UNLISTED], user=user)
 
-    asset_objs = owner.likes.filter(q)
+    asset_objs = user.likes.filter(q)
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
 
     context = {
-        "user": owner,
+        "user": user,
         "assets": assets,
         "page_title": "My likes",
         "paginator": paginator,
@@ -857,8 +921,8 @@ def search(request):
 def toggle_like(request):
     error_return = HttpResponse(status=422)
 
-    owner = AssetOwner.from_django_request(request)
-    if owner is None:
+    user = request.user
+    if user is None or user.is_anonymous:
         return error_return
 
     asset_url = request.POST.get("assetId", None)
@@ -870,11 +934,11 @@ def toggle_like(request):
     except Asset.DoesNotExist:
         return error_return
 
-    is_liked = asset.id in owner.likes.values_list("id", flat=True)
+    is_liked = asset.id in user.likes.values_list("id", flat=True)
     if is_liked:
-        owner.likes.remove(asset)
+        user.likes.remove(asset)
     else:
-        owner.likes.add(asset)
+        user.likes.add(asset)
         # Triggers denorming of asset liked time, but not update_time.
         asset.save()
     template = "main/tags/like_button.html"
