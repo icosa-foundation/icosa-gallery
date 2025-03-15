@@ -292,16 +292,22 @@ def category(request, category):
 def uploads(request):
     template = "main/manage_uploads.html"
 
-    user = AssetOwner.from_django_request(request)
+    user = request.user
     if request.method == "POST":
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
             job_snowflake = generate_snowflake()
             asset_token = secrets.token_urlsafe(8)
+            #TODO: create asset owner
+            assetOwner, _ = AssetOwner.objects.get_or_create(
+                displayname=user.username,
+                email=user.email,
+                django_user=user,
+            )
             asset = Asset.objects.create(
                 id=job_snowflake,
                 url=asset_token,
-                owner=user,
+                owner=assetOwner,
                 state=ASSET_STATE_UPLOADING,
             )
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
@@ -377,17 +383,17 @@ def user_show(request, user_url):
 def my_likes(request):
     template = "main/likes.html"
 
-    owner = AssetOwner.from_django_request(request)
+    user = request.user
     q = Q(visibility__in=[PUBLIC, UNLISTED])
-    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
+    q |= Q(visibility__in=[PRIVATE, UNLISTED], user=user)
 
-    asset_objs = owner.likes.filter(q)
+    asset_objs = user.likes.filter(q)
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
 
     context = {
-        "user": owner,
+        "user": user,
         "assets": assets,
         "page_title": "My likes",
         "paginator": paginator,
@@ -839,8 +845,8 @@ def search(request):
 def toggle_like(request):
     error_return = HttpResponse(status=422)
 
-    owner = AssetOwner.from_django_request(request)
-    if owner is None:
+    user = request.user
+    if user is None or user.is_anonymous:
         return error_return
 
     asset_url = request.POST.get("assetId", None)
@@ -852,11 +858,11 @@ def toggle_like(request):
     except Asset.DoesNotExist:
         return error_return
 
-    is_liked = asset.id in owner.likes.values_list("id", flat=True)
+    is_liked = asset.id in user.likes.values_list("id", flat=True)
     if is_liked:
-        owner.likes.remove(asset)
+        user.likes.remove(asset)
     else:
-        owner.likes.add(asset)
+        user.likes.add(asset)
         # Triggers denorming of asset liked time, but not update_time.
         asset.save(update_timestamps=False)
     template = "main/tags/like_button.html"

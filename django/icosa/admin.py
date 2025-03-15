@@ -239,12 +239,6 @@ class DeviceCodeAdmin(ExportMixin, admin.ModelAdmin):
     date_hierarchy = "expiry"
 
 
-class UserAssetLikeInline(admin.TabularInline):
-    extra = 0
-    model = AssetOwner.likes.through
-    raw_id_fields = ["asset"]
-
-
 @admin.register(AssetOwner)
 class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
@@ -267,7 +261,6 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         ("django_user", admin.EmptyFieldListFilter),
         "is_claimed",
     )
-    inlines = (UserAssetLikeInline,)
     raw_id_fields = [
         "django_user",
         "merged_with",
@@ -364,15 +357,35 @@ class Oauth2CodeAdmin(ExportMixin, admin.ModelAdmin):
 class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
     pass
 
+class UserLikeInline(admin.TabularInline):
+    extra = 0
+    model = User.likes.through
+    raw_id_fields = ["asset"]
 
 class UserAdmin(OriginalUserAdmin):
     actions = [
         "make_not_staff",
     ]
 
+    list_display = ("username", "displayname", "email", "first_name", "last_name", "is_staff")
+
+    search_fields = (
+        "displayname",
+        "username"
+        "email",
+        "fist_name",
+        "last_name",
+        "is_staff",
+        "id",
+    )
+
+
+    inlines = (UserLikeInline,)
+
     @admin.action(description="Mark selected users as not staff")
     def make_not_staff(modeladmin, request, queryset):
         queryset.update(is_staff=False)
+
 
 
 admin.site.register(User, UserAdmin)
