@@ -8,7 +8,6 @@ from constance import config
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
-from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.db import IntegrityError
@@ -31,7 +30,7 @@ from icosa.models import AssetOwner, DeviceCode
 from passlib.context import CryptContext
 
 INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
-
+User = settings.AUTH_USER_MODEL
 
 def send_password_reset_email(request, user, to_email):
     site = get_current_site(request)
@@ -355,23 +354,21 @@ def devicecode(request):
     user = request.user
     context = {}
     if user.is_authenticated:
-        owner = AssetOwner.from_django_request(request)
-        if owner:
-            code = AssetOwner.generate_device_code()
-            expiry_time = timezone.now() + timezone.timedelta(minutes=1)
+        code = User.generate_device_code()
+        expiry_time = timezone.now() + timezone.timedelta(minutes=1)
 
-            # Delete all codes for this user
-            DeviceCode.objects.filter(user=owner).delete()
+        # Delete all codes for this user
+        DeviceCode.objects.filter(user=user).delete()
             # Delete all expired codes for any user
-            DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
+        DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
 
-            DeviceCode.objects.create(
-                user=owner,
-                devicecode=code,
-                expiry=expiry_time,
-            )
+        DeviceCode.objects.create(
+            user=user,
+            devicecode=code,
+            expiry=expiry_time,
+        )
 
-            context = {
-                "device_code": code.upper(),
-            }
+        context = {
+            "device_code": code.upper(),
+        }
     return render(request, template, context)
