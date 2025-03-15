@@ -166,3 +166,11 @@ django/*.tsv
 django/*.jsonl
 uploads.sh
 
+
+django/static
+.direnv
+.python-version
+pyproject.toml
+shell.nix
+uv.lock
+.envrc
