@@ -2,11 +2,13 @@
     <div class="carousel slide">
         <div class="carousel-inner">
             <div class="active carousel-item">
-                <img
-                    class="d"
-                    src="{{ masthead.image.url }}"
-                    alt="{{ masthead.asset.description }} by {{ masthead.asset.owner.displayname }}"
-                >
+                    <a href="{{ masthead.asset.get_absolute_url }}" role="presentation">
+                        <img
+                            class="d"
+                            src="{{ masthead.image.url }}"
+                            alt="{{ masthead.asset.description }} by {{ masthead.asset.owner.displayname }}"
+                        >
+                    </a>
                 <div class="carousel-caption">
                     <p><a href="{{ masthead.asset.get_absolute_url }}">{{ masthead.asset.name }} <span>by</span> {{ masthead.asset.owner.displayname }}</a></p>
                 </div>
