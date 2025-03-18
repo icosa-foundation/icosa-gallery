@@ -1,3 +1,7 @@
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from ninja_keys.admin import APIKeyModelAdmin
+from ninja_keys.models import APIKey
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.db.models import Count
@@ -17,6 +21,7 @@ from icosa.models import (
     Resource,
     Tag,
     User,
+    UserAPIKey
 )
 from import_export.admin import ExportMixin
 
@@ -279,8 +284,12 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
     def display_django_user(self, obj):
         html = "-"
         if obj.django_user:
-            change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
+            change_url = reverse(
+                "admin:icosa_user_change",
+                args=(obj.django_user.id,),
+            )
             html = f"<a href='{change_url}'>{obj.django_user}</a>"
+
         return mark_safe(html)
 
     display_django_user.short_description = "Django User"
@@ -389,3 +398,21 @@ class UserAdmin(OriginalUserAdmin):
 
 
 admin.site.register(User, UserAdmin)
+
+admin.site.unregister(APIKey)
+
+@admin.register(UserAPIKey)
+class UserAPIKeyModelAdmin(APIKeyModelAdmin):
+    model = UserAPIKey
+    
+    list_display = (
+        "user",
+        "prefix",
+        "name",
+        "created",
+        "expiry_date",
+        "_has_expired",
+        "revoked",
+    )
+    list_filter = ("user", "created",)
+    search_fields = ("user", "name", "prefix")

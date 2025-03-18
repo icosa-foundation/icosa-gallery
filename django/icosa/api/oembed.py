@@ -85,7 +85,7 @@ def oembed(
         "version": "1.0",
         "title": asset.name,
         "author_name": asset.owner.displayname,
-        "author_url": f"{host}{asset.owner.get_absolute_url()}",
+        "author_url": f"{host}{asset.owner.django_user.get_absolute_url()}" if asset.owner.django_user else "",
         "provider_name": "Icosa",  # TODO make configurable
         "provider_url": host,
         "thumbnail_url": asset.thumbnail,  # TODO resize to maxwidth / maxheight

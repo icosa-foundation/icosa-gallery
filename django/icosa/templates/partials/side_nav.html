@@ -27,10 +27,10 @@
                     <ul>
                         <h3 class="hide-when-collapsed">Me</h3>
                         <div>
-                            {% if owner is not None %}
+                            {% if user is not None and not user.is_anonymous %}
                                 <li class="pro-menu-item">
                                     <div class="pro-inner-item" tabindex="0" role="button">
-                                        <a href="/user/{{ owner.url }}">
+                                        <a href="/user/{{ user.username | urlencode }}">
                                             <span class="pro-icon-wrapper">
                                                 <span class="pro-icon">
                                                     {% fa_icon "solid" "user" %}
