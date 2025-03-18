@@ -6,7 +6,7 @@ from typing import Optional
 import bcrypt
 from constance import config
 from django.conf import settings
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
@@ -25,12 +25,11 @@ from icosa.forms import (
     PasswordResetForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
-from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import AssetOwner, DeviceCode
-from passlib.context import CryptContext
 
 INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
-User = settings.AUTH_USER_MODEL
+
+User = get_user_model()
 
 def send_password_reset_email(request, user, to_email):
     site = get_current_site(request)
@@ -56,7 +55,7 @@ def send_password_reset_email(request, user, to_email):
     spawn_send_html_mail(mail_subject, message, [to_email])
 
 
-def send_registration_email(request, user, owner, to_email=None):
+def send_registration_email(request, user, to_email=None):
     current_site = get_current_site(request)
     mail_subject = f"Activate your {current_site.name} account."
     message = render_to_string(
@@ -64,31 +63,12 @@ def send_registration_email(request, user, owner, to_email=None):
         {
             "request": request,
             "user": user,
-            "owner": owner,
             "domain": current_site.domain,
             "uid": urlsafe_base64_encode(force_bytes(user.pk)),
             "token": default_token_generator.make_token(user),
         },
     )
     spawn_send_html_mail(mail_subject, message, [to_email])
-
-
-def authenticate_icosa_user(
-    username: str,
-    password: str,
-) -> Optional[AssetOwner]:
-    username = username.lower()
-    try:
-        user = AssetOwner.objects.get(email=username)  # This code used to check either url or username. Seems odd.
-
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        if not pwd_context.verify(password, bytes(user.password)):
-            return None
-
-        return user
-
-    except AssetOwner.DoesNotExist:
-        return None
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -115,54 +95,37 @@ def debug_registration_email(request):
 
     return HttpResponse("ok")
 
-
+def render_login_error(request, error: Optional[str] = None):
+    return render(
+        request,
+        "auth/login.html",
+        {"error": error},
+    )
+    
 def custom_login(request):
     if not request.user.is_anonymous:
-        return HttpResponseRedirect(reverse("home"))
+        return redirect("home")
 
     if request.method == "POST" and config.SIGNUP_OPEN:
         username = request.POST.get("username", None)
         password = request.POST.get("password", None)
         # Creating the error response up front is slower for the happy path,
         # but makes the code perhaps more readable.
-        error_response = render(
-            request,
-            "auth/login.html",
-            {"error": "Please enter a valid username or password"},
-        )
-
-        icosa_user = authenticate_icosa_user(username, password)
-        # TODO(james): if icosa_user has been merged with another, we probably
-        #  don't want to allow them to log in. We need a nice error here that's
-        #  not confusing and perhaps different from failing login under normal
-        #  circumstances.
-        if icosa_user is None:
-            # Icosa user auth failed, so we return early.
-            return error_response
-        else:
-            icosa_user.update_access_token()
-
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={"password": password},
-        )
         user = authenticate(request, username=username, password=password)
-        if user is None:
-            # This is really for type safety/data integrity, the django
-            # user should pass this test.
-            return error_response
-        if created:
-            icosa_user.migrated = True
-            icosa_user.save()
-        else:
-            if user.is_active is False:
-                # This is the case for when a user has registered, but not
-                # yet confirmed their email address. We could provide a more
-                # helpful error message here, but that would leak the existence
-                # of an incomplete registration.
-                return error_response
+        if user is None or not user.is_active:
+            # Icosa user auth failed, so we return early.
+            return render_login_error(request, "Please enter a valid username or password")
 
         login(request, user)
+        
+        # Claim any assets that were created before the user logged in
+        # TODO: Improve and make it configurable (dedicated view, rules for claiming, etc.)
+        assetOwners = AssetOwner.objects.get_unclaimed_for_user(user)
+        for owner in assetOwners:
+            owner.django_user = user
+            owner.is_claimed = True
+            owner.save()
+            
         return redirect("home")
     else:
         return render(request, "auth/login.html")
@@ -183,42 +146,21 @@ def register(request):
         if form.is_valid():
             email = form.cleaned_data["email"]
             password = form.cleaned_data["password_new"]
-            displayname = form.cleaned_data["displayname"]
-
-            # We want to do the work of accessing the database, creating the
-            # password etc in all cases, even if the username is already taken
-            # to mitigatie timing attacks.
-            salt = bcrypt.gensalt(10)
-            hashedpw = bcrypt.hashpw(password.encode(), salt)
-            snowflake = generate_snowflake()
-            assettoken = secrets.token_urlsafe(8)
-
-            try:
-                owner = AssetOwner.objects.create(
-                    id=snowflake,
-                    url=assettoken,
-                    email=email,
-                    password=hashedpw,
-                    displayname=displayname,
-                )
-            except IntegrityError:
-                pass
-
+            username = form.cleaned_data["username"]
             try:
                 user = User.objects.create_user(
-                    username=email,
+                    username=username,
                     email=email,
                     password=password,
                 )
                 user.is_active = False
                 user.save()
-                owner.django_user = user
-                owner.save()
-                send_registration_email(request, user, owner, to_email=form.cleaned_data.get("email"))
+
+                send_registration_email(
+                    request, user, to_email=form.cleaned_data.get("email")
+                )
             except IntegrityError:
                 pass
-            # Always succeed. The user should never know that an account is
-            # already registered.
             success = True
             # Sleep a random amount of time to throw off timing attacks a bit more.
             time.sleep(random.randrange(0, 200) / 100)
@@ -313,8 +255,6 @@ def password_reset_confirm(request, uidb64, token):
                         user.set_password(password)
                         user.save()
                         logout(request)
-                        icosa_user = AssetOwner.from_django_user(user)
-                        icosa_user.set_password(password)
                         return HttpResponseRedirect(
                             reverse("password_reset_complete"),
                         )

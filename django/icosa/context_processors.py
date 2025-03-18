@@ -18,10 +18,10 @@ def settings_processor(request):
 
 
 def user_asset_likes_processor(request):
-    owner = AssetOwner.from_django_request(request)
+    user = request.user
     liked_assets = []
-    if owner is not None:
-        liked_assets = owner.likes.all()
+    if user is not None and not user.is_anonymous:
+        liked_assets = user.likes.all()
     return {
         "user_liked_assets": liked_assets,
     }

@@ -1,4 +1,4 @@
-<p>Hi {{ owner.displayname }},</p>
+<p>Hi {{ user.username }},</p>
 <p>Please click on <a href="{{request.scheme}}://{{ domain }}{% url "activate_registration" uidb64=uid token=token %}">this link</a> to confirm your registration.</p>
 <p>If the above link doesn't work, copy and paste the below link into your browser:</p>
 <p>{{request.scheme}}://{{ domain }}{% url "activate_registration" uidb64=uid token=token %}</p>
