@@ -1,23 +1,15 @@
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from ninja_keys.admin import APIKeyModelAdmin
+from ninja_keys.models import APIKey
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from icosa.models import (
-    Asset,
-    AssetOwner,
-    BulkSaveLog,
-    DeviceCode,
-    Format,
-    HiddenMediaFileLog,
-    MastheadSection,
-    Oauth2Client,
-    Oauth2Code,
-    Oauth2Token,
-    Resource,
-    Tag,
-    User,
-)
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+
+from .models import (Asset, AssetOwner, BulkSaveLog, DeviceCode, Format,
+                     HiddenMediaFileLog, MastheadSection, Oauth2Client,
+                     Oauth2Code, Oauth2Token, Resource, Tag, User, UserAPIKey)
 
 
 @admin.register(Tag)
@@ -214,7 +206,7 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
         html = "-"
         if obj.django_user:
             change_url = reverse(
-                "admin:auth_user_change",
+                "admin:icosa_user_change",
                 args=(obj.django_user.id,),
             )
             html = f"""
@@ -335,3 +327,21 @@ class UserAdmin(OriginalUserAdmin):
 
 
 admin.site.register(User, UserAdmin)
+
+admin.site.unregister(APIKey)
+
+@admin.register(UserAPIKey)
+class UserAPIKeyModelAdmin(APIKeyModelAdmin):
+    model = UserAPIKey
+    
+    list_display = (
+        "user",
+        "prefix",
+        "name",
+        "created",
+        "expiry_date",
+        "_has_expired",
+        "revoked",
+    )
+    list_filter = ("user", "created",)
+    search_fields = ("user", "name", "prefix")
