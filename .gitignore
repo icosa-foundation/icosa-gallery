@@ -175,3 +175,5 @@ pyproject.toml
 shell.nix
 uv.lock
 .envrc
+django/icosa/icosa/
+django/icosa/static

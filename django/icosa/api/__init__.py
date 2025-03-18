@@ -1,7 +1,6 @@
 from typing import Any, List, Optional
 
 from django.db.models import Q
-from icosa.api.authentication import AuthBearer
 from icosa.api.exceptions import FilterException
 from icosa.api.schema import FormatFilter
 from ninja import Schema
@@ -109,12 +108,3 @@ def build_format_q(formats: List) -> Q:
         choices = ", ".join([x.value for x in FormatFilter])
         raise FilterException(f"Format filter not one of {choices}")
 
-
-def get_django_user_from_auth_bearer(request):
-    header = request.headers.get("Authorization")
-    if header is None:
-        return None
-    if not header.startswith("Bearer "):
-        return None
-    token = header.replace("Bearer ", "")
-    return AuthBearer().authenticate(request, token)
