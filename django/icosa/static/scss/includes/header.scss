@@ -16,9 +16,7 @@ header {
     justify-content: center;
 
     .logo-col {
-      @media (max-width: 768px) {
-        text-align: center;
-      }
+      text-align: center;
     }
 
     .logo {

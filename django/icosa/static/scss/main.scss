@@ -324,6 +324,12 @@ label {
   display: none;
 }
 
+.hidden-sm {
+  @media (max-width: 769px) {
+    display: none !important;
+  }
+}
+
 .well {
   background-color: var(--color-card-surface);
   padding: 1rem;
