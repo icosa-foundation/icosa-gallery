@@ -594,7 +594,7 @@ class Asset(models.Model):
 
         # If this asset's preferred_format has a file managed by Django
         # storage, then it will be viewable.
-        if self.preferred_viewer_format.format.file:
+        if self.preferred_viewer_format["format"].file:
             return True
 
         # If any resource does not have a file managed by Django storage, check
