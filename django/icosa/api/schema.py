@@ -4,6 +4,7 @@ from typing import List, Literal, Optional
 
 from django.db.models import Q
 from django.urls import reverse_lazy
+from icosa.helpers.format_roles import role_display
 from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
@@ -139,6 +140,16 @@ class AssetFormat(Schema):
     )
     formatComplexity: FormatComplexity
     formatType: str = Field(None, alias="format_type")
+    zip_archive_url: Optional[str] = None
+    role: Optional[str] = Field(
+        default=None,
+        description="This field is deprecated. Do not rely on it for anything.",
+        deprecated=True,
+    )
+
+    @staticmethod
+    def resolve_role(obj):
+        return role_display.get(obj.role, None)
 
     @staticmethod
     def resolve_formatComplexity(obj):
