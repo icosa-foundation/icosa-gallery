@@ -49,7 +49,7 @@ class FormatInline(admin.TabularInline):
 
     fields = (
         "format_type",
-        "archive_url",
+        "zip_archive_url",
         "role",
     )
 

@@ -15,9 +15,9 @@
                 <p>Choose from the below formats in which to download this model.</p>
                 <p>This list is currently experimental and you might run into issues with some formats. Those marked "(alternative)" might work better for you if the original format type fails.</p>
                 {% for format, resources in downloadable_formats.items %}
-                    {% if resources.archive_url  %}
+                    {% if resources.zip_archive_url  %}
                         <p>
-                            <a data-log-download href="{{ resources.archive_url }}">
+                            <a data-log-download href="{{ resources.zip_archive_url }}">
                                 {% fa_icon "solid" "download" %} {{ format }}
                             </a>
                         </p>

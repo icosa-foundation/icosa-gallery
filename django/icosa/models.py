@@ -631,11 +631,13 @@ class Asset(models.Model):
         preferred_format = self.preferred_viewer_format
 
         if updated_gltf is not None:
-            if updated_gltf.format.archive_url:
-                return f"https://web.archive.org/web/{updated_gltf.format.archive_url}"
+            if updated_gltf.format.zip_archive_url:
+                return (
+                    f"https://web.archive.org/web/{updated_gltf.format.zip_archive_url}"
+                )
         if preferred_format is not None:
-            if preferred_format["resource"].format.archive_url:
-                return f"https://web.archive.org/web/{preferred_format['resource'].format.archive_url}"
+            if preferred_format["resource"].format.zip_archive_url:
+                return f"https://web.archive.org/web/{preferred_format['resource'].format.zip_archive_url}"
             # TODO: "poly" is hardcoded here and will not necessarily be used
             # for 3rd party installs.
         return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/icosa/{self.url}/archive.zip"
@@ -795,8 +797,10 @@ class Asset(models.Model):
         ):
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
-            if format.archive_url:
-                resource_data = {"archive_url": f"{ARCHIVE_PREFIX}{format.archive_url}"}
+            if format.zip_archive_url:
+                resource_data = {
+                    "zip_archive_url": f"{ARCHIVE_PREFIX}{format.zip_archive_url}"
+                }
             else:
                 # Query all resources which have either an external url or a
                 # file. Ignoring resources which have neither.
@@ -957,7 +961,7 @@ def format_upload_path(instance, filename):
 class Format(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
-    archive_url = models.CharField(
+    zip_archive_url = models.CharField(
         max_length=FILENAME_MAX_LENGTH, null=True, blank=True
     )
     triangle_count = models.PositiveIntegerField(null=True, blank=True)

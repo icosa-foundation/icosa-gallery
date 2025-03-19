@@ -247,7 +247,7 @@ def create_formats_from_archive_data(formats_json, asset):
             # `resources` key), then we want to grab the archive url if we have
             # it so we can provide this in the download options for the user.
             if format_json.get("archive", None):
-                format.archive_url = format_json["archive"]["url"]
+                format.zip_archive_url = format_json["archive"]["url"]
                 format.save()
 
 
