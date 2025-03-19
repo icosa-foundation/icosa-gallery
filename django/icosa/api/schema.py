@@ -26,6 +26,13 @@ class FormatFilter(Enum):
     GLTF2 = "GLTF2"
     OBJ = "OBJ"
     FBX = "FBX"
+    NO_TILT = "-TILT"
+    NO_BLOCKS = "-BLOCKS"
+    NO_GLTF = "-GLTF"
+    NO_GLTF1 = "-GLTF1"
+    NO_GLTF2 = "-GLTF2"
+    NO_OBJ = "-OBJ"
+    NO_FBX = "-FBX"
 
 
 class SortDirection(Enum):
