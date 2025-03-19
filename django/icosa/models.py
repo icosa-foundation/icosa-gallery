@@ -193,7 +193,6 @@ VIEWABLE_FORMAT_TYPES = [
     "OBJ",
 ]
 
-
 ASSET_STATE_BARE = "BARE"
 ASSET_STATE_UPLOADING = "UPLOADING"
 ASSET_STATE_COMPLETE = "COMPLETE"
@@ -476,7 +475,7 @@ class Asset(models.Model):
                 # with an error?
                 return None
             return {
-                "format": obj_format.format_type,
+                "format": obj_format,
                 "url": obj_resource.internal_url_or_none,
                 "materialUrl": mtl_resource.url,
                 "resource": obj_resource,
@@ -497,7 +496,7 @@ class Asset(models.Model):
         filename = f"poly/{self.url}/{filename.split('/')[-1]}"
         url = f"{STORAGE_PREFIX}{suffix(filename)}"
         return {
-            "format": blocks_format.format_type,
+            "format": blocks_format,
             "url": url,
             "resource": blocks_resource,
         }
@@ -518,7 +517,7 @@ class Asset(models.Model):
 
         if polygone_gltf:
             return {
-                "format": format.format_type,
+                "format": format,
                 "url": polygone_gltf.internal_url_or_none,
                 "resource": polygone_gltf,
             }
@@ -534,7 +533,7 @@ class Asset(models.Model):
 
         if updated_gltf:
             return {
-                "format": format.format_type,
+                "format": format,
                 "url": updated_gltf.internal_url_or_none,
                 "resource": updated_gltf,
             }
@@ -549,7 +548,7 @@ class Asset(models.Model):
 
         if original_gltf:
             return {
-                "format": format.format_type,
+                "format": format,
                 "url": original_gltf.internal_url_or_none,
                 "resource": original_gltf,
             }
@@ -560,7 +559,7 @@ class Asset(models.Model):
         for format in self.format_set.all():
             root = format.root_resource
             formats[format.format_type] = {
-                "format": format.format_type,
+                "format": format,
                 "url": root.internal_url_or_none,
                 "resource": root,
             }
@@ -588,29 +587,23 @@ class Asset(models.Model):
         return format
 
     @property
-    def has_viewable_format_types(self):
-        return self.format_set.filter(format_type__in=VIEWABLE_FORMAT_TYPES).count() > 0
+    def has_cors_allowed_preferred_format(self):
+        preferred_format = self.preferred_viewer_format
+        if not preferred_format:
+            return False
 
-    @property
-    def has_cors_allowed(self):
-        # If this asset has a file managed by Django storage, then it will
-        # be viewable.
-        if (
-            self.resource_set.filter(
-                file__isnull=False,
-            )
-            .exclude(file="")
-            .exists()
-        ):
+        # If this asset's preferred_format has a file managed by Django
+        # storage, then it will be viewable.
+        if self.preferred_viewer_format.format.file:
             return True
 
         # If any resource does not have a file managed by Django storage, check
         # if any of the externally-hosted files' sources have been allowed by
         # the site admin in django constance settings.
         is_allowed = False
-        for resource in self.resource_set.filter(
-            external_url__isnull=False,
-        ):
+        query = Q(external_url__isnull=False) & ~Q(external_url="")
+        resources = preferred_format.get_all_resources(query)
+        for resource in resources:
             if resource.is_cors_allowed:
                 is_allowed = True
                 break
@@ -703,12 +696,10 @@ class Asset(models.Model):
             f"{self.name} {description} {tag_str} {self.owner.displayname}"
         )
 
-    def calc_is_viewable(self):
+    def calc_is_viewer_compatible(self):
         if not self.pk:
             return False
-        if self.has_viewable_format_types and self.has_cors_allowed:
-            return True
-        return False
+        return self.has_cors_allowed_preferred_format
 
     def denorm_format_types(self):
         if not self.pk:
@@ -890,7 +881,7 @@ class Asset(models.Model):
             # Only denorm fields when updating an existing model
             self.rank = self.get_updated_rank()
             self.update_search_text()
-            self.is_viewer_compatible = self.calc_is_viewable()
+            self.is_viewer_compatible = self.calc_is_viewer_compatible()
             self.denorm_format_types()
             self.denorm_triangle_count()
             self.denorm_liked_time()
