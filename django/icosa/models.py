@@ -598,8 +598,9 @@ class Asset(models.Model):
         if (
             self.resource_set.filter(
                 file__isnull=False,
-            ).count()
-            > 0
+            )
+            .exclude(file="")
+            .exists()
         ):
             return True
 
