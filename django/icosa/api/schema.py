@@ -334,6 +334,7 @@ class FilterBase(Schema):
     maxComplexity: Optional[Complexity] = Field(default=None)
     triangleCountMin: Optional[int] = None
     triangleCountMax: Optional[int] = None
+    zipArchiveUrl: Optional[str] = None
 
 
 class AssetFilters(FilterBase):
@@ -401,6 +402,13 @@ def filter_triangle_count(filters) -> Q:
         q &= Q(triangle_count__lte=max)
     if min or max:
         q &= Q(triangle_count__gt=0)
+    return q
+
+
+def filter_zip_archive_url(filters) -> Q:
+    q = Q()
+    if filters.zipArchiveUrl:
+        q &= Q(format__zip_archive_url__icontains=filters.zipArchiveUrl)
     return q
 
 
