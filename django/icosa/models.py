@@ -593,18 +593,14 @@ class Asset(models.Model):
             return False
 
         # If this asset's preferred_format has a file managed by Django
-        # storage, then it will be viewable.
-        if self.preferred_viewer_format["format"].file:
-            return True
-
-        # If any resource does not have a file managed by Django storage, check
-        # if any of the externally-hosted files' sources have been allowed by
-        # the site admin in django constance settings.
+        # storage, or if any of the externally-hosted files' sources have been
+        # allowed by the site admin in django constance settings, then it will
+        # be viewable.
         is_allowed = False
         query = Q(external_url__isnull=False) & ~Q(external_url="")
         resources = preferred_format.get_all_resources(query)
         for resource in resources:
-            if resource.is_cors_allowed:
+            if resource.file or resource.is_cors_allowed:
                 is_allowed = True
                 break
         return is_allowed
