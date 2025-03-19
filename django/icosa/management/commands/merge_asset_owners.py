@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.urls import reverse
 from icosa.helpers import YES
-from icosa.models import Asset, AssetOwner, DeviceCode, OwnerAssetLike
+from icosa.models import Asset, AssetOwner, DeviceCode, UserLike
 
 
 def print_actions(assets, likes, reports):
@@ -68,12 +68,11 @@ Usage:
             print(f"Asset Owner with id `{destination_id}` not found.")
             return
         assets = Asset.objects.filter(owner=source_owner)
-        likes = OwnerAssetLike.objects.filter(user=source_owner)
         reports = Asset.objects.filter(last_reported_by=source_owner)
         device_codes = DeviceCode.objects.filter(user=source_owner)
 
         action = None
-        if not assets and not likes and not reports:
+        if not assets and not reports:
             print(f"{source_owner} doesn't own any Assets, Likes or Reports.")
             mark_merged(source_owner, destination_owner)
             print("\nDone")
@@ -83,7 +82,6 @@ Usage:
             action = input(
                 f"""Will move:
 \n{assets.count()} Assets
-{likes.count()} Likes
 {reports.count()} "Last reported" attributions on Assets
 from {source_owner} to {destination_owner}
 \nand will expire any active device codes.
@@ -95,17 +93,16 @@ Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
             do_work = True
         if action == "l":
             print("The following objects would be moved:")
-            print_actions(assets, likes, reports)
+            print_actions(assets, reports)
 
         if not do_work:
             print("\nQuitting without doing anything.")
             return
 
         print("Moving the following from {source_owner} to {destination_owner}:")
-        print_actions(assets, likes, reports)
+        print_actions(assets, reports)
 
         assets.update(owner=destination_owner)
-        likes.update(user=destination_owner)
         reports.update(last_reported_by=destination_owner)
         device_codes.delete()
 

@@ -3,22 +3,21 @@ import re
 import secrets
 import string
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, Self
 from urllib.parse import urlparse
 
-import bcrypt
-import jwt
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 from constance import config
 from django.conf import settings
-from django.contrib.auth.models import User as DjangoUser
+from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
+from ninja_keys.models import AbstractAPIKey
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
     DOWNLOADABLE_FORMAT_NAMES,
@@ -206,75 +205,16 @@ ASSET_STATE_CHOICES = [
 ]
 
 
-class AssetOwner(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    url = models.CharField("User Name / URL", max_length=255, unique=True)
-    email = models.EmailField(max_length=255, null=True, blank=True)
-    password = models.BinaryField()
+class User(AbstractUser):
     displayname = models.CharField("Display Name", max_length=255)
-    description = models.TextField(blank=True, null=True)
-    migrated = models.BooleanField(default=False)
     likes = models.ManyToManyField(
         "Asset",
-        through="OwnerAssetLike",
+        through="UserLike",
         blank=True,
     )
-    access_token = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-    )  # Only used while we are emulating fastapi auth. Should be removed.
-    imported = models.BooleanField(default=False)
-    is_claimed = models.BooleanField(default=True)
-    django_user = models.ForeignKey(
-        DjangoUser,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-    )
-    merged_with = models.ForeignKey(
-        "self",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-    )
-
-    @classmethod
-    def from_ninja_request(cls, request):
-        instance = None
-        if getattr(request.auth, "email", None):
-            try:
-                instance = cls.objects.get(django_user=request.auth)
-            except cls.DoesNotExist:
-                pass
-        return instance
-
-    @classmethod
-    def from_django_user(cls, user: DjangoUser) -> Optional[Self]:
-        try:
-            instance = cls.objects.get(django_user=user)
-        except (cls.DoesNotExist, TypeError):
-            instance = None
-        return instance
-
-    @classmethod
-    def from_django_request(cls, request) -> Optional[Self]:
-        return cls.from_django_user(request.user)
-
+    
     def get_absolute_url(self):
-        return f"/user/{self.url}"
-
-    def set_password(self, raw_password):
-        if raw_password:
-            salt = bcrypt.gensalt(10)
-            hashedpw = bcrypt.hashpw(raw_password.encode(), salt)
-
-            self.password = hashedpw
-            self.update_access_token()
-            self.save
-            if self.django_user:
-                self.django_user.set_password(raw_password)
-                self.django_user.save()
+        return f"/user/{self.username}"
 
     @staticmethod
     def generate_device_code(length=5):
@@ -285,33 +225,59 @@ class AssetOwner(models.Model):
         )
         return "".join(secrets.choice(characters) for i in range(length))
 
-    @staticmethod
-    def generate_access_token(*, data: dict, expires_delta: timedelta = None):
-        ALGORITHM = "HS256"
-        to_encode = data.copy()
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(minutes=expires_delta)
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(
-            to_encode,
-            settings.JWT_KEY,
-            algorithm=ALGORITHM,
-        )
-        return encoded_jwt
+class AssetOwnerManager(models.Manager):
+    def get_unclaimed_for_user(self, user: User) -> QuerySet:
+        """Get the list of unclaimed asset owners for a user.
 
-    def update_access_token(self):
-        subject = f"{self.email}"
-        data = {"sub": subject}
-        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = self.generate_access_token(
-            data=data,
-            expires_delta=expires_delta,
+        Args:
+            user (User): The user to get unclaimed asset owners for.
+
+        Returns:
+            List[Self]: A list of unclaimed asset owners.
+        """
+        return self.filter(
+            django_user=None,
+            is_claimed=False,
+            email=user.email,
+            url=user.username,
         )
-        self.access_token = access_token
-        self.save()
-        return access_token
+
+class AssetOwner(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    url = models.CharField("User Name / URL", max_length=255, unique=True)
+    email = models.EmailField(max_length=255, null=True, blank=True)
+    displayname = models.CharField("Display Name", max_length=255)
+    description = models.TextField(blank=True, null=True)
+    migrated = models.BooleanField(default=False)
+    imported = models.BooleanField(default=False)
+    is_claimed = models.BooleanField(default=True)
+    django_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    merged_with = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    
+    objects = AssetOwnerManager()
+
+    @classmethod
+    def from_django_user(cls, user: User) -> Optional[Self]:
+        try:
+            instance = cls.objects.get(django_user=user)
+        except (cls.DoesNotExist, TypeError):
+            instance = None
+        return instance
+
+    @classmethod
+    def from_django_request(cls, request) -> Optional[Self]:
+        return cls.from_django_user(request.user)
+
 
     def __str__(self):
         return self.displayname
@@ -751,7 +717,7 @@ class Asset(models.Model):
         self.triangle_count = self.get_triangle_count()
 
     def denorm_liked_time(self):
-        last_liked = self.ownerassetlike_set.order_by("-date_liked").first()
+        last_liked = self.userlike_set.order_by("-date_liked").first()
         if last_liked is not None:
             self.last_liked_time = last_liked.date_liked
 
@@ -928,9 +894,9 @@ class Asset(models.Model):
         ]
 
 
-class OwnerAssetLike(models.Model):
+class UserLike(models.Model):
     user = models.ForeignKey(
-        AssetOwner, on_delete=models.CASCADE, related_name="likedassets"
+        User, on_delete=models.CASCADE, related_name="likedassets"
     )
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date_liked = models.DateTimeField(auto_now_add=True)
@@ -1187,7 +1153,7 @@ class MastheadSection(models.Model):
 
 class DeviceCode(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(AssetOwner, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     devicecode = models.CharField(max_length=6)
     expiry = models.DateTimeField()
 
@@ -1275,3 +1241,9 @@ class BulkSaveLog(models.Model):
     )
     kill_sig = models.BooleanField(default=False)
     last_id = models.BigIntegerField(null=True, blank=True)
+
+class UserAPIKey(AbstractAPIKey):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user.username}: {self.name}"

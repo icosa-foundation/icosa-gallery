@@ -105,6 +105,7 @@ INSTALLED_APPS = [
     "dal",
     "dal_select2",
     "django.contrib.auth",
+    "icosa.apps.IcosaAPIKeyConfig",
     "icosa",
     "django.contrib.admin",
     "django.contrib.contenttypes",
@@ -112,6 +113,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.staticfiles",
     "django.contrib.messages",
+    "django_extensions",
     "compressor",
     "constance",
     "constance.backends.database",
@@ -188,7 +190,7 @@ DATABASES = {
         "NAME": os.environ.get("POSTGRES_DB"),
         "USER": os.environ.get("POSTGRES_USER"),
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-        "HOST": "db",
+        "HOST": os.environ.get("POSTGRES_HOST","db"),
         "PORT": 5432,
     }
 }
@@ -442,3 +444,6 @@ if SENTRY_DSN is not None:
         # of transactions for tracing.
         traces_sample_rate=1.0,
     )
+
+AUTH_USER_MODEL="icosa.User"
+

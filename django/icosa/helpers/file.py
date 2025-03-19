@@ -22,7 +22,7 @@ from icosa.helpers.format_roles import (
 )
 from icosa.models import (
     Asset,
-    AssetOwner,
+    User,
     Format,
     Resource,
 )
@@ -433,7 +433,6 @@ def process_root(asset: Asset, f: UploadedFormat):
 
 
 def upload_blocks_format(
-    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):

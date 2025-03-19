@@ -1,7 +1,6 @@
 from constance import config
 from dal import autocomplete
 from django import forms
-from django.contrib.auth.models import User as DjangoUser
 from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
 from django.utils.translation import gettext_lazy as _
 from icosa.models import (
@@ -12,7 +11,7 @@ from icosa.models import (
     V4_CC_LICENSE_MAP,
     V4_CC_LICENSES,
     Asset,
-    AssetOwner,
+    User,
 )
 
 ARTIST_QUERY_SUBJECT_CHOICES = [
@@ -143,7 +142,6 @@ class AssetEditForm(forms.ModelForm):
 
 class UserSettingsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
         self.fields["email_confirm"] = forms.CharField(
             required=False, widget=EmailInput
@@ -160,7 +158,6 @@ class UserSettingsForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        user = self.user
 
         password_current = cleaned_data.get("password_current")
         password_new = cleaned_data.get("password_new")
@@ -168,7 +165,7 @@ class UserSettingsForm(forms.ModelForm):
         email = cleaned_data.get("email")
         email_confirm = cleaned_data.get("email_confirm")
 
-        if not user.check_password(password_current):
+        if not self.instance.check_password(password_current):
             self.add_error(
                 "password_current", "You must enter your password to make changes"
             )
@@ -185,32 +182,29 @@ class UserSettingsForm(forms.ModelForm):
         if password_new and password_confirm and password_current:
             msg = "Your current password is incorrect"
             try:
-                if not user.check_password(password_current):
+                if not self.instance.check_password(password_current):
                     self.add_error("password_current", msg)
             except AttributeError:
                 self.add_error("password_current", msg)
 
-        if email and email != user.email:
+        if email and email != self.instance.email:
             if email != email_confirm:
                 msg = "Email addresses must match"
                 self.add_error("email", msg)
                 self.add_error("email_confirm", msg)
             else:
                 if (
-                    DjangoUser.objects.filter(email=email_confirm).exists()
-                    or AssetOwner.objects.filter(email=email_confirm).exists()
+                    User.objects.filter(email=email_confirm).exists()
                 ):
                     msg = "Cannot use this email address, please try another"
                     self.add_error("email", msg)
                     self.add_error("email_confirm", msg)
 
     class Meta:
-        model = AssetOwner
+        model = User
 
         fields = [
-            "url",
             "displayname",
-            "description",
             "email",
         ]
 
@@ -244,18 +238,17 @@ class NewUserForm(forms.ModelForm):
             self.add_error("password_confirm", msg)
 
     class Meta:
-        model = AssetOwner
+        model = User
 
         fields = [
-            "url",
-            "displayname",
+            "username",
             "email",
         ]
 
 
 class PasswordResetForm(forms.ModelForm):
     class Meta:
-        model = AssetOwner
+        model = User
 
         fields = [
             "email",
@@ -284,7 +277,7 @@ class PasswordResetConfirmForm(forms.ModelForm):
             self.add_error("password_confirm", msg)
 
     class Meta:
-        model = AssetOwner
+        model = User
         fields = []
 
 
