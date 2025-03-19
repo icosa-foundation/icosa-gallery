@@ -598,7 +598,7 @@ class Asset(models.Model):
         # be viewable.
         is_allowed = False
         query = Q(external_url__isnull=False) & ~Q(external_url="")
-        resources = preferred_format.get_all_resources(query)
+        resources = preferred_format["format"].get_all_resources(query)
         for resource in resources:
             if resource.file or resource.is_cors_allowed:
                 is_allowed = True
