@@ -9,6 +9,7 @@ from django.conf import settings
 from icosa.helpers.file import (
     IMAGE_REGEX,
     UploadedFormat,
+    add_thumbnail_to_asset,
     get_content_type,
     validate_file,
 )
@@ -153,9 +154,8 @@ def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
                         name=filename,
                         file=io.BytesIO(content),
                     )
-                    # Add the file to the list of unzipped files
-                    # to process. Do not include the thumbnail or
-                    # manifest.
+                    # Add the file to the list of unzipped files to process. Do
+                    # not include the  manifest.
                     unzipped_files.append(processed_file)
 
     return unzipped_files
@@ -224,6 +224,7 @@ def upload(
         files = []
     unzipped_files = process_files(files)
 
+    thumbnail = None
     gltf_to_convert = bin_to_convert = None
     asset_dir = os.path.join("/tmp/", f"{asset.id}")
 
@@ -260,6 +261,11 @@ def upload(
             parent_resource_type = SUB_FILE_MAP[valid_file.filetype]
             sub_files[parent_resource_type].append(valid_file)
 
+        if thumbnail is None:
+            splitext = os.path.splitext(valid_file.file.name)
+            if splitext[0].lower() == "thumbnail" and valid_file.filetype == "IMAGE":
+                thumbnail = valid_file.file
+
     converted_gltf_path = convert_gltf(
         gltf_to_convert,
         bin_to_convert,
@@ -294,6 +300,8 @@ def upload(
         converted_gltf_path,
         asset_dir,
     )
+
+    add_thumbnail_to_asset(thumbnail, asset)
 
     asset.state = ASSET_STATE_COMPLETE
     asset.save(update_timestamps=False)
