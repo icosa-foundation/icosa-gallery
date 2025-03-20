@@ -61,6 +61,7 @@ DJANGO_STORAGE_REGION_NAME = os.environ.get("DJANGO_STORAGE_REGION_NAME")
 DJANGO_STORAGE_ACCESS_KEY = os.environ.get("DJANGO_STORAGE_ACCESS_KEY")
 DJANGO_STORAGE_SECRET_KEY = os.environ.get("DJANGO_STORAGE_SECRET_KEY")
 DJANGO_STORAGE_CUSTOM_DOMAIN = os.environ.get("DJANGO_STORAGE_CUSTOM_DOMAIN")
+DJANGO_STORAGE_MEDIA_ROOT = os.environ.get("DJANGO_STORAGE_MEDIA_ROOT")
 
 if (
     DJANGO_STORAGE_URL
@@ -68,6 +69,7 @@ if (
     and DJANGO_STORAGE_REGION_NAME
     and DJANGO_STORAGE_ACCESS_KEY
     and DJANGO_STORAGE_SECRET_KEY
+    and DJANGO_STORAGE_MEDIA_ROOT
 ):
     # Not using the STORAGES dict here as there is a bug in django-storages
     # that means we must set these separately.
@@ -92,8 +94,13 @@ if (
         AWS_S3_TRANSFER_CONFIG = TransferConfig(
             multipart_threshold=5368709120,  # 5GiB in bytes
         )
+
+        MEDIA_ROOT = DJANGO_STORAGE_MEDIA_ROOT
+        MEDIA_URL = "/"  # unused with django-storages
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    MEDIA_ROOT = "media"
+    MEDIA_URL = "/"  # unused with django-storages
 
 STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 
@@ -235,12 +242,6 @@ STATICFILES_FINDERS = (
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
     "compressor.finders.CompressorFinder",
 )
-
-# Media files
-# TODO make this configurable based on file storage. We should have an absolute
-# path for local storage and a root-relative path for storages such as s3.
-MEDIA_ROOT = "icosa"
-# MEDIA_URL = "..."  # unused with django-storages
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

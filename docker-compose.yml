@@ -1,5 +1,6 @@
 volumes:
   static:
+  gallery-media:
   logs:
   gallery-data:
   web-bash-history:
@@ -16,6 +17,7 @@ services:
       - logs:/opt/logs/
       - ./django:/opt/
       - web-bash-history:/root/hist
+      - gallery-media:/opt/media/
     depends_on:
       - db
     env_file: .env
@@ -43,5 +45,6 @@ services:
     volumes:
         - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template
         - static:/static
+        - gallery-media:/media
     env_file: .env
 
