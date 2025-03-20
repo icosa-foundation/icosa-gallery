@@ -366,7 +366,6 @@ class UserAssetFilters(FilterBase):
     visibility: Optional[str] = None
 
 
-# TODO(james): use more of these abstractions
 def filter_license(query_string: str) -> Q:
     license_str = query_string.upper()
     if license_str == "CREATIVE_COMMONS_BY":
