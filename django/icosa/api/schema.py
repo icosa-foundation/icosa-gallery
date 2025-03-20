@@ -4,11 +4,17 @@ from typing import List, Literal, Optional
 
 from django.db.models import Q
 from django.urls import reverse_lazy
-from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
+from icosa.helpers.format_roles import role_display
+from icosa.models import API_DOWNLOAD_COMPATIBLE, CC_LICENSES, Asset, Category
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
 from pydantic.json_schema import SkipJsonSchema
+
+LICENSE_EXAMPLE = [
+    "REMIXABLE",
+    "ALL_CC",
+] + [CC_LICENSES]
 
 
 class Complexity(Enum):
@@ -25,6 +31,13 @@ class FormatFilter(Enum):
     GLTF2 = "GLTF2"
     OBJ = "OBJ"
     FBX = "FBX"
+    NO_TILT = "-TILT"
+    NO_BLOCKS = "-BLOCKS"
+    NO_GLTF = "-GLTF"
+    NO_GLTF1 = "-GLTF1"
+    NO_GLTF2 = "-GLTF2"
+    NO_OBJ = "-OBJ"
+    NO_FBX = "-FBX"
 
 
 class SortDirection(Enum):
@@ -139,6 +152,16 @@ class AssetFormat(Schema):
     )
     formatComplexity: FormatComplexity
     formatType: str = Field(None, alias="format_type")
+    zip_archive_url: Optional[str] = None
+    role: Optional[str] = Field(
+        default=None,
+        description="This field is deprecated. Do not rely on it for anything.",
+        deprecated=True,
+    )
+
+    @staticmethod
+    def resolve_role(obj):
+        return role_display.get(obj.role, None)
 
     @staticmethod
     def resolve_formatComplexity(obj):
@@ -167,7 +190,14 @@ class AssetSchema(ModelSchema):
     thumbnail: Optional[Thumbnail]
     triangleCount: int = Field(..., alias=("triangle_count"))
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
-    license: Optional[str] = None
+    license: Optional[str] = Field(
+        default=None,
+        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
+        # it has `example`, which also accepts a list, but does not render it
+        # nicely at all.
+        # See: https://github.com/vitalik/django-ninja/issues/1342
+        example=LICENSE_EXAMPLE,  # TODO
+    )
 
     class Config:
         model = Asset
@@ -323,6 +353,7 @@ class FilterBase(Schema):
     maxComplexity: Optional[Complexity] = Field(default=None)
     triangleCountMin: Optional[int] = None
     triangleCountMax: Optional[int] = None
+    zipArchiveUrl: Optional[str] = None
 
 
 class AssetFilters(FilterBase):
@@ -335,7 +366,6 @@ class UserAssetFilters(FilterBase):
     visibility: Optional[str] = None
 
 
-# TODO(james): use more of these abstractions
 def filter_license(query_string: str) -> Q:
     license_str = query_string.upper()
     if license_str == "CREATIVE_COMMONS_BY":
@@ -347,6 +377,20 @@ def filter_license(query_string: str) -> Q:
         variants = [
             "CREATIVE_COMMONS_BY_ND_3_0",
             "CREATIVE_COMMONS_BY_ND_4_0",
+        ]
+    elif license_str == "REMIXABLE":
+        variants = [
+            "CREATIVE_COMMONS_BY_3_0",
+            "CREATIVE_COMMONS_BY_4_0",
+            "CREATIVE_COMMONS_0",
+        ]
+    elif license_str == "ALL_CC":
+        variants = [
+            "CREATIVE_COMMONS_BY_3_0",
+            "CREATIVE_COMMONS_BY_4_0",
+            "CREATIVE_COMMONS_BY_ND_3_0",
+            "CREATIVE_COMMONS_BY_ND_4_0",
+            "CREATIVE_COMMONS_0",
         ]
     else:
         variants = None
@@ -390,6 +434,13 @@ def filter_triangle_count(filters) -> Q:
         q &= Q(triangle_count__lte=max)
     if min or max:
         q &= Q(triangle_count__gt=0)
+    return q
+
+
+def filter_zip_archive_url(filters) -> Q:
+    q = Q()
+    if filters.zipArchiveUrl:
+        q &= Q(format__zip_archive_url__icontains=filters.zipArchiveUrl)
     return q
 
 

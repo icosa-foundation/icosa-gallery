@@ -47,11 +47,13 @@ class AssetReportForm(forms.Form):
     )
 
 
-class AssetSettingsForm(forms.ModelForm):
+class AssetEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
         license_value = self["license"].value()
+
+        self.fields["thumbnail_override"] = forms.BooleanField(required=False)
 
         #  CC licenses are non-revokable, but are upgradeable. If the license
         # is cc but not in our current menu of options, they can upgrade and so
@@ -113,6 +115,8 @@ class AssetSettingsForm(forms.ModelForm):
         "name",
         "description",
         "thumbnail",
+        "thumbnail_override",
+        "thumbnail_override_data",
         "category",
         "visibility",
         "tags",

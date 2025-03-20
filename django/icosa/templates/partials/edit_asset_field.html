@@ -12,4 +12,15 @@
 {% if field.name == "visibility" %}
     <p>Please note, once you have made your work public or unlisted, if you have chosen a CC license, you cannot make the work private or make changes to the model files.</p>
 {% endif %}
-{{ field }}
+{% if field.name == "thumbnail" %}
+    <div>
+        <input type="hidden" name="thumbnail_override_image">
+        <label for="thumbnail_override">Use current viewport as the thumbnail:</label>
+        <input class="input-inline" type="checkbox" name="thumbnail_override" id="id_thumbnail_override">
+        <img class="img-preview" src="{{ asset.thumbnail.url }}" id="thumbnail_override_preview">
+        <a href="javascript:void(0)" id="thumbnail_override_refresh">Update</a>
+        {{ field }}
+    </div>
+{% else %}
+    {{ field }}
+{% endif %}

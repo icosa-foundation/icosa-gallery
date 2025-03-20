@@ -29,8 +29,8 @@ from honeypot.decorators import check_honeypot
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
+    AssetEditForm,
     AssetReportForm,
-    AssetSettingsForm,
     AssetUploadForm,
     UserSettingsForm,
 )
@@ -62,19 +62,27 @@ MASTHEAD_TOP_RANK = 10000
 MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
 
-if config.HIDE_REPORTED_ASSETS:
-    DEFAULT_Q = Q(
-        visibility=PUBLIC,
-        is_viewer_compatible=True,
-        curated=True,
-        last_reported_time__isnull=True,
-    )
-else:
-    DEFAULT_Q = Q(
-        visibility=PUBLIC,
-        is_viewer_compatible=True,
-        curated=True,
-    )
+def get_default_q():
+    try:
+        if config.HIDE_REPORTED_ASSETS:
+            return Q(
+                visibility=PUBLIC,
+                is_viewer_compatible=True,
+                curated=True,
+                last_reported_time__isnull=True,
+            )
+        return Q(
+            visibility=PUBLIC,
+            is_viewer_compatible=True,
+            curated=True,
+        )
+    except:
+        return Q(
+            visibility=PUBLIC,
+            is_viewer_compatible=True,
+            curated=True,
+            last_reported_time__isnull=True,
+        )
 
 
 def user_can_view_asset(
@@ -115,7 +123,7 @@ def health(request):
 
 def landing_page(
     request,
-    assets=Asset.objects.filter(DEFAULT_Q).select_related("owner"),
+    assets=Asset.objects.filter(get_default_q()).select_related("owner"),
     show_masthead=True,
     heading=None,
     heading_link=None,
@@ -533,12 +541,22 @@ def edit_asset(request, asset_url):
     is_editable = asset.model_is_editable
 
     if request.method == "GET":
-        form = AssetSettingsForm(instance=asset)
+        form = AssetEditForm(instance=asset)
     elif request.method == "POST":
-        form = AssetSettingsForm(request.POST, request.FILES, instance=asset)
+        form = AssetEditForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
-            form.save()
+            asset = form.save(commit=False)
+            override_thumbnail = request.POST.get("thumbnail_override", False)
+            thumbnail_override_image = request.POST.get(
+                "thumbnail_override_image", None
+            )
+            if override_thumbnail and thumbnail_override_image:
+                image_file = b64_to_img(thumbnail_override_image)
+                asset.thumbnail = image_file
+            asset.save(update_timestamps=False)
             return HttpResponseRedirect(reverse("uploads"))
+        else:
+            print(form.errors)
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
@@ -584,9 +602,9 @@ def publish_asset(request, asset_url):
     if request.user != asset.owner.django_user:
         raise Http404()
     if request.method == "GET":
-        form = AssetSettingsForm(instance=asset)
+        form = AssetEditForm(instance=asset)
     elif request.method == "POST":
-        form = AssetSettingsForm(request.POST, request.FILES, instance=asset)
+        form = AssetEditForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse("uploads"))

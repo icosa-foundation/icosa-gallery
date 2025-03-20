@@ -44,6 +44,7 @@ from .schema import (
     filter_complexity,
     filter_license,
     filter_triangle_count,
+    filter_zip_archive_url,
     get_keyword_q,
 )
 
@@ -351,6 +352,7 @@ def filter_assets(
         raise
     q &= filter_complexity(filters)
     q &= filter_triangle_count(filters)
+    q &= filter_zip_archive_url(filters)
 
     if config.HIDE_REPORTED_ASSETS:
         ex_q = (

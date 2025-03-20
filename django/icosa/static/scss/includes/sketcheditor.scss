@@ -1,27 +1,66 @@
 .sketcheditor {
-    .update-button {
-        text-align: right;
+  .update-button {
+    text-align: right;
 
-        .btn {
-            font-size: 0.9em;
-            padding: 0.5em 1em;
+    .btn {
+      font-size: 0.9em;
+      padding: 0.5em 1em;
+    }
+  }
+
+
+  .nav-tabs {
+    justify-content: center;
+  }
+
+  .tab-pane {
+    >h2 {
+      padding: 0.1em 0.5em;
+      text-decoration: underline;
+      text-align: center;
+    }
+
+  }
+
+
+  form {
+    width: 100%;
+
+    .field-group {
+      padding: 1rem;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: var(--border-radius-small);
+      margin-bottom: 1rem;
+
+      label {
+        margin-top: 0;
+      }
+    }
+
+    #id_thumbnail_override {
+      &:checked {
+
+        &+img.img-preview {
+          display: inline-block;
+
+          &+#thumbnail_override_refresh {
+            display: inline;
+
+            &+.thumbnail-widget {
+              display: none;
+            }
+          }
         }
-    }
+      }
 
-    .nav-tabs {
-        justify-content: center;
-    }
+      &+img.img-preview {
+        display: none;
 
-    .tab-pane {
-        >h2 {
-            padding: 0.1em 0.5em;
-            text-decoration: underline;
-            text-align: center;
+        &+#thumbnail_override_refresh {
+          display: none;
         }
-
+      }
     }
+  }
 
-    form {
-        width: 100%;
-    }
 }

@@ -31,6 +31,12 @@ body {
 
   >main {
     flex-grow: 1;
+    margin-top: var(--header-height);
+
+    @media (max-width: 768px) {
+      margin-top: 0;
+    }
+
   }
 
   >header,
@@ -318,6 +324,12 @@ label {
   display: none;
 }
 
+.hidden-sm {
+  @media (max-width: 769px) {
+    display: none !important;
+  }
+}
+
 .well {
   background-color: var(--color-card-surface);
   padding: 1rem;
@@ -331,4 +343,28 @@ label {
 
 .no-pointer {
   cursor: initial !important;
+}
+
+.pill {
+  color: var(--color-base-dark);
+  font-size: 0.5em;
+  padding: 0.5rem 0.5rem 0.2rem 0.5rem;
+  border-radius: var(--border-radius-tiny);
+  display: inline-block;
+  vertical-align: top;
+
+  &.pill-- {
+    &warning {
+      background-color: var(--color-alert-warning);
+    }
+
+    &danger {
+      background-color: var(--color-alert-danger);
+      color: var(--color-white);
+    }
+
+    &success {
+      background-color: var(--color-alert-success);
+    }
+  }
 }

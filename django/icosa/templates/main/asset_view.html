@@ -28,7 +28,7 @@
             {% endif %}
             <div class="sketch-info-details">
                 <h2>
-                    {{ asset.name }}{% if user == request_user %}{% if asset.visibility == "PRIVATE" %} <span style="color:red;">(PRIVATE)</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span style="color:orange;">(UNLISTED)</span>{% endif %}{% endif %}
+                    {{ asset.name }}{% if user == request_user %}{% if asset.visibility == "PRIVATE" %} <span class="pill pill--danger">private</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span class="pill pill--warning">unlisted</span>{% endif %}{% endif %}
                     {% like_button request asset %}
                 </h2>
                 {% if asset.owner %}

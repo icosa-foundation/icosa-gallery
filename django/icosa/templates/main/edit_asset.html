@@ -17,17 +17,19 @@
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 {% for field in form %}
-                    <div>
-                        {% if is_editable %}
-                            {% include "partials/edit_asset_field.html" %}
-                        {% else %}
-                            {% if field.name in form.editable_fields %}
+                    {% if field.name != "thumbnail_override" %}
+                        <div class="field-group">
+                            {% if is_editable %}
                                 {% include "partials/edit_asset_field.html" %}
                             {% else %}
-                                {% include "partials/non_edit_asset_field.html" %}
+                                {% if field.name in form.editable_fields %}
+                                    {% include "partials/edit_asset_field.html" %}
+                                {% else %}
+                                    {% include "partials/non_edit_asset_field.html" %}
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
-                    </div>
+                        </div>
+                    {% endif %}
                 {% endfor %}
                 <button type="submit" class="btn btn-primary">Save</button>
                 <a href="{% url 'uploads' %}" class="btn btn-secondary">Cancel</a>
@@ -63,6 +65,29 @@
 </div>
 
 <script type="text/javascript" src="/static/admin/js/vendor/jquery/jquery.min.js"></script>
+<script>
+    let thumbnailOverrideTrigger = document.querySelector("input[name='thumbnail_override']");
+    let thumbnailOverrideRefresh = document.querySelector("#thumbnail_override_refresh");
+    let thumbnailOverrideInput = document.querySelector("input[name='thumbnail_override_image']");
+    let thumbnailSpinner = document.querySelector("#thumbnail-spinner");
+    let thumbnailPreview = document.querySelector("#thumbnail_override_preview");
+    function updateThumbnail() {
+        let data = viewer.captureThumbnail(1280, 720);
+        thumbnailOverrideInput.value = data;
+        thumbnailPreview.src = data;
+    }
+    function handleThumbnail(event) {
+        let el = event.target;
+        if (el.checked === true) {
+            updateThumbnail();
+        } else {
+            thumbnailOverrideInput.value = null;
+        }
+        return false;
+    }
+    thumbnailOverrideTrigger.addEventListener('input', handleThumbnail, false);
+    thumbnailOverrideRefresh.addEventListener('click', updateThumbnail, false);
+</script>
 {{ form.media }}
 {% include "partials/viewer.html" %}
 {% endblock content %}

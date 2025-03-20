@@ -6,6 +6,7 @@ from icosa.api.exceptions import FilterException
 from icosa.api.schema import FormatFilter
 from ninja import Schema
 from ninja.pagination import PaginationBase
+from pydantic.json_schema import SkipJsonSchema
 
 COMMON_ROUTER_SETTINGS = {
     "exclude_none": True,
@@ -24,9 +25,9 @@ MAX_PAGE_SIZE = 100
 class AssetPagination(PaginationBase):
     class Input(Schema):
         pageToken: str = None
-        page_token: str = None
+        page_token: SkipJsonSchema[str] = None
         pageSize: str = None
-        page_size: str = None
+        page_size: SkipJsonSchema[str] = None
 
     class Output(Schema):
         assets: List[Any]
@@ -91,7 +92,12 @@ def build_format_q(formats: List) -> Q:
         format_value = format.value
         if format == FormatFilter.GLTF:
             format_value = "GLTF_ANY"
-        q &= Q(**{f"has_{format_value.lower()}": True})
+        if format == FormatFilter.NO_GLTF:
+            format_value = "-GLTF_ANY"
+        if format_value.startswith("-"):
+            q &= Q(**{f"has_{format_value.lower()[1:]}": False})
+        else:
+            q &= Q(**{f"has_{format_value.lower()}": True})
         valid_q = True
 
     if valid_q:

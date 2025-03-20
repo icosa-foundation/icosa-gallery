@@ -89,7 +89,7 @@
 
     {% if not asset.has_tilt and not override_suffix and not format_override %}
 
-        let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+        let formatType = "{{ asset.preferred_viewer_format.format.format_type }}".toLowerCase();
         let url = "{{ asset.preferred_viewer_format.url }}";
 
     {% else %}
@@ -97,7 +97,7 @@
         {% if format_override %}
             let formatType = "{{ format_override }}".toLowerCase();
         {% else %}
-            let formatType = "{{ asset.preferred_viewer_format.format }}".toLowerCase();
+            let formatType = "{{ asset.preferred_viewer_format.format.format_type }}".toLowerCase();
         {% endif %}
 
         {% if override_suffix %}

@@ -3,32 +3,55 @@
 .toggler {
   position: absolute;
   z-index: 100;
+  display: inline-block;
   background-color: var(--color-base-dark);
   border-bottom-right-radius: var(--border-radius-large);
-  position: fixed;
-  top: 0;
-  left: 0;
+  top: 1.5em;
+  left: 1.5em;
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 1em;
+  }
+
 
   &.toggle-close {
-    position: relative;
+    background-color: transparent;
+    text-align: right;
+    position: static;
+    padding: 1.5em;
+
+    @media (max-width: 768px) {
+      padding: 1em;
+    }
+
+    @media (min-width: 769px) {
+      display: none;
+    }
   }
 
   .toggleicon {
-    font-size: 1.25em;
+    font-size: 1em;
     cursor: pointer;
-    margin: 1em;
   }
 }
 
 .sidenav {
-  z-index: 100;
+  z-index: 1001;
   height: 100vh;
   position: fixed;
+  left: 0;
+  margin-top: 0;
+
+  @media (min-width: 769px) {
+    margin-top: var(--header-height);
+    padding-bottom: var(--header-height);
+  }
 
   &.collapsed {
-
-    width: 0px;
-    min-width: 0px;
+    left: -270px;
 
     .pro-sidebar-header {
       .toggler {
@@ -58,7 +81,7 @@
   }
 
   .pro-sidebar-inner {
-    background: #323232;
+    background-color: var(--color-base-dark);
   }
 
   .pro-menu {

@@ -1,33 +1,59 @@
 header {
-  padding-block: 1em;
+  padding-block: 0.5em;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background-color: var(--color-base-dark);
+  z-index: 1000;
 
+  @media (max-width: 768px) {
+    position: static;
+  }
 
   .row {
     display: flex;
     align-items: center;
     justify-content: center;
 
+    .logo-col {
+      text-align: center;
+    }
+
     .logo {
       position: relative;
 
+
       img {
-        height: 5em;
+        height: 3.5em;
+        width: auto;
       }
 
       .beta {
         display: block;
         position: absolute;
         width: 4em;
-        height: 1.5em;
-        top: -1em;
+        height: 1.2em;
+        top: -0.5em;
         right: -2.1em;
         transform: rotate(25deg);
+        font-size: 0.8rem;
       }
     }
   }
 
   .search-widget {
+    display: block;
     position: relative;
+    margin-top: 0.5em;
+    margin-right: 1.5em;
+    margin-left: 1.5em;
+
+    @media (min-width: 769px) {
+      width: auto;
+      margin-top: 0;
+      margin-right: 1.5em;
+    }
+
 
     input,
     button {
@@ -35,7 +61,7 @@ header {
     }
 
     input {
-      width: auto;
+      width: 100%;
     }
 
     .searchbar {
@@ -69,6 +95,11 @@ header {
   }
 
   .user-info {
+    display: inline-block;
     margin-right: 0.5em;
+
+    a {
+      color: var(--color-white);
+    }
   }
 }
