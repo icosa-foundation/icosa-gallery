@@ -5,11 +5,16 @@ from typing import List, Literal, Optional
 from django.db.models import Q
 from django.urls import reverse_lazy
 from icosa.helpers.format_roles import role_display
-from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
+from icosa.models import API_DOWNLOAD_COMPATIBLE, CC_LICENSES, Asset, Category
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
 from pydantic.json_schema import SkipJsonSchema
+
+LICENSE_EXAMPLE = [
+    "REMIXABLE",
+    "ALL_CC",
+] + [CC_LICENSES]
 
 
 class Complexity(Enum):
@@ -185,7 +190,14 @@ class AssetSchema(ModelSchema):
     thumbnail: Optional[Thumbnail]
     triangleCount: int = Field(..., alias=("triangle_count"))
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
-    license: Optional[str] = None
+    license: Optional[str] = Field(
+        default=None,
+        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
+        # it has `example`, which also accepts a list, but does not render it
+        # nicely at all.
+        # See: https://github.com/vitalik/django-ninja/issues/1342
+        example=LICENSE_EXAMPLE,  # TODO
+    )
 
     class Config:
         model = Asset
@@ -366,6 +378,20 @@ def filter_license(query_string: str) -> Q:
         variants = [
             "CREATIVE_COMMONS_BY_ND_3_0",
             "CREATIVE_COMMONS_BY_ND_4_0",
+        ]
+    elif license_str == "REMIXABLE":
+        variants = [
+            "CREATIVE_COMMONS_BY_3_0",
+            "CREATIVE_COMMONS_BY_4_0",
+            "CREATIVE_COMMONS_0",
+        ]
+    elif license_str == "ALL_CC":
+        variants = [
+            "CREATIVE_COMMONS_BY_3_0",
+            "CREATIVE_COMMONS_BY_4_0",
+            "CREATIVE_COMMONS_BY_ND_3_0",
+            "CREATIVE_COMMONS_BY_ND_4_0",
+            "CREATIVE_COMMONS_0",
         ]
     else:
         variants = None
