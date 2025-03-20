@@ -81,6 +81,7 @@ class Command(BaseCommand):
 
                 if not os.path.exists(resource_full_path):
                     os.makedirs(resource_dir, exist_ok=True)
+                    print("Downloading", resource_url, "to", resource_full_path)
                     response = session.get(resource_url, allow_redirects=True)
                     with open(resource_full_path, "wb") as f:
                         f.write(response.content)
@@ -92,13 +93,13 @@ class Command(BaseCommand):
                         try:
                             gltf_json = json.loads(content.decode("utf-8", errors="replace"))
                         except:
-                            print(f"{resource_full_path[len(root):]} is invalid:  {content[:10].decode("utf-8", errors="replace")}")
+                            print(f"Invalid GLTF JSON: {resource_full_path[len(root):]}:  {content[:10].decode("utf-8", errors="replace")}")
                             invalid = True
 
                     if not invalid:
                         is_v2 = not isinstance(gltf_json.get("buffers", None), dict)
                         if not is_v2:
-                            print(f"{resource_full_path[len(root):]} GLTF2?: {is_v2}")
+                            print(f"Found GLTF v1 instead of v2: {resource_full_path[len(root):]}")
 
 
                 # Canonicalize the path
