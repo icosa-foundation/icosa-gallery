@@ -190,14 +190,7 @@ class AssetSchema(ModelSchema):
     thumbnail: Optional[Thumbnail]
     triangleCount: int = Field(..., alias=("triangle_count"))
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
-    license: Optional[str] = Field(
-        default=None,
-        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
-        # it has `example`, which also accepts a list, but does not render it
-        # nicely at all.
-        # See: https://github.com/vitalik/django-ninja/issues/1342
-        example=LICENSE_EXAMPLE,  # TODO
-    )
+    license: Optional[str] = Field(default=None)
 
     class Config:
         model = Asset
@@ -359,7 +352,14 @@ class FilterBase(Schema):
 class AssetFilters(FilterBase):
     authorName: SkipJsonSchema[Optional[str]] = None
     author_name: Optional[str] = None
-    license: Optional[str] = None
+    license: Optional[str] = Field(
+        default=None,
+        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
+        # it has `example`, which also accepts a list, but does not render it
+        # nicely at all.
+        # See: https://github.com/vitalik/django-ninja/issues/1342
+        example=", ".join([str(x) for x in LICENSE_EXAMPLE]),
+    )
 
 
 class UserAssetFilters(FilterBase):
