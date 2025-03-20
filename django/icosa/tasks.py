@@ -116,16 +116,14 @@ def save_all_assets(
 ):
     save_log = None
     if resume:
-        save_log = BulkSaveLog.objects.filter(
-            finish_status=BulkSaveLog.KILLED,
-        ).last()
+        save_log = BulkSaveLog.objects.exclude().last()
     elif bool(BulkSaveLog.objects.filter(finish_time=None).count()):
         print(
             "It appears there are already save jobs running. Please wait for them to finish or kill them first with --kill."
         )
         return
 
-    if save_log is None:
+    if save_log is None or save_log.finish_status == BulkSaveLog.FAILED:
         save_log = BulkSaveLog.objects.create()
     else:
         save_log.finish_status = BulkSaveLog.RESUMED
