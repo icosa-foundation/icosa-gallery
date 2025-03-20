@@ -1,4 +1,11 @@
 {% extends "base.html" %}
+{% load paginator_tags %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="canonical" href="{% clean_url %}">
+{% endblock extrahead %}
+
 {% block content %}
 <div>
     <div class="container">
