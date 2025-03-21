@@ -24,6 +24,9 @@ MAX_PAGE_SIZE = 100
 
 class AssetPagination(PaginationBase):
     class Input(Schema):
+        # pageToken and pageSize should really be int, but need to be str so we can accept
+        # stuff like ?pageSize=&pageToken=
+        # See here: https://github.com/vitalik/django-ninja/issues/807
         pageToken: str = None
         page_token: SkipJsonSchema[str] = None
         pageSize: str = None
