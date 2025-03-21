@@ -60,13 +60,17 @@ Usage:
         try:
             source_owner = AssetOwner.objects.get(pk=source_id)
         except AssetOwner.DoesNotExist:
-            print(f"Asset Owner with id `{source_id}` not found.")
+            print(f"Source Asset Owner with id `{source_id}` not found.")
             return
         try:
             destination_owner = AssetOwner.objects.get(pk=destination_id)
         except AssetOwner.DoesNotExist:
-            print(f"Asset Owner with id `{destination_id}` not found.")
+            print(f"Destination Asset Owner with id `{destination_id}` not found.")
             return
+
+        source_repr = f"`{source_owner.displayname}` (id: {source_owner.id})"
+        destination_repr = f"`{destination_owner.displayname}` (id: {destination_owner.id})"
+
         assets = Asset.objects.filter(owner=source_owner)
         likes = OwnerAssetLike.objects.filter(user=source_owner)
         reports = Asset.objects.filter(last_reported_by=source_owner)
@@ -74,7 +78,7 @@ Usage:
 
         action = None
         if not assets and not likes and not reports:
-            print(f"{source_owner} doesn't own any Assets, Likes or Reports.")
+            print(f"{source_repr} doesn't own any Assets, Likes or Reports.")
             finish_merge(source_owner, destination_owner)
             print("\nDone")
             return
@@ -85,7 +89,7 @@ Usage:
 \n{assets.count()} Assets
 {likes.count()} Likes
 {reports.count()} "Last reported" attributions on Assets
-from {source_owner} to {destination_owner}
+from {source_repr} to {destination_repr}
 \nand will expire any active device codes.
 Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
             ).lower()
@@ -101,9 +105,7 @@ Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
             print("\nQuitting without doing anything.")
             return
 
-        source_repr = f"{source_owner.displayname} (id: {source_owner.id})"
-        destination_repr = f"{destination_owner.displayname} (id: {destination_owner.id})"
-        print(f"Moving the following from {source_repr} to {destination_repr}:")
+        print(f"\nMoving the following from {source_repr} to {destination_repr}:")
         print_actions(assets, likes, reports)
 
         assets.update(owner=destination_owner)
@@ -112,11 +114,18 @@ Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
         device_codes.delete()
 
         finish_merge(source_owner, destination_owner)
-        change_url = reverse(
+        change_url_source = reverse(
             "admin:icosa_assetowner_change",
             args=(source_owner.id,),
         )
+        change_url_destination = reverse(
+            "admin:icosa_assetowner_change",
+            args=(destination_owner.id,),
+        )
         print(
-            f"Visit the admin for the old source owner at {settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}{change_url}"
+            f"\nVisit the admin for the source owner at {settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}{change_url_source}"
+        )
+        print(
+            f"Visit the admin for the destination owner at {settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}{change_url_destination}"
         )
         print("\nDone")
