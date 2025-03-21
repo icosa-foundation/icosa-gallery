@@ -13,7 +13,7 @@
     {% else %}
         <a href="{% if can_edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}" role="presentation">
             <div class="sketchimage">
-                <img src="{{ asset.get_thumbnail_url }}">
+                <img src="{{ asset.get_thumbnail_url }}" alt="{{ asset.name }} by {{ asset.owner.displayname }}"" }}">
             </div>
         </a>
     {% endif %}
