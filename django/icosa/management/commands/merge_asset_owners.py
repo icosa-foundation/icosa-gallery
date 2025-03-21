@@ -20,9 +20,9 @@ def print_actions(assets, likes, reports):
             print(f"\t{report} asset id: {report.id}")
 
 
-def mark_merged(source_owner, destination_owner):
-    # TODO(james): We will want to handle associated Django users here. What to
-    # do: delete, mark as inactive, something else?
+def finish_merge(source_owner, destination_owner):
+    source_owner.django_user.active = False
+    source_owner.django_user.save()
     source_owner.merged_with = destination_owner
     source_owner.save()
 
@@ -75,7 +75,7 @@ Usage:
         action = None
         if not assets and not likes and not reports:
             print(f"{source_owner} doesn't own any Assets, Likes or Reports.")
-            mark_merged(source_owner, destination_owner)
+            finish_merge(source_owner, destination_owner)
             print("\nDone")
             return
 
@@ -101,7 +101,9 @@ Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
             print("\nQuitting without doing anything.")
             return
 
-        print("Moving the following from {source_owner} to {destination_owner}:")
+        source_repr = f"{source_owner.displayname} (id: {source_owner.id})"
+        destination_repr = f"{destination_owner.displayname} (id: {destination_owner.id})"
+        print(f"Moving the following from {source_repr} to {destination_repr}:")
         print_actions(assets, likes, reports)
 
         assets.update(owner=destination_owner)
@@ -109,7 +111,7 @@ Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
         reports.update(last_reported_by=destination_owner)
         device_codes.delete()
 
-        mark_merged(source_owner, destination_owner)
+        finish_merge(source_owner, destination_owner)
         change_url = reverse(
             "admin:icosa_assetowner_change",
             args=(source_owner.id,),
