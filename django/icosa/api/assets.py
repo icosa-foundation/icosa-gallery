@@ -334,7 +334,7 @@ def filter_assets(
         category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
         q &= Q(category__iexact=category_str)
     if filters.license:
-        q &= filter_license(filters.license)
+        q &= filter_license(filters)
     if filters.curated:
         q &= Q(curated=True)
     if filters.name:
