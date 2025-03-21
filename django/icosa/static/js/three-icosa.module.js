@@ -4414,6 +4414,7 @@ const $cf098bb13503440d$var$tiltBrushMaterialParams = {
 class $ca086492148dd3fa$export$2b011a5b12963d65 {
     constructor(parser, brushPath){
         this.name = "GOOGLE_tilt_brush_material";
+        this.altName = "GOOGLE_tilt_brush_techniques";
         this.parser = parser;
         this.brushPath = brushPath;
         // Quick repair of path if required
@@ -4425,11 +4426,16 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
     beforeRoot() {
         const parser = this.parser;
         const json = parser.json;
-        if (!json.extensionsUsed || !json.extensionsUsed.includes(this.name)) return null;
+        if (!this.isTiltGltf(json)) return null;
         json.materials.forEach((material)=>{
             const extensionsDef = material.extensions;
-            if (!extensionsDef || !extensionsDef[this.name]) return;
-            const guid = material.extensions.GOOGLE_tilt_brush_material.guid;
+            if (!extensionsDef || !(extensionsDef[this.name] || extensionsDef[this.altName])) {
+                console.log("No extension found", this.name);
+                return;
+            }
+            let guid;
+            if (extensionsDef[this.name]) guid = extensionsDef[this.name].guid;
+            else guid = material.name.replace("material_", "");
             const materialParams = this.tiltShaderLoader.lookupMaterial(guid);
             //MainTex
             if (material?.pbrMetallicRoughness?.baseColorTexture) {
@@ -4446,22 +4452,35 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
     afterRoot(glTF) {
         const parser = this.parser;
         const json = parser.json;
-        if (!json.extensionsUsed || !json.extensionsUsed.includes(this.name)) return null;
+        if (!this.isTiltGltf(json)) return null;
         const shaderResolves = [];
-        //const extensionDef = json.exensions[this.name];
         for (const scene of glTF.scenes)scene.traverse(async (object)=>{
             const association = parser.associations.get(object);
             if (association === undefined || association.meshes === undefined) return;
             const mesh = json.meshes[association.meshes];
             mesh.primitives.forEach((prim)=>{
                 if (!prim.material) return;
-                const mat = json.materials[prim.material];
-                if (!mat.extensions || !mat.extensions[this.name]) return;
-                const guid = mat.extensions.GOOGLE_tilt_brush_material.guid;
+                const material = json.materials[prim.material];
+                const extensionsDef = material.extensions;
+                if (!extensionsDef || !(extensionsDef[this.name] || extensionsDef[this.altName])) {
+                    console.log("No extension found", this.name);
+                    return;
+                }
+                let guid;
+                if (extensionsDef[this.name]) guid = extensionsDef[this.name].guid;
+                else guid = material.name.replace("material_", "");
                 shaderResolves.push(this.replaceMaterial(object, guid));
             });
         });
         return Promise.all(shaderResolves);
+    }
+    isTiltGltf(json) {
+        let isTiltGltf = false;
+        isTiltGltf ||= json.extensionsUsed && json.extensionsUsed.includes(this.name);
+        isTiltGltf ||= json.extensionsUsed && json.extensionsUsed.includes(this.altName);
+        isTiltGltf ||= "extensions" in json && this.name in json["extensions"];
+        isTiltGltf ||= "extensions" in json && this.altName in json["extensions"];
+        return isTiltGltf;
     }
     async replaceMaterial(mesh, guid) {
         let shader;
@@ -4508,10 +4527,13 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
             case "89d104cd-d012-426b-b5b3-bbaee63ac43c":
                 mesh.geometry.name = "geometry_Bubbles";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
-                mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Bubbles");
                 shader.lights = true;
                 shader.fog = true;
@@ -4524,7 +4546,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("CelVinyl");
                 shader.lights = true;
                 shader.fog = true;
@@ -4537,7 +4560,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ChromaticWave");
                 shader.lights = true;
                 shader.fog = true;
@@ -4551,7 +4575,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("CoarseBristles");
                 shader.lights = true;
                 shader.fog = true;
@@ -4564,7 +4589,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Comet");
                 shader.lights = true;
                 shader.fog = true;
@@ -4577,7 +4603,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DiamondHull");
                 shader.lights = true;
                 shader.fog = true;
@@ -4590,7 +4617,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Disco");
                 shader.lights = true;
                 shader.fog = true;
@@ -4603,7 +4631,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DotMarker");
                 shader.lights = true;
                 shader.fog = true;
@@ -4614,10 +4643,13 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
             case "6a1cf9f9-032c-45ec-9b1d-a6680bee30f7":
                 mesh.geometry.name = "geometry_Dots";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
-                mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Dots");
                 shader.lights = true;
                 shader.fog = true;
@@ -4630,7 +4662,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DoubleTaperedFlat");
                 shader.lights = true;
                 shader.fog = true;
@@ -4643,7 +4676,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DoubleTaperedMarker");
                 shader.lights = true;
                 shader.fog = true;
@@ -4657,7 +4691,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DuctTape");
                 shader.lights = true;
                 shader.fog = true;
@@ -4670,8 +4705,10 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
-                mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Electricity");
                 mesh.material = shader;
                 mesh.material.name = "material_Electricity";
@@ -4679,10 +4716,13 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
             case "02ffb866-7fb2-4d15-b761-1012cefb1360":
                 mesh.geometry.name = "geometry_Embers";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
-                mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Embers");
                 mesh.material = shader;
                 mesh.material.name = "material_Embers";
@@ -4692,7 +4732,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("EnvironmentDiffuse");
                 shader.lights = true;
                 shader.fog = true;
@@ -4705,7 +4746,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("EnvironmentDiffuseLightMap");
                 shader.lights = true;
                 shader.fog = true;
@@ -4718,7 +4760,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Fire");
                 shader.lights = true;
                 shader.fog = true;
@@ -4733,7 +4776,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Flat");
                 shader.lights = true;
                 shader.fog = true;
@@ -4746,7 +4790,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Highlighter");
                 shader.lights = true;
                 shader.fog = true;
@@ -4760,7 +4805,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Hypercolor");
                 shader.lights = true;
                 shader.fog = true;
@@ -4773,8 +4819,10 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
-                mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("HyperGrid");
                 shader.lights = true;
                 shader.fog = true;
@@ -4787,7 +4835,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Icing");
                 shader.lights = true;
                 shader.fog = true;
@@ -4801,7 +4850,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Ink");
                 shader.lights = true;
                 shader.fog = true;
@@ -4815,7 +4865,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Leaves");
                 shader.lights = true;
                 shader.fog = true;
@@ -4828,7 +4879,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Light");
                 shader.lights = true;
                 shader.fog = true;
@@ -4841,7 +4893,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("LightWire");
                 shader.lights = true;
                 shader.fog = true;
@@ -4854,7 +4907,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Lofted");
                 shader.lights = true;
                 shader.fog = true;
@@ -4867,7 +4921,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Marker");
                 shader.lights = true;
                 shader.fog = true;
@@ -4892,7 +4947,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("NeonPulse");
                 shader.lights = true;
                 shader.fog = true;
@@ -4906,7 +4962,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("OilPaint");
                 shader.lights = true;
                 shader.fog = true;
@@ -4920,7 +4977,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Paper");
                 shader.lights = true;
                 shader.fog = true;
@@ -4933,7 +4991,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("PbrTemplate");
                 shader.lights = true;
                 shader.fog = true;
@@ -4946,7 +5005,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("PbrTransparentTemplate");
                 shader.lights = true;
                 shader.fog = true;
@@ -4959,7 +5019,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Petal");
                 shader.lights = true;
                 shader.fog = true;
@@ -4972,7 +5033,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Plasma");
                 shader.lights = true;
                 shader.fog = true;
@@ -4985,7 +5047,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Rainbow");
                 shader.lights = true;
                 shader.fog = true;
@@ -4998,7 +5061,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ShinyHull");
                 shader.lights = true;
                 shader.fog = true;
@@ -5009,10 +5073,13 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
             case "70d79cca-b159-4f35-990c-f02193947fe8":
                 mesh.geometry.name = "geometry_Smoke";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
-                mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Smoke");
                 shader.lights = true;
                 shader.fog = true;
@@ -5023,10 +5090,13 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
             case "d902ed8b-d0d1-476c-a8de-878a79e3a34c":
                 mesh.geometry.name = "geometry_Snow";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
-                mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Snow");
                 mesh.material = shader;
                 mesh.material.name = "material_Snow";
@@ -5036,7 +5106,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("SoftHighlighter");
                 shader.lights = true;
                 shader.fog = true;
@@ -5049,7 +5120,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Spikes");
                 shader.lights = true;
                 shader.fog = true;
@@ -5063,7 +5135,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Splatter");
                 shader.lights = true;
                 shader.fog = true;
@@ -5074,10 +5147,13 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
             case "0eb4db27-3f82-408d-b5a1-19ebd7d5b711":
                 mesh.geometry.name = "geometry_Stars";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
-                mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Stars");
                 shader.lights = true;
                 shader.fog = true;
@@ -5090,7 +5166,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Streamers");
                 shader.lights = true;
                 shader.fog = true;
@@ -5103,7 +5180,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Taffy");
                 shader.lights = true;
                 shader.fog = true;
@@ -5117,7 +5195,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("TaperedFlat");
                 shader.lights = true;
                 shader.fog = true;
@@ -5131,7 +5210,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("TaperedMarker");
                 shader.lights = true;
                 shader.fog = true;
@@ -5145,7 +5225,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ThickPaint");
                 shader.lights = true;
                 shader.fog = true;
@@ -5171,6 +5252,7 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("UnlitHull");
+                shader.fog = true;
                 mesh.material = shader;
                 mesh.material.name = "material_UnlitHull";
                 break;
@@ -5179,7 +5261,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("VelvetInk");
                 shader.lights = true;
                 shader.fog = true;
@@ -5192,7 +5275,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Waveform");
                 shader.lights = true;
                 shader.fog = true;
@@ -5206,7 +5290,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("WetPaint");
                 shader.lights = true;
                 shader.fog = true;
@@ -5220,7 +5305,8 @@ class $ca086492148dd3fa$export$2b011a5b12963d65 {
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
                 mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("WigglyGraphite");
                 shader.lights = true;
                 shader.fog = true;
@@ -5315,14 +5401,12 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 0,
                         "texCoord": 0
                     },
                     "metallicFactor": 0,
                     "roughnessFactor": 0.600000024
                 },
                 "normalTexture": {
-                    "index": 1,
                     "texCoord": 0
                 },
                 "name": "brush_OilPaint",
@@ -5338,14 +5422,12 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 2,
                         "texCoord": 0
                     },
                     "metallicFactor": 0,
                     "roughnessFactor": 0.600000024
                 },
                 "normalTexture": {
-                    "index": 3,
                     "texCoord": 0
                 },
                 "name": "brush_Ink",
@@ -5361,14 +5443,12 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 4,
                         "texCoord": 0
                     },
                     "metallicFactor": 0,
                     "roughnessFactor": 0.600000024
                 },
                 "normalTexture": {
-                    "index": 5,
                     "texCoord": 0
                 },
                 "name": "brush_ThickPaint",
@@ -5384,14 +5464,12 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 6,
                         "texCoord": 0
                     },
                     "metallicFactor": 0,
                     "roughnessFactor": 0.149999976
                 },
                 "normalTexture": {
-                    "index": 7,
                     "texCoord": 0
                 },
                 "name": "brush_WetPaint",
@@ -5407,7 +5485,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 8,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5425,7 +5502,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 9,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5453,7 +5529,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 10,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5481,7 +5556,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 11,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5508,7 +5582,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 12,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5525,7 +5598,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 13,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5542,7 +5614,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 14,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5559,7 +5630,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 15,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5576,7 +5646,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 16,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5603,7 +5672,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 17,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5620,7 +5688,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 18,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5637,7 +5704,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 19,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5655,7 +5721,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 20,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5673,14 +5738,12 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 21,
                         "texCoord": 0
                     },
                     "metallicFactor": 0,
                     "roughnessFactor": 0.585999966
                 },
                 "normalTexture": {
-                    "index": 22,
                     "texCoord": 0
                 },
                 "name": "brush_DuctTape",
@@ -5696,14 +5759,12 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 23,
                         "texCoord": 0
                     },
                     "metallicFactor": 0,
                     "roughnessFactor": 0.855000019
                 },
                 "normalTexture": {
-                    "index": 24,
                     "texCoord": 0
                 },
                 "name": "brush_Paper",
@@ -5718,7 +5779,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 25,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5736,7 +5796,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 26,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5754,7 +5813,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 27,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5781,7 +5839,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 28,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5799,14 +5856,12 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 29,
                         "texCoord": 0
                     },
                     "metallicFactor": 0,
                     "roughnessFactor": 0.5
                 },
                 "normalTexture": {
-                    "index": 30,
                     "texCoord": 0
                 },
                 "name": "brush_Hypercolor",
@@ -5821,7 +5876,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 31,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5849,7 +5903,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 32,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5866,7 +5919,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 33,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5882,7 +5934,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "alphaMode": "OPAQUE",
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 34,
                         "texCoord": 0
                     },
                     "metallicFactor": 0,
@@ -5910,7 +5961,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 35,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -5940,7 +5990,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                     "roughnessFactor": 0.850000024
                 },
                 "normalTexture": {
-                    "index": 36,
                     "texCoord": 0
                 },
                 "name": "brush_Icing",
@@ -6002,7 +6051,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 37,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -6052,7 +6100,6 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
                 "doubleSided": true,
                 "pbrMetallicRoughness": {
                     "baseColorTexture": {
-                        "index": 38,
                         "texCoord": 0
                     },
                     "metallicFactor": 0
@@ -6076,7 +6123,7 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
         const json = parser.json;
         if (!json.extensionsUsed || !json.extensionsUsed.includes(this.name)) return null;
         if (!json.extensionsUsed.includes("GOOGLE_tilt_brush_material")) json.extensionsUsed.push("GOOGLE_tilt_brush_material");
-        json.materials = json.materials.map((material, index)=>{
+        json.materials.map((material, index)=>{
             const extensionsDef = material.extensions;
             if (!extensionsDef || !extensionsDef[this.name]) return;
             const guid = material.name.replace("material_", "");
@@ -6086,7 +6133,7 @@ class $d838b23e95c97ee8$export$24723e25468f5bb7 {
             if (mainTexIndex !== undefined) json.materials[index].pbrMetallicRoughness.baseColorTexture.index = mainTexIndex;
             //BumpMap
             let bumpMapIndex = extensionsDef.GOOGLE_tilt_brush_techniques.values.BumpMap;
-            if (bumpMapIndex !== undefined) json.materials[index].pbrMetallicRoughness.normalTexture.index = bumpMapIndex;
+            if (bumpMapIndex !== undefined) json.materials[index].normalTexture.index = bumpMapIndex;
         });
     }
 }
