@@ -332,14 +332,23 @@ def default_orienting_rotation():
     return "[0, 0, 0, 0]"
 
 
+def get_cloud_media_root():
+    if settings.DJANGO_STORAGE_MEDIA_ROOT is not None:
+        return f"{settings.DJANGO_STORAGE_MEDIA_ROOT}/"
+    else:
+        # We are writing to whatever is defined in settings.MEDIA_ROOT.
+        return ""
+
+
 def thumbnail_upload_path(instance, filename):
-    root = settings.MEDIA_ROOT
-    return f"{root}/{instance.owner.id}/{instance.id}/{filename}"
+    root = get_cloud_media_root()
+    path = f"{root}{instance.owner.id}/{instance.id}/{filename}"
+    return path
 
 
 def preview_image_upload_path(instance, filename):
-    root = settings.MEDIA_ROOT
-    return f"{root}/{instance.owner.id}/{instance.id}/preview_image/{filename}"
+    root = get_cloud_media_root()
+    return f"{root}{instance.owner.id}/{instance.id}/preview_image/{filename}"
 
 
 class Asset(models.Model):
@@ -927,7 +936,7 @@ class OwnerAssetLike(models.Model):
 
 
 def format_upload_path(instance, filename):
-    root = settings.MEDIA_ROOT
+    root = get_cloud_media_root()
     format = instance.format
     if format is None:
         # This is a root resource. TODO(james): implement a get_format method
@@ -941,7 +950,7 @@ def format_upload_path(instance, filename):
         name = f"model-triangulated.{ext}"
     else:
         name = filename
-    return f"{root}/{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
+    return f"{root}{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
 
 
 class Format(models.Model):
@@ -1133,8 +1142,8 @@ class Resource(models.Model):
 
 
 def masthead_image_upload_path(instance, filename):
-    root = settings.MEDIA_ROOT
-    return f"{root}/masthead_images/{instance.id}/{filename}"
+    root = get_cloud_media_root()
+    return f"{root}masthead_images/{instance.id}/{filename}"
 
 
 class MastheadSection(models.Model):

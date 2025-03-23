@@ -43,6 +43,11 @@
                     {{ asset.get_license_icons }} {{ asset.get_license_display|default_if_none:" All rights reserved" }}
                 </p>
                 <p></p>
+                {% if user == request_user %}
+                    <a class="btn btn-primary btn-sm" href="{% url 'edit_asset' asset_url=asset.url %}">
+                        {% fa_icon "solid" "gear" %} Edit settings
+                    </a>
+                {% endif %}
                 {% if downloadable_formats %}
                     <p>
                         <a href="{% url 'asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">

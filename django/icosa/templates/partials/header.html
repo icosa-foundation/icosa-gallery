@@ -6,8 +6,8 @@
     </div>
     <div class="container-full-width">
         <div class="row">
-            <div class="col-md-4 hidden-sm"></div>
-            <div class="logo-col col-sm-12 col-md-4">
+            <div class="col-md-5 hidden-sm"></div>
+            <div class="logo-col col-sm-12 col-md-2">
                 <a class="logo" href="/">
                     <img
                         alt="logo"
@@ -18,8 +18,13 @@
                         {% if config.BETA_MODE %}<span class="beta">Beta</span>{% endif %}
                 </a>
             </div>
-            <div class="text-right col-sm-12 col-md-4">
+            <div class="text-right col-sm-12 col-md-5">
                 {% include "partials/search_bar.html" %}
+                {% if user.is_authenticated %}
+                    <small class="user-actions"><a href="{% url 'logout' %}">logout</a></small>
+                {% else %}
+                    <small class="user-actions"><a href="{% url 'login' %}">login</a></small>
+                {% endif %}
             </div>
         </div>
     </div>

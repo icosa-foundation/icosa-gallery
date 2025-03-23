@@ -95,12 +95,13 @@ if (
             multipart_threshold=5368709120,  # 5GiB in bytes
         )
 
-        MEDIA_ROOT = DJANGO_STORAGE_MEDIA_ROOT
+        MEDIA_ROOT = None
         MEDIA_URL = "/"  # unused with django-storages
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
-    MEDIA_ROOT = "media"
-    MEDIA_URL = "/"  # unused with django-storages
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
+    MEDIA_URL = "/media/"
+    DJANGO_STORAGE_MEDIA_ROOT = None
 
 STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 

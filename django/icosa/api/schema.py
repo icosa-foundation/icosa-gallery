@@ -11,10 +11,17 @@ from ninja.errors import HttpError
 from pydantic import EmailStr
 from pydantic.json_schema import SkipJsonSchema
 
-LICENSE_EXAMPLE = [
-    "REMIXABLE",
-    "ALL_CC",
-] + [CC_LICENSES]
+
+class LicenseFilter(Enum):
+    REMIXABLE = "REMIXABLE"
+    ALL_CC = "ALL_CC"
+    CREATIVE_COMMONS_BY_3_0 = "CREATIVE_COMMONS_BY_3_0"
+    CREATIVE_COMMONS_BY_ND_3_0 = "CREATIVE_COMMONS_BY_ND_3_0"
+    CREATIVE_COMMONS_BY_4_0 = "CREATIVE_COMMONS_BY_4_0"
+    CREATIVE_COMMONS_BY_ND_4_0 = "CREATIVE_COMMONS_BY_ND_4_0"
+    CREATIVE_COMMONS_BY = "CREATIVE_COMMONS_BY"
+    CREATIVE_COMMONS_BY_ND = "CREATIVE_COMMONS_BY_ND"
+    CREATIVE_COMMONS_0 = "CREATIVE_COMMONS_0"
 
 
 class Complexity(Enum):
@@ -190,14 +197,7 @@ class AssetSchema(ModelSchema):
     thumbnail: Optional[Thumbnail]
     triangleCount: int = Field(..., alias=("triangle_count"))
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
-    license: Optional[str] = Field(
-        default=None,
-        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
-        # it has `example`, which also accepts a list, but does not render it
-        # nicely at all.
-        # See: https://github.com/vitalik/django-ninja/issues/1342
-        example=LICENSE_EXAMPLE,  # TODO
-    )
+    license: Optional[str] = Field(default=None)
 
     class Config:
         model = Asset
@@ -359,45 +359,47 @@ class FilterBase(Schema):
 class AssetFilters(FilterBase):
     authorName: SkipJsonSchema[Optional[str]] = None
     author_name: Optional[str] = None
-    license: Optional[str] = None
+    license: Optional[LicenseFilter] = Field(default=None)
 
 
 class UserAssetFilters(FilterBase):
     visibility: Optional[str] = None
 
 
-def filter_license(query_string: str) -> Q:
-    license_str = query_string.upper()
-    if license_str == "CREATIVE_COMMONS_BY":
-        variants = [
-            "CREATIVE_COMMONS_BY_3_0",
-            "CREATIVE_COMMONS_BY_4_0",
-        ]
-    elif license_str == "CREATIVE_COMMONS_BY_ND":
-        variants = [
-            "CREATIVE_COMMONS_BY_ND_3_0",
-            "CREATIVE_COMMONS_BY_ND_4_0",
-        ]
-    elif license_str == "REMIXABLE":
-        variants = [
-            "CREATIVE_COMMONS_BY_3_0",
-            "CREATIVE_COMMONS_BY_4_0",
-            "CREATIVE_COMMONS_0",
-        ]
-    elif license_str == "ALL_CC":
-        variants = [
-            "CREATIVE_COMMONS_BY_3_0",
-            "CREATIVE_COMMONS_BY_4_0",
-            "CREATIVE_COMMONS_BY_ND_3_0",
-            "CREATIVE_COMMONS_BY_ND_4_0",
-            "CREATIVE_COMMONS_0",
-        ]
-    else:
-        variants = None
-    if variants is not None:
-        q = Q(license__in=variants)
-    else:
-        q = Q(license__iexact=license_str)
+def filter_license(filters) -> Q:
+    q = Q()
+    if filters.license:
+        license_variant = filters.license
+        if license_variant == LicenseFilter.CREATIVE_COMMONS_BY:
+            variants = [
+                "CREATIVE_COMMONS_BY_3_0",
+                "CREATIVE_COMMONS_BY_4_0",
+            ]
+        elif license_variant == LicenseFilter.CREATIVE_COMMONS_BY_ND:
+            variants = [
+                "CREATIVE_COMMONS_BY_ND_3_0",
+                "CREATIVE_COMMONS_BY_ND_4_0",
+            ]
+        elif license_variant == LicenseFilter.REMIXABLE:
+            variants = [
+                "CREATIVE_COMMONS_BY_3_0",
+                "CREATIVE_COMMONS_BY_4_0",
+                "CREATIVE_COMMONS_0",
+            ]
+        elif license_variant == LicenseFilter.ALL_CC:
+            variants = [
+                "CREATIVE_COMMONS_BY_3_0",
+                "CREATIVE_COMMONS_BY_4_0",
+                "CREATIVE_COMMONS_BY_ND_3_0",
+                "CREATIVE_COMMONS_BY_ND_4_0",
+                "CREATIVE_COMMONS_0",
+            ]
+        else:
+            variants = None
+        if variants is not None:
+            q = Q(license__in=variants)
+        else:
+            q = Q(license__iexact=license_variant.value)
     return q
 
 

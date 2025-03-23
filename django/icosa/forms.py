@@ -247,9 +247,9 @@ class NewUserForm(forms.ModelForm):
         model = AssetOwner
 
         fields = [
+            "email",
             "url",
             "displayname",
-            "email",
         ]
 
 

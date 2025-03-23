@@ -151,7 +151,7 @@ def save_all_assets(
                 print(f"Saved Asset {asset.id}\t", end="\r")
             save_log.last_id = asset.id
             save_log.save(update_fields=["update_time", "last_id"])
-            time.sleep(1)
+            time.sleep(0.25)
         except Exception:
             save_log.finish_status = BulkSaveLog.FAILED
             save_log.finish_time = timezone.now()
