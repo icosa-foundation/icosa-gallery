@@ -90,9 +90,8 @@ class FormatAdmin(ImportExportModelAdmin, ExportActionMixin):
 class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "name",
-        "_thumbnail_image",
-        "url",
-        "owner",
+        "display_thumbnail",
+        "display_owner",
         "description",
         "visibility",
         "curated",
@@ -105,7 +104,7 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
         "name",
         "url",
         "tags",
-        "owner__displayname",
+        "display_owner",
         "description",
     )
     list_filter = (
@@ -156,24 +155,22 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
     display_preferred_viewer_format.short_description = "Preferred viewer format"
     display_preferred_viewer_format.allow_tags = True
 
-    def _thumbnail_image(self, obj):
-        html = ""
-
+    def display_thumbnail(self, obj):
+        html = f"{obj.url}"
         if obj.thumbnail:
-            html = f"""
-<a href="{obj.get_absolute_url()}">
-<img src="{obj.thumbnail.url}" width="150" loading="lazy">
-</a>
-            """
-        else:
-            html = f"""
-<a href="{obj.get_absolute_url()}">View on site</a>
-            """
-
+            html = f"<img src='{obj.thumbnail.url}' width='150' loading='lazy'><br>{html}"
+        html = f"<a href='{obj.get_absolute_url()}'>{html}</a>"
         return mark_safe(html)
+    display_thumbnail.short_description = "Thumbnail"
+    display_thumbnail.allow_tags = True
 
-    _thumbnail_image.short_description = "Thumbnail"
-    _thumbnail_image.allow_tags = True
+    def display_owner(self, obj):
+        html = "-"
+        if obj.owner:
+            change_url = reverse("admin:icosa_assetowner_change", args=(obj.owner.id,))
+            html = f"<a href='{change_url}'>{obj.owner.displayname}</a>"
+        return mark_safe(html)
+    display_owner.short_description = "Owner"
 
     search_fields = (
         "name",
@@ -216,8 +213,8 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
         "displayname",
         "email",
         "url",
-        "_asset_count",
-        "_django_user_link",
+        "display_asset_count",
+        "display_django_user",
     )
 
     search_fields = (
@@ -237,58 +234,43 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
         "merged_with",
     ]
 
-    def _asset_count(self, obj):
-        lister_url = reverse(
-            "admin:icosa_asset_changelist",)
-        #     kwargs={"owner__id__exact": obj.id}
-        # )
-        return mark_safe(f"""
-        <a href="{lister_url}">{obj.asset_set.count()}</a>
-        """)
-    _asset_count.short_description = "Assets"
-    _asset_count.admin_order_field = "asset_count"
-
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(
             asset_count=Count("asset")
         )
 
+    def display_asset_count(self, obj):
+        lister_url = f"{reverse('admin:icosa_asset_changelist')}?owner__id__exact={obj.id}"
+        return mark_safe(f"<a href='{lister_url}'>{obj.asset_set.count()}</a>")
+    display_asset_count.short_description = "Assets"
+    display_asset_count.admin_order_field = "asset_count"
 
-    def _django_user_link(self, obj):
+    def display_django_user(self, obj):
         html = "-"
         if obj.django_user:
             change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
-            html = f"""<a href="{change_url}">{obj.django_user}</a>"""
-
+            html = f"<a href="{change_url}">{obj.django_user}</a>"
         return mark_safe(html)
-
-    _django_user_link.short_description = "Django User"
-    _django_user_link.allow_tags = True
+    display_django_user.short_description = "Django User"
 
 
 @admin.register(MastheadSection)
 class MastheadSectionAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
-        "_thumbnail_image",
+        "display_thumbnail",
         "asset",
         "headline_text",
         "sub_text",
     )
 
-    def _thumbnail_image(self, obj):
-        html = ""
-
+    def display_thumbnail(self, obj):
         if obj.image:
-            html = f"""
-<img src="{obj.image.url}" width="150" loading="lazy">
-            """
+            html = f"<img src='{obj.image.url}' width='150' loading='lazy'>"
         else:
             html = ""
-
         return mark_safe(html)
-
-    _thumbnail_image.short_description = "Thumbnail"
-    _thumbnail_image.allow_tags = True
+    display_thumbnail.short_description = "Thumbnail"
+    display_thumbnail.allow_tags = True
 
 
 @admin.register(BulkSaveLog)
