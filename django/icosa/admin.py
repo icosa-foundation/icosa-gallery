@@ -249,7 +249,7 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
         html = "-"
         if obj.django_user:
             change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
-            html = f"<a href="{change_url}">{obj.django_user}</a>"
+            html = f"<a href='{change_url}'>{obj.django_user}</a>"
         return mark_safe(html)
     display_django_user.short_description = "Django User"
 
