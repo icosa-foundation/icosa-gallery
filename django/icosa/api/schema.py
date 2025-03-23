@@ -357,8 +357,8 @@ class FilterBase(Schema):
 
 
 class AssetFilters(FilterBase):
-    authorName: SkipJsonSchema[Optional[str]] = None
-    author_name: Optional[str] = None
+    authorName: Optional[str] = None
+    author_name: SkipJsonSchema[Optional[str]] = None
     license: Optional[LicenseFilter] = Field(default=None)
 
 
