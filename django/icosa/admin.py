@@ -1,8 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.contrib.auth.models import User
+from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+
+from icosa.management.commands.import_poly_assets import FORMAT_ROLE_CHOICES
 from icosa.models import (
     Asset,
     AssetOwner,
@@ -30,11 +33,12 @@ class ResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "id",
         "asset",
+        "format",
         "file",
         "contenttype",
     )
 
-    list_filter = ("contenttype",)
+    list_filter = ("contenttype", "format__format_type")
     search_fields = ("file",)
     raw_id_fields = [
         "asset",
@@ -135,7 +139,22 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
         "has_fbx",
         "last_reported_by",
         "last_reported_time",
+        "display_preferred_viewer_format",
     )
+
+    def display_preferred_viewer_format(self, obj):
+        if obj.preferred_viewer_format: # and obj.preferred_viewer_format.format:
+            try:
+                change_url = reverse("admin:icosa_format_change", args=(obj.preferred_viewer_format['format'].id,))
+                role_text = FORMAT_ROLE_CHOICES[obj.preferred_viewer_format['format'].role]
+                html = f"<a href='{change_url}'>{role_text}</a>"
+            except Exception as e:
+                html = f"{e.message}"
+        else:
+            html = "-"
+        return mark_safe(html)
+    display_preferred_viewer_format.short_description = "Preferred viewer format"
+    display_preferred_viewer_format.allow_tags = True
 
     def _thumbnail_image(self, obj):
         html = ""
@@ -197,6 +216,7 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
         "displayname",
         "email",
         "url",
+        "_asset_count",
         "_django_user_link",
     )
 
@@ -217,16 +237,28 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
         "merged_with",
     ]
 
+    def _asset_count(self, obj):
+        lister_url = reverse(
+            "admin:icosa_asset_changelist",)
+        #     kwargs={"owner__id__exact": obj.id}
+        # )
+        return mark_safe(f"""
+        <a href="{lister_url}">{obj.asset_set.count()}</a>
+        """)
+    _asset_count.short_description = "Assets"
+    _asset_count.admin_order_field = "asset_count"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            asset_count=Count("asset")
+        )
+
+
     def _django_user_link(self, obj):
         html = "-"
         if obj.django_user:
-            change_url = reverse(
-                "admin:auth_user_change",
-                args=(obj.django_user.id,),
-            )
-            html = f"""
-<a href="{change_url}">{obj.django_user}</a>
-"""
+            change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
+            html = f"""<a href="{change_url}">{obj.django_user}</a>"""
 
         return mark_safe(html)
 
