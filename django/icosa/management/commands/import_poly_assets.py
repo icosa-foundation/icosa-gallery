@@ -4,34 +4,76 @@ import secrets
 from datetime import datetime
 from pathlib import Path
 
+import requests
 from django.core.management.base import BaseCommand
+
+from django_project import settings
 from icosa.helpers.file import get_content_type, is_gltf2
 from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.storage import get_b2_bucket
 from icosa.models import (
     ASSET_STATE_COMPLETE,
-    CATEGORY_CHOICES,
-    FORMAT_ROLE_CHOICES,
+    CATEGORY_LABELS,
     Asset,
     Format,
     Resource,
     Tag,
-    User,
+    AssetOwner,
 )
 
 # IMPORT_SOURCE = "google_poly"
-IMPORT_SOURCE = "internet_archive"
+IMPORT_SOURCE = "internet_archive_extras"
 
-POLY_JSON_DIR = "polygone_data"
-ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
+# WARNING This is currently unsafe if set to True
+UPDATE_EXISTING = False
 
-FORMAT_ROLE_MAP = {x[1]: x[0] for x in FORMAT_ROLE_CHOICES}
+# This only works with genuine locally stored media
+# and needs rewriting if you are using remote storage (i.e. S3)
+CONVERT_AND_DOWNLOAD_THUMBNAILS = False
 
+# POLY_JSON_DIR = "polygone_data"
+# ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
+
+POLY_GLTF_JSON_PATH = "C:\\poly_megajson\\poly.google.com\\view\\gltf_overrides.json"
+POLY_MEGAJSON_PATH = "C:\\poly_megajson\\poly.google.com\\view\\all_data.jsonl"
+ASSETS_JSON_DIR = "C:\\Users\\andyb\\Documents\\polygone.art\\assets"
+
+FORMAT_ROLE_CHOICES = {
+    1: "Original OBJ File",
+    2: "Tilt File",
+    4: "Unknown GLTF File A",
+    6: "Original FBX File",
+    7: "Blocks File",
+    8: "USD File",
+    11: "HTML File",
+    12: "Original glTF File",
+    13: "TOUR CREATOR EXPERIENCE",
+    15: "JSON File",
+    16: "lullmodel File",
+    17: "SAND File A",
+    18: "GLB File",
+    19: "SAND File B",
+    20: "SANDC File",
+    21: "PB File",
+    22: "Unknown GLTF File B",
+    24: "Original Triangulated OBJ File",
+    25: "JPG BUGGY",
+    26: "USDZ File",
+    30: "Updated glTF File",
+    32: "Editor settings pb file",
+    35: "Unknown GLTF File C",
+    36: "Unknown GLB File A",
+    38: "Unknown GLB File B",
+    39: "TILT NATIVE glTF",
+    40: "USER SUPPLIED glTF"
+}
+
+FORMAT_ROLE_MAP = {x[1]: x[0] for x in FORMAT_ROLE_CHOICES.items()}
 
 VALID_TYPES = [x.replace(".", "").upper() for x in EXTENSION_ROLE_MAP.keys()]
 
-CATEGORY_REVERSE_MAP = dict([(x[1], x[0]) for x in CATEGORY_CHOICES])
+CATEGORY_REVERSE_MAP = dict([(x[1], x[0]) for x in CATEGORY_LABELS])
 
 # Only one of these should be enabled at any given time, but other than b2
 # access and slowdown, there is no harm to the data by enabling them both.
@@ -67,7 +109,7 @@ def get_json_from_b2(dir):
 
 
 def get_or_create_asset(directory, data, curated=False):
-    user, _ = User.objects.get_or_create(
+    owner, _ = AssetOwner.objects.get_or_create(
         url=data["authorId"],
         defaults={
             "password": secrets.token_bytes(16),
@@ -95,7 +137,7 @@ def get_or_create_asset(directory, data, curated=False):
             id=generate_snowflake(),
             imported_from=IMPORT_SOURCE,
             formats="",
-            owner=user,
+            owner=owner,
             description=data.get("description", None),
             visibility=data["visibility"],
             curated=curated,
@@ -192,10 +234,15 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
                 }
                 Resource.objects.create(**resource_data)
 
-
 def create_formats_from_archive_data(formats_json, asset):
     # done_thumbnail = False
     for format_json in formats_json:
+
+        # Not sure if this is a safe assumption for existing data so only run when only adding new assets
+        if not UPDATE_EXISTING:
+            if "root" in format_json and format_json["root"]["role"] == "Updated glTF File":
+                format_json["formatType"] = "GLTF2"
+
         format = Format.objects.create(
             asset=asset,
             format_type=format_json["formatType"],
@@ -302,7 +349,7 @@ class Command(BaseCommand):
             directories = set(os.listdir(ASSETS_JSON_DIR))
 
         print("Importing...", end="\r")
-        with open(os.path.join(POLY_JSON_DIR, "gltf2.json")) as g:
+        with open(POLY_GLTF_JSON_PATH, encoding='utf-8', errors='replace') as g:
             gltf2_data = json.load(g)
             # Loop through all entries in the big jsonl.
             #
@@ -310,7 +357,7 @@ class Command(BaseCommand):
             # an asset from the formats we find in there, then proceed to
             # create formats from the jsonl data.
 
-            with open("./all_data.jsonl", "r") as json_file:
+            with open(POLY_MEGAJSON_PATH, "r") as json_file:
                 for line in json_file:
                     archive_data = json.loads(line)
                     asset_id = archive_data["assetId"]
@@ -379,7 +426,9 @@ def handle_asset(
             archive_data,
             "curated" in scrape_data.get("tags", []),
         )
-        if asset_created:
+
+        if asset_created or UPDATE_EXISTING:
+
             tag_set = set(archive_data["tags"] + scrape_data["tags"])
             icosa_tags = []
             for tag in tag_set:
@@ -398,6 +447,8 @@ def handle_asset(
                     asset,
                 )
 
+            if UPDATE_EXISTING:
+                asset.format_set.all().delete()
             # Create formats from the archive data, for
             # posterity.
             create_formats_from_archive_data(
@@ -408,6 +459,21 @@ def handle_asset(
             # Re-save the asset to trigger model
             # validation.
             asset.save(update_timestamps=False)
+        
+        if CONVERT_AND_DOWNLOAD_THUMBNAILS:
+            thumbnail_url = archive_data["thumbnail_url"]
+            root = settings.MEDIA_ROOT
+            if thumbnail_url:
+                thumbnail_dir = os.path.join(root, str(asset_id))
+                thumbnail_path = os.path.join(thumbnail_dir, "thumbnail.png")
+                if not os.path.exists(thumbnail_path):
+                    os.makedirs(thumbnail_dir, exist_ok=True)
+                    response = requests.get(thumbnail_url)
+                    with open(thumbnail_path, "wb") as f:
+                        f.write(response.content)
+                asset.thumbnail = thumbnail_path[len(root):]
+                asset.save(update_timestamps=False)
+
     else:
         with open("./invalid_assets.log", "a") as log:
             log.write(f"{asset_id}\n")
