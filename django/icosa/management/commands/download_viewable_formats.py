@@ -1,13 +1,14 @@
 import json
+import urllib
 
 from django.core.management.base import BaseCommand
+
 from django_project import settings
 from icosa.models import (
     Asset,
     Format
 )
 import os
-import re
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
@@ -29,14 +30,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         root = os.path.abspath(os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT))
+
+        skip = False
         for asset in Asset.objects.all():
 
             # Skip assets that are owned by stores with too many assets
             if asset.owner.displayname in [
                 "Sora Cycling",
-                "Jasmine Roberts",
                 "Verge Sport",
-                "Endless Prowl",
                 "arman apelo",
                 "Rovikov"
             ]:
@@ -46,12 +47,18 @@ class Command(BaseCommand):
             root_resource = preferred["resource"]
             root_format = Format.objects.get(root_resource=root_resource)
             resources = list(root_format.resource_set.all())
+
+            # TODO Grab the GLTF1 format and use it later if the preferred GLTF uses the "technqiues" extension
+            # unknown_gltf_q = Q(format__role=4) | Q(format__role=35)
+            # fallback_format = asset.resource_set.filter(unknown_gltf_q).first()
+            # print(dir(fallback_format))
+            # fallback_resource = fallback_format.resource
+            # fallback_resources = list(root_format.resource_set.all())
+
             # Root root_resource is not included in the root_resource set
             resources.insert(0, root_resource)
-            # if os.path.exists(resource_full_path) root_format.format_type:
-            #     print(f"{root_resource.format.format_type}")
 
-            # TODO this requires a thumbnail url field
+            # TODO this requires a thumbnail url field which we don't currently have
             # thumbnail_url = asset.thumbnail_url
             # if thumbnail_url:
             #     thumbnail_dir = os.path.join(root, str(asset.url))
@@ -65,26 +72,38 @@ class Command(BaseCommand):
 
             is_root = True
             for root_resource in resources:
+
                 resource_url = root_resource.external_url
-                if not resource_url:
-                    continue
+
+                if not resource_url: continue
+
                 if is_root:
                     resource_base, resource_filename = resource_url.rsplit("/", 1)
                 else:
                     resource_filename = resource_url[len(resource_base) + 1:]
 
-                resource_filename = re.sub(r'[<>:"|?*]', '-', resource_filename)
-                resource_full_path = os.path.join(root, str(asset.url), resource_filename)
-                resource_full_path = resource_full_path.replace("\\", "/")
+                resource_rel_path = os.path.join(str(asset.url), resource_filename)
+                resource_rel_path = resource_rel_path.replace("/", "\\")
+                resource_rel_path = urllib.parse.unquote(resource_rel_path)
+
+                # TODO See later note about where this breaks the relative path calculation
+                # There are relative paths that start with c:\ or similar
+                # which will break os.path.join on Windows
+                resource_rel_path = resource_rel_path.replace(":", "%3A")
+                resource_full_path = os.path.join(root, resource_rel_path)
                 resource_dir = os.path.dirname(resource_full_path)
-                # print(f"Downloading {resource_full_path} to {resource_dir} for {asset.url} {asset.name} ({asset.owner.displayname})")
 
                 if not os.path.exists(resource_full_path):
                     os.makedirs(resource_dir, exist_ok=True)
-                    print("Downloading", resource_url, "to", resource_full_path)
-                    response = session.get(resource_url, allow_redirects=True)
-                    with open(resource_full_path, "wb") as f:
-                        f.write(response.content)
+                    old_path = resource_full_path.replace("\\media\\", "\\media_old\\")
+                    if os.path.exists(old_path):
+                        os.rename(old_path, resource_full_path)
+                        print(f"Restored {resource_full_path}")
+                    else:
+                        print("Downloading", resource_url, "to", resource_full_path)
+                        response = session.get(resource_url, allow_redirects=True)
+                        with open(resource_full_path, "wb") as f:
+                            f.write(response.content)
 
                 if is_root and resource_filename.endswith(".gltf"):
                     invalid = False
@@ -101,20 +120,28 @@ class Command(BaseCommand):
                         if not is_v2:
                             print(f"Found GLTF v1 instead of v2: {resource_full_path[len(root):]}")
 
+                    extensions = gltf_json.get("extensions", None)
+                    if extensions is not None and extensions.get("GOOGLE_tilt_brush_material", None) is not None:
+                        print(f"Has GOOGLE_tilt_brush_material: {resource_full_path[len(root):]}")
+                    if extensions is not None and extensions.get("GOOGLE_tilt_brush_techniques", None) is not None:
+                        print(f"Has techniques: {resource_full_path[len(root):]}")
+                        skip = True
+                        break
 
                 # Canonicalize the path
                 resource_full_path = os.path.abspath(resource_full_path)
                 if not resource_full_path.startswith(root):
                     print(f"Invalid path: {resource_full_path}")
-                    print(f"Root: {root}")
-                    assert False
 
+                # TODO This is buggy for assets where we replaced drive letters with %3A earlier
                 relative_path = resource_full_path[len(root):]
                 root_resource.file = relative_path
+
+                # Do we want to clear external_url?
                 # root_resource.external_url = None
                 root_resource.save()
-                # print(f"asset: {asset.url}, file: {root_resource.file}, url: {root_resource.external_url}")
                 # Only the first root_resource is the root root_resource
                 is_root = False
-
             asset.save(update_timestamps=False)
+            if skip:
+                continue
