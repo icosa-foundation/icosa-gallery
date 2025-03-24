@@ -161,8 +161,10 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
             html = f"<img src='{obj.thumbnail.url}' width='150' loading='lazy'><br>{html}"
         html = f"<a href='{obj.get_absolute_url()}'>{html}</a>"
         return mark_safe(html)
-    display_thumbnail.short_description = "Thumbnail"
+    display_thumbnail.short_description = "View"
     display_thumbnail.allow_tags = True
+    display_thumbnail.admin_order_field = "url"
+
 
     def display_owner(self, obj):
         html = "-"
