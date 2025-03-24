@@ -6,7 +6,6 @@ from pathlib import Path
 
 import requests
 from django.core.management.base import BaseCommand
-
 from django_project import settings
 from icosa.helpers.file import get_content_type, is_gltf2
 from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
@@ -16,10 +15,10 @@ from icosa.models import (
     ASSET_STATE_COMPLETE,
     CATEGORY_LABELS,
     Asset,
+    AssetOwner,
     Format,
     Resource,
     Tag,
-    AssetOwner,
 )
 
 # IMPORT_SOURCE = "google_poly"
@@ -66,7 +65,7 @@ FORMAT_ROLE_CHOICES = {
     36: "Unknown GLB File A",
     38: "Unknown GLB File B",
     39: "TILT NATIVE glTF",
-    40: "USER SUPPLIED glTF"
+    40: "USER SUPPLIED glTF",
 }
 
 FORMAT_ROLE_MAP = {x[1]: x[0] for x in FORMAT_ROLE_CHOICES.items()}
@@ -144,12 +143,8 @@ def get_or_create_asset(directory, data, curated=False):
             polyid=directory,
             polydata=data,
             license=license,
-            create_time=datetime.fromisoformat(
-                data["createTime"].replace("Z", "+00:00")
-            ),
-            update_time=datetime.fromisoformat(
-                data["updateTime"].replace("Z", "+00:00")
-            ),
+            create_time=datetime.fromisoformat(data["createTime"].replace("Z", "+00:00")),
+            update_time=datetime.fromisoformat(data["updateTime"].replace("Z", "+00:00")),
             transform=data.get("transform", None),
             camera=data.get("camera", None),
             presentation_params=presentation_params,
@@ -234,10 +229,10 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
                 }
                 Resource.objects.create(**resource_data)
 
+
 def create_formats_from_archive_data(formats_json, asset):
     # done_thumbnail = False
     for format_json in formats_json:
-
         # Not sure if this is a safe assumption for existing data so only run when only adding new assets
         if not UPDATE_EXISTING:
             if "root" in format_json and format_json["root"]["role"] == "Updated glTF File":
@@ -349,7 +344,7 @@ class Command(BaseCommand):
             directories = set(os.listdir(ASSETS_JSON_DIR))
 
         print("Importing...", end="\r")
-        with open(POLY_GLTF_JSON_PATH, encoding='utf-8', errors='replace') as g:
+        with open(POLY_GLTF_JSON_PATH, encoding="utf-8", errors="replace") as g:
             gltf2_data = json.load(g)
             # Loop through all entries in the big jsonl.
             #
@@ -394,9 +389,7 @@ class Command(BaseCommand):
                         full_path = os.path.join(ASSETS_JSON_DIR, asset_id, "data.json")
                         with open(full_path) as f:
                             scrape_data = json.load(f)
-                            scrape_formats = dedup_scrape_formats(
-                                scrape_data["formats"], asset_id
-                            )
+                            scrape_formats = dedup_scrape_formats(scrape_data["formats"], asset_id)
                         handle_asset(
                             asset_id,
                             archive_data,
@@ -428,7 +421,6 @@ def handle_asset(
         )
 
         if asset_created or UPDATE_EXISTING:
-
             tag_set = set(archive_data["tags"] + scrape_data["tags"])
             icosa_tags = []
             for tag in tag_set:
@@ -459,7 +451,7 @@ def handle_asset(
             # Re-save the asset to trigger model
             # validation.
             asset.save(update_timestamps=False)
-        
+
         if CONVERT_AND_DOWNLOAD_THUMBNAILS:
             thumbnail_url = archive_data["thumbnail_url"]
             root = settings.MEDIA_ROOT
@@ -471,7 +463,7 @@ def handle_asset(
                     response = requests.get(thumbnail_url)
                     with open(thumbnail_path, "wb") as f:
                         f.write(response.content)
-                asset.thumbnail = thumbnail_path[len(root):]
+                asset.thumbnail = thumbnail_path[len(root) :]
                 asset.save(update_timestamps=False)
 
     else:
