@@ -34,9 +34,12 @@ CONVERT_AND_DOWNLOAD_THUMBNAILS = False
 # POLY_JSON_DIR = "polygone_data"
 # ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
 
-POLY_GLTF_JSON_PATH = "C:\\poly_megajson\\poly.google.com\\view\\gltf_overrides.json"
-POLY_MEGAJSON_PATH = "C:\\poly_megajson\\poly.google.com\\view\\all_data.jsonl"
-ASSETS_JSON_DIR = "C:\\Users\\andyb\\Documents\\polygone.art\\assets"
+# POLY_GLTF_JSON_PATH = "C:\\poly_megajson\\poly.google.com\\view\\gltf_overrides.json"
+# POLY_MEGAJSON_PATH = "C:\\poly_megajson\\poly.google.com\\view\\all_data.jsonl"
+# ASSETS_JSON_DIR = "C:\\Users\\andyb\\Documents\\polygone.art\\assets"
+POLY_GLTF_JSON_PATH = "gltf2.json"
+POLY_MEGAJSON_PATH = "all_data.jsonl"
+ASSETS_JSON_DIR = "polygone_data/assets"
 
 FORMAT_ROLE_CHOICES = {
     1: "Original OBJ File",
