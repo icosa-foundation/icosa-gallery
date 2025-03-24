@@ -1,8 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.contrib.auth.models import User
+from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+
+from icosa.management.commands.import_poly_assets import FORMAT_ROLE_CHOICES
 from icosa.models import (
     Asset,
     AssetOwner,
@@ -30,11 +33,12 @@ class ResourceAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "id",
         "asset",
+        "format",
         "file",
         "contenttype",
     )
 
-    list_filter = ("contenttype",)
+    list_filter = ("contenttype", "format__format_type")
     search_fields = ("file",)
     raw_id_fields = [
         "asset",
@@ -86,23 +90,21 @@ class FormatAdmin(ImportExportModelAdmin, ExportActionMixin):
 class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
         "name",
-        "_thumbnail_image",
-        "url",
-        "owner",
+        "display_thumbnail",
+        "display_owner",
         "description",
         "visibility",
         "curated",
         "rank",
         "is_viewer_compatible",
         "category",
-        "license",
         "state",
     )
     search_fields = (
         "name",
         "url",
         "tags",
-        "owner__displayname",
+        "display_owner",
         "description",
     )
     list_filter = (
@@ -136,26 +138,41 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
         "has_fbx",
         "last_reported_by",
         "last_reported_time",
+        "display_preferred_viewer_format",
     )
 
-    def _thumbnail_image(self, obj):
-        html = ""
-
-        if obj.thumbnail:
-            html = f"""
-<a href="{obj.get_absolute_url()}">
-<img src="{obj.thumbnail.url}" width="150" loading="lazy">
-</a>
-            """
+    def display_preferred_viewer_format(self, obj):
+        if obj.preferred_viewer_format: # and obj.preferred_viewer_format.format:
+            try:
+                change_url = reverse("admin:icosa_format_change", args=(obj.preferred_viewer_format['format'].id,))
+                role_text = FORMAT_ROLE_CHOICES[obj.preferred_viewer_format['format'].role]
+                html = f"<a href='{change_url}'>{role_text}</a>"
+            except Exception as e:
+                html = f"{e.message}"
         else:
-            html = f"""
-<a href="{obj.get_absolute_url()}">View on site</a>
-            """
-
+            html = "-"
         return mark_safe(html)
+    display_preferred_viewer_format.short_description = "Preferred viewer format"
+    display_preferred_viewer_format.allow_tags = True
 
-    _thumbnail_image.short_description = "Thumbnail"
-    _thumbnail_image.allow_tags = True
+    def display_thumbnail(self, obj):
+        html = f"{obj.url}"
+        if obj.thumbnail:
+            html = f"<img src='{obj.thumbnail.url}' width='150' loading='lazy'><br>{html}"
+        html = f"<a href='{obj.get_absolute_url()}'>{html}</a>"
+        return mark_safe(html)
+    display_thumbnail.short_description = "View"
+    display_thumbnail.allow_tags = True
+    display_thumbnail.admin_order_field = "url"
+
+
+    def display_owner(self, obj):
+        html = "-"
+        if obj.owner:
+            change_url = reverse("admin:icosa_assetowner_change", args=(obj.owner.id,))
+            html = f"<a href='{change_url}'>{obj.owner.displayname}</a>"
+        return mark_safe(html)
+    display_owner.short_description = "Owner"
 
     search_fields = (
         "name",
@@ -198,7 +215,8 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
         "displayname",
         "email",
         "url",
-        "_django_user_link",
+        "display_asset_count",
+        "display_django_user",
     )
 
     search_fields = (
@@ -218,46 +236,43 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
         "merged_with",
     ]
 
-    def _django_user_link(self, obj):
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            asset_count=Count("asset")
+        )
+
+    def display_asset_count(self, obj):
+        lister_url = f"{reverse('admin:icosa_asset_changelist')}?owner__id__exact={obj.id}"
+        return mark_safe(f"<a href='{lister_url}'>{obj.asset_set.count()}</a>")
+    display_asset_count.short_description = "Assets"
+    display_asset_count.admin_order_field = "asset_count"
+
+    def display_django_user(self, obj):
         html = "-"
         if obj.django_user:
-            change_url = reverse(
-                "admin:auth_user_change",
-                args=(obj.django_user.id,),
-            )
-            html = f"""
-<a href="{change_url}">{obj.django_user}</a>
-"""
-
+            change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
+            html = f"<a href='{change_url}'>{obj.django_user}</a>"
         return mark_safe(html)
-
-    _django_user_link.short_description = "Django User"
-    _django_user_link.allow_tags = True
+    display_django_user.short_description = "Django User"
 
 
 @admin.register(MastheadSection)
 class MastheadSectionAdmin(ImportExportModelAdmin, ExportActionMixin):
     list_display = (
-        "_thumbnail_image",
+        "display_thumbnail",
         "asset",
         "headline_text",
         "sub_text",
     )
 
-    def _thumbnail_image(self, obj):
-        html = ""
-
+    def display_thumbnail(self, obj):
         if obj.image:
-            html = f"""
-<img src="{obj.image.url}" width="150" loading="lazy">
-            """
+            html = f"<img src='{obj.image.url}' width='150' loading='lazy'>"
         else:
             html = ""
-
         return mark_safe(html)
-
-    _thumbnail_image.short_description = "Thumbnail"
-    _thumbnail_image.allow_tags = True
+    display_thumbnail.short_description = "Thumbnail"
+    display_thumbnail.allow_tags = True
 
 
 @admin.register(BulkSaveLog)
