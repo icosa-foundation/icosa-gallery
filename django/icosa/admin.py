@@ -95,6 +95,7 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
         "rank",
         "is_viewer_compatible",
         "category",
+        "license",
         "state",
     )
     search_fields = (
