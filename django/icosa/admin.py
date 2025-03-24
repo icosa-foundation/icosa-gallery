@@ -170,16 +170,20 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
     )
 
     def display_preferred_viewer_format(self, obj):
-        if obj.preferred_viewer_format: # and obj.preferred_viewer_format.format:
+        if obj.preferred_viewer_format:  # and obj.preferred_viewer_format.format:
             try:
-                change_url = reverse("admin:icosa_format_change", args=(obj.preferred_viewer_format['format'].id,))
-                role_text = FORMAT_ROLE_CHOICES[obj.preferred_viewer_format['format'].role]
+                change_url = reverse(
+                    "admin:icosa_format_change",
+                    args=(obj.preferred_viewer_format["format"].id,),
+                )
+                role_text = FORMAT_ROLE_CHOICES[obj.preferred_viewer_format["format"].role]
                 html = f"<a href='{change_url}'>{role_text}</a>"
             except Exception as e:
                 html = f"{e.message}"
         else:
             html = "-"
         return mark_safe(html)
+
     display_preferred_viewer_format.short_description = "Preferred viewer format"
     display_preferred_viewer_format.allow_tags = True
 
@@ -189,10 +193,10 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
             html = f"<img src='{obj.thumbnail.url}' width='150' loading='lazy'><br>{html}"
         html = f"<a href='{obj.get_absolute_url()}'>{html}</a>"
         return mark_safe(html)
+
     display_thumbnail.short_description = "View"
     display_thumbnail.allow_tags = True
     display_thumbnail.admin_order_field = "url"
-
 
     def display_owner(self, obj):
         html = "-"
@@ -200,6 +204,7 @@ class AssetAdmin(ImportExportModelAdmin, ExportActionMixin):
             change_url = reverse("admin:icosa_assetowner_change", args=(obj.owner.id,))
             html = f"<a href='{change_url}'>{obj.owner.displayname}</a>"
         return mark_safe(html)
+
     display_owner.short_description = "Owner"
 
     search_fields = (
@@ -265,13 +270,12 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
     ]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(
-            asset_count=Count("asset")
-        )
+        return super().get_queryset(request).annotate(asset_count=Count("asset"))
 
     def display_asset_count(self, obj):
         lister_url = f"{reverse('admin:icosa_asset_changelist')}?owner__id__exact={obj.id}"
         return mark_safe(f"<a href='{lister_url}'>{obj.asset_set.count()}</a>")
+
     display_asset_count.short_description = "Assets"
     display_asset_count.admin_order_field = "asset_count"
 
@@ -281,6 +285,7 @@ class AssetOwnerAdmin(ImportExportModelAdmin, ExportActionMixin):
             change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
             html = f"<a href='{change_url}'>{obj.django_user}</a>"
         return mark_safe(html)
+
     display_django_user.short_description = "Django User"
 
 
@@ -299,6 +304,7 @@ class MastheadSectionAdmin(ImportExportModelAdmin, ExportActionMixin):
         else:
             html = ""
         return mark_safe(html)
+
     display_thumbnail.short_description = "Thumbnail"
     display_thumbnail.allow_tags = True
 
