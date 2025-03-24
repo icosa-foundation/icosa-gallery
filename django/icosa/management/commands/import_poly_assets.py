@@ -465,6 +465,9 @@ def handle_asset(
                         f.write(response.content)
                 asset.thumbnail = thumbnail_path[len(root) :]
                 asset.save(update_timestamps=False)
+        else:
+            if not settings.LOCAL_MEDIA_STORAGE:
+                asset.thumbnail = f"poly/{asset_id}/thumbnail.png"
 
     else:
         with open("./invalid_assets.log", "a") as log:
