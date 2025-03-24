@@ -4,8 +4,6 @@ from django.contrib.auth.models import User
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-
-from icosa.management.commands.import_poly_assets import FORMAT_ROLE_CHOICES
 from icosa.models import (
     Asset,
     AssetOwner,
@@ -21,6 +19,36 @@ from icosa.models import (
     Tag,
 )
 from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+
+FORMAT_ROLE_CHOICES = {
+    1: "Original OBJ File",
+    2: "Tilt File",
+    4: "Unknown GLTF File A",
+    6: "Original FBX File",
+    7: "Blocks File",
+    8: "USD File",
+    11: "HTML File",
+    12: "Original glTF File",
+    13: "TOUR CREATOR EXPERIENCE",
+    15: "JSON File",
+    16: "lullmodel File",
+    17: "SAND File A",
+    18: "GLB File",
+    19: "SAND File B",
+    20: "SANDC File",
+    21: "PB File",
+    22: "Unknown GLTF File B",
+    24: "Original Triangulated OBJ File",
+    25: "JPG BUGGY",
+    26: "USDZ File",
+    30: "Updated glTF File",
+    32: "Editor settings pb file",
+    35: "Unknown GLTF File C",
+    36: "Unknown GLB File A",
+    38: "Unknown GLB File B",
+    39: "TILT NATIVE glTF",
+    40: "USER SUPPLIED glTF",
+}
 
 
 @admin.register(Tag)
