@@ -2,7 +2,12 @@ from constance import config
 from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User as DjangoUser
-from django.forms.widgets import ClearableFileInput, EmailInput, PasswordInput
+from django.forms.widgets import (
+    ClearableFileInput,
+    EmailInput,
+    HiddenInput,
+    PasswordInput,
+)
 from django.utils.translation import gettext_lazy as _
 from icosa.models import (
     V3_CC_LICENSE_MAP,
@@ -28,6 +33,11 @@ class CustomImageInput(ClearableFileInput):
     initial_text = _("Currently")
     input_text = _("New thumbnail")
     template_name = "widgets/custom_clearable_image_input.html"
+
+
+class CameraButton(HiddenInput):
+    input_type = "hidden"
+    template_name = "widgets/camera_input.html"
 
 
 class AssetUploadForm(forms.Form):
@@ -117,6 +127,7 @@ class AssetEditForm(forms.ModelForm):
         "thumbnail",
         "thumbnail_override",
         "thumbnail_override_data",
+        "camera",
         "category",
         "visibility",
         "tags",
@@ -133,11 +144,13 @@ class AssetEditForm(forms.ModelForm):
             "thumbnail",
             "category",
             "tags",
+            "camera",
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(
                 url="tag-autocomplete",
             ),
+            "camera": CameraButton(),
         }
 
 

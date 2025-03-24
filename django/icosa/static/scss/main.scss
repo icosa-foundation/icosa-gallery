@@ -98,6 +98,10 @@ code {
   &.btn-xs {
     font-size: 0.62rem;
   }
+
+  &.btn-lc {
+    text-transform: lowercase;
+  }
 }
 
 .errorlist {
