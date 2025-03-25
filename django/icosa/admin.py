@@ -18,7 +18,7 @@ from icosa.models import (
     Resource,
     Tag,
 )
-from import_export.admin import ExportActionMixin, ExportMixin
+from import_export.admin import ExportMixin
 
 FORMAT_ROLE_CHOICES = {
     1: "Original OBJ File",
@@ -52,12 +52,12 @@ FORMAT_ROLE_CHOICES = {
 
 
 @admin.register(Tag)
-class TagAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class TagAdmin(ExportMixin, admin.ModelAdmin):
     search_fields = ("name",)
 
 
 @admin.register(Resource)
-class ResourceAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class ResourceAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
         "id",
         "asset",
@@ -97,7 +97,7 @@ class ResourceInline(admin.TabularInline):
 
 
 @admin.register(Format)
-class FormatAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class FormatAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
         "asset",
         "format_type",
@@ -115,7 +115,7 @@ class FormatAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
 
 
 @admin.register(Asset)
-class AssetAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class AssetAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
         "name",
         "display_thumbnail",
@@ -224,7 +224,7 @@ class AssetAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
 
 
 @admin.register(DeviceCode)
-class DeviceCodeAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class DeviceCodeAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
         "user",
         "devicecode",
@@ -243,7 +243,7 @@ class UserAssetLikeInline(admin.TabularInline):
 
 
 @admin.register(AssetOwner)
-class AssetOwnerAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
         "displayname",
         "email",
@@ -290,7 +290,7 @@ class AssetOwnerAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
 
 
 @admin.register(MastheadSection)
-class MastheadSectionAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class MastheadSectionAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
         "display_thumbnail",
         "asset",
@@ -323,7 +323,7 @@ class BulkSaveLogAdmin(admin.ModelAdmin):
 
 
 @admin.register(HiddenMediaFileLog)
-class HiddenMediaFileLogAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class HiddenMediaFileLogAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
         "original_asset_id",
         "file_name",
@@ -347,17 +347,17 @@ class HiddenMediaFileLogAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
 
 
 @admin.register(Oauth2Client)
-class Oauth2ClientAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class Oauth2ClientAdmin(ExportMixin, admin.ModelAdmin):
     pass
 
 
 @admin.register(Oauth2Code)
-class Oauth2CodeAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class Oauth2CodeAdmin(ExportMixin, admin.ModelAdmin):
     pass
 
 
 @admin.register(Oauth2Token)
-class Oauth2TokenAdmin(ExportActionMixin, ExportMixin, admin.ModelAdmin):
+class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
     pass
 
 
