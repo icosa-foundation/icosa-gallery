@@ -114,6 +114,7 @@ Usage:
 
         overwrite_prompt = ""
         if any([overwrite_email, overwrite_displayname, overwrite_description]):
+            overwrite_prompt += "Will also:"
             if overwrite_email:
                 overwrite_prompt += f"\nChange email from {destination_owner.email} to {source_owner.email}"
             if overwrite_description:
@@ -130,8 +131,8 @@ Usage:
 {likes.count()} Likes
 {reports.count()} "Last reported" attributions on Assets
 from {source_repr} to {destination_repr}
-\nand will expire any active device codes.
 {overwrite_prompt}
+\nand will expire any active device codes.
 \nDo you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
         ).lower()
 
@@ -157,7 +158,7 @@ from {source_repr} to {destination_repr}
             print("\nQuitting without doing anything.")
             return
 
-        print("Doing the following:")
+        print("\nDoing the following:")
         print_actions(
             source_repr,
             source_owner,
