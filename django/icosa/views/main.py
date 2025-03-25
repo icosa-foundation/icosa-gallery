@@ -62,6 +62,7 @@ MASTHEAD_TOP_RANK = 10000
 MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
 
+
 def get_default_q():
     try:
         if config.HIDE_REPORTED_ASSETS:
@@ -140,11 +141,7 @@ def landing_page(
     template = "main/home.html"
 
     # TODO(james): filter out assets with no formats
-    assets = (
-        assets.exclude(license__isnull=True)
-        .exclude(license=ALL_RIGHTS_RESERVED)
-        .select_related("owner")
-    )
+    assets = assets.exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).select_related("owner")
 
     try:
         page_number = int(request.GET.get("page", 1))
@@ -326,11 +323,7 @@ def uploads(request):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    asset_objs = (
-        Asset.objects.filter(owner=user)
-        .exclude(state=ASSET_STATE_BARE)
-        .order_by("-create_time")
-    )
+    asset_objs = Asset.objects.filter(owner=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
@@ -547,9 +540,7 @@ def edit_asset(request, asset_url):
         if form.is_valid():
             asset = form.save(commit=False)
             override_thumbnail = request.POST.get("thumbnail_override", False)
-            thumbnail_override_image = request.POST.get(
-                "thumbnail_override_image", None
-            )
+            thumbnail_override_image = request.POST.get("thumbnail_override_image", None)
             if override_thumbnail and thumbnail_override_image:
                 image_file = b64_to_img(thumbnail_override_image)
                 asset.thumbnail = image_file
@@ -820,10 +811,7 @@ def search(request):
         q &= Q(search_text__icontains=query)
 
     asset_objs = (
-        Asset.objects.filter(q)
-        .exclude(license__isnull=True)
-        .exclude(license=ALL_RIGHTS_RESERVED)
-        .order_by("-rank")
+        Asset.objects.filter(q).exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).order_by("-rank")
     )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
