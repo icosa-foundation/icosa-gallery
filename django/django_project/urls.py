@@ -179,9 +179,7 @@ else:
     urlpatterns.append(
         path("api/v1/", api.urls),
     )
-if (
-    getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)
-) and "debug_toolbar" in settings.INSTALLED_APPS:
+if (getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)) and "debug_toolbar" in settings.INSTALLED_APPS:
     urlpatterns = [
         path("__debug__/", include("debug_toolbar.urls")),
     ] + urlpatterns

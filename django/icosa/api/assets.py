@@ -355,11 +355,7 @@ def filter_assets(
     q &= filter_zip_archive_url(filters)
 
     if config.HIDE_REPORTED_ASSETS:
-        ex_q = (
-            Q(license__isnull=True)
-            | Q(license=ALL_RIGHTS_RESERVED)
-            | Q(last_reported_time__isnull=False)
-        )
+        ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(last_reported_time__isnull=False)
     else:
         ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
 
