@@ -21,24 +21,27 @@ class TagAutocomplete(autocomplete.Select2QuerySetView):
         if user.is_anonymous:
             return no_tags
 
-        try:
-            owner = AssetOwner.objects.get(django_user=user)
-        except AssetOwner.DoesNotExist:
-            return no_tags
+        if user.is_superuser:
+            qs = Tag.objects.all()
+        else:
+            try:
+                owner = AssetOwner.objects.get(django_user=user)
+            except AssetOwner.DoesNotExist:
+                return no_tags
 
-        asset_tags = list(
-            set(
-                Asset.objects.filter(owner=owner).values_list(
-                    "tags",
-                    flat=True,
+            asset_tags = list(
+                set(
+                    Asset.objects.filter(owner=owner).values_list(
+                        "tags",
+                        flat=True,
+                    )
                 )
             )
-        )
 
-        if not asset_tags:
-            return no_tags
+            if not asset_tags:
+                return no_tags
 
-        qs = Tag.objects.filter(pk__in=asset_tags)
+            qs = Tag.objects.filter(pk__in=asset_tags)
         if self.q:
             qs = qs.filter(name__istartswith=self.q)
         return qs

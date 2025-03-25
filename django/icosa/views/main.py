@@ -525,7 +525,11 @@ def asset_status(request, asset_url):
 def asset_edit(request, asset_url):
     template = "main/asset_edit.html"
     owner = AssetOwner.from_django_user(request.user)
-    asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+    is_superuser = request.user.is_superuser
+    if is_superuser:
+        asset = get_object_or_404(Asset, url=asset_url)
+    else:
+        asset = get_object_or_404(Asset, owner=owner, url=asset_url)
     # We need to disconnect the editable state from the form during validation.
     # Without this, if the form contains errors, some fields that need
     # correction cannot be edited.
@@ -544,7 +548,10 @@ def asset_edit(request, asset_url):
                 asset.thumbnail = image_file
             form.save_m2m()
             asset.save()
-            return HttpResponseRedirect(reverse("uploads"))
+            if is_superuser:
+                return HttpResponseRedirect(reverse("asset_view", kwargs={"asset_url": asset.url}))
+            else:
+                return HttpResponseRedirect(reverse("uploads"))
         else:
             print(form.errors)
     else:

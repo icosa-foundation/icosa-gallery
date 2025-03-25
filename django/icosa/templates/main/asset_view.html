@@ -45,7 +45,7 @@
                 <p></p>
                 {% if asset.owner == request_owner or request.user.is_superuser %}
                     <a class="btn btn-primary btn-sm" href="{% url 'asset_edit' asset_url=asset.url %}">
-                        {% fa_icon "solid" "gear" %} Edit settings
+                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser %} (as superuser){% endif %}
                     </a>
                 {% endif %}
                 {% if downloadable_formats %}
