@@ -544,7 +544,8 @@ def edit_asset(request, asset_url):
             if override_thumbnail and thumbnail_override_image:
                 image_file = b64_to_img(thumbnail_override_image)
                 asset.thumbnail = image_file
-            asset.save(update_timestamps=False)
+            form.save_m2m()
+            asset.save()
             return HttpResponseRedirect(reverse("uploads"))
         else:
             print(form.errors)
