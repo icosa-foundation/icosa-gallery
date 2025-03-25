@@ -524,8 +524,8 @@ def asset_status(request, asset_url):
 
 @login_required
 @never_cache
-def edit_asset(request, asset_url):
-    template = "main/edit_asset.html"
+def asset_edit(request, asset_url):
+    template = "main/asset_edit.html"
     owner = AssetOwner.from_django_user(request.user)
     asset = get_object_or_404(Asset, owner=owner, url=asset_url)
     # We need to disconnect the editable state from the form during validation.
@@ -588,8 +588,8 @@ def delete_asset(request, asset_url):
 
 
 @login_required
-def publish_asset(request, asset_url):
-    template = "main/edit_asset.html"
+def asset_publish(request, asset_url):
+    template = "main/asset_edit.html"
     asset = get_object_or_404(Asset, url=asset_url)
     if request.user != asset.owner.django_user:
         raise Http404()

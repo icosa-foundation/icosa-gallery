@@ -133,8 +133,8 @@ urlpatterns = [
     ),
     path(
         "edit/<str:asset_url>",
-        main_views.edit_asset,
-        name="edit_asset",
+        main_views.asset_edit,
+        name="asset_edit",
     ),
     path(
         "delete/<str:asset_url>",
@@ -143,8 +143,8 @@ urlpatterns = [
     ),
     path(
         "publish/<str:asset_url>",
-        main_views.publish_asset,
-        name="publish_asset",
+        main_views.asset_publish,
+        name="asset_publish",
     ),
     path("search", main_views.search, name="search"),
     path("settings", main_views.user_settings, name="settings"),

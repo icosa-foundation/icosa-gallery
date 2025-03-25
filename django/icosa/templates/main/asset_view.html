@@ -44,7 +44,7 @@
                 </p>
                 <p></p>
                 {% if user == request_user %}
-                    <a class="btn btn-primary btn-sm" href="{% url 'edit_asset' asset_url=asset.url %}">
+                    <a class="btn btn-primary btn-sm" href="{% url 'asset_edit' asset_url=asset.url %}">
                         {% fa_icon "solid" "gear" %} Edit settings
                     </a>
                 {% endif %}

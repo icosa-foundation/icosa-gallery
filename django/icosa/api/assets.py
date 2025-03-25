@@ -60,7 +60,7 @@ IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 def get_publish_url(request, asset: Asset) -> str:
     url = request.build_absolute_uri(
         reverse(
-            "publish_asset",
+            "asset_publish",
             kwargs={
                 "asset_url": asset.url,
             },
