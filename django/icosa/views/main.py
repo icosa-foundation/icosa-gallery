@@ -410,8 +410,7 @@ def asset_view(request, asset_url):
     format_override = request.GET.get("forceformat", "")
 
     context = {
-        "request_user": AssetOwner.from_django_user(request.user),
-        "user": asset.owner,
+        "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
@@ -480,8 +479,7 @@ def asset_downloads(request, asset_url):
     check_user_can_view_asset(request.user, asset)
 
     context = {
-        "request_user": AssetOwner.from_django_user(request.user),
-        "user": asset.owner,
+        "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
         "downloadable_formats": asset.get_all_downloadable_formats(),
         "page_title": f"Download {asset.name}",
@@ -603,7 +601,6 @@ def asset_publish(request, asset_url):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
-        "user": asset.owner,
         "asset": asset,
         "form": form,
         "page_title": f"Publish {asset.name}",

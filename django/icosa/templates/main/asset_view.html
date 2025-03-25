@@ -28,7 +28,7 @@
             {% endif %}
             <div class="sketch-info-details">
                 <h2>
-                    {{ asset.name }}{% if user == request_user %}{% if asset.visibility == "PRIVATE" %} <span class="pill pill--danger">private</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span class="pill pill--warning">unlisted</span>{% endif %}{% endif %}
+                    {{ asset.name }}{% if asset.owner == request_owner %}{% if asset.visibility == "PRIVATE" %} <span class="pill pill--danger">private</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span class="pill pill--warning">unlisted</span>{% endif %}{% endif %}
                     {% like_button request asset %}
                 </h2>
                 {% if asset.owner %}
@@ -43,7 +43,7 @@
                     {{ asset.get_license_icons }} {{ asset.get_license_display|default_if_none:" All rights reserved" }}
                 </p>
                 <p></p>
-                {% if user == request_user %}
+                {% if asset.owner == request_owner or request.user.is_superuser %}
                     <a class="btn btn-primary btn-sm" href="{% url 'asset_edit' asset_url=asset.url %}">
                         {% fa_icon "solid" "gear" %} Edit settings
                     </a>
