@@ -39,14 +39,6 @@ def print_actions(
         print(f"\nChange displayname from {destination_owner.displayname} to {source_owner.displayname}")
 
 
-def finish_merge(source_owner, destination_owner):
-    if source_owner.django_user:
-        source_owner.django_user.active = False
-        source_owner.django_user.save()
-    source_owner.merged_with = destination_owner
-    source_owner.save()
-
-
 class Command(BaseCommand):
     help = """Extracts format json into concrete models and converts to poly
     format."""
@@ -184,7 +176,20 @@ from {source_repr} to {destination_repr}
         reports.update(last_reported_by=destination_owner)
         device_codes.delete()
 
-        finish_merge(source_owner, destination_owner)
+        if overwrite_email and source_owner.email:
+            destination_owner.email = source_owner.email
+        if overwrite_description and source_owner.description:
+            destination_owner.description = source_owner.description
+        if overwrite_displayname and source_owner.displayname:
+            destination_owner.displayname = source_owner.displayname
+        destination_owner.save()
+
+        if source_owner.django_user:
+            source_owner.django_user.active = False
+            source_owner.django_user.save()
+        source_owner.merged_with = destination_owner
+        source_owner.save()
+
         change_url_source = reverse(
             "admin:icosa_assetowner_change",
             args=(source_owner.id,),
