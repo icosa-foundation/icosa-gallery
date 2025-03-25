@@ -262,6 +262,7 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         "imported",
         ("email", admin.EmptyFieldListFilter),
         ("django_user", admin.EmptyFieldListFilter),
+        "is_claimed",
     )
     inlines = (UserAssetLikeInline,)
     raw_id_fields = [
