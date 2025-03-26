@@ -414,6 +414,8 @@ def upload_blocks_format(
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
+    asset.state = ASSET_STATE_UPLOADING
+    asset.save(update_timestamps=False)
     if files is None or len(files) > 1:
         raise HttpError(422, "Must upload exactly one file.")
     file = files[0]
