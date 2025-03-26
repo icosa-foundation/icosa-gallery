@@ -38,6 +38,7 @@ from .schema import (
     AssetFilters,
     AssetFinalizeData,
     AssetSchema,
+    AssetStateSchema,
     Order,
     SortDirection,
     UploadJobSchemaOut,
@@ -237,6 +238,21 @@ def finalize_asset(
     queue_finalize_asset(asset.url, data)
 
     return get_publish_url(request, asset)
+
+
+@router.get(
+    "/{str:asset}/upload_state",
+    response={200: AssetStateSchema},
+    **COMMON_ROUTER_SETTINGS,
+    include_in_schema=False,  # TODO, should this be advertised?
+)
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+def asset_upload_state(
+    request,
+    asset: str,
+):
+    asset = get_asset_by_url(request, asset)
+    return asset
 
 
 @router.patch(

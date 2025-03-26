@@ -276,6 +276,12 @@ class AssetSchema(ModelSchema):
     #     return params
 
 
+class AssetStateSchema(ModelSchema):
+    class Config:
+        model = Asset
+        model_fields = ["state"]
+
+
 class AssetPatchData(Schema):
     name: Optional[str]
     url: Optional[str]
