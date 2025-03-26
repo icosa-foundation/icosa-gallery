@@ -20,12 +20,7 @@ from icosa.helpers.format_roles import (
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
     TILT_FORMAT,
 )
-from icosa.models import (
-    Asset,
-    AssetOwner,
-    Format,
-    Resource,
-)
+from icosa.models import ASSET_STATE_UPLOADING, Asset, AssetOwner, Format, Resource
 from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
@@ -163,11 +158,7 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
     # if this is a gltf1 and we have a converted file on disk, swap out the
     # uploaded file with the one we have on disk and change the format_type
     # to gltf2.
-    if (
-        format_type == "GLTF"
-        and gltf_to_convert is not None
-        and os.path.exists(gltf_to_convert)
-    ):
+    if format_type == "GLTF" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
         format_type = "GLB"
         name = f"{os.path.splitext(name)[0]}.glb"
         with open(gltf_to_convert, "rb") as f:
@@ -195,18 +186,9 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
         # Horrendous check for supposedly compatible subfiles. can
         # definitely be improved with parsing, but is it necessary?
         if (
-            (
-                mainfile.filetype == "GLTF2"
-                and (subfile.filetype == "BIN" or subfile.filetype == "IMAGE")
-            )
-            or (
-                mainfile.filetype == "OBJ"
-                and (subfile.filetype == "MTL" or subfile.filetype == "IMAGE")
-            )
-            or (
-                mainfile.filetype == "FBX"
-                and (subfile.filetype == "FBM" or subfile.filetype == "IMAGE")
-            )
+            (mainfile.filetype == "GLTF2" and (subfile.filetype == "BIN" or subfile.filetype == "IMAGE"))
+            or (mainfile.filetype == "OBJ" and (subfile.filetype == "MTL" or subfile.filetype == "IMAGE"))
+            or (mainfile.filetype == "FBX" and (subfile.filetype == "FBM" or subfile.filetype == "IMAGE"))
         ):
             sub_resource_data = {
                 "file": subfile.file,
@@ -220,14 +202,9 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
 def add_thumbnail_to_asset(thumbnail, asset):
     extension = thumbnail.name.split(".")[-1].lower()
     thumbnail_upload_details = validate_file(thumbnail, extension)
-    if (
-        thumbnail_upload_details is not None
-        and thumbnail_upload_details.filetype == "IMAGE"
-    ):
+    if thumbnail_upload_details is not None and thumbnail_upload_details.filetype == "IMAGE":
         asset.thumbnail = thumbnail_upload_details.file
-        asset.thumbnail_contenttype = get_content_type(
-            thumbnail_upload_details.file.name
-        )
+        asset.thumbnail_contenttype = get_content_type(thumbnail_upload_details.file.name)
         asset.save(update_timestamps=False)
 
 
