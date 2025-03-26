@@ -22,6 +22,7 @@ from icosa.helpers.format_roles import (
 )
 from icosa.models import (
     ASSET_STATE_COMPLETE,
+    ASSET_STATE_UPLOADING,
     Asset,
     AssetOwner,
     Format,
@@ -112,6 +113,8 @@ def upload_api_asset(
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
+    asset.state = ASSET_STATE_UPLOADING
+    asset.save(update_timestamps=False)
     if files is None:
         files = []
     upload_set = process_files(files)
