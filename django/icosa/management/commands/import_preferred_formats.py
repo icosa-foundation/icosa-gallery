@@ -31,7 +31,8 @@ class Command(BaseCommand):
                 json_line = json.loads(line)
                 asset_url = json_line["asset_url"]
                 print(f"Importing {asset_url}")
-            asset = Asset.objects.get(url=asset_url)
+
+                asset = Asset.objects.get(url=asset_url)
 
                 # Skip if is_viewer_compatible is true; we either don't need to
                 # operate on this file, or we already have in a previous run.
