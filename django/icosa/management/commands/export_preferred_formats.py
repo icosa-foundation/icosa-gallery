@@ -21,8 +21,8 @@ class Command(BaseCommand):
                 ]:
                     continue
 
-                # Assume that the presence of a preferred viewer format means
-                # that we have already processed this asset
+                # Only process assets who have a preferred_viewer_format_override
+                # TODO: Refactor this to use the new preferred_viewer_format_override
                 preferred_qs = asset.format_set.filter(is_preferred_for_viewer=True)
 
                 if len(preferred_qs) == 0:
@@ -37,7 +37,7 @@ class Command(BaseCommand):
                 json_line = {
                     "asset_url": asset.url,
                     "role": preferred.role,
-                    "format_type": preferred.role,
+                    "format_type": preferred.format_type,
                     "root_resource": str(preferred.root_resource.file),
                     "resources": [],
                 }
