@@ -418,6 +418,15 @@ class Asset(models.Model):
         default="BARE",
         db_default="BARE",
     )
+    preferred_viewer_format_override = models.OneToOneField(
+        "Format",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="preferred_format_override_for",
+        # limit_choices_to cannot have a reference to self. We must limit the
+        # choices another way.
+    )
 
     # Denorm fields
     triangle_count = models.PositiveIntegerField(default=0)

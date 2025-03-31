@@ -152,6 +152,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "category",
         "state",
         "last_reported_time",
+        "preferred_viewer_format_override",
     )
     readonly_fields = (
         "rank",
@@ -220,7 +221,10 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
 
     filter_horizontal = ("tags",)
     inlines = (FormatInline,)
-    raw_id_fields = ["owner"]
+    raw_id_fields = [
+        "owner",
+        "preferred_viewer_format_override",
+    ]
 
 
 @admin.register(DeviceCode)
