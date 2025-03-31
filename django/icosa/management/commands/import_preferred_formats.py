@@ -1,5 +1,6 @@
 import json
 import os
+import urllib.parse
 
 from django.core.management.base import BaseCommand
 from icosa.models import Asset, Resource
@@ -43,8 +44,13 @@ class Command(BaseCommand):
                     try:
                         resource_obj = Resource.objects.get(format=format, external_url__endswith=filename)
                     except (Resource.DoesNotExist, Resource.MultipleObjectsReturned):
-                        print(f"Resource not found for format {format.pk} and filename {filename}")
-                        continue
+                        try:  # Nested try/except bad
+                            resource_obj = Resource.objects.get(
+                                format=format, external_url__endswith=urllib.parse.quote(filename)
+                            )
+                        except (Resource.DoesNotExist, Resource.MultipleObjectsReturned):
+                            print(f"Resource not found for format {format.pk} and filename {filename}")
+                            continue
                     resource_obj.file = resource_file_name
                     resource_obj.save()
                 asset.preferred_viewer_format_override = format
