@@ -24,7 +24,6 @@ session = requests.Session()
 session.mount('http://', adapter)
 session.mount('https://', adapter)
 
-old_media_root = os.path.abspath(os.path.join(settings.BASE_DIR, "_edia"))
 media_root = os.path.abspath(os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT))
 
 
@@ -80,7 +79,11 @@ class Command(BaseCommand):
             resource_dir = os.path.dirname(path)
             os.makedirs(resource_dir, exist_ok=True)
             print("Downloading", url, "to", path)
-            response = session.get(url, allow_redirects=True)
+            try:
+                response = session.get(url, allow_redirects=True)
+            except Exception as e:
+                print(f"Failed to download {url}: {e}")
+                return None
             with open(path, "wb") as f:
                 f.write(response.content)
         return path
@@ -147,6 +150,7 @@ class Command(BaseCommand):
             root_resource = asset._preferred_viewer_format["resource"]
             root_base_path, root_filename = root_resource.external_url.rsplit("/", 1)
             root_full_path = self.download_if_needed(root_resource, root_filename, forced=False)
+            if root_full_path is None: continue
             gltf_status = self.check_gltf(root_full_path)
 
             print(gltf_status)
@@ -163,6 +167,9 @@ class Command(BaseCommand):
                     root_base_path, root_filename = root_resource.external_url.rsplit("/", 1)
                     print(f"Trying {format_candidate.role} {root_base_path} // {root_filename}")
                     root_full_path = self.download_if_needed(root_resource, root_filename, forced=True)
+                    if root_full_path is None:
+                        print(f"Skipping failed download")
+                        continue
                     gltf_status = self.check_gltf(root_full_path)
                     print(gltf_status)
                     if not gltf_status["is_valid"] or gltf_status["uses_techniques"]:
@@ -176,7 +183,8 @@ class Command(BaseCommand):
                 if not found_alternate:
                     print(f"No valid GLTF format found: {asset.url}")
                     print()
-                    os.unlink(root_full_path)
+                    if os.path.exists(root_full_path):
+                        os.unlink(root_full_path)
                     continue
 
             if nonstandard_preferred_format:
@@ -191,6 +199,9 @@ class Command(BaseCommand):
                 sub_rel_path = sub_resource.external_url[len(root_base_path) + 1:]
                 force_redownload = nonstandard_preferred_format and sub_rel_path.endswith(".bin")
                 sub_full_path = self.download_if_needed(sub_resource, sub_rel_path, forced=force_redownload)
+                if sub_full_path is None:
+                    print(f"Skipping failed download")
+                    continue
                 self.finalize_resource(sub_full_path, sub_resource)
 
             for format in asset.format_set.all():
