@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 json_line = {
                     'asset_url': asset.url,
                     'role': preferred.role,
-                    'format_type': preferred.role,
+                    'format_type': preferred.format_type,
                     'root_resource': str(preferred.root_resource.file),
                     'resources': [],
                 }
