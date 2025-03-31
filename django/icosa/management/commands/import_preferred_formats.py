@@ -25,7 +25,6 @@ JSONL_PATH = "all_data.jsonl"
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         with open(JSONL_PATH, "r") as json_file:
             for line in json_file:
