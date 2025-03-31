@@ -27,8 +27,8 @@ class Command(BaseCommand):
 
                 # Skip if is_viewer_compatible is true; we either don't need to
                 # operate on this file, or we already have in a previous run.
-                if asset.is_viewer_compatible:
-                    continue
+                # if asset.is_viewer_compatible:
+                #     continue
 
                 print(f"Importing {asset_url}")
 
