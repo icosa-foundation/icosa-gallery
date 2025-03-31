@@ -32,7 +32,6 @@ class Command(BaseCommand):
                 for resource_file_name in json_line["resources"]:
                     resource_file_name = resource_file_name.replace("\\", "/")
                     filename = os.path.basename(resource_file_name.replace("\\", "/"))
-                    print(filename)
                     # Find the resource object we want to operate on based on
                     # the filename we have in the jsonl.
                     # Intentional hard fail if not found.
