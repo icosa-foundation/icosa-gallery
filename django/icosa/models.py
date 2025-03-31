@@ -586,7 +586,10 @@ class Asset(models.Model):
 
     @property
     def preferred_viewer_format(self):
-        format = self._preferred_viewer_format
+        if self.preferred_viewer_format_override is not None:
+            format = self.preferred_viewer_format_override
+        else:
+            format = self._preferred_viewer_format
         if format is None:
             return None
         if format["url"] is None:
