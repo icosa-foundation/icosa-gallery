@@ -4,7 +4,7 @@ import os
 from django.core.management.base import BaseCommand
 from icosa.models import Asset
 
-JSONL_PATH = "all_data.jsonl"
+JSONL_PATH = "preferred_formats.jsonl"
 
 
 class Command(BaseCommand):
