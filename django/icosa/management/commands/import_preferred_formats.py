@@ -15,7 +15,11 @@ class Command(BaseCommand):
                 asset_url = json_line["asset_url"]
 
                 # Intentional hard fail if not found.
-                asset = Asset.objects.get(url=asset_url)
+                try:
+                    asset = Asset.objects.get(url=asset_url)
+                except (Asset.DoesNotExist, Asset.MultipleObjectsReturned):
+                    print(f"Cannot get asset {asset_url}")
+                    continue
 
                 # Skip if is_viewer_compatible is true; we either don't need to
                 # operate on this file, or we already have in a previous run.
