@@ -4,8 +4,6 @@ from django.contrib.auth.models import User
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-
-from icosa.management.commands.import_poly_assets import FORMAT_ROLE_CHOICES
 from icosa.models import (
     Asset,
     AssetOwner,
@@ -173,10 +171,13 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
     )
 
     def display_preferred_viewer_format(self, obj):
-        if obj.preferred_viewer_format: # and obj.preferred_viewer_format.format:
+        if obj.preferred_viewer_format:  # and obj.preferred_viewer_format.format:
             try:
-                change_url = reverse("admin:icosa_format_change", args=(obj.preferred_viewer_format['format'].id,))
-                role_text = FORMAT_ROLE_CHOICES[obj.preferred_viewer_format['format'].role]
+                change_url = reverse(
+                    "admin:icosa_format_change",
+                    args=(obj.preferred_viewer_format["format"].id,),
+                )
+                role_text = FORMAT_ROLE_CHOICES[obj.preferred_viewer_format["format"].role]
                 html = f"<a href='{change_url}'>{role_text}</a>"
             except Exception as e:
                 html = f"{e.message}"
@@ -195,7 +196,6 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
     display_thumbnail.short_description = "View"
     display_thumbnail.allow_tags = True
     display_thumbnail.admin_order_field = "url"
-
 
     def display_owner(self, obj):
         html = "-"
