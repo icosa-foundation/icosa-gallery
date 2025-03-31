@@ -43,6 +43,7 @@ class Command(BaseCommand):
                         return
                     resource_obj.file = resource_file_name
                     resource_obj.save()
+                asset.preferred_viewer_format_override = format
                 format.save()
                 # We are saving this to correctly set is_viewer_compatible.
                 asset.save(update_timestamps=False)
