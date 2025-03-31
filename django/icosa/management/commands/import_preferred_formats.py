@@ -38,7 +38,7 @@ class Command(BaseCommand):
                     # Intentional hard fail if not found.
                     try:
                         resource_obj = Resource.objects.get(format=format, external_url__endswith=filename)
-                    except Resource.DoesNotExist:
+                    except (Resource.DoesNotExist, Resource.MultipleObjectsReturned):
                         print(f"Resource not found for format {format.pk} and filename {filename}")
                         continue
                     resource_obj.file = resource_file_name
