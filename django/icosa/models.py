@@ -604,7 +604,6 @@ class Asset(models.Model):
 
     @property
     def has_cors_allowed_preferred_format(self):
-        return True
         preferred_format = self.preferred_viewer_format
         if not preferred_format:
             return False
