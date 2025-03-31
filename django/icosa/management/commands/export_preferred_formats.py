@@ -3,9 +3,7 @@ import os
 
 from django.core.management.base import BaseCommand
 from django_project import settings
-from icosa.models import (
-    Asset,
-)
+from icosa.models import Asset
 
 media_root = os.path.abspath(os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT))
 
@@ -15,10 +13,16 @@ class Command(BaseCommand):
         with open("preferred_formats.jsonl", "w") as f:
             for asset in Asset.objects.all():
                 # Skip assets that are owned by stores with too many assets
-                if asset.owner.displayname in ["Sora Cycling", "Verge Sport", "arman apelo", "Rovikov"]:
+                if asset.owner.displayname in [
+                    "Sora Cycling",
+                    "Verge Sport",
+                    "arman apelo",
+                    "Rovikov",
+                ]:
                     continue
 
-                # Assume that the presence of a preferred viewer format means that we have already processed this asset
+                # Assume that the presence of a preferred viewer format means
+                # that we have already processed this asset
                 preferred_qs = asset.format_set.filter(is_preferred_for_viewer=True)
 
                 if len(preferred_qs) == 0:
