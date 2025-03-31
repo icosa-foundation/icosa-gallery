@@ -276,6 +276,12 @@ class AssetSchema(ModelSchema):
     #     return params
 
 
+class AssetStateSchema(ModelSchema):
+    class Config:
+        model = Asset
+        model_fields = ["state"]
+
+
 class AssetPatchData(Schema):
     name: Optional[str]
     url: Optional[str]
@@ -329,9 +335,7 @@ class OembedOut(Schema):
 class FilterBase(Schema):
     category: Optional[Category] = Field(default=None, example="ANIMALS")
     curated: bool = Field(default=False)
-    format: Optional[List[FormatFilter]] = Field(
-        default=None, description="Filter by format"
-    )
+    format: Optional[List[FormatFilter]] = Field(default=None, description="Filter by format")
     keywords: Optional[str] = Field(default=None)
     name: Optional[str] = Field(default=None)
     description: Optional[str] = Field(default=None)
@@ -347,9 +351,7 @@ class FilterBase(Schema):
         # ],
         default=None,
     )
-    order_by: SkipJsonSchema[Optional[Order]] = Field(
-        default=None
-    )  # For backwards compatibility
+    order_by: SkipJsonSchema[Optional[Order]] = Field(default=None)  # For backwards compatibility
     maxComplexity: Optional[Complexity] = Field(default=None)
     triangleCountMin: Optional[int] = None
     triangleCountMax: Optional[int] = None

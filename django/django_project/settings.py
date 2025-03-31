@@ -80,6 +80,9 @@ if (
     AWS_STORAGE_BUCKET_NAME = DJANGO_STORAGE_BUCKET_NAME
     AWS_S3_REGION_NAME = DJANGO_STORAGE_REGION_NAME
     AWS_S3_ENDPOINT_URL = DJANGO_STORAGE_URL
+    # NOTE: This setting removes all auth, effectively allowing full public access to
+    # all media. If we want authenticated media, we will need a workaround.
+    AWS_QUERYSTRING_AUTH = False
     if DJANGO_STORAGE_CUSTOM_DOMAIN:
         AWS_S3_CUSTOM_DOMAIN = DJANGO_STORAGE_CUSTOM_DOMAIN
     # Special case for Backblaze B2, which doesn't support `x-amz-checksum-*`
@@ -97,11 +100,13 @@ if (
 
         MEDIA_ROOT = None
         MEDIA_URL = "/"  # unused with django-storages
+        LOCAL_MEDIA_STORAGE = False
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
     MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
     MEDIA_URL = "/media/"
     DJANGO_STORAGE_MEDIA_ROOT = None
+    LOCAL_MEDIA_STORAGE = True
 
 STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 

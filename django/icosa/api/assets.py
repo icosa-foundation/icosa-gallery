@@ -38,6 +38,7 @@ from .schema import (
     AssetFilters,
     AssetFinalizeData,
     AssetSchema,
+    AssetStateSchema,
     Order,
     SortDirection,
     UploadJobSchemaOut,
@@ -60,7 +61,7 @@ IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 def get_publish_url(request, asset: Asset) -> str:
     url = request.build_absolute_uri(
         reverse(
-            "publish_asset",
+            "asset_publish",
             kwargs={
                 "asset_url": asset.url,
             },
@@ -239,6 +240,21 @@ def finalize_asset(
     return get_publish_url(request, asset)
 
 
+@router.get(
+    "/{str:asset}/upload_state",
+    response={200: AssetStateSchema},
+    **COMMON_ROUTER_SETTINGS,
+    include_in_schema=False,  # TODO, should this be advertised?
+)
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+def asset_upload_state(
+    request,
+    asset: str,
+):
+    asset = get_asset_by_url(request, asset)
+    return asset
+
+
 @router.patch(
     "/{str:asset}/unpublish",
     auth=AuthBearer(),
@@ -355,11 +371,7 @@ def filter_assets(
     q &= filter_zip_archive_url(filters)
 
     if config.HIDE_REPORTED_ASSETS:
-        ex_q = (
-            Q(license__isnull=True)
-            | Q(license=ALL_RIGHTS_RESERVED)
-            | Q(last_reported_time__isnull=False)
-        )
+        ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(last_reported_time__isnull=False)
     else:
         ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
 

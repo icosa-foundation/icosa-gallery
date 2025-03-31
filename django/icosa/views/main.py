@@ -62,6 +62,7 @@ MASTHEAD_TOP_RANK = 10000
 MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
 
+
 def get_default_q():
     try:
         if config.HIDE_REPORTED_ASSETS:
@@ -140,11 +141,7 @@ def landing_page(
     template = "main/home.html"
 
     # TODO(james): filter out assets with no formats
-    assets = (
-        assets.exclude(license__isnull=True)
-        .exclude(license=ALL_RIGHTS_RESERVED)
-        .select_related("owner")
-    )
+    assets = assets.exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).select_related("owner")
 
     try:
         page_number = int(request.GET.get("page", 1))
@@ -326,11 +323,7 @@ def uploads(request):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    asset_objs = (
-        Asset.objects.filter(owner=user)
-        .exclude(state=ASSET_STATE_BARE)
-        .order_by("-create_time")
-    )
+    asset_objs = Asset.objects.filter(owner=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
@@ -417,8 +410,7 @@ def asset_view(request, asset_url):
     format_override = request.GET.get("forceformat", "")
 
     context = {
-        "request_user": AssetOwner.from_django_user(request.user),
-        "user": asset.owner,
+        "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
@@ -487,8 +479,7 @@ def asset_downloads(request, asset_url):
     check_user_can_view_asset(request.user, asset)
 
     context = {
-        "request_user": AssetOwner.from_django_user(request.user),
-        "user": asset.owner,
+        "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
         "downloadable_formats": asset.get_all_downloadable_formats(),
         "page_title": f"Download {asset.name}",
@@ -531,10 +522,14 @@ def asset_status(request, asset_url):
 
 @login_required
 @never_cache
-def edit_asset(request, asset_url):
-    template = "main/edit_asset.html"
+def asset_edit(request, asset_url):
+    template = "main/asset_edit.html"
     owner = AssetOwner.from_django_user(request.user)
-    asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+    is_superuser = request.user.is_superuser
+    if is_superuser:
+        asset = get_object_or_404(Asset, url=asset_url)
+    else:
+        asset = get_object_or_404(Asset, owner=owner, url=asset_url)
     # We need to disconnect the editable state from the form during validation.
     # Without this, if the form contains errors, some fields that need
     # correction cannot be edited.
@@ -547,14 +542,16 @@ def edit_asset(request, asset_url):
         if form.is_valid():
             asset = form.save(commit=False)
             override_thumbnail = request.POST.get("thumbnail_override", False)
-            thumbnail_override_image = request.POST.get(
-                "thumbnail_override_image", None
-            )
+            thumbnail_override_image = request.POST.get("thumbnail_override_image", None)
             if override_thumbnail and thumbnail_override_image:
                 image_file = b64_to_img(thumbnail_override_image)
                 asset.thumbnail = image_file
-            asset.save(update_timestamps=False)
-            return HttpResponseRedirect(reverse("uploads"))
+            form.save_m2m()
+            asset.save()
+            if is_superuser:
+                return HttpResponseRedirect(reverse("asset_view", kwargs={"asset_url": asset.url}))
+            else:
+                return HttpResponseRedirect(reverse("uploads"))
         else:
             print(form.errors)
     else:
@@ -596,8 +593,8 @@ def delete_asset(request, asset_url):
 
 
 @login_required
-def publish_asset(request, asset_url):
-    template = "main/edit_asset.html"
+def asset_publish(request, asset_url):
+    template = "main/asset_edit.html"
     asset = get_object_or_404(Asset, url=asset_url)
     if request.user != asset.owner.django_user:
         raise Http404()
@@ -611,7 +608,6 @@ def publish_asset(request, asset_url):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
-        "user": asset.owner,
         "asset": asset,
         "form": form,
         "page_title": f"Publish {asset.name}",
@@ -820,10 +816,7 @@ def search(request):
         q &= Q(search_text__icontains=query)
 
     asset_objs = (
-        Asset.objects.filter(q)
-        .exclude(license__isnull=True)
-        .exclude(license=ALL_RIGHTS_RESERVED)
-        .order_by("-rank")
+        Asset.objects.filter(q).exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).order_by("-rank")
     )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")

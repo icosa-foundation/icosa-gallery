@@ -5,7 +5,19 @@ from icosa.helpers import YES
 from icosa.models import Asset, AssetOwner, DeviceCode, OwnerAssetLike
 
 
-def print_actions(assets, likes, reports):
+def print_actions(
+    source_repr,
+    source_owner,
+    destination_repr,
+    destination_owner,
+    assets,
+    likes,
+    reports,
+    overwrite_email,
+    overwrite_description,
+    overwrite_displayname,
+):
+    print(f"\nMove the following from {source_repr} to {destination_repr}:")
     if len(assets):
         print("Assets:")
         for asset in assets:
@@ -19,12 +31,12 @@ def print_actions(assets, likes, reports):
         for report in reports:
             print(f"\t{report} asset id: {report.id}")
 
-
-def finish_merge(source_owner, destination_owner):
-    source_owner.django_user.active = False
-    source_owner.django_user.save()
-    source_owner.merged_with = destination_owner
-    source_owner.save()
+    if overwrite_email:
+        print(f"\nChange email from {destination_owner.email} to {source_owner.email}")
+    if overwrite_description:
+        print(f"\nChange description from {destination_owner.description} to {source_owner.description}")
+    if overwrite_displayname:
+        print(f"\nChange displayname from {destination_owner.displayname} to {source_owner.displayname}")
 
 
 class Command(BaseCommand):
@@ -35,18 +47,24 @@ class Command(BaseCommand):
         parser.add_argument("--sourceid", action="store", type=str)
         parser.add_argument("--destinationid", action="store", type=str)
         parser.add_argument(
-            "--non-interactive",
+            "--overwrite-email",
             action="store_true",
-            help="""
-Don't prompt. Assume `yes` to moving assets and marking as merged. Useful when
-running as a script or as a result of user confirmation elsewhere.
-            """,
+        )
+        parser.add_argument(
+            "--overwrite-displayname",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--overwrite-description",
+            action="store_true",
         )
 
     def handle(self, *args, **options):
         source_id = options["sourceid"]
         destination_id = options["destinationid"]
-        is_interactive = not options["non_interactive"]
+        overwrite_email = options["overwrite_email"]
+        overwrite_displayname = options["overwrite_displayname"]
+        overwrite_description = options["overwrite_description"]
 
         if source_id is None or destination_id is None:
             print(
@@ -71,49 +89,108 @@ Usage:
         source_repr = f"`{source_owner.displayname}` (id: {source_owner.id})"
         destination_repr = f"`{destination_owner.displayname}` (id: {destination_owner.id})"
 
+        # Hard fail if we are overwriting with blank values
+        if any([overwrite_email, overwrite_displayname, overwrite_description]):
+            if overwrite_email and not source_owner.email:
+                print(f"Error: --overwrite_email was set, but {source_owner} email is blank. Unset this to continue.")
+                return
+            if overwrite_description and not source_owner.description:
+                print(
+                    f"Error: --overwrite_description was set, but {source_owner} description is blank. Unset this to continue."
+                )
+                return
+            if overwrite_displayname and not source_owner.displayname:
+                print(
+                    f"Error: --overwrite_displayname was set, but {source_owner} displayname is blank. Unset this to continue."
+                )
+                return
+
         assets = Asset.objects.filter(owner=source_owner)
         likes = OwnerAssetLike.objects.filter(user=source_owner)
         reports = Asset.objects.filter(last_reported_by=source_owner)
         device_codes = DeviceCode.objects.filter(user=source_owner)
 
         action = None
-        if not assets and not likes and not reports:
-            print(f"{source_repr} doesn't own any Assets, Likes or Reports.")
-            finish_merge(source_owner, destination_owner)
-            print("\nDone")
-            return
 
-        elif is_interactive:
-            action = input(
-                f"""Will move:
+        overwrite_prompt = ""
+        if any([overwrite_email, overwrite_displayname, overwrite_description]):
+            overwrite_prompt += "Will also:"
+            if overwrite_email:
+                overwrite_prompt += f"\nChange email from {destination_owner.email} to {source_owner.email}"
+            if overwrite_description:
+                overwrite_prompt += (
+                    f"\nChange description from {destination_owner.description} to {source_owner.description}"
+                )
+            if overwrite_displayname:
+                overwrite_prompt += (
+                    f"\nChange displayname from {destination_owner.displayname} to {source_owner.displayname}"
+                )
+        action = input(
+            f"""Will move:
 \n{assets.count()} Assets
 {likes.count()} Likes
 {reports.count()} "Last reported" attributions on Assets
 from {source_repr} to {destination_repr}
+{overwrite_prompt}
 \nand will expire any active device codes.
-Do you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
-            ).lower()
+\nDo you want to continue? [(y)es,(n)o,(l)ist objects] [n] """
+        ).lower()
 
         do_work = False
-        if not is_interactive or action in YES:
+        if action in YES:
             do_work = True
         if action == "l":
-            print("The following objects would be moved:")
-            print_actions(assets, likes, reports)
+            print("The following objects would be done:")
+            print_actions(
+                source_repr,
+                source_owner,
+                destination_repr,
+                destination_owner,
+                assets,
+                likes,
+                reports,
+                overwrite_email,
+                overwrite_description,
+                overwrite_displayname,
+            )
 
         if not do_work:
             print("\nQuitting without doing anything.")
             return
 
-        print(f"\nMoving the following from {source_repr} to {destination_repr}:")
-        print_actions(assets, likes, reports)
+        print("\nDoing the following:")
+        print_actions(
+            source_repr,
+            source_owner,
+            destination_repr,
+            destination_owner,
+            assets,
+            likes,
+            reports,
+            overwrite_email,
+            overwrite_description,
+            overwrite_displayname,
+        )
 
         assets.update(owner=destination_owner)
         likes.update(user=destination_owner)
         reports.update(last_reported_by=destination_owner)
         device_codes.delete()
 
-        finish_merge(source_owner, destination_owner)
+        if overwrite_email and source_owner.email:
+            destination_owner.email = source_owner.email
+        if overwrite_description and source_owner.description:
+            destination_owner.description = source_owner.description
+        if overwrite_displayname and source_owner.displayname:
+            destination_owner.displayname = source_owner.displayname
+        destination_owner.save()
+
+        if source_owner.django_user:
+            source_owner.django_user.active = False
+            source_owner.django_user.save()
+        source_owner.merged_with = destination_owner
+        source_owner.save()
+
         change_url_source = reverse(
             "admin:icosa_assetowner_change",
             args=(source_owner.id,),

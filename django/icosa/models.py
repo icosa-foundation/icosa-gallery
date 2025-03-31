@@ -88,9 +88,7 @@ V3_TO_V4_UPGRADE_MAP = {
 
 ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED"
 RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
-CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES] + [
-    x[0] for x in V4_CC_LICENSE_CHOICES
-]
+CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES] + [x[0] for x in V4_CC_LICENSE_CHOICES]
 
 REMIX_REGEX = re.compile("(^.*BY_[0-9]_|CREATIVE_COMMONS_0)")
 
@@ -113,9 +111,7 @@ def suffix(name):
     if name is None:
         return None
     if name.endswith(".gltf"):
-        return "".join(
-            [f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]]
-        )
+        return "".join([f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]])
     return name
 
 
@@ -359,9 +355,7 @@ class Asset(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
-    owner = models.ForeignKey(
-        "AssetOwner", null=True, blank=True, on_delete=models.CASCADE
-    )
+    owner = models.ForeignKey("AssetOwner", null=True, blank=True, on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
     formats = models.JSONField(null=True, blank=True)
     visibility = models.CharField(
@@ -400,9 +394,7 @@ class Asset(models.Model):
     )
     create_time = models.DateTimeField()
     update_time = models.DateTimeField(null=True, blank=True)
-    license = models.CharField(
-        max_length=50, null=True, blank=True, choices=LICENSE_CHOICES
-    )
+    license = models.CharField(max_length=50, null=True, blank=True, choices=LICENSE_CHOICES)
     tags = models.ManyToManyField("Tag", blank=True)
     category = models.CharField(
         max_length=255,
@@ -449,10 +441,7 @@ class Asset(models.Model):
         # available for use in other models, we cannot allow changing anything
         # about it. Doing so would allow abuse.
         is_editable = True
-        if (
-            self.visibility in [PUBLIC, UNLISTED]
-            and self.license != ALL_RIGHTS_RESERVED
-        ):
+        if self.visibility in [PUBLIC, UNLISTED] and self.license != ALL_RIGHTS_RESERVED:
             is_editable = False
         return is_editable
 
@@ -637,9 +626,7 @@ class Asset(models.Model):
 
         if updated_gltf is not None:
             if updated_gltf.format.zip_archive_url:
-                return (
-                    f"https://web.archive.org/web/{updated_gltf.format.zip_archive_url}"
-                )
+                return f"https://web.archive.org/web/{updated_gltf.format.zip_archive_url}"
         if preferred_format is not None:
             if preferred_format["resource"].format.zip_archive_url:
                 return f"https://web.archive.org/web/{preferred_format['resource'].format.zip_archive_url}"
@@ -704,9 +691,7 @@ class Asset(models.Model):
             return
         tag_str = " ".join([t.name for t in self.tags.all()])
         description = self.description if self.description is not None else ""
-        self.search_text = (
-            f"{self.name} {description} {tag_str} {self.owner.displayname}"
-        )
+        self.search_text = f"{self.name} {description} {tag_str} {self.owner.displayname}"
 
     def calc_is_viewer_compatible(self):
         if not self.pk:
@@ -720,9 +705,7 @@ class Asset(models.Model):
         self.has_blocks = self.format_set.filter(format_type="BLOCKS").exists()
         self.has_gltf1 = self.format_set.filter(format_type="GLTF").exists()
         self.has_gltf2 = self.format_set.filter(format_type="GLTF2").exists()
-        self.has_gltf_any = self.format_set.filter(
-            format_type__in=["GLTF", "GLTF2"]
-        ).exists()
+        self.has_gltf_any = self.format_set.filter(format_type__in=["GLTF", "GLTF2"]).exists()
         self.has_fbx = self.format_set.filter(format_type="FBX").exists()
         self.has_obj = self.format_set.filter(format_type="OBJ").exists()
 
@@ -800,9 +783,7 @@ class Asset(models.Model):
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
             if format.zip_archive_url:
-                resource_data = {
-                    "zip_archive_url": f"{ARCHIVE_PREFIX}{format.zip_archive_url}"
-                }
+                resource_data = {"zip_archive_url": f"{ARCHIVE_PREFIX}{format.zip_archive_url}"}
             else:
                 # Query all resources which have either an external url or a
                 # file. Ignoring resources which have neither.
@@ -831,18 +812,14 @@ class Asset(models.Model):
                     if resource.file:
                         storage = settings.DJANGO_STORAGE_URL
                         bucket = settings.DJANGO_STORAGE_BUCKET_NAME
-                        resource_data = {
-                            "file": f"{storage}/{bucket}/{resource.file.name}"
-                        }
+                        resource_data = {"file": f"{storage}/{bucket}/{resource.file.name}"}
                     elif resource.external_url:
                         resource_data = {"file": resource.external_url}
                     else:
                         resource_data = {}
 
             if resource_data:
-                format_name = DOWNLOADABLE_FORMAT_NAMES.get(
-                    format.get_role_display(), format.get_role_display()
-                )
+                format_name = DOWNLOADABLE_FORMAT_NAMES.get(format.get_role_display(), format.get_role_display())
                 # TODO: Currently, we only offer the first format per role
                 # that we find. This might be a mistake. Should we include all
                 # duplicate roles?
@@ -931,9 +908,7 @@ class Asset(models.Model):
 
 
 class OwnerAssetLike(models.Model):
-    user = models.ForeignKey(
-        AssetOwner, on_delete=models.CASCADE, related_name="likedassets"
-    )
+    user = models.ForeignKey(AssetOwner, on_delete=models.CASCADE, related_name="likedassets")
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date_liked = models.DateTimeField(auto_now_add=True)
 
@@ -963,9 +938,7 @@ def format_upload_path(instance, filename):
 class Format(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
-    zip_archive_url = models.CharField(
-        max_length=FILENAME_MAX_LENGTH, null=True, blank=True
-    )
+    zip_archive_url = models.CharField(max_length=FILENAME_MAX_LENGTH, null=True, blank=True)
     triangle_count = models.PositiveIntegerField(null=True, blank=True)
     lod_hint = models.PositiveIntegerField(null=True, blank=True)
     role = models.IntegerField(
@@ -987,9 +960,7 @@ class Format(models.Model):
         if not resource.format:
             from icosa.api.exceptions import RootResourceException
 
-            raise RootResourceException(
-                "Resource must have a format associated with it."
-            )
+            raise RootResourceException("Resource must have a format associated with it.")
         self.root_resource = resource
         resource.format = None
         resource.save()
@@ -1005,20 +976,14 @@ class Format(models.Model):
     def get_resource_data(self, resources):
         if all([x.is_cors_allowed and x.remote_host for x in resources]):
             external_files = [x.external_url for x in resources if x.external_url]
-            local_files = [
-                f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file
-            ]
+            local_files = [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file]
             resource_data = {
                 "files_to_zip": external_files + local_files,
                 "role": self.role,
             }
         elif all([x.file for x in resources]):
             resource_data = {
-                "files_to_zip": [
-                    f"{STORAGE_PREFIX}{suffix(x.file.name)}"
-                    for x in resources
-                    if x.file
-                ],
+                "files_to_zip": [f"{STORAGE_PREFIX}{suffix(x.file.name)}" for x in resources if x.file],
                 "role": self.role,
             }
         else:
@@ -1032,14 +997,8 @@ class Format(models.Model):
             # the suffixed data which attempts to fix any errors. Add some
             # supporting text to make it clear to the user this is the case.
             resource_data = {
-                "files_to_zip": [
-                    f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file
-                ],
-                "files_to_zip_with_suffix": [
-                    f"{STORAGE_PREFIX}{suffix(x.file.name)}"
-                    for x in resources
-                    if x.file
-                ],
+                "files_to_zip": [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file],
+                "files_to_zip_with_suffix": [f"{STORAGE_PREFIX}{suffix(x.file.name)}" for x in resources if x.file],
                 "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
                 "role": self.role,
             }
@@ -1058,11 +1017,7 @@ class Format(models.Model):
                     if override_format_root.file or override_format_root.external_url:
                         override_resources.append(override_format_root)
                 resource_data = {
-                    "files_to_zip": [
-                        f"{STORAGE_PREFIX}{suffix(x.file.name)}"
-                        for x in override_resources
-                        if x.file
-                    ],
+                    "files_to_zip": [f"{STORAGE_PREFIX}{suffix(x.file.name)}" for x in override_resources if x.file],
                     "role": self.role,
                 }
             except (
@@ -1094,9 +1049,7 @@ class Resource(models.Model):
         max_length=FILENAME_MAX_LENGTH,
         upload_to=format_upload_path,
     )
-    external_url = models.CharField(
-        max_length=FILENAME_MAX_LENGTH, null=True, blank=True
-    )
+    external_url = models.CharField(max_length=FILENAME_MAX_LENGTH, null=True, blank=True)
 
     @property
     def url(self):
@@ -1136,9 +1089,7 @@ class Resource(models.Model):
     @property
     def is_cors_allowed(self):
         if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
-            allowed_sources = tuple(
-                [x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")]
-            )
+            allowed_sources = tuple([x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")])
         else:
             allowed_sources = tuple([])
         if self.remote_host is None:

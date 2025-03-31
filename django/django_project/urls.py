@@ -140,8 +140,8 @@ urlpatterns = [
     ),
     path(
         "edit/<str:asset_url>",
-        main_views.edit_asset,
-        name="edit_asset",
+        main_views.asset_edit,
+        name="asset_edit",
     ),
     path(
         "delete/<str:asset_url>",
@@ -150,8 +150,8 @@ urlpatterns = [
     ),
     path(
         "publish/<str:asset_url>",
-        main_views.publish_asset,
-        name="publish_asset",
+        main_views.asset_publish,
+        name="asset_publish",
     ),
     path("search", main_views.search, name="search"),
     path("settings", main_views.user_settings, name="settings"),
@@ -188,9 +188,7 @@ else:
     urlpatterns.append(
         path("api/v1/", api.urls),
     )
-if (
-    getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)
-) and "debug_toolbar" in settings.INSTALLED_APPS:
+if (getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)) and "debug_toolbar" in settings.INSTALLED_APPS:
     urlpatterns = [
         path("__debug__/", include("debug_toolbar.urls")),
     ] + urlpatterns

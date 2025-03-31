@@ -164,5 +164,6 @@ django/node_modules
 django/polygone_data*
 django/*.tsv
 django/*.jsonl
+django/gltf2.json
 uploads.sh
 
