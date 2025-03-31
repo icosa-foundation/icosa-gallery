@@ -27,8 +27,8 @@ class Command(BaseCommand):
 
                 # Skip if is_viewer_compatible is true; we either don't need to
                 # operate on this file, or we already have in a previous run.
-                if asset.is_viewer_compatible:
-                    continue
+                # if asset.is_viewer_compatible:
+                #     continue
 
                 print(f"Importing {asset_url}")
 
@@ -37,7 +37,8 @@ class Command(BaseCommand):
                 format = asset.format_set.get(role=json_line["role"])
                 format.format_type = json_line["format_type"]
                 root_filename = json_line["root_resource"].replace("\\", "/")
-                format.root_resource.file = root_filename
+                format.root_resource.file = f"poly/{root_filename}"
+                format.root_resource.save()
                 for resource_file_name in json_line["resources"]:
                     resource_file_name = resource_file_name.replace("\\", "/")
                     filename = os.path.basename(resource_file_name.replace("\\", "/"))
@@ -54,7 +55,7 @@ class Command(BaseCommand):
                         except (Resource.DoesNotExist, Resource.MultipleObjectsReturned):
                             print(f"Resource not found for format {format.pk} and filename {filename}")
                             continue
-                    resource_obj.file = resource_file_name
+                    resource_obj.file = f"poly/{resource_file_name}"
                     resource_obj.save()
                 asset.preferred_viewer_format_override = format
                 format.save()
