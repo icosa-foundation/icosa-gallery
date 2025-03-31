@@ -2,7 +2,7 @@ import json
 import os
 
 from django.core.management.base import BaseCommand
-from icosa.models import Asset
+from icosa.models import Asset, Resource
 
 JSONL_PATH = "preferred_formats.jsonl"
 
@@ -15,6 +15,7 @@ class Command(BaseCommand):
                 asset_url = json_line["asset_url"]
                 print(f"Importing {asset_url}")
 
+                # Intentional hard fail if not found.
                 asset = Asset.objects.get(url=asset_url)
 
                 # Skip if is_viewer_compatible is true; we either don't need to
@@ -27,13 +28,12 @@ class Command(BaseCommand):
                 format = asset.format_set.get(role=json_line["role"])
                 format.format_type = json_line["format_type"]
                 format.root_resource.file = json_line["root_resource"]
-                resources = list(format.resource_set.all())
                 for resource_file_name in json_line["resources"]:
                     filename = os.path.basename(resource_file_name)
                     # Find the resource object we want to operate on based on
                     # the filename we have in the jsonl.
-                    # This should hard fail instead of choosing the first one
-                    resource_obj = [x for x in resources if str(x.file).endswith(filename)][0]
+                    # Intentional hard fail if not found.
+                    resource_obj = Resource.objects.get(format=format, external_url__endswith=filename)
                     resource_obj.file = resource_file_name
                     resource_obj.save()
                 format.save()
