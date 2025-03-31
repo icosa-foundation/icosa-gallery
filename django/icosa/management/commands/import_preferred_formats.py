@@ -40,7 +40,7 @@ class Command(BaseCommand):
                         resource_obj = Resource.objects.get(format=format, external_url__endswith=filename)
                     except Resource.DoesNotExist:
                         print(f"Resource not found for format {format.pk} and filename {filename}")
-                        return
+                        continue
                     resource_obj.file = resource_file_name
                     resource_obj.save()
                 asset.preferred_viewer_format_override = format
