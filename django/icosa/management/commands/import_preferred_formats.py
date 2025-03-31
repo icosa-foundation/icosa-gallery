@@ -13,7 +13,6 @@ class Command(BaseCommand):
             for line in json_file:
                 json_line = json.loads(line)
                 asset_url = json_line["asset_url"]
-                print(f"Importing {asset_url}")
 
                 # Intentional hard fail if not found.
                 asset = Asset.objects.get(url=asset_url)
@@ -22,6 +21,8 @@ class Command(BaseCommand):
                 # operate on this file, or we already have in a previous run.
                 if asset.is_viewer_compatible:
                     continue
+
+                print(f"Importing {asset_url}")
 
                 # NOTE: this get assumes there are no duplicate roles in this data
                 # set at this time.
@@ -41,5 +42,3 @@ class Command(BaseCommand):
                 format.save()
                 # We are saving this to correctly set is_viewer_compatible.
                 asset.save(update_timestamps=False)
-                # TODO remove this return, it's for safety
-                return
