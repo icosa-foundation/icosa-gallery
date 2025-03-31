@@ -23,16 +23,12 @@ class Command(BaseCommand):
 
                 # Only process assets who have a preferred_viewer_format_override
                 # TODO: Refactor this to use the new preferred_viewer_format_override
-                preferred_qs = asset.format_set.filter(is_preferred_for_viewer=True)
+                preferred = asset.preferred_viewer_format_override
 
-                if len(preferred_qs) == 0:
+                if preferred is None:
                     print(f"Asset has no preferred format: {asset.url}")
                     continue
-                if len(preferred_qs) > 1:
-                    print(f"Asset has multiple preferred formats: {asset.url}")
-                    continue
 
-                preferred = preferred_qs.first()
                 resources = list(preferred.resource_set.all())
                 json_line = {
                     "asset_url": asset.url,
