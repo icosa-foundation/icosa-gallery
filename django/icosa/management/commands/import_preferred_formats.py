@@ -1,25 +1,8 @@
 import json
 import os
-import secrets
-from datetime import datetime
-from pathlib import Path
 
-import requests
 from django.core.management.base import BaseCommand
-from django_project import settings
-from icosa.helpers.file import get_content_type, is_gltf2
-from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
-from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.storage import get_b2_bucket
-from icosa.models import (
-    ASSET_STATE_COMPLETE,
-    CATEGORY_LABELS,
-    Asset,
-    AssetOwner,
-    Format,
-    Resource,
-    Tag,
-)
+from icosa.models import Asset
 
 JSONL_PATH = "all_data.jsonl"
 
