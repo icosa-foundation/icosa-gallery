@@ -18,8 +18,11 @@ class Command(BaseCommand):
                 # Intentional hard fail if not found.
                 try:
                     asset = Asset.objects.get(url=asset_url)
-                except (Asset.DoesNotExist, Asset.MultipleObjectsReturned):
-                    print(f"Cannot get asset {asset_url}")
+                except Asset.DoesNotExist:
+                    print(f"Asset {asset_url} not found")
+                    continue
+                except Asset.MultipleObjectsReturned:
+                    print(f"Asset {asset_url} multiple objects returned")
                     continue
 
                 # Skip if is_viewer_compatible is true; we either don't need to
