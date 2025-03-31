@@ -68443,11 +68443,11 @@ class $a970d3af3e0e453f$export$9559c3115faeb0b0 extends (0, $ded5eecc0cd20cc2$ex
     parse(data, path, callback) {
         var content;
         var extensions = {};
-        var magic = (0, $ded5eecc0cd20cc2$export$b5d2dc08d867e41a).decodeText(new Uint8Array(data, 0, 4));
+        var magic = new TextDecoder().decode(new Uint8Array(data, 0, 4));
         if (magic === $a970d3af3e0e453f$var$BINARY_EXTENSION_HEADER_DEFAULTS.magic) {
             extensions[$a970d3af3e0e453f$var$EXTENSIONS.KHR_BINARY_GLTF] = new $a970d3af3e0e453f$var$GLTFBinaryExtension(data);
             content = extensions[$a970d3af3e0e453f$var$EXTENSIONS.KHR_BINARY_GLTF].content;
-        } else content = (0, $ded5eecc0cd20cc2$export$b5d2dc08d867e41a).decodeText(new Uint8Array(data));
+        } else content = new TextDecoder().decode(new Uint8Array(data));
         var json = JSON.parse(content);
         if (json.extensionsUsed && json.extensionsUsed.indexOf($a970d3af3e0e453f$var$EXTENSIONS.KHR_MATERIALS_COMMON) >= 0) extensions[$a970d3af3e0e453f$var$EXTENSIONS.KHR_MATERIALS_COMMON] = new $a970d3af3e0e453f$var$GLTFMaterialsCommonExtension(json);
         var parser = new $a970d3af3e0e453f$var$GLTFParser(json, extensions, {
@@ -68589,7 +68589,7 @@ class $a970d3af3e0e453f$var$GLTFBinaryExtension {
         this.name = $a970d3af3e0e453f$var$EXTENSIONS.KHR_BINARY_GLTF;
         var headerView = new DataView(data, 0, $a970d3af3e0e453f$var$BINARY_EXTENSION_HEADER_LENGTH);
         var header = {
-            magic: (0, $ded5eecc0cd20cc2$export$b5d2dc08d867e41a).decodeText(new Uint8Array(data.slice(0, 4))),
+            magic: new TextDecoder().decode(new Uint8Array(data.slice(0, 4))),
             version: headerView.getUint32(4, true),
             length: headerView.getUint32(8, true),
             contentLength: headerView.getUint32(12, true),
@@ -68601,13 +68601,13 @@ class $a970d3af3e0e453f$var$GLTFBinaryExtension {
         }
         var contentArray = new Uint8Array(data, $a970d3af3e0e453f$var$BINARY_EXTENSION_HEADER_LENGTH, header.contentLength);
         this.header = header;
-        this.content = (0, $ded5eecc0cd20cc2$export$b5d2dc08d867e41a).decodeText(contentArray);
+        this.content = new TextDecoder().decode(contentArray);
         this.body = data.slice($a970d3af3e0e453f$var$BINARY_EXTENSION_HEADER_LENGTH + header.contentLength, header.length);
     }
     loadShader(shader, bufferViews) {
         var bufferView = bufferViews[shader.extensions[$a970d3af3e0e453f$var$EXTENSIONS.KHR_BINARY_GLTF].bufferView];
         var array = new Uint8Array(bufferView);
-        return (0, $ded5eecc0cd20cc2$export$b5d2dc08d867e41a).decodeText(array);
+        return new TextDecoder().decode(array);
     }
 }
 var $a970d3af3e0e453f$var$WEBGL_CONSTANTS = {
