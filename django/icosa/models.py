@@ -588,12 +588,19 @@ class Asset(models.Model):
 
     @property
     def preferred_viewer_format(self):
-        format = self._preferred_viewer_format
-        if format is None:
+        preferred_qs = self.format_set.filter(is_preferred_for_viewer=True)
+        if preferred_qs.exists():
+            p = preferred_qs.first()
+            return {
+                "format": p,
+                "url": p.root_resource.internal_url_or_none,
+                "resource": p.root_resource,
+            }
+        preferred = self._preferred_viewer_format
+        if preferred is None:
             return None
-        if format["url"] is None:
+        if preferred["url"] is None:
             return None
-        return format
 
     @property
     def has_cors_allowed_preferred_format(self):
