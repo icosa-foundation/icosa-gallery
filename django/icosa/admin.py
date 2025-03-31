@@ -55,6 +55,7 @@ class FormatInline(admin.TabularInline):
         "format_type",
         "zip_archive_url",
         "role",
+        "is_preferred_for_viewer",
     )
 
 
