@@ -38,6 +38,7 @@ class Command(BaseCommand):
                 format.format_type = json_line["format_type"]
                 root_filename = json_line["root_resource"].replace("\\", "/")
                 format.root_resource.file = root_filename
+                format.root_resource.save()
                 for resource_file_name in json_line["resources"]:
                     resource_file_name = resource_file_name.replace("\\", "/")
                     filename = os.path.basename(resource_file_name.replace("\\", "/"))
