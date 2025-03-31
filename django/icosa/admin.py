@@ -152,7 +152,6 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "category",
         "state",
         "last_reported_time",
-        "preferred_viewer_format_override",
     )
     readonly_fields = (
         "rank",
