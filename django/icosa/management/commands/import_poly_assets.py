@@ -83,6 +83,8 @@ PROCESS_VIA_JSON_OVERRIDES = True
 PROCESS_VIA_GLTF_PARSING = False
 
 IGNORE_SCRAPED_DATA = True
+SKIP_POLYGONE = True
+SKIP_NON_POLYGONE = False
 
 
 def get_json_from_b2(dir):
@@ -364,12 +366,11 @@ class Command(BaseCommand):
                         end="\r",
                     )
 
-                    if IGNORE_SCRAPED_DATA:
+                    if SKIP_POLYGONE:
                         if asset_id in directories:
                             continue
-                    else:
-                        # Skip importing if the asset is not in the scraped
-                        # json.
+                    elif SKIP_NON_POLYGONE:
+                        # Skip importing if the asset is not in the scraped json.
                         if asset_id not in directories:
                             continue
 
