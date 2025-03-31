@@ -27,9 +27,10 @@ class Command(BaseCommand):
                 # set at this time.
                 format = asset.format_set.get(role=json_line["role"])
                 format.format_type = json_line["format_type"]
-                format.root_resource.file = json_line["root_resource"]
+                root_filename = json_line["root_resource"].replace("\\", "/")
+                format.root_resource.file = root_filename
                 for resource_file_name in json_line["resources"]:
-                    filename = os.path.basename(resource_file_name)
+                    filename = os.path.basename(resource_file_name).replace("\\", "/")
                     # Find the resource object we want to operate on based on
                     # the filename we have in the jsonl.
                     # Intentional hard fail if not found.
