@@ -36,7 +36,11 @@ class Command(BaseCommand):
                     # Find the resource object we want to operate on based on
                     # the filename we have in the jsonl.
                     # Intentional hard fail if not found.
-                    resource_obj = Resource.objects.get(format=format, external_url__endswith=filename)
+                    try:
+                        resource_obj = Resource.objects.get(format=format, external_url__endswith=filename)
+                    except Resource.DoesNotExist:
+                        print(f"Resource not found for format {format.pk} and filename {filename}")
+                        return
                     resource_obj.file = resource_file_name
                     resource_obj.save()
                 format.save()
