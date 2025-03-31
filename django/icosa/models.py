@@ -510,6 +510,15 @@ class Asset(models.Model):
 
     @property
     def _preferred_viewer_format(self):
+        if self.preferred_viewer_format_override is not None:
+            format = self.preferred_viewer_format_override
+            root_resource = format.root_resource
+            return {
+                "format": format,
+                "url": root_resource.internal_url_or_none,
+                "resource": root_resource,
+            }
+
         if self.has_blocks:
             return self.handle_blocks_preferred_format()
 
@@ -586,10 +595,7 @@ class Asset(models.Model):
 
     @property
     def preferred_viewer_format(self):
-        if self.preferred_viewer_format_override is not None:
-            format = self.preferred_viewer_format_override
-        else:
-            format = self._preferred_viewer_format
+        format = self._preferred_viewer_format
         if format is None:
             return None
         if format["url"] is None:
