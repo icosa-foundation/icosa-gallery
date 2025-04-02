@@ -1,12 +1,10 @@
 from functools import wraps
 
-from icosa.api import get_django_user_from_auth_bearer
-
 from django.core.cache import cache as core_cache
+from icosa.api import get_django_user_from_auth_bearer
 
 
 def cache_key(request):
-
     if request.user.is_anonymous:
         user = get_django_user_from_auth_bearer(request)
         if user is None:

@@ -1,46 +1,63 @@
 import json
 import os
-import secrets
-from datetime import datetime
-from pathlib import Path
+import urllib.parse
 
-import requests
 from django.core.management.base import BaseCommand
-from django_project import settings
-from icosa.helpers.file import get_content_type, is_gltf2
-from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
-from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.storage import get_b2_bucket
-from icosa.models import (
-    ASSET_STATE_COMPLETE,
-    CATEGORY_LABELS,
-    Asset,
-    AssetOwner,
-    Format,
-    Resource,
-    Tag,
-)
+from icosa.models import Asset, Resource
 
-JSONL_PATH = "all_data.jsonl"
+JSONL_PATH = "preferred_formats.jsonl"
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         with open(JSONL_PATH, "r") as json_file:
             for line in json_file:
                 json_line = json.loads(line)
                 asset_url = json_line["asset_url"]
+
+                # Intentional hard fail if not found.
+                try:
+                    asset = Asset.objects.get(url=asset_url)
+                except Asset.DoesNotExist:
+                    print(f"Asset {asset_url} not found")
+                    continue
+                except Asset.MultipleObjectsReturned:
+                    print(f"Asset {asset_url} multiple objects returned")
+                    continue
+
+                # Skip if is_viewer_compatible is true; we either don't need to
+                # operate on this file, or we already have in a previous run.
+                if asset.is_viewer_compatible:
+                    continue
+
                 print(f"Importing {asset_url}")
-            asset = Asset.objects.get(url=asset_url)
-            format = asset.format_set.get(role=json_line["role"])
-            format.format_type = json_line["format_type"]
-            format.root_resource.file = json_line["root_resource"]
-            existing_resources = list(format.resource_set.all())
-            for resource in json_line["resources"]:
-                filename = os.path.basename(resource)
-                resource_obj = [x for x in existing_resources if str(x.file).endswith(filename)].first()
-                resource_obj.file = resource
-                resource_obj.save()
-            format.save()
-            asset.save(update_timestamps=False)
+
+                # NOTE: this get assumes there are no duplicate roles in this data
+                # set at this time.
+                format = asset.format_set.get(role=json_line["role"])
+                format.format_type = json_line["format_type"]
+                root_filename = json_line["root_resource"].replace("\\", "/")
+                format.root_resource.file = f"poly/{root_filename}"
+                format.root_resource.save()
+                for resource_file_name in json_line["resources"]:
+                    resource_file_name = resource_file_name.replace("\\", "/")
+                    filename = os.path.basename(resource_file_name.replace("\\", "/"))
+                    # Find the resource object we want to operate on based on
+                    # the filename we have in the jsonl.
+                    # Intentional hard fail if not found.
+                    try:
+                        resource_obj = Resource.objects.get(format=format, external_url__endswith=filename)
+                    except (Resource.DoesNotExist, Resource.MultipleObjectsReturned):
+                        try:  # Nested try/except bad
+                            resource_obj = Resource.objects.get(
+                                format=format, external_url__endswith=urllib.parse.quote(filename)
+                            )
+                        except (Resource.DoesNotExist, Resource.MultipleObjectsReturned):
+                            print(f"Resource not found for format {format.pk} and filename {filename}")
+                            continue
+                    resource_obj.file = f"poly/{resource_file_name}"
+                    resource_obj.save()
+                asset.preferred_viewer_format_override = format
+                format.save()
+                # We are saving this to correctly set is_viewer_compatible.
+                asset.save(update_timestamps=False)

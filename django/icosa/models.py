@@ -418,6 +418,15 @@ class Asset(models.Model):
         default="BARE",
         db_default="BARE",
     )
+    preferred_viewer_format_override = models.OneToOneField(
+        "Format",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="preferred_format_override_for",
+        # limit_choices_to cannot have a reference to self. We must limit the
+        # choices another way.
+    )
 
     # Denorm fields
     triangle_count = models.PositiveIntegerField(default=0)
@@ -501,6 +510,15 @@ class Asset(models.Model):
 
     @property
     def _preferred_viewer_format(self):
+        if self.preferred_viewer_format_override is not None:
+            format = self.preferred_viewer_format_override
+            root_resource = format.root_resource
+            return {
+                "format": format,
+                "url": root_resource.internal_url_or_none,
+                "resource": root_resource,
+            }
+
         if self.has_blocks:
             return self.handle_blocks_preferred_format()
 
@@ -602,12 +620,14 @@ class Asset(models.Model):
         # allowed by the site admin in django constance settings, then it will
         # be viewable.
         is_allowed = False
-        query = Q(external_url__isnull=False) & ~Q(external_url="")
-        resources = preferred_format["format"].get_all_resources(query)
-        for resource in resources:
-            if resource.file or resource.is_cors_allowed:
-                is_allowed = True
-                break
+
+        for format in self.format_set.all():
+            root = format.root_resource
+            if root is not None:
+                if root.file or root.is_cors_allowed:
+                    is_allowed = True
+                    break
+
         return is_allowed
 
     @property

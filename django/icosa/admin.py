@@ -218,7 +218,10 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
 
     filter_horizontal = ("tags",)
     inlines = (FormatInline,)
-    raw_id_fields = ["owner"]
+    raw_id_fields = [
+        "owner",
+        "preferred_viewer_format_override",
+    ]
 
 
 @admin.register(DeviceCode)
