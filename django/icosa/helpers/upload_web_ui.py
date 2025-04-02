@@ -166,11 +166,7 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
     format_type = mainfile.filetype
     name = mainfile.file.name
     file = mainfile.file
-    if (
-        format_type == "GLTF"
-        and gltf_to_convert is not None
-        and os.path.exists(gltf_to_convert)
-    ):
+    if format_type == "GLTF" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
         format_type = "GLB"
         name = f"{os.path.splitext(name)[0]}.glb"
         with open(gltf_to_convert, "rb") as f:
