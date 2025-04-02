@@ -287,60 +287,6 @@ def category(request, category):
     )
 
 
-@login_required
-@never_cache
-def uploads(request):
-    template = "main/manage_uploads.html"
-
-    user = AssetOwner.from_django_request(request)
-    if request.method == "POST":
-        form = AssetUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            job_snowflake = generate_snowflake()
-            asset_token = secrets.token_urlsafe(8)
-            asset = Asset.objects.create(
-                id=job_snowflake,
-                url=asset_token,
-                owner=user,
-                state=ASSET_STATE_UPLOADING,
-            )
-            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                queue_upload_asset_web_ui(
-                    current_user=user,
-                    asset=asset,
-                    files=[request.FILES["file"]],
-                )
-            else:
-                upload(
-                    user,
-                    asset,
-                    [request.FILES["file"]],
-                )
-            messages.add_message(request, messages.INFO, "Your upload has started.")
-            return HttpResponseRedirect(reverse("uploads"))
-    elif request.method == "GET":
-        form = AssetUploadForm()
-    else:
-        return HttpResponseNotAllowed(["GET", "POST"])
-
-    asset_objs = Asset.objects.filter(owner=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
-    assets = paginator.get_page(page_number)
-
-    context = {
-        "assets": assets,
-        "form": form,
-        "page_title": "My Uploads",
-        "paginator": paginator,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
-
-
 @never_cache
 def user_show(request, user_url):
     template = "main/user_show.html"
@@ -425,51 +371,6 @@ def asset_view(request, asset_url):
 
 
 @never_cache
-@user_passes_test(lambda u: u.is_superuser)
-def make_asset_thumbnail(request, asset_url):
-    if request.method == "POST":
-        asset = get_object_or_404(Asset, url=asset_url)
-        b64_image = request.POST.get("thumbnail_image", None)
-        if not b64_image:
-            return HttpResponseBadRequest("No image data received")
-
-        image_file = b64_to_img(b64_image)
-
-        asset.preview_image = image_file
-        asset.save(update_timestamps=False)
-        body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
-
-        return HttpResponse(mark_safe(body))
-    else:
-        return HttpResponseNotAllowed(["POST"])
-
-
-@never_cache
-@user_passes_test(lambda u: u.is_superuser)
-def make_asset_masthead_image(request, asset_url):
-    if request.method == "POST":
-        asset = get_object_or_404(Asset, url=asset_url)
-        b64_image = request.POST.get("masthead_image", None)
-        if not b64_image:
-            return HttpResponseBadRequest("No image data received")
-
-        image_file = b64_to_img(b64_image)
-        create = {
-            "asset": asset,
-        }
-        masthead = MastheadSection.objects.create(**create)
-        # We need an instance ID to populate the image path in storage.
-        # So we need to save it separately after the create.
-        masthead.image = image_file
-        masthead.save()
-        body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
-
-        return HttpResponse(mark_safe(body))
-    else:
-        return HttpResponseNotAllowed(["POST"])
-
-
-@never_cache
 def asset_downloads(request, asset_url):
     asset = get_object_or_404(Asset, url=asset_url)
     if asset.license == ALL_RIGHTS_RESERVED:
@@ -512,6 +413,60 @@ def asset_status(request, asset_url):
     context = {
         "asset": asset,
         "is_polling": True,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@login_required
+@never_cache
+def uploads(request):
+    template = "main/manage_uploads.html"
+
+    user = AssetOwner.from_django_request(request)
+    if request.method == "POST":
+        form = AssetUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            job_snowflake = generate_snowflake()
+            asset_token = secrets.token_urlsafe(8)
+            asset = Asset.objects.create(
+                id=job_snowflake,
+                url=asset_token,
+                owner=user,
+                state=ASSET_STATE_UPLOADING,
+            )
+            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                queue_upload_asset_web_ui(
+                    current_user=user,
+                    asset=asset,
+                    files=[request.FILES["file"]],
+                )
+            else:
+                upload(
+                    user,
+                    asset,
+                    [request.FILES["file"]],
+                )
+            messages.add_message(request, messages.INFO, "Your upload has started.")
+            return HttpResponseRedirect(reverse("uploads"))
+    elif request.method == "GET":
+        form = AssetUploadForm()
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+
+    asset_objs = Asset.objects.filter(owner=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
+
+    context = {
+        "assets": assets,
+        "form": form,
+        "page_title": "My Uploads",
+        "paginator": paginator,
     }
     return render(
         request,
@@ -869,6 +824,51 @@ def toggle_like(request):
         template,
         context,
     )
+
+
+@never_cache
+@user_passes_test(lambda u: u.is_superuser)
+def make_asset_thumbnail(request, asset_url):
+    if request.method == "POST":
+        asset = get_object_or_404(Asset, url=asset_url)
+        b64_image = request.POST.get("thumbnail_image", None)
+        if not b64_image:
+            return HttpResponseBadRequest("No image data received")
+
+        image_file = b64_to_img(b64_image)
+
+        asset.preview_image = image_file
+        asset.save(update_timestamps=False)
+        body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
+
+        return HttpResponse(mark_safe(body))
+    else:
+        return HttpResponseNotAllowed(["POST"])
+
+
+@never_cache
+@user_passes_test(lambda u: u.is_superuser)
+def make_asset_masthead_image(request, asset_url):
+    if request.method == "POST":
+        asset = get_object_or_404(Asset, url=asset_url)
+        b64_image = request.POST.get("masthead_image", None)
+        if not b64_image:
+            return HttpResponseBadRequest("No image data received")
+
+        image_file = b64_to_img(b64_image)
+        create = {
+            "asset": asset,
+        }
+        masthead = MastheadSection.objects.create(**create)
+        # We need an instance ID to populate the image path in storage.
+        # So we need to save it separately after the create.
+        masthead.image = image_file
+        masthead.save()
+        body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
+
+        return HttpResponse(mark_safe(body))
+    else:
+        return HttpResponseNotAllowed(["POST"])
 
 
 @never_cache
