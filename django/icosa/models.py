@@ -595,19 +595,12 @@ class Asset(models.Model):
 
     @property
     def preferred_viewer_format(self):
-        preferred_qs = self.format_set.filter(is_preferred_for_viewer=True)
-        if preferred_qs.exists():
-            p = preferred_qs.first()
-            return {
-                "format": p,
-                "url": p.root_resource.internal_url_or_none,
-                "resource": p.root_resource,
-            }
-        preferred = self._preferred_viewer_format
-        if preferred is None:
+        format = self._preferred_viewer_format
+        if format is None:
             return None
-        if preferred["url"] is None:
+        if format["url"] is None:
             return None
+        return format
 
     @property
     def has_cors_allowed_preferred_format(self):
@@ -684,7 +677,7 @@ class Asset(models.Model):
         return self.thumbnail.content_type
 
     def img_tag(self, src):
-        return f"<img src='{settings.STATIC_URL}images/{src}'>"
+        return f"<img src='{settings.STATIC_URL}/images/{src}'>"
 
     def get_license_icons(self):
         icons = []
@@ -767,11 +760,10 @@ class Asset(models.Model):
         rank += (1 / (datetime.now().timestamp() - self.create_time.timestamp())) * RECENCY_WEIGHT
         return rank
 
-    def inc_views_and_rank(self, save=False):
+    def inc_views_and_rank(self):
         self.views += 1
         self.rank = self.get_updated_rank()
-        if save:
-            self.save(update_timestamps=False)
+        self.save(update_timestamps=False)
 
     def get_all_file_names(self):
         file_list = []
