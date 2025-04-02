@@ -503,9 +503,11 @@ def asset_edit(request, asset_url):
                 asset.thumbnail = image_file
             form.save_m2m()
             if is_editable:
-                if "_publish_public" in request.POST:
+                if "_save_private" in request.POST:
+                    asset.visibility = PRIVATE
+                if "_save_public" in request.POST:
                     asset.visibility = PUBLIC
-                if "_publish_unlisted" in request.POST:
+                if "_save_unlisted" in request.POST:
                     asset.visibility = UNLISTED
             asset.save()
 
