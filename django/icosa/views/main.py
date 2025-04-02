@@ -508,7 +508,8 @@ def asset_edit(request, asset_url):
             else:
                 return HttpResponseRedirect(reverse("uploads"))
         else:
-            print(form.errors)
+            if settings.DEBUG:
+                print(form.errors)
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
