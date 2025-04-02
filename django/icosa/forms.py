@@ -68,7 +68,10 @@ class AssetEditForm(forms.ModelForm):
         #  CC licenses are non-revokable, but are upgradeable. If the license
         # is cc but not in our current menu of options, they can upgrade and so
         # should be able to choose a different one.
-        self.fields["license"].disabled = self.instance.license in V4_CC_LICENSES
+        self.fields["license"].disabled = self.instance.license in V4_CC_LICENSES and self.instance.visibility in [
+            "PUBLIC",
+            "UNLISTED",
+        ]
 
         if self.instance.license in V3_CC_LICENSES and license_value not in V4_CC_LICENSES:
             upgrade_option = V3_TO_V4_UPGRADE_MAP[license_value]
