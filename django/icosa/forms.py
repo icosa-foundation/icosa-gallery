@@ -70,10 +70,7 @@ class AssetEditForm(forms.ModelForm):
         # should be able to choose a different one.
         self.fields["license"].disabled = self.instance.license in V4_CC_LICENSES
 
-        if (
-            self.instance.license in V3_CC_LICENSES
-            and license_value not in V4_CC_LICENSES
-        ):
+        if self.instance.license in V3_CC_LICENSES and license_value not in V4_CC_LICENSES:
             upgrade_option = V3_TO_V4_UPGRADE_MAP[license_value]
             self.fields["license"].choices = [
                 (upgrade_option, V4_CC_LICENSE_MAP[upgrade_option]),
@@ -109,11 +106,7 @@ class AssetEditForm(forms.ModelForm):
             )
 
         for field in self.fields:
-            if (
-                not self.instance.model_is_editable
-                and field not in self.editable_fields
-                and field in self.changed_data
-            ):
+            if not self.instance.model_is_editable and field not in self.editable_fields and field in self.changed_data:
                 self.add_error(
                     field,
                     "You cannot modify this field because this work is not private and has a CC license.",
@@ -158,18 +151,10 @@ class UserSettingsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
-        self.fields["email_confirm"] = forms.CharField(
-            required=False, widget=EmailInput
-        )
-        self.fields["password_current"] = forms.CharField(
-            required=False, widget=PasswordInput
-        )
-        self.fields["password_new"] = forms.CharField(
-            required=False, widget=PasswordInput
-        )
-        self.fields["password_confirm"] = forms.CharField(
-            required=False, widget=PasswordInput
-        )
+        self.fields["email_confirm"] = forms.CharField(required=False, widget=EmailInput)
+        self.fields["password_current"] = forms.CharField(required=False, widget=PasswordInput)
+        self.fields["password_new"] = forms.CharField(required=False, widget=PasswordInput)
+        self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -182,9 +167,7 @@ class UserSettingsForm(forms.ModelForm):
         email_confirm = cleaned_data.get("email_confirm")
 
         if not user.check_password(password_current):
-            self.add_error(
-                "password_current", "You must enter your password to make changes"
-            )
+            self.add_error("password_current", "You must enter your password to make changes")
 
         if (password_new or password_confirm) and password_new != password_confirm:
             msg = "Passwords must match"
@@ -231,12 +214,8 @@ class UserSettingsForm(forms.ModelForm):
 class NewUserForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["password_new"] = forms.CharField(
-            required=True, widget=PasswordInput
-        )
-        self.fields["password_confirm"] = forms.CharField(
-            required=False, widget=PasswordInput
-        )
+        self.fields["password_new"] = forms.CharField(required=True, widget=PasswordInput)
+        self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -278,12 +257,8 @@ class PasswordResetForm(forms.ModelForm):
 class PasswordResetConfirmForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["password_new"] = forms.CharField(
-            required=True, widget=PasswordInput
-        )
-        self.fields["password_confirm"] = forms.CharField(
-            required=False, widget=PasswordInput
-        )
+        self.fields["password_new"] = forms.CharField(required=True, widget=PasswordInput)
+        self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
 
     def clean(self):
         cleaned_data = super().clean()
