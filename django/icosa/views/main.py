@@ -77,7 +77,7 @@ def get_default_q():
             is_viewer_compatible=True,
             curated=True,
         )
-    except:
+    except Exception:
         return Q(
             visibility=PUBLIC,
             is_viewer_compatible=True,
