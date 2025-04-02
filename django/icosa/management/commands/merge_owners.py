@@ -22,10 +22,13 @@ class Command(BaseCommand):
                 print(icosa_asset.name)
                 print(poly_asset.name)
                 print()
-            if icosa_asset.description != poly_asset.description:
+            idesc = icosa_asset.description if icosa_asset.description else ""
+            pdesc = poly_asset.description if poly_asset.description else ""
+            if idesc != pdesc:
                 print(f"Description mismatch {icosa_asset.url}/{poly_asset.url}:")
-                print(icosa_asset.description)
-                print(poly_asset.description)
+                print(idesc)
+                print("----------------------------------")
+                print(pdesc)
                 print()
 
         # print()
