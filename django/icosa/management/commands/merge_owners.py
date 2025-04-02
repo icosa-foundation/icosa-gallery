@@ -17,8 +17,11 @@ class Command(BaseCommand):
             if not poly_asset: continue
             owner_match = (icosa_asset.owner, poly_asset.owner)
             owner_matches.add(owner_match)
-            print(icosa_asset.name, poly_asset.name)
+            print(icosa_asset.name)
+            print(poly_asset.name)
+        print()
+        print()
         print()
         for owner_match in owner_matches:
             icosa_owner, poly_owner = owner_match
-            print(icosa_owner.displayname, poly_owner.displayname)
+            print(f"{icosa_owner.displayname} :: {poly_owner.displayname}")
