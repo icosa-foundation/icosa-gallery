@@ -17,11 +17,20 @@ class Command(BaseCommand):
             if not poly_asset: continue
             owner_match = (icosa_asset.owner, poly_asset.owner)
             owner_matches.add(owner_match)
-            print(icosa_asset.name)
-            print(poly_asset.name)
-        print()
-        print()
-        print()
-        for owner_match in owner_matches:
-            icosa_owner, poly_owner = owner_match
-            print(f"{icosa_owner.displayname} :: {poly_owner.displayname}")
+            if icosa_asset.name != poly_asset.name:
+                print(f"Name mismatch for {icosa_asset.url}/{poly_asset.url}:")
+                print(icosa_asset.name)
+                print(poly_asset.name)
+                print()
+            if icosa_asset.description != poly_asset.description:
+                print(f"Description mismatch {icosa_asset.url}/{poly_asset.url}:")
+                print(icosa_asset.description)
+                print(poly_asset.description)
+                print()
+
+        # print()
+        # print()
+        # print()
+        # for owner_match in owner_matches:
+        #     icosa_owner, poly_owner = owner_match
+        #     print(f"{icosa_owner.displayname} :: {poly_owner.displayname}")
