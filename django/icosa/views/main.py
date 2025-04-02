@@ -503,6 +503,23 @@ def asset_edit(request, asset_url):
                 asset.thumbnail = image_file
             form.save_m2m()
             asset.save()
+
+            if request.FILES.get("zip_file"):
+                asset.state = ASSET_STATE_UPLOADING
+                asset.save()
+
+                if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                    queue_upload_asset_web_ui(
+                        current_user=owner,
+                        asset=asset,
+                        files=[request.FILES["zip_file"]],
+                    )
+                else:
+                    upload(
+                        owner,
+                        asset,
+                        [request.FILES["zip_file"]],
+                    )
             if is_superuser:
                 return HttpResponseRedirect(reverse("asset_view", kwargs={"asset_url": asset.url}))
             else:

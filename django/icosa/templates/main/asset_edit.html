@@ -14,6 +14,9 @@
     </div>
     <div class="editor">
         <div class="sketcheditor container">
+            {% if form.errors %}
+                <p class="error"><strong>This form has errors. Please correct them below.</strong></p>
+            {% endif %}
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 {% for field in form %}

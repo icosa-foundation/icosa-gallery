@@ -116,6 +116,7 @@ class AssetEditForm(forms.ModelForm):
                 )
 
     thumbnail = forms.FileField(required=False, widget=CustomImageInput)
+    zip_file = forms.FileField(required=False)
 
     editable_fields = [
         "name",
@@ -125,7 +126,6 @@ class AssetEditForm(forms.ModelForm):
         "thumbnail_override_data",
         "camera",
         "category",
-        "visibility",
         "tags",
     ]
 
@@ -135,12 +135,12 @@ class AssetEditForm(forms.ModelForm):
         fields = [
             "name",
             "description",
-            "visibility",
             "license",
             "thumbnail",
             "category",
             "tags",
             "camera",
+            "zip_file",
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(

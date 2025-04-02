@@ -272,7 +272,8 @@ def upload(
         asset_dir,
     )
 
-    asset.name = asset_name
+    if not asset.name:
+        asset.name = asset_name
     asset.save(update_timestamps=False)
 
     for mainfile in main_files:
@@ -301,7 +302,8 @@ def upload(
         asset_dir,
     )
 
-    add_thumbnail_to_asset(thumbnail, asset)
+    if thumbnail is not None:
+        add_thumbnail_to_asset(thumbnail, asset)
 
     asset.state = ASSET_STATE_COMPLETE
     asset.save(update_timestamps=False)

@@ -12,6 +12,9 @@
 {% if field.name == "visibility" %}
     <p>Please note, once you have made your work public or unlisted, if you have chosen a CC license, you cannot make the work private or make changes to the model files.</p>
 {% endif %}
+{% if field.name == "zip_file" %}
+        <p>Upload a new zip file to replace the work you've already uploaded. You cannot change this once you have published your work.</p>
+{% endif %}
 {% if field.name == "thumbnail" %}
     <div>
         <input type="hidden" name="thumbnail_override_image">
