@@ -14,6 +14,7 @@ class Command(BaseCommand):
             if not icosa_asset.polydata: continue
             poly_url = icosa_asset.polydata['name'].split('/')[-1]
             poly_asset = Asset.objects.filter(url=poly_url).first()
+            if not poly_asset: continue
             owner_match = (icosa_asset.owner, poly_asset.owner)
             owner_matches.add(owner_match)
             print(icosa_asset.name, poly_asset.name)
