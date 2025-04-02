@@ -34,7 +34,21 @@
                         </div>
                     {% endif %}
                 {% endfor %}
-                <button type="submit" class="btn btn-primary">Save Draft</button>
+                {% if is_editable %}
+                    <div class="field-group">
+                        <p>Please note, once you have made your work public or unlisted, if you have chosen a CC license, you cannot make the work private or make changes to the model files.</p>
+                        <div class="dropdown">
+                            <a class="btn btn-primary dropdown-toggle" href="#" role="button" id="savebtngroup" data-bs-toggle="dropdown" aria-expanded="false">Save</a>
+                            <ul class="dropdown-menu" aria-labelledby="savebtngroup">
+                                <li><button type="submit" class="dropdown-item">Save Draft</button></li>
+                                <li><button type="submit" name="_publish_public" class="dropdown-item">Publish</button></li>
+                                <li><button type="submit" name="_publish_unlisted" class="dropdown-item">Publish (as unlisted)</button></li>
+                            </ul>
+                        </div>
+                    </div>
+                {% else %}
+                    <button type="submit" class="btn btn-primary">Save</button>
+                {% endif %}
                 <a href="{% url 'uploads' %}" class="btn btn-secondary">Cancel</a>
             </form>
             {% if is_editable %}

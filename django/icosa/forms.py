@@ -60,6 +60,10 @@ class AssetReportForm(forms.Form):
 class AssetEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance.model_is_editable:
+            del self.fields["visibility"]
+        else:
+            del self.fields["zip_file"]
         self.fields["name"].required = True
         license_value = self["license"].value()
 
@@ -126,6 +130,7 @@ class AssetEditForm(forms.ModelForm):
         "thumbnail_override_data",
         "camera",
         "category",
+        "visibility",
         "tags",
     ]
 
@@ -141,6 +146,7 @@ class AssetEditForm(forms.ModelForm):
             "tags",
             "camera",
             "zip_file",
+            "visibility",
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(
