@@ -2,6 +2,7 @@ from typing import Optional
 
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseNotFound
+from django.template.loader import render_to_string
 from django.urls import resolve
 from icosa.api.schema import OembedOut
 from icosa.models import Asset
@@ -70,6 +71,13 @@ def oembed(
 
     host = f"{settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}"
 
+    embed_code = render_to_string(
+        "partials/oembed_code.html",
+        {
+            "host": host,
+            "asset": asset,
+        },
+    )
     return {
         "type": "rich",
         "version": "1.0",
@@ -81,7 +89,7 @@ def oembed(
         "thumbnail_url": asset.thumbnail,  # TODO resize to maxwidth / maxheight
         "thumbnail_width": "256",  # TODO Must obey maxwidth (?)
         "thumbnail_height": "256",  # TODO Must obey maxheight (?)
-        "html": f"""<div class="icosa-embed-wrapper"><iframe id="" title="" class="" width="{frame_width}" height="{frame_height}" src="{host}{asset.get_absolute_url()}/embed/" frameborder="0" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen="" mozallowfullscreen="true" webkitallowfullscreen="true" xr-spatial-tracking="true" execution-while-out-of-viewport="true" execution-while-not-rendered="true" web-share="true"></iframe></div>""",
+        "html": embed_code.strip(),
         "width": f"{frame_width}",
         "height": f"{frame_height}",
     }
