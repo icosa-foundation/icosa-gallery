@@ -6,6 +6,7 @@
 
 {% block extrahead %}
     <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ asset.get_absolute_url }}" />
+    {% include "partials/oembed_head.html" %}
 {% endblock extrahead %}
 
 {% block banner %}

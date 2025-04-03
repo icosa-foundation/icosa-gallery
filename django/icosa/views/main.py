@@ -25,6 +25,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
+from django.views.decorators.clickjacking import xframe_options_exempt
 from honeypot.decorators import check_honeypot
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
@@ -362,6 +363,32 @@ def asset_view(request, asset_url):
         "format_override": format_override,
         "downloadable_formats": bool(asset.get_all_downloadable_formats()),
         "page_title": asset.name,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@xframe_options_exempt
+@never_cache
+def asset_oembed(request, asset_url):
+    template = "main/asset_embed.html"
+
+    asset = get_object_or_404(Asset, url=asset_url)
+    check_user_can_view_asset(request.user, asset)
+    asset.inc_views_and_rank()  # TODO: do we count embedded views separately or at all?
+    override_suffix = request.GET.get("nosuffix", "")
+    format_override = request.GET.get("forceformat", "")
+
+    context = {
+        "request_owner": AssetOwner.from_django_user(request.user),
+        "asset": asset,
+        "override_suffix": override_suffix,
+        "format_override": format_override,
+        "downloadable_formats": bool(asset.get_all_downloadable_formats()),
+        "page_title": f"embed {asset.name}",
     }
     return render(
         request,
