@@ -76,6 +76,8 @@ def oembed(
         {
             "host": host,
             "asset": asset,
+            "frame_width": frame_width,
+            "frame_height": frame_height,
         },
     )
     return {

@@ -361,6 +361,8 @@ def asset_view(request, asset_url):
         {
             "host": f"{settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}",
             "asset": asset,
+            "frame_width": 1920,
+            "frame_height": 1440,
         },
     )
 
