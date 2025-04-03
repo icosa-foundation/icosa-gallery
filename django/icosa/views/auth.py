@@ -1,4 +1,6 @@
+import random
 import secrets
+import time
 from typing import Optional
 
 import bcrypt
@@ -9,6 +11,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
+from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -77,9 +80,7 @@ def authenticate_icosa_user(
 ) -> Optional[AssetOwner]:
     username = username.lower()
     try:
-        user = AssetOwner.objects.get(
-            email=username
-        )  # This code used to check either url or username. Seems odd.
+        user = AssetOwner.objects.get(email=username)  # This code used to check either url or username. Seems odd.
 
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         if not pwd_context.verify(password, bytes(user.password)):
@@ -182,37 +183,46 @@ def register(request):
         form = NewUserForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data["email"]
-            url = form.cleaned_data["url"]
             password = form.cleaned_data["password_new"]
             displayname = form.cleaned_data["displayname"]
 
+            # We want to do the work of accessing the database, creating the
+            # password etc in all cases, even if the username is already taken
+            # to mitigatie timing attacks.
             salt = bcrypt.gensalt(10)
             hashedpw = bcrypt.hashpw(password.encode(), salt)
             snowflake = generate_snowflake()
-            assettoken = secrets.token_urlsafe(8) if url is None else url
+            assettoken = secrets.token_urlsafe(8)
 
-            owner = AssetOwner.objects.create(
-                id=snowflake,
-                url=assettoken,
-                email=email,
-                password=hashedpw,
-                displayname=displayname,
-            )
+            try:
+                owner = AssetOwner.objects.create(
+                    id=snowflake,
+                    url=assettoken,
+                    email=email,
+                    password=hashedpw,
+                    displayname=displayname,
+                )
+            except IntegrityError:
+                pass
 
-            user = User.objects.create_user(
-                username=owner.email,
-                email=owner.email,
-                password=password,
-            )
-            user.is_active = False
-            user.save()
-            owner.django_user = user
-            owner.save()
-
-            send_registration_email(
-                request, user, owner, to_email=form.cleaned_data.get("email")
-            )
+            try:
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                )
+                user.is_active = False
+                user.save()
+                owner.django_user = user
+                owner.save()
+                send_registration_email(request, user, owner, to_email=form.cleaned_data.get("email"))
+            except IntegrityError:
+                pass
+            # Always succeed. The user should never know that an account is
+            # already registered.
             success = True
+            # Sleep a random amount of time to throw off timing attacks a bit more.
+            time.sleep(random.randrange(0, 200) / 100)
     else:
         form = NewUserForm()
     return render(

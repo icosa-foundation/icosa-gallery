@@ -249,7 +249,6 @@ class NewUserForm(forms.ModelForm):
 
         fields = [
             "email",
-            "url",
             "displayname",
         ]
 
