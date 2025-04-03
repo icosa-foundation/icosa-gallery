@@ -356,6 +356,14 @@ def asset_view(request, asset_url):
     override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
 
+    embed_code = render_to_string(
+        "partials/oembed_code.html",
+        {
+            "host": f"{settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}",
+            "asset": asset,
+        },
+    )
+
     context = {
         "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
@@ -363,6 +371,7 @@ def asset_view(request, asset_url):
         "format_override": format_override,
         "downloadable_formats": bool(asset.get_all_downloadable_formats()),
         "page_title": asset.name,
+        "embed_code": embed_code.strip(),
     }
     return render(
         request,

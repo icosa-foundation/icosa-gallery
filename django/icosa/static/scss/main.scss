@@ -395,3 +395,22 @@ label {
 img {
   font-style: italic;
 }
+
+#embed-wrapper {
+  &.hidden {
+    display: none;
+  }
+  a {
+    text-decoration: underline;
+  }
+}
+.embed-code {
+  width: 100%;
+  max-width: 80ch;
+  background-color: var(--color-base-dark);
+  color: var(--color-base-light);
+  overflow: scroll;
+  whitespace: break-spaces;
+  font-family: monospace;
+  font-size: 80%;
+}
