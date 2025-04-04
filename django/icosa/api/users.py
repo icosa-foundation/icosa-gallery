@@ -1,28 +1,19 @@
 from typing import List
 
-from django.db.models import Q
-from icosa.api import (
-    COMMON_ROUTER_SETTINGS,
-    POLY_CATEGORY_MAP,
-    AssetPagination,
-    build_format_q,
-)
+from icosa.api import (COMMON_ROUTER_SETTINGS, POLY_CATEGORY_MAP,
+                       AssetPagination, build_format_q)
 from icosa.api.assets import filter_assets, sort_assets
 from icosa.api.exceptions import FilterException
+from icosa.jwt.authentication import JWTAuth
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetOwner, Tag
 from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
-from ninja_jwt.authentication import JWTAuth
 
-from .schema import (
-    AssetFilters,
-    AssetSchema,
-    FullUserSchema,
-    PatchUserSchema,
-    UserAssetFilters,
-    get_keyword_q,
-)
+from django.db.models import Q
+
+from .schema import (AssetFilters, AssetSchema, FullUserSchema,
+                     PatchUserSchema, UserAssetFilters, get_keyword_q)
 
 router = Router()
 

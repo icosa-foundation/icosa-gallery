@@ -3,6 +3,20 @@ import secrets
 from typing import List, NoReturn, Optional
 
 from constance import config
+from icosa.api import (COMMON_ROUTER_SETTINGS, POLY_CATEGORY_MAP,
+                       AssetPagination, build_format_q)
+from icosa.api.exceptions import FilterException
+from icosa.helpers.snowflake import generate_snowflake
+from icosa.jwt.authentication import JWTAuth
+from icosa.models import ALL_RIGHTS_RESERVED, PRIVATE, PUBLIC, Asset, AssetOwner
+from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
+from icosa.views.decorators import cache_per_user
+from ninja import File, Query, Router
+from ninja.decorators import decorate_view
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+from ninja.pagination import paginate
+
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
@@ -10,27 +24,6 @@ from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
-from icosa.api import (
-    COMMON_ROUTER_SETTINGS,
-    POLY_CATEGORY_MAP,
-    AssetPagination,
-    build_format_q,
-)
-from icosa.api.exceptions import FilterException
-from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import ALL_RIGHTS_RESERVED, PRIVATE, PUBLIC, Asset, AssetOwner
-from icosa.tasks import (
-    queue_blocks_upload_format,
-    queue_finalize_asset,
-)
-from icosa.views.decorators import cache_per_user
-from ninja import File, Query, Router
-from ninja.decorators import decorate_view
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-from ninja.pagination import paginate
-from ninja_jwt.authentication import JWTAuth
-
 
 from .schema import (
     ORDER_FIELD_MAP,
