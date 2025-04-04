@@ -1,6 +1,9 @@
+from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from ninja_keys.admin import APIKeyModelAdmin
+from ninja_keys.models import APIKey
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
-from django.contrib.auth.models import User
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -17,6 +20,8 @@ from icosa.models import (
     Oauth2Token,
     Resource,
     Tag,
+    User,
+    UserAPIKey
 )
 from import_export.admin import ExportMixin
 
@@ -239,12 +244,6 @@ class DeviceCodeAdmin(ExportMixin, admin.ModelAdmin):
     date_hierarchy = "expiry"
 
 
-class UserAssetLikeInline(admin.TabularInline):
-    extra = 0
-    model = AssetOwner.likes.through
-    raw_id_fields = ["asset"]
-
-
 @admin.register(AssetOwner)
 class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
@@ -267,7 +266,6 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         ("django_user", admin.EmptyFieldListFilter),
         "is_claimed",
     )
-    inlines = (UserAssetLikeInline,)
     raw_id_fields = [
         "django_user",
         "merged_with",
@@ -286,8 +284,12 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
     def display_django_user(self, obj):
         html = "-"
         if obj.django_user:
-            change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
+            change_url = reverse(
+                "admin:icosa_user_change",
+                args=(obj.django_user.id,),
+            )
             html = f"<a href='{change_url}'>{obj.django_user}</a>"
+
         return mark_safe(html)
 
     display_django_user.short_description = "Django User"
@@ -364,16 +366,53 @@ class Oauth2CodeAdmin(ExportMixin, admin.ModelAdmin):
 class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
     pass
 
+class UserLikeInline(admin.TabularInline):
+    extra = 0
+    model = User.likes.through
+    raw_id_fields = ["asset"]
 
 class UserAdmin(OriginalUserAdmin):
     actions = [
         "make_not_staff",
     ]
 
+    list_display = ("username", "displayname", "email", "first_name", "last_name", "is_staff")
+
+    search_fields = (
+        "displayname",
+        "username"
+        "email",
+        "fist_name",
+        "last_name",
+        "is_staff",
+        "id",
+    )
+
+
+    inlines = (UserLikeInline,)
+
     @admin.action(description="Mark selected users as not staff")
     def make_not_staff(modeladmin, request, queryset):
         queryset.update(is_staff=False)
 
 
-admin.site.unregister(User)
+
 admin.site.register(User, UserAdmin)
+
+admin.site.unregister(APIKey)
+
+@admin.register(UserAPIKey)
+class UserAPIKeyModelAdmin(APIKeyModelAdmin):
+    model = UserAPIKey
+    
+    list_display = (
+        "user",
+        "prefix",
+        "name",
+        "created",
+        "expiry_date",
+        "_has_expired",
+        "revoked",
+    )
+    list_filter = ("user", "created",)
+    search_fields = ("user", "name", "prefix")

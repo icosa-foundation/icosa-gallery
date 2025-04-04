@@ -1,19 +1,20 @@
-from django.conf import settings
-from django.conf.urls import include
-from django.contrib import admin
-from django.urls import path
-from django.views.generic import RedirectView
 from icosa.api.assets import router as assets_router
-from icosa.api.authentication import AuthBearer
 from icosa.api.login import router as login_router
 from icosa.api.oembed import router as oembed_router
 from icosa.api.poly import router as poly_router
 from icosa.api.users import router as users_router
+from icosa.jwt.authentication import JWTAuth
 from icosa.views import auth as auth_views
 from icosa.views import autocomplete as autocomplete_views
 from icosa.views import main as main_views
 from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
+
+from django.conf import settings
+from django.conf.urls import include
+from django.contrib import admin
+from django.urls import path
+from django.views.generic import RedirectView
 
 handler404 = main_views.handler404
 handler500 = main_views.handler500
@@ -31,7 +32,7 @@ api_servers = [
 ]
 if getattr(settings, "STAFF_ONLY_ACCESS", False):
     api = NinjaAPI(
-        auth=AuthBearer(),
+        auth=JWTAuth(),
         throttle=throttle_rules,
         servers=api_servers,
     )
@@ -89,7 +90,8 @@ urlpatterns = [
     path("other", main_views.home_other, name="home_other"),
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
-    path("user/<str:user_url>", main_views.user_show, name="user_show"),
+    path("user/<str:user_username>", main_views.user_show, name="user_show"),
+    path("owner/<str:owner_url>", main_views.owner_show, name="owner_show"),
     path("likes", main_views.my_likes, name="my_likes"),
     path(
         "view/<str:asset_url>",
