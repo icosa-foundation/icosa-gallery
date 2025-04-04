@@ -1,10 +1,10 @@
 from ninja import Router
 from ninja.errors import HttpError
-from ninja_jwt.tokens import RefreshToken
 
 from django.conf import settings
 from django.utils import timezone
 
+from ..jwt.tokens import AccessToken
 from ..models import DeviceCode
 from .auth import UserAPIKeyAuth
 from .schema import LoginToken
@@ -19,11 +19,11 @@ def device_login(request, device_code: str):
             devicecode__iexact=device_code,
             expiry__gt=timezone.now(),
         )
-        refresh = RefreshToken.for_user(valid_code.user)
+        access_token = AccessToken.for_user(valid_code.user)
 
         valid_code.delete()
         return {
-            "access_token": str(refresh.access_token),
+            "access_token": str(access_token),
             "token_type": "bearer",
         }
 
@@ -38,8 +38,8 @@ def device_login(request, device_code: str):
 @router.post("/apikey_login", auth=UserAPIKeyAuth(), response=LoginToken)
 def apikey_login(request):
 
-    refresh = RefreshToken.for_user(request.auth)
+    access_token = AccessToken.for_user(request.auth)
     return {
-        "access_token": str(refresh.access_token),
+        "access_token": str(access_token),
         "token_type": "bearer",
     }
