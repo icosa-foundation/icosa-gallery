@@ -10,6 +10,7 @@ from django.forms.widgets import (
 )
 from django.utils.translation import gettext_lazy as _
 from icosa.models import (
+    PRIVATE,
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
     V3_TO_V4_UPGRADE_MAP,
@@ -106,7 +107,7 @@ class AssetEditForm(forms.ModelForm):
         visibility = cleaned_data.get("visibility")
         if visibility in ["PUBLIC", "UNLISTED"] and not license:
             self.add_error("license", "Please add a CC License.")
-        if not self.instance.model_is_editable and visibility == "PRIVATE":
+        if not self.instance.model_is_editable and visibility == PRIVATE:
             self.add_error(
                 "visibility",
                 "You cannot make this model private because you have published this work under a CC license.",

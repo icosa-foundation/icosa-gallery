@@ -39,7 +39,7 @@ class Command(BaseCommand):
                 icosa_owner.refresh_from_db()
                 poly_owner.refresh_from_db()
 
-                if icosa_asset.visibility == "PRIVATE":
+                if icosa_asset.visibility == PRIVATE:
                     # Most likely the user never changed the default visibility
                     pass
                 else:
