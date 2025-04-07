@@ -3,19 +3,19 @@ from icosa.models import Asset
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
-
         icosa_assets = Asset.objects.filter(imported_from=None)
 
         owner_matches = set()
         asset_matches = {}
 
         for icosa_asset in icosa_assets:
-            if not icosa_asset.polydata: continue
-            poly_url = icosa_asset.polydata['name'].split('/')[-1]
+            if not icosa_asset.polydata:
+                continue
+            poly_url = icosa_asset.polydata["name"].split("/")[-1]
             poly_asset = Asset.objects.filter(url=poly_url).first()
-            if not poly_asset: continue
+            if not poly_asset:
+                continue
             owner_match = (icosa_asset.owner, poly_asset.owner)
             owner_matches.add(owner_match)
             asset_matches[icosa_asset.owner] = (icosa_asset, poly_asset)
@@ -26,7 +26,6 @@ class Command(BaseCommand):
         # Copy over name and description changes from the icosa version and then delete the icosa version to remove duplicates
 
         for owners in owner_matches:
-
             icosa_owner, poly_owner = owners
 
             # TODO
@@ -36,7 +35,6 @@ class Command(BaseCommand):
                 poly_asset.save()
 
             for asset in asset_matches[icosa_owner]:
-
                 icosa_asset, poly_asset = asset
                 icosa_owner.refresh_from_db()
                 poly_owner.refresh_from_db()
