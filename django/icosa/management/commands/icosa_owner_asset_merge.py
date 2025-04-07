@@ -1,9 +1,31 @@
 from django.core.management import BaseCommand
-from icosa.models import Asset
+from icosa.helpers import YES
+from icosa.models import PRIVATE, Asset
+
+
+def printlog(dry_run, message):
+    if dry_run:
+        prefix = "-- dry run -- "
+    else:
+        prefix = ""
+    print(f"{prefix}{message}")
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--dryrun",
+            action="store_true",
+        )
+
     def handle(self, *args, **options):
+        dry_run = options["dryrun"]
+
+        if not dry_run:
+            if input("`--dryrun` is not set. Will really modify assets. Continue? ").lower() not in YES:
+                print("Quitting")
+                return
+
         icosa_assets = Asset.objects.filter(imported_from=None)
 
         owner_matches = set()
@@ -28,28 +50,58 @@ class Command(BaseCommand):
         for owners in owner_matches:
             icosa_owner, poly_owner = owners
 
-            # TODO
             # Merge poly_owner assets into icosa_owner
             for poly_asset in poly_owner.assets.all():
+                printlog(
+                    dry_run,
+                    f"Change ower for poly_asset `{poly_asset.name} - {poly_asset.id}` from `{poly_asset.owner.displayname} - {poly_asset.owner.id}` to `{icosa_owner.displayname} - {icosa_owner.id}`",
+                )
                 poly_asset.owner = icosa_owner
-                poly_asset.save()
+
+                if not dry_run:
+                    poly_asset.save()
 
             for asset in asset_matches[icosa_owner]:
                 icosa_asset, poly_asset = asset
-                icosa_owner.refresh_from_db()
-                poly_owner.refresh_from_db()
+                if not dry_run:
+                    icosa_owner.refresh_from_db()
+                    poly_owner.refresh_from_db()
 
                 if icosa_asset.visibility == PRIVATE:
                     # Most likely the user never changed the default visibility
                     pass
                 else:
+                    printlog(
+                        dry_run,
+                        f"Change visibility for poly_asset `{poly_asset.name} - {poly_asset.id}` from `{poly_asset.visibility}` to `{icosa_asset.visibility}`",
+                    )
                     # A deliberate change so we respect it
                     poly_asset.visibility = icosa_asset.visibility
 
-                poly_asset.name = icosa_asset.name or poly_asset.name
-                poly_asset.description = icosa_asset.description or poly_asset.description
+                if icosa_asset.name:
+                    printlog(
+                        dry_run,
+                        f"Change name for poly_asset `{poly_asset.name} - {poly_asset.id}` from `{poly_asset.name}` to `{icosa_asset.name}`",
+                    )
+                    poly_asset.name = icosa_asset.name
+
+                if icosa_asset.description:
+                    printlog(
+                        dry_run,
+                        f"Change description for poly_asset `{poly_asset.description} - {poly_asset.id}` from `{poly_asset.description}` to `{icosa_asset.description}`",
+                    )
+                    poly_asset.description = icosa_asset.description
 
                 # We will keep the poly owner as a backup in case we need to restore
+                printlog(
+                    dry_run,
+                    f"Change owner for icosa_asset `{poly_asset.description} - {poly_asset.id}` from `{icosa_owner.displayname}- {icosa_owner.id}` to `{poly_owner.displayname}- {poly_owner.id}`",
+                )
                 icosa_asset.owner = poly_owner
+
                 icosa_asset.visibility = "ARCHIVED"  # TODO
                 poly_owner.disable_profile = True  # TODO
+                if not dry_run:
+                    icosa_asset.save()
+                    poly_asset.save()
+                    poly_owner.save()

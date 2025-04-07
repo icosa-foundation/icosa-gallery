@@ -52,10 +52,12 @@ RECENCY_WEIGHT = 1
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
 UNLISTED = "UNLISTED"
+ARCHIVED = "ARCHIVED"
 ASSET_VISIBILITY_CHOICES = [
     (PUBLIC, "Public"),
     (PRIVATE, "Private"),
     (UNLISTED, "Unlisted"),
+    (ARCHIVED, "ARCHIVED"),
 ]
 
 V4_CC_LICENSE_CHOICES = [
@@ -233,6 +235,7 @@ class AssetOwner(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
     )
+    disable_profile = models.BooleanField(default=False)
 
     @classmethod
     def from_ninja_request(cls, request):
