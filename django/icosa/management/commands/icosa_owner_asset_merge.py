@@ -1,6 +1,13 @@
 from django.core.management import BaseCommand
 from icosa.helpers import YES
-from icosa.models import PRIVATE, Asset
+from icosa.models import ARCHIVED, PRIVATE, Asset
+
+SKIP_ASSET_OWNER_IDS = [
+    63664420588408665,
+    62557179709778192,
+    804,
+    18169,
+]
 
 
 def printlog(dry_run, message):
@@ -38,9 +45,16 @@ class Command(BaseCommand):
             poly_asset = Asset.objects.filter(url=poly_url).first()
             if not poly_asset:
                 continue
+
+            if icosa_asset.owner.id in SKIP_ASSET_OWNER_IDS or poly_asset.owner.id in SKIP_ASSET_OWNER_IDS:
+                continue
+
             owner_match = (icosa_asset.owner, poly_asset.owner)
             owner_matches.add(owner_match)
-            asset_matches[icosa_asset.owner] = (icosa_asset, poly_asset)
+            key = icosa_asset.owner.id
+            if key not in asset_matches:
+                asset_matches[key] = []
+            asset_matches[key].append((icosa_asset, poly_asset))
 
         # 1308 have become PRIVATE from PUBLIC
         # private was the default so the 1308 were people doing nothing except importing.
@@ -51,18 +65,18 @@ class Command(BaseCommand):
             icosa_owner, poly_owner = owners
 
             # Merge poly_owner assets into icosa_owner
-            for poly_asset in poly_owner.assets.all():
+            for poly_asset in poly_owner.asset_set.all():
                 printlog(
                     dry_run,
-                    f"Change ower for poly_asset `{poly_asset.name} - {poly_asset.id}` from `{poly_asset.owner.displayname} - {poly_asset.owner.id}` to `{icosa_owner.displayname} - {icosa_owner.id}`",
+                    f"Change owner for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.owner.displayname}::{poly_asset.owner.id}` TO `{icosa_owner.displayname}::{icosa_owner.id}`",
                 )
                 poly_asset.owner = icosa_owner
 
                 if not dry_run:
                     poly_asset.save()
 
-            for asset in asset_matches[icosa_owner]:
-                icosa_asset, poly_asset = asset
+            for item in asset_matches[icosa_owner.id]:
+                icosa_asset, poly_asset = item
                 if not dry_run:
                     icosa_owner.refresh_from_db()
                     poly_owner.refresh_from_db()
@@ -70,36 +84,39 @@ class Command(BaseCommand):
                 if icosa_asset.visibility == PRIVATE:
                     # Most likely the user never changed the default visibility
                     pass
-                else:
+                elif icosa_asset.visibility != poly_asset.visibility:
                     printlog(
                         dry_run,
-                        f"Change visibility for poly_asset `{poly_asset.name} - {poly_asset.id}` from `{poly_asset.visibility}` to `{icosa_asset.visibility}`",
+                        f"Change visibility for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.visibility}` TO `{icosa_asset.visibility}`",
                     )
                     # A deliberate change so we respect it
                     poly_asset.visibility = icosa_asset.visibility
 
-                if icosa_asset.name:
+                if icosa_asset.name and icosa_asset.name != poly_asset.name:
                     printlog(
                         dry_run,
-                        f"Change name for poly_asset `{poly_asset.name} - {poly_asset.id}` from `{poly_asset.name}` to `{icosa_asset.name}`",
+                        f"Change name for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.name}` TO `{icosa_asset.name}`",
                     )
                     poly_asset.name = icosa_asset.name
 
-                if icosa_asset.description:
+                if icosa_asset.description and icosa_asset.description != poly_asset.description:
                     printlog(
                         dry_run,
-                        f"Change description for poly_asset `{poly_asset.description} - {poly_asset.id}` from `{poly_asset.description}` to `{icosa_asset.description}`",
+                        f"Change description for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{len(poly_asset.description)}` TO `{len(icosa_asset.description)}`",
                     )
                     poly_asset.description = icosa_asset.description
 
                 # We will keep the poly owner as a backup in case we need to restore
                 printlog(
                     dry_run,
-                    f"Change owner for icosa_asset `{poly_asset.description} - {poly_asset.id}` from `{icosa_owner.displayname}- {icosa_owner.id}` to `{poly_owner.displayname}- {poly_owner.id}`",
+                    f"Change owner for icosa_asset `{icosa_asset.name}::{icosa_asset.id}` FROM `{icosa_owner.displayname}::{icosa_owner.id}` TO `{poly_owner.displayname}::{poly_owner.id}`",
                 )
                 icosa_asset.owner = poly_owner
 
-                icosa_asset.visibility = "ARCHIVED"  # TODO
+                polydata = icosa_asset.polydata
+                polydata.update({"previous_visibility": icosa_asset.visibility})
+                icosa_asset.visibility = ARCHIVED  # TODO
+                icosa_asset.polydata = polydata
                 poly_owner.disable_profile = True  # TODO
                 if not dry_run:
                     icosa_asset.save()

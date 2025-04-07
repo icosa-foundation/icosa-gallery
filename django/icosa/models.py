@@ -57,7 +57,7 @@ ASSET_VISIBILITY_CHOICES = [
     (PUBLIC, "Public"),
     (PRIVATE, "Private"),
     (UNLISTED, "Unlisted"),
-    (ARCHIVED, "ARCHIVED"),
+    (ARCHIVED, "Archived"),
 ]
 
 V4_CC_LICENSE_CHOICES = [
