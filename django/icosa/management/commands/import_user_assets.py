@@ -105,7 +105,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
         if not done_thumbnail:
             asset.thumbnail = f"poly/{directory}/thumbnail.png"
             asset.thumbnail_contenttype = "image/png"
-            asset.save(update_timestamps=False)
+            asset.save()
         done_thumbnail = True
         root_resource_json = format_json["root"]
 
@@ -212,6 +212,6 @@ class Command(BaseCommand):
 
                         # Re-save the asset to trigger model
                         # validation.
-                        asset.save(update_timestamps=False)
+                        asset.save()
 
         print("Finished                                  ")

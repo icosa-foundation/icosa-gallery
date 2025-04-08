@@ -51,10 +51,8 @@ class Command(BaseCommand):
                     format.save()
 
                     if asset.thumbnail and done_thumbnail is False:
-                        asset.thumbnail_contenttype = get_content_type(
-                            asset.thumbnail.name
-                        )
-                        asset.save(update_timestamps=False)
+                        asset.thumbnail_contenttype = get_content_type(asset.thumbnail.name)
+                        asset.save()
                         done_thumbnail = True
 
                     if format_json.get("subfiles", None) is not None:

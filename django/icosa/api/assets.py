@@ -214,7 +214,7 @@ def add_blocks_asset_format(
     else:
         raise HttpError(415, "Unsupported content type.")
 
-    asset.save(update_timestamps=False)
+    asset.save()
     return get_publish_url(request, asset)
 
 
@@ -267,7 +267,7 @@ def unpublish_asset(
     if asset.model_is_editable:
         asset = get_my_id_asset(request, asset)
         asset.visibility = PRIVATE
-        asset.save()
+        asset.save(update_timestamps=True)
         return asset
     else:
         raise HttpError(

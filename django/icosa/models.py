@@ -766,7 +766,7 @@ class Asset(models.Model):
     def inc_views_and_rank(self):
         self.views += 1
         self.rank = self.get_updated_rank()
-        self.save(update_timestamps=False)
+        self.save()
 
     def get_all_file_names(self):
         file_list = []
@@ -875,11 +875,10 @@ class Asset(models.Model):
                 pass
 
     def save(self, *args, **kwargs):
-        update_timestamps = kwargs.pop("update_timestamps", True)
+        update_timestamps = kwargs.pop("update_timestamps", False)
         now = timezone.now()
         if self._state.adding:
-            if update_timestamps:
-                self.create_time = now
+            self.create_time = now
         else:
             # Only denorm fields when updating an existing model
             self.rank = self.get_updated_rank()

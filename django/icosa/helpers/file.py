@@ -205,7 +205,7 @@ def add_thumbnail_to_asset(thumbnail, asset):
     if thumbnail_upload_details is not None and thumbnail_upload_details.filetype == "IMAGE":
         asset.thumbnail = thumbnail_upload_details.file
         asset.thumbnail_contenttype = get_content_type(thumbnail_upload_details.file.name)
-        asset.save(update_timestamps=False)
+        asset.save()
 
 
 def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
@@ -415,7 +415,7 @@ def upload_blocks_format(
     files: Optional[List[UploadedFile]] = File(None),
 ):
     asset.state = ASSET_STATE_UPLOADING
-    asset.save(update_timestamps=False)
+    asset.save()
     if files is None or len(files) > 1:
         raise HttpError(422, "Must upload exactly one file.")
     file = files[0]
@@ -445,7 +445,7 @@ def upload_blocks_format(
         asset.thumbnail_contenttype = get_content_type(f.file.name)
         # We save outside of this function too. Saving here is more explicit,
         # but might reduce perf.
-        asset.save(update_timestamps=False)
+        asset.save()
     else:
         process_normally(asset, f)
 
