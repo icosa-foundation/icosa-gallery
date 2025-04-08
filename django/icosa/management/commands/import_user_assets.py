@@ -72,12 +72,8 @@ def update_or_create_asset(directory, data):
             polyid=directory,
             polydata=data,
             license=license,
-            create_time=datetime.fromisoformat(
-                data["createTime"].replace("Z", "+00:00")
-            ),
-            update_time=datetime.fromisoformat(
-                data["updateTime"].replace("Z", "+00:00")
-            ),
+            create_time=datetime.fromisoformat(data["createTime"].replace("Z", "+00:00")),
+            update_time=datetime.fromisoformat(data["updateTime"].replace("Z", "+00:00")),
             transform=data.get("transform", None),
             camera=data.get("camera", None),
             presentation_params=presentation_params,

@@ -13,9 +13,9 @@ class Command(BaseCommand):
     format."""
 
     def handle(self, *args, **options):
-        assets = Asset.objects.filter(
-            Q(imported_from__isnull=True) | Q(imported_from="")
-        ).exclude(Q(formats__isnull=True) | Q(formats=""))
+        assets = Asset.objects.filter(Q(imported_from__isnull=True) | Q(imported_from="")).exclude(
+            Q(formats__isnull=True) | Q(formats="")
+        )
 
         for idx, asset in enumerate(assets):
             done_thumbnail = False
