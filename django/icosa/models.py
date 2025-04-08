@@ -176,21 +176,6 @@ BLOCKS_VIEWABLE_TYPES = [
     "GLTF2",
 ]
 
-# This only returns roles that are associated with the poly scrape for now
-VIEWABLE_ROLES = [
-    POLYGONE_GLB_FORMAT,
-    POLYGONE_GLTF_FORMAT,
-    POLYGONE_OBJ_FORMAT,
-]
-
-VIEWABLE_FORMAT_TYPES = [
-    "FBX",
-    "GLB",
-    "GLTF",
-    "GLTF2",
-    "OBJ",
-]
-
 ASSET_STATE_BARE = "BARE"
 ASSET_STATE_UPLOADING = "UPLOADING"
 ASSET_STATE_COMPLETE = "COMPLETE"
