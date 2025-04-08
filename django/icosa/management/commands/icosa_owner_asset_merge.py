@@ -63,6 +63,8 @@ class Command(BaseCommand):
 
         for owners in owner_matches:
             icosa_owner, poly_owner = owners
+            msg = f"Processing match. icosa_owner id: {icosa_owner.id}, poly_owner id: {poly_owner.id}"
+            printlog(dry_run, msg)
 
             # Merge poly_owner assets into icosa_owner
             for poly_asset in poly_owner.asset_set.all():
@@ -71,13 +73,12 @@ class Command(BaseCommand):
                 poly_asset.owner = icosa_owner
 
                 if not dry_run:
-                    poly_asset.save()
+                    poly_asset.save(bypass_custom_logic=True)
 
             for item in asset_matches[icosa_owner.id]:
                 icosa_asset, poly_asset = item
-                if not dry_run:
-                    icosa_owner.refresh_from_db()
-                    poly_owner.refresh_from_db()
+                icosa_asset = Asset.objects.get(pk=icosa_asset.pk)
+                poly_asset = Asset.objects.get(pk=poly_asset.pk)
 
                 if icosa_asset.visibility == PRIVATE:
                     # Most likely the user never changed the default visibility
@@ -105,10 +106,10 @@ class Command(BaseCommand):
 
                 polydata = icosa_asset.polydata
                 polydata.update({"previous_visibility": icosa_asset.visibility})
-                icosa_asset.visibility = ARCHIVED  # TODO
+                icosa_asset.visibility = ARCHIVED
                 icosa_asset.polydata = polydata
-                poly_owner.disable_profile = True  # TODO
+                poly_owner.disable_profile = True
                 if not dry_run:
-                    icosa_asset.save()
-                    poly_asset.save()
+                    icosa_asset.save(bypass_custom_logic=True)
+                    poly_asset.save(bypass_custom_logic=True)
                     poly_owner.save()

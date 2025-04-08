@@ -876,19 +876,21 @@ class Asset(models.Model):
 
     def save(self, *args, **kwargs):
         update_timestamps = kwargs.pop("update_timestamps", False)
-        now = timezone.now()
-        if self._state.adding:
-            self.create_time = now
-        else:
-            # Only denorm fields when updating an existing model
-            self.rank = self.get_updated_rank()
-            self.update_search_text()
-            self.is_viewer_compatible = self.calc_is_viewer_compatible()
-            self.denorm_format_types()
-            self.denorm_triangle_count()
-            self.denorm_liked_time()
-            if update_timestamps:
-                self.update_time = now
+        bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
+        if not bypass_custom_logic:
+            now = timezone.now()
+            if self._state.adding:
+                self.create_time = now
+            else:
+                # Only denorm fields when updating an existing model
+                self.rank = self.get_updated_rank()
+                self.update_search_text()
+                self.is_viewer_compatible = self.calc_is_viewer_compatible()
+                self.denorm_format_types()
+                self.denorm_triangle_count()
+                self.denorm_liked_time()
+                if update_timestamps:
+                    self.update_time = now
         super().save(*args, **kwargs)
 
     class Meta:
