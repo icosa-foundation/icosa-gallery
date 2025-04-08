@@ -66,10 +66,8 @@ class Command(BaseCommand):
 
             # Merge poly_owner assets into icosa_owner
             for poly_asset in poly_owner.asset_set.all():
-                printlog(
-                    dry_run,
-                    f"Change owner for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.owner.displayname}::{poly_asset.owner.id}` TO `{icosa_owner.displayname}::{icosa_owner.id}`",
-                )
+                msg = f"Change owner for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.owner.displayname}::{poly_asset.owner.id}` TO `{icosa_owner.displayname}::{icosa_owner.id}`"
+                printlog(dry_run, msg)
                 poly_asset.owner = icosa_owner
 
                 if not dry_run:
@@ -85,32 +83,24 @@ class Command(BaseCommand):
                     # Most likely the user never changed the default visibility
                     pass
                 elif icosa_asset.visibility != poly_asset.visibility:
-                    printlog(
-                        dry_run,
-                        f"Change visibility for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.visibility}` TO `{icosa_asset.visibility}`",
-                    )
+                    msg = f"Change visibility for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.visibility}` TO `{icosa_asset.visibility}`"
+                    printlog(dry_run, msg)
                     # A deliberate change so we respect it
                     poly_asset.visibility = icosa_asset.visibility
 
                 if icosa_asset.name and icosa_asset.name != poly_asset.name:
-                    printlog(
-                        dry_run,
-                        f"Change name for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.name}` TO `{icosa_asset.name}`",
-                    )
+                    msg = f"Change name for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{poly_asset.name}` TO `{icosa_asset.name}`"
+                    printlog(dry_run, msg)
                     poly_asset.name = icosa_asset.name
 
                 if icosa_asset.description and icosa_asset.description != poly_asset.description:
-                    printlog(
-                        dry_run,
-                        f"Change description for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{len(poly_asset.description)}` TO `{len(icosa_asset.description)}`",
-                    )
+                    msg = f"Change description for poly_asset `{poly_asset.name}::{poly_asset.id}` FROM `{len(poly_asset.description)}` TO `{len(icosa_asset.description)}`"
+                    printlog(dry_run, msg)
                     poly_asset.description = icosa_asset.description
 
                 # We will keep the poly owner as a backup in case we need to restore
-                printlog(
-                    dry_run,
-                    f"Change owner for icosa_asset `{icosa_asset.name}::{icosa_asset.id}` FROM `{icosa_owner.displayname}::{icosa_owner.id}` TO `{poly_owner.displayname}::{poly_owner.id}`",
-                )
+                msg = f"Change owner for icosa_asset `{icosa_asset.name}::{icosa_asset.id}` FROM `{icosa_owner.displayname}::{icosa_owner.id}` TO `{poly_owner.displayname}::{poly_owner.id}`"
+                printlog(dry_run, msg)
                 icosa_asset.owner = poly_owner
 
                 polydata = icosa_asset.polydata
