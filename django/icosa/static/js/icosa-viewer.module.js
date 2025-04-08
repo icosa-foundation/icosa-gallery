@@ -72725,6 +72725,7 @@ class $3c43f222267ed54b$var$EnvironmentPreset {
 }
 class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
     constructor(assetBaseUrl, frame){
+        this.loadingError = false;
         this.icosa_frame = frame;
         // Attempt to find viewer frame if not assigned
         if (!this.icosa_frame) this.icosa_frame = document.getElementById('icosa-viewer');
@@ -74383,20 +74384,16 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading glTFv1 model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     async loadGltf(url, loadEnvironment, overrides) {
         try {
             await this._loadGltf(url, loadEnvironment, overrides, false);
         } catch (error) {
-            console.error("Error loading glTFv2 model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
             this.showErrorIcon();
+            console.error("Error loading glTFv2 model");
+            this.loadingError = true;
         }
     }
     async _loadGltf(url, loadEnvironment, overrides, isV1) {
@@ -74422,9 +74419,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Tilt model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     setAllVertexColors(model) {
@@ -74451,9 +74446,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Obj model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     async loadObjWithMtl(objUrl, mtlUrl, overrides) {
@@ -74476,9 +74469,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Obj/Mtl model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     async loadFbx(url, overrides) {
@@ -74491,9 +74482,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Fbx model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     async loadPly(url, overrides) {
@@ -74512,9 +74501,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Ply model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     async loadStl(url, overrides) {
@@ -74536,9 +74523,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Stl model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     async loadUsdz(url, overrides) {
@@ -74551,9 +74536,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Usdz model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     async loadVox(url, overrides) {
@@ -74573,9 +74556,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Vox model");
-            setTimeout(()=>{
-                throw error; // Rethrow the exception after DOM updates
-            }, 0);
+            this.loadingError = true;
         }
     }
     async assignEnvironment(scene) {

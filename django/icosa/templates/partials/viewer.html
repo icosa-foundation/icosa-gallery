@@ -112,6 +112,10 @@
         try {
             console.log("Trying to load as GLTF2");
             await viewer.loadGltf(url, true, overrides);
+            if (viewer.loadingError == true)
+            {
+                throw new Error("GLTF2 loading error");
+            }
         } catch (error) {
             console.log(error);
             console.log("GLTF2 failed. Trying to load as GLTF1");
@@ -121,18 +125,35 @@
         try {
             console.log("Trying to load as GLTF1");
             await viewer.loadGltf1(url, true, overrides);
+            if (viewer.loadingError == true)
+            {
+                throw new Error("GLTF1 loading error");
+            }
+
         } catch (error) {
             console.log(error);
             console.log("GLTF1 failed. Trying to load as GLTF2");
             await viewer.loadGltf(url, true, overrides);
         }
+    } else if (formatType === 'fbx') {
+        console.log("Trying to load fbx");
+        await viewer.loadFbx(url, overrides);
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
         let mtlUrl = "{{ asset.preferred_viewer_format.materialUrl }}";
         await viewer.loadObjWithMtl(url, mtlUrl, overrides);
-    } else if (formatType === 'fbx') {
-        console.log("Trying to load fbx");
-        await viewer.loadFbx(url, overrides);
+    } else if (formatType === 'ply') {
+        console.log("Trying to load ply");
+        await viewer.loadPly(url, overrides);
+    } else if (formatType === 'stl') {
+        console.log("Trying to load stl");
+        await viewer.loadStl(url, overrides);
+    } else if (formatType === 'usdz') {
+        console.log("Trying to load usdz");
+        await viewer.loadUsdz(url, overrides);
+    } else if (formatType === 'vox') {
+        console.log("Trying to load vox");
+        await viewer.loadVox(url, overrides);
     } else {
         console.error("Unsupported file format: " + formatType);
     }
