@@ -13,9 +13,9 @@ class Command(BaseCommand):
     format."""
 
     def handle(self, *args, **options):
-        assets = Asset.objects.filter(
-            Q(imported_from__isnull=True) | Q(imported_from="")
-        ).exclude(Q(formats__isnull=True) | Q(formats=""))
+        assets = Asset.objects.filter(Q(imported_from__isnull=True) | Q(imported_from="")).exclude(
+            Q(formats__isnull=True) | Q(formats="")
+        )
 
         for idx, asset in enumerate(assets):
             done_thumbnail = False
@@ -51,10 +51,8 @@ class Command(BaseCommand):
                     format.save()
 
                     if asset.thumbnail and done_thumbnail is False:
-                        asset.thumbnail_contenttype = get_content_type(
-                            asset.thumbnail.name
-                        )
-                        asset.save(update_timestamps=False)
+                        asset.thumbnail_contenttype = get_content_type(asset.thumbnail.name)
+                        asset.save()
                         done_thumbnail = True
 
                     if format_json.get("subfiles", None) is not None:

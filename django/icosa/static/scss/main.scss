@@ -104,6 +104,25 @@ code {
   }
 }
 
+.dropdown-menu {
+  background-color: var(--color-black);
+  li {
+    .dropdown-item,
+    .dropdown-item:visited {
+      background-color: var(--color-black);
+      color: var(--color-base-mid);
+
+      &:hover,
+      &:focus,
+      &:active {
+        background-color: var(--color-base-mid);
+        color: var(--color-black);
+      }
+    }
+  }
+  color: var(--color-base-mid);
+}
+
 .errorlist {
   margin-top: 2rem;
   margin-bottom: 0;
@@ -375,4 +394,23 @@ label {
 
 img {
   font-style: italic;
+}
+
+#embed-wrapper {
+  &.hidden {
+    display: none;
+  }
+  a {
+    text-decoration: underline;
+  }
+}
+.embed-code {
+  width: 100%;
+  max-width: 80ch;
+  background-color: var(--color-base-dark);
+  color: var(--color-base-light);
+  overflow: scroll;
+  whitespace: break-spaces;
+  font-family: monospace;
+  font-size: 80%;
 }

@@ -5,12 +5,12 @@
 {% if field.name == "license" %}
     {% if not field.field.disabled %}
         <p>Please choose a permissive, Creative Commons (CC) license before publishing your work. If you choose "All Rights Reserved", your work will only be shown on your profile page and via direct links. Work with a CC license will also appear in public lists and search results.</p>
-        <p>Please note, CC licenses are non-revokable once chosen.</p>
+        <p>Please note, CC licenses are non-revokable once your work is published.</p>
         <p><a href="#">Find out why permissive licenses are important</a></p>
     {% endif %}
 {% endif %}
-{% if field.name == "visibility" %}
-    <p>Please note, once you have made your work public or unlisted, if you have chosen a CC license, you cannot make the work private or make changes to the model files.</p>
+{% if field.name == "zip_file" %}
+    <p>Upload a new zip file to replace the work you've already uploaded. You cannot change this once you have published your work.</p>
 {% endif %}
 {% if field.name == "thumbnail" %}
     <div>

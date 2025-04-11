@@ -98,6 +98,11 @@ urlpatterns = [
         name="asset_view",
     ),
     path(
+        "view/<str:asset_url>/embed",
+        main_views.asset_oembed,
+        name="asset_oembed",
+    ),
+    path(
         "masthead_image/<str:asset_url>",
         main_views.make_asset_masthead_image,
         name="make_asset_masthead_image",

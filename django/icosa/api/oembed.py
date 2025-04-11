@@ -1,11 +1,13 @@
 from typing import Optional
 
+from django.conf import settings
+from django.http import HttpResponse, HttpResponseNotFound
+from django.template.loader import render_to_string
+from django.urls import resolve
 from icosa.api.schema import OembedOut
 from icosa.models import Asset
 from ninja import Router
-
-from django.http import HttpResponse, HttpResponseNotFound
-from django.urls import resolve
+from ninja.errors import HttpError
 
 router = Router()
 
@@ -17,6 +19,35 @@ router = Router()
 #   title="PostBirb Diorama - 3D model by JuanchoAbad (@juanchodeth)">
 
 
+def calc_width(height):
+    return round(height * (8 / 6))
+
+
+def calc_height(width):
+    return round(width * (6 / 8))
+
+
+def calc_dimensions(maxwidth, maxheight):
+    if maxwidth and maxheight:
+        if maxwidth < maxheight:
+            frame_width = maxwidth
+            frame_height = calc_height(maxwidth)
+        else:
+            frame_height = maxheight
+            frame_width = calc_width(maxheight)
+    elif maxwidth:
+        frame_width = maxwidth
+        frame_height = calc_height(maxwidth)
+    elif maxheight:
+        frame_height = maxheight
+        frame_width = calc_width(maxheight)
+    else:
+        frame_width = 1920
+        frame_height = 1440
+
+    return (frame_width, frame_height)
+
+
 @router.get("", response=OembedOut)
 def oembed(
     request,
@@ -25,28 +56,42 @@ def oembed(
     maxwidth: Optional[int] = None,
     maxheight: Optional[int] = None,
 ):
+    if not url:
+        raise HttpError(404, "Not found.")
+
     if format != "json" and format is not None:
-        return HttpResponse("Not implemented", status_code=501)
+        raise HttpError(501, "Not implemented.")
     url = url.replace(f"{request.scheme}://{request.get_host()}", "")
     match = resolve(url)
-    if match.url_name != "view_asset":
-        return HttpResponseNotFound("Not found")
+    if match.url_name != "asset_oembed":
+        raise HttpError(404, "Not found.")
     asset = asset = Asset.objects.get(url=match.kwargs["asset_url"])
-    # TODO Implement a view for "asset.get_absolute_url()}/embed/" - minimal viewer markup suitable for embedding
+
+    frame_width, frame_height = calc_dimensions(maxwidth, maxheight)
+
+    host = f"{settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}"
+
+    embed_code = render_to_string(
+        "partials/oembed_code.html",
+        {
+            "host": host,
+            "asset": asset,
+            "frame_width": frame_width,
+            "frame_height": frame_height,
+        },
+    )
     return {
         "type": "rich",
         "version": "1.0",
         "title": asset.name,
         "author_name": asset.owner.displayname,
-        "author_url": asset.owner.get_absolute_url(),
+        "author_url": f"{host}{asset.owner.get_absolute_url()}",
         "provider_name": "Icosa",  # TODO make configurable
-        "provider_url": request.get_host(),  # TODO is this always correct?
+        "provider_url": host,
         "thumbnail_url": asset.thumbnail,  # TODO resize to maxwidth / maxheight
         "thumbnail_width": "256",  # TODO Must obey maxwidth (?)
         "thumbnail_height": "256",  # TODO Must obey maxheight (?)
-        "html": f"""<div class="icosa-embed-wrapper">
-<iframe id="" title="" class="" width="800" height="600" src="{asset.get_absolute_url()}/embed/" frameborder="0" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen="" mozallowfullscreen="true" webkitallowfullscreen="true" xr-spatial-tracking="true" execution-while-out-of-viewport="true" execution-while-not-rendered="true" web-share="true">
-</iframe></div>""",  # TODO The HTML required to embed a video player. The HTML should have no padding or margins.
-        "width": "800",  # TODO The width in pixels of the resource. Must obey maxwidth
-        "height": "600",  # TODO The height in pixels of the resource. Must obey maxheight
+        "html": embed_code.strip(),
+        "width": f"{frame_width}",
+        "height": f"{frame_height}",
     }

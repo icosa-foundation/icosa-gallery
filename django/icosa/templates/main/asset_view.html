@@ -6,6 +6,7 @@
 
 {% block extrahead %}
     <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ asset.get_absolute_url }}" />
+    {% include "partials/oembed_head.html" %}
 {% endblock extrahead %}
 
 {% block banner %}
@@ -45,16 +46,23 @@
                 <p></p>
                 {% if asset.owner == request_owner or request.user.is_superuser %}
                     <a class="btn btn-primary btn-sm" href="{% url 'asset_edit' asset_url=asset.url %}">
-                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser %} (as superuser){% endif %}
+                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser and asset.owner != request_owner %} (as superuser){% endif %}
                     </a>
                 {% endif %}
-                {% if downloadable_formats %}
-                    <p>
+                <p>
+                    {% if downloadable_formats %}
                         <a href="{% url 'asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
                             {% fa_icon "solid" "download" %} Downloads
                         </a>
-                    </p>
-                {% endif %}
+                    {% endif %}
+                    <a id="embed-btn" href="javascript:void(0);" class="btn btn-primary btn-sm">
+                        {% fa_icon "solid" "code" %} Get embed code
+                    </a>
+                </p>
+                <div id="embed-wrapper" class="hidden">
+                    <p>Copy and paste the below code into your site to embed this work. Or use <a href="https://oembed.com/">oEmbed</a>.</p>
+                    <textarea rows="6" class="embed-code">{{ embed_code }}</textarea>
+                </div>
                 <p class="text-right actions">
                     <small>
                         <a href="{% url 'artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a>
@@ -73,4 +81,12 @@
 {% if asset.is_viewer_compatible %}
     {% include "partials/viewer.html" %}
 {% endif %}
+<script>
+    let embedBtn = document.querySelector("#embed-btn");
+    let embedWrapper = document.querySelector("#embed-wrapper");
+    embedBtn.addEventListener("click", function(){
+        embedWrapper.classList.toggle("hidden");
+        embedBtn.remove();
+    });
+</script>
 {% endblock content %}

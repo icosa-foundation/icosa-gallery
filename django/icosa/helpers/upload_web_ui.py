@@ -166,11 +166,7 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
     format_type = mainfile.filetype
     name = mainfile.file.name
     file = mainfile.file
-    if (
-        format_type == "GLTF"
-        and gltf_to_convert is not None
-        and os.path.exists(gltf_to_convert)
-    ):
+    if format_type == "GLTF" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
         format_type = "GLB"
         name = f"{os.path.splitext(name)[0]}.glb"
         with open(gltf_to_convert, "rb") as f:
@@ -272,8 +268,9 @@ def upload(
         asset_dir,
     )
 
-    asset.name = asset_name
-    asset.save(update_timestamps=False)
+    if not asset.name:
+        asset.name = asset_name
+    asset.save()
 
     for mainfile in main_files:
         type = mainfile.filetype
@@ -301,8 +298,9 @@ def upload(
         asset_dir,
     )
 
-    add_thumbnail_to_asset(thumbnail, asset)
+    if thumbnail is not None:
+        add_thumbnail_to_asset(thumbnail, asset)
 
     asset.state = ASSET_STATE_COMPLETE
-    asset.save(update_timestamps=False)
+    asset.save()
     return asset

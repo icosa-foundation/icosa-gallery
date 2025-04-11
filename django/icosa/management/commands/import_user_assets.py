@@ -72,12 +72,8 @@ def update_or_create_asset(directory, data):
             polyid=directory,
             polydata=data,
             license=license,
-            create_time=datetime.fromisoformat(
-                data["createTime"].replace("Z", "+00:00")
-            ),
-            update_time=datetime.fromisoformat(
-                data["updateTime"].replace("Z", "+00:00")
-            ),
+            create_time=datetime.fromisoformat(data["createTime"].replace("Z", "+00:00")),
+            update_time=datetime.fromisoformat(data["updateTime"].replace("Z", "+00:00")),
             transform=data.get("transform", None),
             camera=data.get("camera", None),
             presentation_params=presentation_params,
@@ -105,7 +101,7 @@ def create_formats(directory, gltf2_data, formats_json, asset):
         if not done_thumbnail:
             asset.thumbnail = f"poly/{directory}/thumbnail.png"
             asset.thumbnail_contenttype = "image/png"
-            asset.save(update_timestamps=False)
+            asset.save()
         done_thumbnail = True
         root_resource_json = format_json["root"]
 
@@ -212,6 +208,6 @@ class Command(BaseCommand):
 
                         # Re-save the asset to trigger model
                         # validation.
-                        asset.save(update_timestamps=False)
+                        asset.save()
 
         print("Finished                                  ")

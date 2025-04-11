@@ -20,7 +20,7 @@ from icosa.api import (
 from icosa.api.authentication import AuthBearer
 from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset, AssetOwner
+from icosa.models import ALL_RIGHTS_RESERVED, PRIVATE, PUBLIC, Asset, AssetOwner
 from icosa.tasks import (
     queue_blocks_upload_format,
     queue_finalize_asset,
@@ -79,7 +79,7 @@ def user_can_view_asset(
     request: HttpRequest,
     asset: Asset,
 ) -> bool:
-    if asset.visibility == "PRIVATE":
+    if asset.visibility == PRIVATE:
         return user_owns_asset(request, asset)
     return True
 
@@ -214,7 +214,7 @@ def add_blocks_asset_format(
     else:
         raise HttpError(415, "Unsupported content type.")
 
-    asset.save(update_timestamps=False)
+    asset.save()
     return get_publish_url(request, asset)
 
 
@@ -266,8 +266,8 @@ def unpublish_asset(
 ):
     if asset.model_is_editable:
         asset = get_my_id_asset(request, asset)
-        asset.visibility = "PRIVATE"
-        asset.save()
+        asset.visibility = PRIVATE
+        asset.save(update_timestamps=True)
         return asset
     else:
         raise HttpError(

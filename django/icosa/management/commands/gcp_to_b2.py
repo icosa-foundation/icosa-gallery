@@ -22,9 +22,9 @@ class Command(BaseCommand):
         for asset in assets_with_formats:
             format_str = json.dumps(asset.formats)
             asset.formats = json.loads(format_str.replace(GCP_URL, B2_URL))
-            asset.save(update_timestamps=False)
+            asset.save()
 
         for asset in assets_with_thumbnails:
             url = asset.thumbnail.name.replace(GCP_URL, "icosa/")
             asset.thumbnail = url
-            asset.save(update_timestamps=False)
+            asset.save()

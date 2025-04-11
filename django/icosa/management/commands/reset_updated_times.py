@@ -15,13 +15,9 @@ def set_asset_update_time(asset_id, data):
     )
     try:
         asset = Asset.objects.get(url=asset_id)
-        asset.create_time = datetime.fromisoformat(
-            data["createTime"].replace("Z", "+00:00")
-        )
-        asset.update_time = datetime.fromisoformat(
-            data["updateTime"].replace("Z", "+00:00")
-        )
-        asset.save(update_timestamps=False)
+        asset.create_time = datetime.fromisoformat(data["createTime"].replace("Z", "+00:00"))
+        asset.update_time = datetime.fromisoformat(data["updateTime"].replace("Z", "+00:00"))
+        asset.save()
     except Asset.DoesNotExist:
         print(f"Not found: {asset_id}")
 

@@ -52,10 +52,12 @@ RECENCY_WEIGHT = 1
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
 UNLISTED = "UNLISTED"
+ARCHIVED = "ARCHIVED"
 ASSET_VISIBILITY_CHOICES = [
     (PUBLIC, "Public"),
     (PRIVATE, "Private"),
     (UNLISTED, "Unlisted"),
+    (ARCHIVED, "Archived"),
 ]
 
 V4_CC_LICENSE_CHOICES = [
@@ -174,21 +176,6 @@ BLOCKS_VIEWABLE_TYPES = [
     "GLTF2",
 ]
 
-# This only returns roles that are associated with the poly scrape for now
-VIEWABLE_ROLES = [
-    POLYGONE_GLB_FORMAT,
-    POLYGONE_GLTF_FORMAT,
-    POLYGONE_OBJ_FORMAT,
-]
-
-VIEWABLE_FORMAT_TYPES = [
-    "FBX",
-    "GLB",
-    "GLTF",
-    "GLTF2",
-    "OBJ",
-]
-
 ASSET_STATE_BARE = "BARE"
 ASSET_STATE_UPLOADING = "UPLOADING"
 ASSET_STATE_COMPLETE = "COMPLETE"
@@ -233,6 +220,7 @@ class AssetOwner(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
     )
+    disable_profile = models.BooleanField(default=False)
 
     @classmethod
     def from_ninja_request(cls, request):
@@ -763,7 +751,7 @@ class Asset(models.Model):
     def inc_views_and_rank(self):
         self.views += 1
         self.rank = self.get_updated_rank()
-        self.save(update_timestamps=False)
+        self.save()
 
     def get_all_file_names(self):
         file_list = []
@@ -872,21 +860,22 @@ class Asset(models.Model):
                 pass
 
     def save(self, *args, **kwargs):
-        update_timestamps = kwargs.pop("update_timestamps", True)
-        now = timezone.now()
-        if self._state.adding:
-            if update_timestamps:
+        update_timestamps = kwargs.pop("update_timestamps", False)
+        bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
+        if not bypass_custom_logic:
+            now = timezone.now()
+            if self._state.adding:
                 self.create_time = now
-        else:
-            # Only denorm fields when updating an existing model
-            self.rank = self.get_updated_rank()
-            self.update_search_text()
-            self.is_viewer_compatible = self.calc_is_viewer_compatible()
-            self.denorm_format_types()
-            self.denorm_triangle_count()
-            self.denorm_liked_time()
-            if update_timestamps:
-                self.update_time = now
+            else:
+                # Only denorm fields when updating an existing model
+                self.rank = self.get_updated_rank()
+                self.update_search_text()
+                self.is_viewer_compatible = self.calc_is_viewer_compatible()
+                self.denorm_format_types()
+                self.denorm_triangle_count()
+                self.denorm_liked_time()
+                if update_timestamps:
+                    self.update_time = now
         super().save(*args, **kwargs)
 
     class Meta:
