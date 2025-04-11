@@ -20,7 +20,7 @@ from icosa.helpers.format_roles import (
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
     TILT_FORMAT,
 )
-from icosa.models import ASSET_STATE_UPLOADING, Asset, AssetOwner, Format, Resource
+from icosa.models import ASSET_STATE_UPLOADING, Asset, Format, Resource
 from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
@@ -410,7 +410,6 @@ def process_root(asset: Asset, f: UploadedFormat):
 
 
 def upload_blocks_format(
-    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):

@@ -1,51 +1,41 @@
 from typing import List
 
-from django.db.models import Q
-from icosa.api import (
-    COMMON_ROUTER_SETTINGS,
-    POLY_CATEGORY_MAP,
-    AssetPagination,
-    build_format_q,
-)
+from icosa.api import (COMMON_ROUTER_SETTINGS, POLY_CATEGORY_MAP,
+                       AssetPagination, build_format_q)
 from icosa.api.assets import filter_assets, sort_assets
 from icosa.api.exceptions import FilterException
+from icosa.jwt.authentication import JWTAuth
 from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetOwner, Tag
 from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
 
-from .authentication import AuthBearer
-from .schema import (
-    AssetFilters,
-    AssetSchema,
-    FullUserSchema,
-    PatchUserSchema,
-    UserAssetFilters,
-    get_keyword_q,
-)
+from django.db.models import Q
+
+from .schema import (AssetFilters, AssetSchema, FullUserSchema,
+                     PatchUserSchema, UserAssetFilters, get_keyword_q)
 
 router = Router()
 
 
 @router.get(
     "/me",
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     response=FullUserSchema,
 )
 def get_users_me(request):
-    return AssetOwner.from_ninja_request(request)
-
+    return request.user
 
 @router.patch(
     "/me",
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     response=FullUserSchema,
 )
 def update_user(
     request,
     patch_user: PatchUserSchema,
 ):
-    current_user = AssetOwner.from_ninja_request(request)
+    current_user = request.user
     url = getattr(patch_user, "url", "").strip() or current_user.url
 
     if (
@@ -64,7 +54,7 @@ def update_user(
 
 @router.get(
     "/me/assets",
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     response=List[AssetSchema],
     **COMMON_ROUTER_SETTINGS,
 )
@@ -74,9 +64,9 @@ def get_me_assets(
     filters: UserAssetFilters = Query(...),
 ):
     # TODO(james): Standardise this with /me/likedassets
-    owner = AssetOwner.from_ninja_request(request)
+    user = request.user
     q = Q(
-        owner=owner,
+        owner__django_user=user,
     )
     ex_q = Q()
     if filters.visibility:
@@ -132,7 +122,7 @@ def get_me_assets(
 
 @router.get(
     "/me/likedassets",
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     response=List[AssetSchema],
     **COMMON_ROUTER_SETTINGS,
 )
@@ -141,14 +131,14 @@ def get_me_likedassets(
     request,
     filters: AssetFilters = Query(...),
 ):
-    owner = AssetOwner.from_ninja_request(request)
+    user = request.user
     assets = Asset.objects.filter(
-        id__in=owner.likedassets.all().values_list("asset__id", flat=True)
+        id__in=user.likedassets.all().values_list("asset__id", flat=True)
     )
     q = Q(
         visibility__in=[PUBLIC, UNLISTED],
     )
-    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
+    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner__django_user=user)
 
     try:
         assets = filter_assets(filters, assets, q)
