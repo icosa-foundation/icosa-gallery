@@ -83,7 +83,7 @@
     let overrides = {
         'defaultBackgroundColor': presentationParams?.backgroundColor || "#000000",
         'camera': cameraSettings,
-        'geometryData': presentationParams?.GOOGLE_geometry_data || {},
+        'geometryData': presentationParams?.geometry_data || presentationParams?.GOOGLE_geometry_data || {},
         'colorSpace': presentationParams?.colorSpace || "LINEAR",
     };
 
