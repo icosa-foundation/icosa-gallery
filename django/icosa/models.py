@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
 from constance import config
 from django.conf import settings
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Q, QuerySet
@@ -189,11 +190,6 @@ ASSET_STATE_CHOICES = [
 
 class User(AbstractUser):
     displayname = models.CharField("Display Name", max_length=255)
-    likes = models.ManyToManyField(
-        "Asset",
-        through="UserLike",
-        blank=True,
-    )
     
     def get_absolute_url(self):
         return f"/user/{self.username}"
@@ -208,7 +204,7 @@ class User(AbstractUser):
         return "".join(secrets.choice(characters) for i in range(length))
 
 class AssetOwnerManager(models.Manager):
-    def get_unclaimed_for_user(self, user: User) -> QuerySet:
+    def get_unclaimed_for_user(self, user: AbstractBaseUser) -> QuerySet:
         """Get the list of unclaimed asset owners for a user.
 
         Args:
@@ -250,7 +246,7 @@ class AssetOwner(models.Model):
     objects = AssetOwnerManager()
 
     @classmethod
-    def from_django_user(cls, user: User) -> Optional[Self]:
+    def from_django_user(cls, user: AbstractBaseUser) -> Optional[Self]:
         try:
             instance = cls.objects.get(django_user=user)
         except (cls.DoesNotExist, TypeError):
@@ -876,7 +872,7 @@ class Asset(models.Model):
 
 class UserLike(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="likedassets"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="likedassets"
     )
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date_liked = models.DateTimeField(auto_now_add=True)
@@ -1109,7 +1105,7 @@ class MastheadSection(models.Model):
 
 class DeviceCode(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     devicecode = models.CharField(max_length=6)
     expiry = models.DateTimeField()
 

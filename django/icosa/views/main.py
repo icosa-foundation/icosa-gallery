@@ -3,21 +3,32 @@ import random
 import secrets
 
 from constance import config
+from honeypot.decorators import check_honeypot
+from icosa.forms import (ARTIST_QUERY_SUBJECT_CHOICES, ArtistQueryForm,
+                         AssetEditForm, AssetReportForm, AssetUploadForm,
+                         UserSettingsForm)
+from icosa.helpers.email import spawn_send_html_mail
+from icosa.helpers.file import b64_to_img
+from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.upload_web_ui import upload
+from icosa.models import (ALL_RIGHTS_RESERVED, ASSET_STATE_BARE,
+                          ASSET_STATE_UPLOADING, CATEGORY_LABEL_MAP,
+                          CATEGORY_LABELS, PRIVATE, PUBLIC, UNLISTED, Asset,
+                          AssetOwner, MastheadSection, UserLike)
+from icosa.tasks import queue_upload_asset_web_ui
+from silk.profiling.profiler import silk_profile
+
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import get_user_model, logout
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import (
-    Http404,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseNotAllowed,
-    HttpResponseRedirect,
-)
+from django.http import (Http404, HttpResponse, HttpResponseBadRequest,
+                         HttpResponseNotAllowed, HttpResponseRedirect)
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -25,35 +36,8 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
-from honeypot.decorators import check_honeypot
-from icosa.forms import (
-    ARTIST_QUERY_SUBJECT_CHOICES,
-    ArtistQueryForm,
-    AssetEditForm,
-    AssetReportForm,
-    AssetUploadForm,
-    UserSettingsForm,
-)
-from icosa.helpers.email import spawn_send_html_mail
-from icosa.helpers.file import b64_to_img
-from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.upload_web_ui import upload
-from icosa.models import (
-    ALL_RIGHTS_RESERVED,
-    ASSET_STATE_BARE,
-    ASSET_STATE_UPLOADING,
-    CATEGORY_LABEL_MAP,
-    CATEGORY_LABELS,
-    PRIVATE,
-    PUBLIC,
-    UNLISTED,
-    Asset,
-    AssetOwner,
-    MastheadSection,
-    User
-)
-from icosa.tasks import queue_upload_asset_web_ui
-from silk.profiling.profiler import silk_profile
+
+User = get_user_model()
 
 POLY_USER_URL = "4aEd8rQgKu2"
 
@@ -88,7 +72,7 @@ def get_default_q():
 
 
 def user_can_view_asset(
-    user: User,
+    user: AbstractBaseUser,
     asset: Asset,
 ) -> bool:
     if asset.visibility == PRIVATE:
@@ -97,7 +81,7 @@ def user_can_view_asset(
 
 
 def check_user_can_view_asset(
-    user: User,
+    user: AbstractBaseUser,
     asset: Asset,
 ):
     if not user_can_view_asset(user, asset):
@@ -417,10 +401,11 @@ def my_likes(request):
     template = "main/likes.html"
 
     user = request.user
-    q = Q(visibility__in=[PUBLIC, UNLISTED])
-    q |= Q(visibility__in=[PRIVATE, UNLISTED], user=user)
+    q = Q(asset__visibility__in=[PUBLIC, UNLISTED])
+    q |= Q(asset__visibility__in=[PRIVATE, UNLISTED], asset__owner__django_user=user)
 
-    asset_objs = user.likes.filter(q)
+    liked_assets = UserLike.objects.filter(user=user).filter(q)
+    asset_objs = [ul.asset for ul in liked_assets ]
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
@@ -556,16 +541,18 @@ def asset_status(request, asset_url):
 def uploads(request):
     template = "main/manage_uploads.html"
 
-    user = AssetOwner.from_django_request(request)
+    user = request.user
     if request.method == "POST":
         form = AssetUploadForm(request.POST, request.FILES)
         if form.is_valid():
             job_snowflake = generate_snowflake()
             asset_token = secrets.token_urlsafe(8)
+            #TODO: check the way the aset owner is created
+            owner, _ = AssetOwner.objects.get_or_create(django_user=user, displayname=user.displayname, email=user.email)
             asset = Asset.objects.create(
                 id=job_snowflake,
                 url=asset_token,
-                owner=user,
+                owner=owner,
                 state=ASSET_STATE_UPLOADING,
             )
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
@@ -587,7 +574,7 @@ def uploads(request):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    asset_objs = Asset.objects.filter(owner=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+    asset_objs = Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
@@ -958,13 +945,13 @@ def toggle_like(request):
     except Asset.DoesNotExist:
         return error_return
 
-    is_liked = asset.id in user.likes.values_list("id", flat=True)
+    is_liked = asset.id in UserLike.objects.filter(user=user).values_list("asset__id", flat=True)     
     if is_liked:
-        user.likes.remove(asset)
+        UserLike.objects.filter(user=user, asset=asset).delete()
     else:
-        user.likes.add(asset)
-        # Triggers denorming of asset liked time, but not update_time.
-        asset.save()
+        UserLike.objects.create(user=user, asset=asset)
+    # Triggers denorming of asset liked time, but not update_time.
+    asset.save()
     template = "main/tags/like_button.html"
     context = {
         "is_liked": not is_liked,

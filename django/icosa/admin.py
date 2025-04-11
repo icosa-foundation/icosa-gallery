@@ -1,29 +1,19 @@
-from import_export.admin import ExportActionMixin, ImportExportModelAdmin
+from icosa.models import (Asset, AssetOwner, BulkSaveLog, DeviceCode, Format,
+                          HiddenMediaFileLog, MastheadSection, Oauth2Client,
+                          Oauth2Code, Oauth2Token, Resource, Tag, UserAPIKey,
+                          UserLike)
+from import_export.admin import ExportMixin
 from ninja_keys.admin import APIKeyModelAdmin
 from ninja_keys.models import APIKey
 
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from icosa.models import (
-    Asset,
-    AssetOwner,
-    BulkSaveLog,
-    DeviceCode,
-    Format,
-    HiddenMediaFileLog,
-    MastheadSection,
-    Oauth2Client,
-    Oauth2Code,
-    Oauth2Token,
-    Resource,
-    Tag,
-    User,
-    UserAPIKey
-)
-from import_export.admin import ExportMixin
+
+User = get_user_model()
 
 FORMAT_ROLE_CHOICES = {
     1: "Original OBJ File",
@@ -368,10 +358,11 @@ class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
 
 class UserLikeInline(admin.TabularInline):
     extra = 0
-    model = User.likes.through
+    model = UserLike
     raw_id_fields = ["asset"]
 
 class UserAdmin(OriginalUserAdmin):
+    model = User
     actions = [
         "make_not_staff",
     ]
@@ -386,6 +377,10 @@ class UserAdmin(OriginalUserAdmin):
         "last_name",
         "is_staff",
         "id",
+    )
+    
+    fieldsets = OriginalUserAdmin.fieldsets + (
+        (None, {'fields': ('displayname',)}),
     )
 
 
