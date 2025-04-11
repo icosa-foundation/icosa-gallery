@@ -1,2 +1,26 @@
-<input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
-<div><a href="javascript:void(0)" class="btn btn-sm btn-primary btn-lc">Update initial camera position from viewport</a></div>
+<script>
+    function updateCamera(inputId) {
+        let camera = viewer.activeCamera;
+        let input = document.getElementById(inputId);
+        input.value = JSON.stringify({
+            "translation": [
+                camera.position.x,
+                camera.position.y,
+                camera.position.z
+            ],
+            "rotation": [
+                camera.quaternion._x,
+                camera.quaternion._y,
+                camera.quaternion._z,
+                camera.quaternion._w,
+            ]
+        });
+    }
+</script>
+<input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %}
+       value="{{ widget.value|stringformat:'s' }}"{% endif %}
+        {% include "django/forms/widgets/attrs.html" %}>
+<div>
+    <a href="javascript:updateCamera('id_camera');" class="btn btn-sm btn-primary btn-lc">Update initial camera position from viewport</a>
+</div>
+
