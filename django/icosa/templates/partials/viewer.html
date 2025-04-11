@@ -1,4 +1,5 @@
 {{ asset.presentation_params|json_script:"presentation-params" }}
+{{ asset.camera|default_if_none:"{}"|json_script:"camera-data" }}
 <style>
     .lil-gui {
         --title-background-color: rgba(0,0,0,0.25);
@@ -76,9 +77,12 @@
     var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
 
     let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);
+    let cameraSettings = presentationParams?.camera || {};
+    let cameraOverrides = JSON.parse(document.getElementById('camera-data').textContent);
+    cameraSettings = { ...cameraSettings, ...cameraOverrides };
     let overrides = {
         'defaultBackgroundColor': presentationParams?.backgroundColor || "#000000",
-        'camera': presentationParams?.camera || {},
+        'camera': cameraSettings,
         'geometryData': presentationParams?.GOOGLE_geometry_data || {},
         'colorSpace': presentationParams?.colorSpace || "LINEAR",
     };
