@@ -3,7 +3,7 @@ import re
 import secrets
 import string
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, Self
 from urllib.parse import urlparse
 
@@ -18,7 +18,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-from ninja_keys.models import AbstractAPIKey
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
     DOWNLOADABLE_FORMAT_NAMES,
@@ -39,6 +38,8 @@ from icosa.helpers.format_roles import (
     USDZ_FORMAT,
     USER_SUPPLIED_GLTF,
 )
+
+import jwt
 
 from .helpers.snowflake import get_snowflake_timestamp
 from .helpers.storage import get_b2_bucket
@@ -257,6 +258,17 @@ class AssetOwner(models.Model):
     def from_django_request(cls, request) -> Optional[Self]:
         return cls.from_django_user(request.user)
 
+    def generate_access_token(self):
+        ALGORITHM = "HS256"
+        to_encode = {"sub": f"{self.email}"}
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(
+            to_encode,
+            settings.JWT_KEY,
+            algorithm=ALGORITHM,
+        )
+        return encoded_jwt
 
     def __str__(self):
         return self.displayname
@@ -1193,9 +1205,3 @@ class BulkSaveLog(models.Model):
     )
     kill_sig = models.BooleanField(default=False)
     last_id = models.BigIntegerField(null=True, blank=True)
-
-class UserAPIKey(AbstractAPIKey):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.user.username}: {self.name}"

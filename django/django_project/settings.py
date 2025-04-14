@@ -118,7 +118,6 @@ INSTALLED_APPS = [
     "dal",
     "dal_select2",
     "django.contrib.auth",
-    "icosa.apps.IcosaAPIKeyConfig",
     "icosa",
     "django.contrib.admin",
     "django.contrib.contenttypes",

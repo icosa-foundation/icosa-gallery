@@ -1,17 +1,25 @@
-from icosa.models import (Asset, AssetOwner, BulkSaveLog, DeviceCode, Format,
-                          HiddenMediaFileLog, MastheadSection, Oauth2Client,
-                          Oauth2Code, Oauth2Token, Resource, Tag, UserAPIKey,
-                          UserLike)
-from import_export.admin import ExportMixin
-from ninja_keys.admin import APIKeyModelAdmin
-from ninja_keys.models import APIKey
-
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from icosa.models import (
+    Asset,
+    AssetOwner,
+    BulkSaveLog,
+    DeviceCode,
+    Format,
+    HiddenMediaFileLog,
+    MastheadSection,
+    Oauth2Client,
+    Oauth2Code,
+    Oauth2Token,
+    Resource,
+    Tag,
+    UserLike,
+)
+from import_export.admin import ExportMixin
 
 User = get_user_model()
 
@@ -391,23 +399,4 @@ class UserAdmin(OriginalUserAdmin):
         queryset.update(is_staff=False)
 
 
-
 admin.site.register(User, UserAdmin)
-
-admin.site.unregister(APIKey)
-
-@admin.register(UserAPIKey)
-class UserAPIKeyModelAdmin(APIKeyModelAdmin):
-    model = UserAPIKey
-    
-    list_display = (
-        "user",
-        "prefix",
-        "name",
-        "created",
-        "expiry_date",
-        "_has_expired",
-        "revoked",
-    )
-    list_filter = ("user", "created",)
-    search_fields = ("user", "name", "prefix")

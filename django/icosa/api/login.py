@@ -1,12 +1,8 @@
+from django.utils import timezone
 from ninja import Router
 from ninja.errors import HttpError
 
-from django.conf import settings
-from django.utils import timezone
-
-from ..jwt.tokens import AccessToken
-from ..models import DeviceCode
-from .auth import UserAPIKeyAuth
+from ..models import AssetOwner, DeviceCode
 from .schema import LoginToken
 
 router = Router()
@@ -19,7 +15,8 @@ def device_login(request, device_code: str):
             devicecode__iexact=device_code,
             expiry__gt=timezone.now(),
         )
-        access_token = AccessToken.for_user(valid_code.user)
+        asset_owner = AssetOwner.from_django_user(valid_code.user)
+        access_token = asset_owner.generate_access_token()
 
         valid_code.delete()
         return {
@@ -33,13 +30,3 @@ def device_login(request, device_code: str):
     ):
         # headers={"WWW-Authenticate": "Bearer"},
         raise HttpError(401, "Authentication failed.")
-
-
-@router.post("/apikey_login", auth=UserAPIKeyAuth(), response=LoginToken)
-def apikey_login(request):
-
-    access_token = AccessToken.for_user(request.auth)
-    return {
-        "access_token": str(access_token),
-        "token_type": "bearer",
-    }

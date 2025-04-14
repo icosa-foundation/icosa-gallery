@@ -39,7 +39,6 @@ ijson==3.3.0
 jmespath==1.0.1
 libsass==0.23.0
 logfury==1.0.1
-ninja-keys==1.0.1
 numpy==2.2.3
 odfpy==1.4.1
 openpyxl==3.1.5
