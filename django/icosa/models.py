@@ -465,6 +465,7 @@ class Asset(models.Model):
         if filename is None:
             return None
         filename = f"poly/{self.url}/{filename.split('/')[-1]}"
+        # TODO(datacleanup): NUMBER_1 When we hit this block, we need to save the suffix to the file field
         url = f"{STORAGE_PREFIX}{suffix(filename)}"
         return {
             "format": blocks_format,
@@ -564,6 +565,7 @@ class Asset(models.Model):
             return None
         if format["url"] is None:
             return None
+        # TODO(datacleanup): NUMBER_2 Mark this as the preferred format in the database
         return format
 
     @property

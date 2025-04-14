@@ -263,6 +263,7 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         ("email", admin.EmptyFieldListFilter),
         ("django_user", admin.EmptyFieldListFilter),
         "is_claimed",
+        "disable_profile",
     )
     raw_id_fields = [
         "django_user",
