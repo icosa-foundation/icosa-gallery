@@ -15,8 +15,9 @@ def copy_likes(apps, schema_editor):
 def copy_displayname(apps, schema_editor):
     AssetOwner = apps.get_model("icosa", "AssetOwner")
     for asset_owner in AssetOwner.objects.all():
-        asset_owner.user.displayname = asset_owner.displayname
-        asset_owner.user.save()
+        if asset_owner.django_user:
+            asset_owner.django_user.displayname = asset_owner.displayname
+            asset_owner.django_user.save()
 
 class Migration(migrations.Migration):
 
