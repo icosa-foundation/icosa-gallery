@@ -1,18 +1,11 @@
 from functools import wraps
 
 from django.core.cache import cache as core_cache
-from icosa.api import get_django_user_from_auth_bearer
 
 
 def cache_key(request):
-    if request.user.is_anonymous:
-        user = get_django_user_from_auth_bearer(request)
-        if user is None:
-            user_id = "anonymous"
-        else:
-            user_id = user.id
-    else:
-        user_id = request.user.id
+
+    user_id = "anonymous" if request.user.is_anonymous else request.user.id
 
     q = getattr(request, request.method)
     # q.lists()

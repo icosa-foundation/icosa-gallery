@@ -3,6 +3,20 @@ import secrets
 from typing import List, NoReturn, Optional
 
 from constance import config
+from icosa.api import (COMMON_ROUTER_SETTINGS, POLY_CATEGORY_MAP,
+                       AssetPagination, build_format_q)
+from icosa.api.exceptions import FilterException
+from icosa.helpers.snowflake import generate_snowflake
+from icosa.jwt.authentication import JWTAuth
+from icosa.models import ALL_RIGHTS_RESERVED, PRIVATE, PUBLIC, Asset, AssetOwner
+from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
+from icosa.views.decorators import cache_per_user
+from ninja import File, Query, Router
+from ninja.decorators import decorate_view
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+from ninja.pagination import paginate
+
 from django.conf import settings
 from django.core.files.storage import get_storage_class
 from django.db import transaction
@@ -10,28 +24,6 @@ from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
-from icosa.api import (
-    COMMON_ROUTER_SETTINGS,
-    POLY_CATEGORY_MAP,
-    AssetPagination,
-    build_format_q,
-    get_django_user_from_auth_bearer,
-)
-from icosa.api.authentication import AuthBearer
-from icosa.api.exceptions import FilterException
-from icosa.helpers.snowflake import generate_snowflake
-from icosa.models import ALL_RIGHTS_RESERVED, PRIVATE, PUBLIC, Asset, AssetOwner
-from icosa.tasks import (
-    queue_blocks_upload_format,
-    queue_finalize_asset,
-    queue_upload_api_asset,
-)
-from icosa.views.decorators import cache_per_user
-from ninja import File, Query, Router
-from ninja.decorators import decorate_view
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-from ninja.pagination import paginate
 
 from .schema import (
     ORDER_FIELD_MAP,
@@ -91,10 +83,8 @@ def user_owns_asset(
     # This probably needs to be done in from_ninja_request
     # but putting requests stuff in models seemed wrong
     # so probably needs a refactor
-    if not hasattr(request, "auth"):
-        user = get_django_user_from_auth_bearer(request)
-        return user is not None and user == asset.owner.django_user
-    return AssetOwner.from_ninja_request(request) == asset.owner
+    user = request.user
+    return user is not None and user == asset.owner.django_user
 
 
 def check_user_owns_asset(
@@ -163,7 +153,7 @@ def get_asset(
 
 @router.delete(
     "/{str:asset}",
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     response={204: int},
 )
 def delete_asset(
@@ -183,7 +173,7 @@ def delete_asset(
 # other way.
 @router.post(
     "/{str:asset}/blocks_format",
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     response={200: UploadJobSchemaOut},
     include_in_schema=False,  # TODO this route, coupled with finalize_asset
     # has a race condition. If this route becomes public, this will probably
@@ -195,7 +185,7 @@ def add_blocks_asset_format(
     asset: str,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    user = AssetOwner.from_ninja_request(request)
+    user = request.user
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
@@ -220,7 +210,7 @@ def add_blocks_asset_format(
 
 @router.post(
     "/{str:asset}/blocks_finalize",
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     response={200: UploadJobSchemaOut},
     include_in_schema=False,  # TODO this route has a race condition with
     # add_blocks_asset_format and will overwrite the last format uploaded. If this
@@ -257,7 +247,7 @@ def asset_upload_state(
 
 @router.patch(
     "/{str:asset}/unpublish",
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     response=AssetSchema,
 )
 def unpublish_asset(
@@ -300,26 +290,31 @@ def get_user_asset(
 @router.post(
     "",
     response={200: UploadJobSchemaOut},
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     include_in_schema=False,
 )
 @router.post(
     "/",
     response={201: UploadJobSchemaOut},
-    auth=AuthBearer(),
+    auth=JWTAuth(),
     include_in_schema=False,
 )
 def upload_new_assets(
     request,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    user = AssetOwner.from_ninja_request(request)
+    user = request.user
+    assetOwner = AssetOwner.objects.get_or_create(django_user=user, defaults={
+        "url": user.name,
+        "email": user.email,
+        "displayname": user.displayname,
+    })
     job_snowflake = generate_snowflake()
     asset_token = secrets.token_urlsafe(8)
     asset = Asset.objects.create(
         id=job_snowflake,
         url=asset_token,
-        owner=user,
+        owner=assetOwner,
         name="Untitled Asset",
     )
     if files is not None:

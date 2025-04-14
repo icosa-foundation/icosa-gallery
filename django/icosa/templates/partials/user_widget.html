@@ -1,7 +1,7 @@
 {% load fontawesome_tags %}
 
 <div class="user-info">
-  {% if owner is None %}
+  {% if user is None or user.is_anonymous %}
       {% if config.SIGNUP_OPEN %}
           <a href="{% url 'login' %}">Login / Register</a>
       {% else %}

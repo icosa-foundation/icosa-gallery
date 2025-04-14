@@ -1,9 +1,8 @@
-from django.conf import settings
 from django.utils import timezone
-from icosa.models import AssetOwner, DeviceCode
 from ninja import Router
 from ninja.errors import HttpError
 
+from ..models import AssetOwner, DeviceCode
 from .schema import LoginToken
 
 router = Router()
@@ -16,16 +15,12 @@ def device_login(request, device_code: str):
             devicecode__iexact=device_code,
             expiry__gt=timezone.now(),
         )
-        access_token_expires = timezone.timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
-        )
-        access_token = AssetOwner.generate_access_token(
-            data={"sub": valid_code.user.email},
-            expires_delta=access_token_expires,
-        )
+        asset_owner = AssetOwner.from_django_user(valid_code.user)
+        access_token = asset_owner.generate_access_token()
+
         valid_code.delete()
         return {
-            "access_token": access_token,
+            "access_token": str(access_token),
             "token_type": "bearer",
         }
 

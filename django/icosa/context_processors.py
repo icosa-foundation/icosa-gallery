@@ -1,5 +1,5 @@
 from django.conf import settings
-from icosa.models import AssetOwner
+from icosa.models import AssetOwner, UserLike
 
 
 def owner_processor(request):
@@ -18,10 +18,10 @@ def settings_processor(request):
 
 
 def user_asset_likes_processor(request):
-    owner = AssetOwner.from_django_request(request)
+    user = request.user
     liked_assets = []
-    if owner is not None:
-        liked_assets = owner.likes.all()
+    if user is not None and not user.is_anonymous:
+        liked_assets = [ ul.asset for ul in UserLike.objects.filter(user=user) ]
     return {
         "user_liked_assets": liked_assets,
     }

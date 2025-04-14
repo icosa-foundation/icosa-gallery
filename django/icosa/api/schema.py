@@ -104,14 +104,14 @@ class LoginToken(Schema):
 
 class FullUserSchema(Schema):
     id: int
-    url: str
+    username: str
     email: EmailStr
     displayName: str = Field(None, alias="displayname")
     description: Optional[str] = None
 
 
 class PatchUserSchema(Schema):
-    url: Optional[str] = None
+    email: Optional[EmailStr] = None
     displayName: str = Field(None, alias="displayname")
     description: Optional[str] = None
 
