@@ -1,20 +1,24 @@
 from datetime import datetime, timedelta, timezone
-from django.conf import settings
+
 import jwt
+from django.conf import settings
 
 ALGORITHM = "HS256"
 
+
 class TokenError(Exception):
     pass
+
 
 class AccessToken:
     """
     A class which validates and wraps an existing JWT or can be used to build a
     new JWT.
     """
+
     lifetime = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    def __init__(self, token = None, verify = True):
+    def __init__(self, token=None, verify=True):
         """
         !!!! IMPORTANT !!!! MUST raise a TokenError with a user-facing error
         message if the given token is invalid, expired, or otherwise not safe
@@ -73,16 +77,12 @@ class AccessToken:
         """
         Signs and returns a token as a base64 encoded string.
         """
-        return jwt.encode(
-            self.payload,
-            settings.JWT_KEY,
-            algorithm=ALGORITHM
-        )
+        return jwt.encode(self.payload, settings.JWT_KEY, algorithm=ALGORITHM)
 
     def set_exp(
         self,
-        from_time = None,
-        lifetime = None,
+        from_time=None,
+        lifetime=None,
     ):
         """
         Updates the expiration time of a token.

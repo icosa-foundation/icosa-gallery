@@ -1,17 +1,17 @@
+from django.contrib.auth import get_user_model
 from ninja.errors import HttpError
 from ninja.security import HttpBearer
-
-from django.contrib.auth import get_user_model
 
 from .tokens import AccessToken, TokenError
 
 User = get_user_model()
 
+
 class JWTAuth(HttpBearer):
     def authenticate(self, request, token):
         authentication_error = HttpError(401, "Invalid Credentials")
         try:
-            token =  AccessToken(token)
+            token = AccessToken(token)
             email = token.get("sub")
             if email is None:
                 # headers={"WWW-Authenticate": "Bearer"},

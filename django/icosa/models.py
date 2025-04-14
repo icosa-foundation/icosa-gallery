@@ -191,7 +191,7 @@ ASSET_STATE_CHOICES = [
 
 class User(AbstractUser):
     displayname = models.CharField("Display Name", max_length=255)
-    
+
     def get_absolute_url(self):
         return f"/user/{self.username}"
 
@@ -203,6 +203,7 @@ class User(AbstractUser):
             set(string.ascii_uppercase + string.digits) - set(exclude),
         )
         return "".join(secrets.choice(characters) for i in range(length))
+
 
 class AssetOwnerManager(models.Manager):
     def get_unclaimed_for_user(self, user: AbstractBaseUser) -> QuerySet:
@@ -220,6 +221,7 @@ class AssetOwnerManager(models.Manager):
             email=user.email,
             url=user.username,
         )
+
 
 class AssetOwner(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -243,7 +245,7 @@ class AssetOwner(models.Model):
         on_delete=models.SET_NULL,
     )
     disable_profile = models.BooleanField(default=False)
-    
+
     objects = AssetOwnerManager()
 
     @classmethod
@@ -883,9 +885,7 @@ class Asset(models.Model):
 
 
 class UserLike(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="likedassets"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="likedassets")
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     date_liked = models.DateTimeField(auto_now_add=True)
 

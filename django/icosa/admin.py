@@ -364,10 +364,12 @@ class Oauth2CodeAdmin(ExportMixin, admin.ModelAdmin):
 class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
     pass
 
+
 class UserLikeInline(admin.TabularInline):
     extra = 0
     model = UserLike
     raw_id_fields = ["asset"]
+
 
 class UserAdmin(OriginalUserAdmin):
     model = User
@@ -379,18 +381,15 @@ class UserAdmin(OriginalUserAdmin):
 
     search_fields = (
         "displayname",
-        "username"
+        "username",
         "email",
         "fist_name",
         "last_name",
         "is_staff",
         "id",
     )
-    
-    fieldsets = OriginalUserAdmin.fieldsets + (
-        (None, {'fields': ('displayname',)}),
-    )
 
+    fieldsets = OriginalUserAdmin.fieldsets + ((None, {"fields": ("displayname",)}),)
 
     inlines = (UserLikeInline,)
 
