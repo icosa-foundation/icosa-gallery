@@ -51,3 +51,9 @@ if either:
 The second criteria is met if the resource's remote host is in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
 
 We also have some undocumented logic that is special to various data sets we are using on the flagship instance. This is extremely subject to change.
+
+### Docker's startup order
+
+Despite the web container depending on the postgres container, Docker makes no guarantees about the status of various services once the containers have started.
+
+We check for postgres availability by listening to `/dev/tcp/db/5432` from within the django container at the start of `entrypoint.sh`. This improves the initial run experience for new users, but can result in delayed startups if you change the postgres service name or port in `docker-compose.yml` for any reason. In that case, you will need to change the values in `entrypoint.sh`, too.

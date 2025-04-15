@@ -24,30 +24,7 @@ cd icosa-gallery
 
 **Note:** Further steps assume you are now in the `icosa-gallery` directory.
 
-### Step 2 - Populate the .env file with your custom values
-
-You can configure Icosa Gallery to your needs using an `.env` file. Copy the provided example file into place and amend its default values.
-
-``` bash
-cp example.env .env
-```
-
-Complete documentation of every variable and its purpose can be found in the `.env` file itself.
-
-**Important:** The application will not start without you first having populated the following values
-with something secure, for instance the output of something like [this](https://django-secret-key-generator.netlify.app/):
-
-``` bash
-DJANGO_SECRET_KEY=
-JWT_SECRET_KEY=
-```
-
-**Note:** So that Docker can correctly parse your environment variables, try to ensure none of them contain the `$` character. If a value must contain `$`, then wrap the value in single quotes. For example:
-
-`MY_BAD_PASSWORD='pa$$word'`
-
-
-### Step 3 - Choose a domain configuration
+### Step 2 - Choose a domain configuration
 
 Icosa gallery has two main, public-facing, components: The Web UI and the API. These can be run at the same domain, e.g. `example.com` for the Web UI and `example.com/api` for the API.
 
@@ -79,7 +56,7 @@ DEPLOYMENT_HOST_WEB=example.com
 DEPLOYMENT_HOST_API=api.example.com
 ```
 
-### Step 3½ - For local deployment only
+#### For local deployment only
 
 **Note:** For either of the above domain configurations, if you are planning on running this software on your own machine instead of a web host, you'll want to set your `.env` file to something like:
 
@@ -94,6 +71,28 @@ You'll then need to configure your local hosts file so that these domains are ro
 127.0.0.1       example.localhost
 127.0.0.1       api.example.localhost
 ```
+
+### Step 3 - Populate the .env file with your custom values
+
+You can configure Icosa Gallery to your needs using an `.env` file. Copy the provided example file into place and amend its default values.
+
+``` bash
+cp example.env .env
+```
+
+Complete documentation of every variable and its purpose can be found in the `.env` file itself.
+
+**Important:** The application will not start without you first having populated the following values
+with something secure, for instance the output of something like [this](https://django-secret-key-generator.netlify.app/):
+
+``` bash
+DJANGO_SECRET_KEY=
+JWT_SECRET_KEY=
+```
+
+**Note:** So that Docker can correctly parse your environment variables, try to ensure none of them contain the `$` character. If a value must contain `$`, then wrap the value in single quotes. For example:
+
+`MY_BAD_PASSWORD='pa$$word'`
 
 ### Step 4 - Build and run the project
 
@@ -110,14 +109,7 @@ If you've updated your `.env` file as above, visit http://example.localhost
 docker compose down
 ```
 
-**Note:** When running  `docker compose up -d` for the first time, the api service may start before postgres is fully available and fail to start. Subsequent runs should work as expected, so if you find that the software shows database-related errors on startup:
-
-``` bash
-docker compose down
-docker compose up -d
-```
-
-We're working to make this better for first-time users.
+**Note:** The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
 
 ### Step 5 - Setup an admin user
 
