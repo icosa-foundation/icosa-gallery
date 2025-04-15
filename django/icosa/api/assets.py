@@ -4,7 +4,6 @@ from typing import List, NoReturn, Optional
 
 from constance import config
 from django.conf import settings
-from django.core.files.storage import get_storage_class
 from django.db import transaction
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
@@ -46,7 +45,6 @@ from .schema import (
 
 router = Router()
 
-default_storage = get_storage_class()()
 
 DEFAULT_CACHE_SECONDS = 10
 

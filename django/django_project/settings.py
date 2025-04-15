@@ -71,38 +71,54 @@ if (
     and DJANGO_STORAGE_SECRET_KEY
     and DJANGO_STORAGE_MEDIA_ROOT
 ):
-    # Not using the STORAGES dict here as there is a bug in django-storages
-    # that means we must set these separately.
-    DEFAULT_FILE_STORAGE = DJANGO_DEFAULT_FILE_STORAGE
-    AWS_DEFAULT_ACL = "public-read"
-    AWS_ACCESS_KEY_ID = DJANGO_STORAGE_ACCESS_KEY
-    AWS_SECRET_ACCESS_KEY = DJANGO_STORAGE_SECRET_KEY
-    AWS_STORAGE_BUCKET_NAME = DJANGO_STORAGE_BUCKET_NAME
-    AWS_S3_REGION_NAME = DJANGO_STORAGE_REGION_NAME
-    AWS_S3_ENDPOINT_URL = DJANGO_STORAGE_URL
-    # NOTE: This setting removes all auth, effectively allowing full public access to
-    # all media. If we want authenticated media, we will need a workaround.
-    AWS_QUERYSTRING_AUTH = False
+    STORAGES = {
+        "default": {
+            "BACKEND": DJANGO_DEFAULT_FILE_STORAGE,
+            "OPTIONS": {
+                "default_acl": "public-read",
+                "access_key": DJANGO_STORAGE_ACCESS_KEY,
+                "secret_key": DJANGO_STORAGE_SECRET_KEY,
+                "bucket_name": DJANGO_STORAGE_BUCKET_NAME,
+                "region_name": DJANGO_STORAGE_REGION_NAME,
+                "endpoint_url": DJANGO_STORAGE_URL,
+                # NOTE: This setting removes all auth, effectively allowing
+                # full public access to all media. If we want authenticated
+                # media, we will need a workaround.
+                "querystring_auth": False,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
     if DJANGO_STORAGE_CUSTOM_DOMAIN:
-        AWS_S3_CUSTOM_DOMAIN = DJANGO_STORAGE_CUSTOM_DOMAIN
+        STORAGES["default"]["OPTIONS"].update({"custom_domain": DJANGO_STORAGE_CUSTOM_DOMAIN})
     # Special case for Backblaze B2, which doesn't support `x-amz-checksum-*`
     # headers. See here (at time of writing):
     # https://www.backblaze.com/docs/cloud-storage-s3-compatible-api#unsupported-features
     if "backblazeb2.com" in DJANGO_STORAGE_URL:
-        AWS_S3_CLIENT_CONFIG = Config(
-            request_checksum_calculation="when_required",
+        STORAGES["default"]["OPTIONS"].update(
+            {
+                "client_config": Config(
+                    request_checksum_calculation="when_required",
+                ),
+                "transfer_config": TransferConfig(
+                    multipart_threshold=5368709120,  # 5GiB in bytes
+                ),
+            }
         )
-        # Effectively disable multipart uploads so that checksum calculation is
-        # never required.
-        AWS_S3_TRANSFER_CONFIG = TransferConfig(
-            multipart_threshold=5368709120,  # 5GiB in bytes
-        )
-
         MEDIA_ROOT = None
         MEDIA_URL = "/"  # unused with django-storages
         LOCAL_MEDIA_STORAGE = False
 else:
-    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
     MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
     MEDIA_URL = "/media/"
     DJANGO_STORAGE_MEDIA_ROOT = None

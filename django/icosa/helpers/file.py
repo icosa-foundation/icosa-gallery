@@ -10,7 +10,6 @@ from typing import List, Optional
 
 import ijson
 from django.conf import settings
-from django.core.files.storage import get_storage_class
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
@@ -25,9 +24,6 @@ from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from PIL import Image
-
-default_storage = get_storage_class()()
-
 
 ASSET_NOT_FOUND = HttpError(404, "Asset not found.")
 
