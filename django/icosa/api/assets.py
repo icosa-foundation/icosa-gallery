@@ -3,8 +3,19 @@ import secrets
 from typing import List, NoReturn, Optional
 
 from constance import config
-from icosa.api import (COMMON_ROUTER_SETTINGS, POLY_CATEGORY_MAP,
-                       AssetPagination, build_format_q)
+from django.conf import settings
+from django.core.files.storage import get_storage_class
+from django.db import transaction
+from django.db.models import F, Q
+from django.db.models.query import QuerySet
+from django.http import HttpRequest
+from django.urls import reverse
+from icosa.api import (
+    COMMON_ROUTER_SETTINGS,
+    POLY_CATEGORY_MAP,
+    AssetPagination,
+    build_format_q,
+)
 from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
@@ -16,14 +27,6 @@ from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
-
-from django.conf import settings
-from django.core.files.storage import get_storage_class
-from django.db import transaction
-from django.db.models import F, Q
-from django.db.models.query import QuerySet
-from django.http import HttpRequest
-from django.urls import reverse
 
 from .schema import (
     ORDER_FIELD_MAP,
@@ -304,11 +307,14 @@ def upload_new_assets(
     files: Optional[List[UploadedFile]] = File(None),
 ):
     user = request.user
-    assetOwner = AssetOwner.objects.get_or_create(django_user=user, defaults={
-        "url": user.name,
-        "email": user.email,
-        "displayname": user.displayname,
-    })
+    assetOwner = AssetOwner.objects.get_or_create(
+        django_user=user,
+        defaults={
+            "url": user.name,
+            "email": user.email,
+            "displayname": user.displayname,
+        },
+    )
     job_snowflake = generate_snowflake()
     asset_token = secrets.token_urlsafe(8)
     asset = Asset.objects.create(
