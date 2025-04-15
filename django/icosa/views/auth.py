@@ -6,7 +6,7 @@ from typing import Optional
 import bcrypt
 from constance import config
 from django.conf import settings
-from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
@@ -30,6 +30,7 @@ from icosa.models import AssetOwner, DeviceCode
 INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
 
 User = get_user_model()
+
 
 def send_password_reset_email(request, user, to_email):
     site = get_current_site(request)
@@ -95,13 +96,15 @@ def debug_registration_email(request):
 
     return HttpResponse("ok")
 
+
 def render_login_error(request, error: Optional[str] = None):
     return render(
         request,
         "auth/login.html",
         {"error": error},
     )
-    
+
+
 def custom_login(request):
     if not request.user.is_anonymous:
         return redirect("home")
@@ -117,7 +120,7 @@ def custom_login(request):
             return render_login_error(request, "Please enter a valid username or password")
 
         login(request, user)
-        
+
         # Claim any assets that were created before the user logged in
         # TODO: Improve and make it configurable (dedicated view, rules for claiming, etc.)
         assetOwners = AssetOwner.objects.get_unclaimed_for_user(user)
@@ -125,7 +128,7 @@ def custom_login(request):
             owner.django_user = user
             owner.is_claimed = True
             owner.save()
-            
+
         return redirect("home")
     else:
         return render(request, "auth/login.html")
@@ -156,9 +159,7 @@ def register(request):
                 user.is_active = False
                 user.save()
 
-                send_registration_email(
-                    request, user, to_email=form.cleaned_data.get("email")
-                )
+                send_registration_email(request, user, to_email=form.cleaned_data.get("email"))
             except IntegrityError:
                 pass
             success = True
@@ -299,7 +300,7 @@ def devicecode(request):
 
         # Delete all codes for this user
         DeviceCode.objects.filter(user=user).delete()
-            # Delete all expired codes for any user
+        # Delete all expired codes for any user
         DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
 
         DeviceCode.objects.create(
