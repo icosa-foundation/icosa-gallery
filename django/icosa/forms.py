@@ -178,9 +178,7 @@ class UserSettingsForm(forms.ModelForm):
         email_confirm = cleaned_data.get("email_confirm")
 
         if not self.instance.check_password(password_current):
-            self.add_error(
-                "password_current", "You must enter your password to make changes"
-            )
+            self.add_error("password_current", "You must enter your password to make changes")
 
         if (password_new or password_confirm) and password_new != password_confirm:
             msg = "Passwords must match"
@@ -205,9 +203,7 @@ class UserSettingsForm(forms.ModelForm):
                 self.add_error("email", msg)
                 self.add_error("email_confirm", msg)
             else:
-                if (
-                    User.objects.filter(email=email_confirm).exists()
-                ):
+                if User.objects.filter(email=email_confirm).exists():
                     msg = "Cannot use this email address, please try another"
                     self.add_error("email", msg)
                     self.add_error("email_confirm", msg)
