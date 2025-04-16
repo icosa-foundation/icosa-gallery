@@ -29,7 +29,7 @@ services:
   redis:
     container_name: ig-redis
     image: redis:7.4.2-alpine
-    volumes: 
+    volumes:
       - "redis:/data"
     ports:
       - 6379:6379

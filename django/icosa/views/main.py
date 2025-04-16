@@ -680,7 +680,6 @@ def asset_publish(request, asset_url):
 @check_honeypot
 @never_cache
 def report_asset(request, asset_url):
-    print(request.headers)
     template = "main/report_asset.html"
     asset = get_object_or_404(Asset, url=asset_url)
     if request.method == "GET":
