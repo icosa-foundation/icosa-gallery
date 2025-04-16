@@ -199,6 +199,13 @@ class UserSettingsForm(forms.ModelForm):
             except AttributeError:
                 self.add_error("password_current", msg)
 
+        if password_new:
+            try:
+                validate_password(password_new)
+            except ValidationError as e:
+                for msg in e.messages:
+                    self.add_error("password_new", msg)
+
         if email and email != self.instance.email:
             if email != email_confirm:
                 msg = "Email addresses must match"
