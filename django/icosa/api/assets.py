@@ -305,12 +305,12 @@ def upload_new_assets(
     files: Optional[List[UploadedFile]] = File(None),
 ):
     user = request.user
-    assetOwner = AssetOwner.objects.get_or_create(
+    owner, _ = AssetOwner.objects.get_or_create(
         django_user=user,
         defaults={
-            "url": user.name,
             "email": user.email,
-            "displayname": user.displayname,
+            "url": user.username,
+            "displayname": user.displayname or user.username,
         },
     )
     job_snowflake = generate_snowflake()
@@ -318,7 +318,7 @@ def upload_new_assets(
     asset = Asset.objects.create(
         id=job_snowflake,
         url=asset_token,
-        owner=assetOwner,
+        owner=owner,
         name="Untitled Asset",
     )
     if files is not None:
