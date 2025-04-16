@@ -283,19 +283,18 @@ def uploads(request):
         if form.is_valid():
             job_snowflake = generate_snowflake()
             asset_token = secrets.token_urlsafe(8)
-            #TODO: create asset owner
-            assetOwner, _ = AssetOwner.objects.get_or_create(
-                email=user.email,
-                url=user.username,
+            owner, _ = AssetOwner.objects.get_or_create(
+                django_user=user,
                 defaults={
-                    "django_user": user,
+                    "email": user.email,
+                    "url": user.username,
                     "displayname": user.displayname or user.username,
                 },
             )
             asset = Asset.objects.create(
                 id=job_snowflake,
                 url=asset_token,
-                owner=assetOwner,
+                owner=owner,
                 state=ASSET_STATE_UPLOADING,
             )
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
@@ -528,62 +527,6 @@ def asset_status(request, asset_url):
     context = {
         "asset": asset,
         "is_polling": True,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
-
-
-@login_required
-@never_cache
-def uploads(request):
-    template = "main/manage_uploads.html"
-
-    user = request.user
-    if request.method == "POST":
-        form = AssetUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            job_snowflake = generate_snowflake()
-            asset_token = secrets.token_urlsafe(8)
-            #TODO: check the way the aset owner is created
-            owner, _ = AssetOwner.objects.get_or_create(django_user=user, displayname=user.displayname, email=user.email)
-            asset = Asset.objects.create(
-                id=job_snowflake,
-                url=asset_token,
-                owner=owner,
-                state=ASSET_STATE_UPLOADING,
-            )
-            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                queue_upload_asset_web_ui(
-                    current_user=user,
-                    asset=asset,
-                    files=[request.FILES["file"]],
-                )
-            else:
-                upload(
-                    user,
-                    asset,
-                    [request.FILES["file"]],
-                )
-            messages.add_message(request, messages.INFO, "Your upload has started.")
-            return HttpResponseRedirect(reverse("uploads"))
-    elif request.method == "GET":
-        form = AssetUploadForm()
-    else:
-        return HttpResponseNotAllowed(["GET", "POST"])
-
-    asset_objs = Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
-    assets = paginator.get_page(page_number)
-
-    context = {
-        "assets": assets,
-        "form": form,
-        "page_title": "My Uploads",
-        "paginator": paginator,
     }
     return render(
         request,
