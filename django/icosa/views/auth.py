@@ -123,8 +123,8 @@ def custom_login(request):
 
         # Claim any assets that were created before the user logged in
         # TODO: Improve and make it configurable (dedicated view, rules for claiming, etc.)
-        assetOwners = AssetOwner.objects.get_unclaimed_for_user(user)
-        for owner in assetOwners:
+        asset_owners = AssetOwner.objects.get_unclaimed_for_user(user)
+        for owner in asset_owners:
             owner.django_user = user
             owner.is_claimed = True
             owner.save()
