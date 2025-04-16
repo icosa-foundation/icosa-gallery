@@ -46,7 +46,7 @@
             {% else %}
             {{ asset.owner.displayname | default:asset.owner.url }}
             {% endif %}
-            {% if owner_details %}&bull; {{ asset.timestamp|date:"d/m/Y" }}{% endif %}
+            {% if owner_details %}&bull; {{ asset.create_time|date:"d/m/Y" }}{% endif %}
         </p>
         {% if owner_details %}
             <p><small>Visibility: {{ asset.get_visibility_display }}<br>

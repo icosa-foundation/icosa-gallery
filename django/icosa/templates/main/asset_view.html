@@ -34,7 +34,7 @@
                 </h2>
                 {% if asset.owner %}
                     <p class="sketch-byline">
-                        <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a> &bull; {{ asset.timestamp|date:"d/m/Y" }}
+                        <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a> &bull; {{ asset.create_time|date:"d/m/Y" }}
                     </p>
                 {% endif %}
                 {% if asset.description %}

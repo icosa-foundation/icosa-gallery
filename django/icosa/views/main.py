@@ -26,6 +26,7 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django_ratelimit.decorators import ratelimit
 from honeypot.decorators import check_honeypot
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
@@ -675,8 +676,11 @@ def asset_publish(request, asset_url):
     )
 
 
+@ratelimit(key="user_or_ip", rate="5/m", method="POST")
 @check_honeypot
+@never_cache
 def report_asset(request, asset_url):
+    print(request.headers)
     template = "main/report_asset.html"
     asset = get_object_or_404(Asset, url=asset_url)
     if request.method == "GET":

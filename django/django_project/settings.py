@@ -18,6 +18,17 @@ if os.environ.get("DJANGO_DISABLE_CACHE"):
             "BACKEND": "django.core.cache.backends.dummy.DummyCache",
         }
     }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://redis:6379",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
+
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 JWT_KEY = os.environ.get("JWT_SECRET_KEY")

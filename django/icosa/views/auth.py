@@ -19,6 +19,7 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.cache import never_cache
+from django_ratelimit.decorators import ratelimit
 from icosa.forms import (
     NewUserForm,
     PasswordResetConfirmForm,
@@ -142,6 +143,7 @@ def custom_logout(request):
         return render(request, "auth/logout.html")
 
 
+@ratelimit(key="user_or_ip", rate="10/m", method="POST")
 def register(request):
     success = False
     if request.method == "POST":
@@ -198,6 +200,7 @@ def activate_registration(request, uidb64, token):
     )
 
 
+@ratelimit(key="user_or_ip", rate="5/m", method="POST")
 def password_reset(request):
     if request.method == "POST":
         form = PasswordResetForm(request.POST)
