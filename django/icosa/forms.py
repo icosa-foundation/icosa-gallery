@@ -2,6 +2,8 @@ from constance import config
 from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User as DjangoUser
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.forms.widgets import (
     ClearableFileInput,
@@ -240,6 +242,12 @@ class NewUserForm(forms.ModelForm):
             msg = "Passwords must match"
             self.add_error("password_new", msg)
             self.add_error("password_confirm", msg)
+        if password_new:
+            try:
+                validate_password(password_new)
+            except ValidationError as e:
+                for msg in e.messages:
+                    self.add_error("password_new", msg)
 
     class Meta:
         model = User
