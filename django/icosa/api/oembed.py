@@ -1,7 +1,6 @@
 from typing import Optional
 
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseNotFound
 from django.template.loader import render_to_string
 from django.urls import resolve
 from icosa.api.schema import OembedOut

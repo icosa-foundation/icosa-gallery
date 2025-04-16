@@ -5,7 +5,7 @@ from typing import List, Literal, Optional
 from django.db.models import Q
 from django.urls import reverse_lazy
 from icosa.helpers.format_roles import role_display
-from icosa.models import API_DOWNLOAD_COMPATIBLE, CC_LICENSES, Asset, Category
+from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr

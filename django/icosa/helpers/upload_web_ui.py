@@ -7,7 +7,6 @@ from typing import List, Optional
 
 from django.conf import settings
 from icosa.helpers.file import (
-    IMAGE_REGEX,
     UploadedFormat,
     add_thumbnail_to_asset,
     get_content_type,

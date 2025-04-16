@@ -2,14 +2,10 @@ import base64
 import io
 import os
 import re
-import subprocess
-import zipfile
 from dataclasses import dataclass
-from pathlib import Path
 from typing import List, Optional
 
 import ijson
-from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
