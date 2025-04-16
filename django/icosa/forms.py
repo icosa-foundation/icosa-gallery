@@ -292,6 +292,13 @@ class PasswordResetConfirmForm(forms.ModelForm):
             self.add_error("password_new", msg)
             self.add_error("password_confirm", msg)
 
+        if password_new:
+            try:
+                validate_password(password_new)
+            except ValidationError as e:
+                for msg in e.messages:
+                    self.add_error("password_new", msg)
+
     class Meta:
         model = User
         fields = []
