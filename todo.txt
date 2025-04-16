@@ -1,7 +1,5 @@
 this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
 
-Add max complexity as a search filter
-
 orderBy is currently:
 BEST, NEWEST, OLDEST. Defaults to BEST, which ranks assets
 based on a combination of popularity and other features. 
