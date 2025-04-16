@@ -249,6 +249,7 @@ class NewUserForm(forms.ModelForm):
             msg = "Passwords must match"
             self.add_error("password_new", msg)
             self.add_error("password_confirm", msg)
+
         if password_new:
             try:
                 validate_password(password_new)
