@@ -12,6 +12,7 @@ from constance import config
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models import Q, QuerySet
 from django.urls import reverse
@@ -43,6 +44,19 @@ import jwt
 
 from .helpers.snowflake import get_snowflake_timestamp
 from .helpers.storage import get_b2_bucket
+
+VALID_THUMBNAIL_EXTENSIONS = [
+    "jpeg",
+    "jpg",
+    "png",
+]
+
+VALID_IMAGE_EXTENSIONS = VALID_THUMBNAIL_EXTENSIONS + [
+    "tif",
+    "tiff",
+    "webp",
+    "bmp",
+]
 
 FILENAME_MAX_LENGTH = 1024
 
@@ -344,12 +358,14 @@ class Asset(models.Model):
         blank=True,
         null=True,
         upload_to=thumbnail_upload_path,
+        validators=[FileExtensionValidator(allowed_extensions=VALID_THUMBNAIL_EXTENSIONS)],
     )
     preview_image = models.ImageField(
         max_length=FILENAME_MAX_LENGTH,
         blank=True,
         null=True,
         upload_to=preview_image_upload_path,
+        validators=[FileExtensionValidator(allowed_extensions=VALID_THUMBNAIL_EXTENSIONS)],
     )
     thumbnail_contenttype = models.CharField(
         max_length=255,
@@ -1089,6 +1105,7 @@ class MastheadSection(models.Model):
         blank=True,
         null=True,
         upload_to=masthead_image_upload_path,
+        validators=[FileExtensionValidator(allowed_extensions=VALID_THUMBNAIL_EXTENSIONS)],
     )
     asset = models.ForeignKey(Asset, on_delete=models.SET_NULL, null=True, blank=True)
     url = models.CharField(

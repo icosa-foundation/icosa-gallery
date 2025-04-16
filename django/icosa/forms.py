@@ -2,6 +2,7 @@ from constance import config
 from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User as DjangoUser
+from django.core.validators import FileExtensionValidator
 from django.forms.widgets import (
     ClearableFileInput,
     EmailInput,
@@ -42,7 +43,7 @@ class CameraButton(HiddenInput):
 
 
 class AssetUploadForm(forms.Form):
-    file = forms.FileField()
+    file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=["zip"])])
 
 
 class AssetReportForm(forms.Form):
@@ -120,8 +121,10 @@ class AssetEditForm(forms.ModelForm):
                     "You cannot modify this field because this work is not private and has a CC license.",
                 )
 
-    thumbnail = forms.FileField(required=False, widget=CustomImageInput)
-    zip_file = forms.FileField(required=False)
+    thumbnail = forms.FileField(
+        required=False, widget=CustomImageInput
+    )  # No validator needed here; it's on the model field definition.
+    zip_file = forms.FileField(required=False, validators=[FileExtensionValidator(allowed_extensions=["zip"])])
 
     editable_fields = [
         "name",
