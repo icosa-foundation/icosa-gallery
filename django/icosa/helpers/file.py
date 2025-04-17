@@ -61,6 +61,11 @@ CONTENT_TYPE_MAP = {
 }
 
 
+MAX_UNZIP_BYTES = 524288000  # 500MB
+
+MAX_UNZIP_SECONDS = 120
+
+
 def get_content_type(filename):
     extension = os.path.splitext(filename)[-1].replace(".", "")
     return CONTENT_TYPE_MAP.get(extension, None)

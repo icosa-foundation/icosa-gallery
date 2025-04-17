@@ -127,6 +127,10 @@ class AssetEditForm(forms.ModelForm):
         if thumbnail:
             if not validate_mime(next(thumbnail.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
                 self.add_error("thumbnail", "Image is not a png or jpg.")
+        zip_file = cleaned_data.get("zip_file")
+        if zip_file:
+            if not validate_mime(next(zip_file.chunks(chunk_size=2048)), ["application/zip"]):
+                self.add_error("zip_file", "File is not a zip archive.")
 
     thumbnail = forms.FileField(
         required=False, widget=CustomImageInput

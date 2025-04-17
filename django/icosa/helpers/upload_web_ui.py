@@ -6,7 +6,11 @@ from pathlib import Path
 from typing import List, Optional
 
 from django.conf import settings
+from django.utils import timezone
+from icosa.api.exceptions import ZipException
 from icosa.helpers.file import (
+    MAX_UNZIP_BYTES,
+    MAX_UNZIP_SECONDS,
     UploadedFormat,
     add_thumbnail_to_asset,
     get_content_type,
@@ -131,19 +135,35 @@ def clean_up_conversion(gltf_file, bin_file, gltf_path, asset_dir):
 def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
     unzipped_files = []
     for file in files:
+        # Note, the mime type should be checked in the form. This function assumes the correct mime type for zip
         if not file.name.endswith(".zip"):
             # No further processing needed, though really we are not expecting
             # extra files outside of a zip.
             unzipped_files.append(file)
             continue
 
+        unzip_start = timezone.now()
+        total_size_bytes = 0
         # Read the file as a ZIP file
         with zipfile.ZipFile(io.BytesIO(file.read())) as zip_file:
             # Iterate over each file in the ZIP
-            for zip_info in zip_file.infolist():
+            for i, zip_info in enumerate(zip_file.infolist()):
+                unzip_elapsed = timezone.now() - unzip_start
+                if unzip_elapsed.seconds > MAX_UNZIP_SECONDS:
+                    raise ZipException("Zip taking too long to extract, aborting.")
+                # only allow 1000 "things" inside the zip. This includes
+                # directories, even though we are skipping them. This is for
+                # decompression safety.
+                if i >= 999:
+                    raise ZipException("Too many files")
                 # Skip directories
+                # TODO(james): skipping directories is great for preventing zip
+                # bombs, but isn't flexible.
                 if zip_info.is_dir():
                     continue
+                total_size_bytes += zip_info.file_size
+                if total_size_bytes > MAX_UNZIP_BYTES:
+                    raise ZipException(f"Uncompressed zip will be larger than {MAX_UNZIP_BYTES}")
                 # Read the file contents
                 with zip_file.open(zip_info) as extracted_file:
                     # Create a new UploadedFile object
@@ -156,7 +176,6 @@ def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
                     # Add the file to the list of unzipped files to process. Do
                     # not include the  manifest.
                     unzipped_files.append(processed_file)
-
     return unzipped_files
 
 
@@ -217,7 +236,10 @@ def upload(
 
     if files is None:
         files = []
-    unzipped_files = process_files(files)
+    try:
+        unzipped_files = process_files(files)
+    except ZipException as err:
+        raise err
 
     thumbnail = None
     gltf_to_convert = bin_to_convert = None

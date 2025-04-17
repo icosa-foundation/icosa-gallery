@@ -5,7 +5,11 @@ import zipfile
 from dataclasses import dataclass
 from typing import List, Optional
 
+from django.utils import timezone
+from icosa.api.exceptions import ZipException
 from icosa.helpers.file import (
+    MAX_UNZIP_BYTES,
+    MAX_UNZIP_SECONDS,
     UploadedFormat,
     add_thumbnail_to_asset,
     get_content_type,
@@ -57,6 +61,9 @@ class UploadSet:
 
 
 def process_files(files: List[UploadedFile]) -> UploadSet:
+    # TODO(james): unify this with upload_web_ui.process_files
+    # The two are similar and complex enough. Need to update the callsite of
+    # the web_ui version. Prefer this version.
     thumbnail = None
     manifest = None
     unzipped_files = []
@@ -67,13 +74,30 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
             unzipped_files.append(file)
             continue
 
+        if not validate_mime(file.chunks(chunk_size=2048), ["application/zip"]):
+            raise HttpError(400, "Uploaded file is not a zip archive.")
+        file.seek(0)
+        unzip_start = timezone.now()
+        total_size_bytes = 0
         # Read the file as a ZIP file
         with zipfile.ZipFile(io.BytesIO(file.read())) as zip_file:
-            # Iterate over each file in the ZIP
-            for zip_info in zip_file.infolist():
+            for i, zip_info in enumerate(zip_file.infolist()):
+                unzip_elapsed = timezone.now() - unzip_start
+                if unzip_elapsed.seconds > MAX_UNZIP_SECONDS:
+                    raise ZipException("Zip taking too long to extract, aborting.")
+                # only allow 1000 "things" inside the zip. This includes
+                # directories, even though we are skipping them. This is for
+                # decompression safety.
+                if i >= 999:
+                    raise ZipException("Too many files")
                 # Skip directories
+                # TODO(james): skipping directories is great for preventing zip
+                # bombs, but isn't flexible.
                 if zip_info.is_dir():
                     continue
+                total_size_bytes += zip_info.file_size
+                if total_size_bytes > MAX_UNZIP_BYTES:
+                    raise ZipException(f"Uncompressed zip will be larger than {MAX_UNZIP_BYTES}")
                 # Read the file contents
                 with zip_file.open(zip_info) as extracted_file:
                     # Create a new UploadedFile object
@@ -120,7 +144,10 @@ def upload_api_asset(
     asset.save()
     if files is None:
         raise HttpError(400, "Include files for upload.")
-    upload_set = process_files(files)
+    try:
+        upload_set = process_files(files)
+    except (ZipException, HttpError):
+        raise HttpError(400, "Invalid zip archive.")
 
     main_files = []
     sub_files = {
