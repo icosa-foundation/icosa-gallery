@@ -57,3 +57,89 @@ We also have some undocumented logic that is special to various data sets we are
 Despite the web container depending on the postgres container, Docker makes no guarantees about the status of various services once the containers have started.
 
 We check for postgres availability by listening to `/dev/tcp/db/5432` from within the django container at the start of `entrypoint.sh`. This improves the initial run experience for new users, but can result in delayed startups if you change the postgres service name or port in `docker-compose.yml` for any reason. In that case, you will need to change the values in `entrypoint.sh`, too.
+
+# Usage and customisation
+
+Once you have a superuser, you can log in to the admin at <example.com>/admin
+
+From there you, can change some settings for allowing signup and other site behaviours at <example.com>/admin/constance/config/
+
+**Note:** While this application supports uploading via an undocumented API, we would encourage users to only upload via the web UI until this area of the site is stabilised.
+
+## Managements commands
+
+There are a number of managements commands you can run from the Django container to make administering the site easier.
+
+To run a management command, enter the Django container:
+
+`docker exec -it ig-web bash`
+
+Then run the command:
+
+`python manage.py <my_command>`
+
+The following custom commands are available:
+
+### `create_apikey [username]`
+
+Creates a JWT for the specified Django user, identified by their username, for accessing the API. Expires after two weeks, by default. Used as an alternative to the device login flow provided by Open Brush.
+
+Arguments:
+
+`--username`
+
+The username of the Django user.
+
+### `save_all_assets [options]`
+
+Runs a bulk save of all assets in the database. Most useful when denormalising metadata after, for example, bulk importing assets from somewhere.
+
+Options:
+
+`--verbose`
+
+Prints logs to stdout
+
+`--background`
+
+Queues the bulk save as a background task so that you are free to log out while the job continues.
+
+`--kill`
+
+Kills all running jobs.
+
+`--resume`
+
+Resumes the last killed job.
+
+### `create_django_user_from_asset_owner [id]`
+
+Creates a Django user based on an existing Asset Owner.
+
+Arguments:
+
+`--id`
+
+The primary key of the Asset Owner from which to create a Django User.
+
+## Customising the look and feel
+
+Some basic experience with working with Django is currently required. We are working to make customisations easier out of the box, but for now, follow the below instructions.
+
+First, you'll need to fork this repo. 
+
+Then, to make changes to any html template, you can do so without modifying the base application code by including your own templates in a new Django app.
+
+See (the Django tutorial for starting a new app)[https://docs.djangoproject.com/en/5.2/intro/tutorial01/#creating-the-polls-app]. You'll need to run Django commands from inside the docker container: `docker exec -it ig-web bash`.
+
+Then, add your new app to `INSTALLED_APPS` in `django/django_project/settings.py` *before* the `"icosa"` app.
+
+Inside your app's templates directory, duplicate the path of the template you'd like to override. For example to completely override the base template, create `base.html` inside `django/my_app/templates/`. You can include any custom styles and other static assets in your app's static folder: `django/my_app/static/`.
+
+# Contributing
+
+This project is still in its early days. If you've forked this repo or are using it as is and you'd like to contribute a change, fix or improvement, please get in touch; we'd love to chat!
+
+## Code style
+
+Currently running `ruff check --select I --fix - | ruff format --line-length 120 -` on python files. We'll provide official code style guidelines soon.
