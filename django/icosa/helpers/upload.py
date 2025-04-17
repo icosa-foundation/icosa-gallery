@@ -10,6 +10,7 @@ from icosa.helpers.file import (
     add_thumbnail_to_asset,
     get_content_type,
     validate_file,
+    validate_mime,
 )
 from icosa.helpers.format_roles import (
     GLB_FORMAT,
@@ -23,12 +24,14 @@ from icosa.helpers.format_roles import (
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     ASSET_STATE_UPLOADING,
+    VALID_THUMBNAIL_MIME_TYPES,
     Asset,
     AssetOwner,
     Format,
     Resource,
 )
 from ninja import File
+from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
 SUB_FILE_MAP = {
@@ -116,7 +119,7 @@ def upload_api_asset(
     asset.state = ASSET_STATE_UPLOADING
     asset.save()
     if files is None:
-        files = []
+        raise HttpError(400, "Include files for upload.")
     upload_set = process_files(files)
 
     main_files = []
@@ -175,7 +178,11 @@ def upload_api_asset(
         )
 
     if upload_set.thumbnail:
-        add_thumbnail_to_asset(upload_set.thumbnail, asset)
+        thumbnail = upload_set.thumbnail
+        if validate_mime(next(thumbnail.file.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
+            add_thumbnail_to_asset(upload_set.thumbnail, asset)
+        else:
+            raise HttpError(400, "Thumbnail must be png or jpg.")
 
     asset.state = ASSET_STATE_COMPLETE
     asset.save()

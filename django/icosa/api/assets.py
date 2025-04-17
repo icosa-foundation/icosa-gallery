@@ -324,11 +324,15 @@ def upload_new_assets(
     if files is not None:
         from icosa.helpers.upload import upload_api_asset
 
-        upload_api_asset(
-            user,
-            asset,
-            files,
-        )
+        try:
+            upload_api_asset(
+                user,
+                asset,
+                files,
+            )
+        except HttpError as err:
+            raise err
+
         # queue_upload_api_asset(
         #     user,
         #     asset,

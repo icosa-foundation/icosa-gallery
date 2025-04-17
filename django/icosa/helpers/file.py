@@ -17,7 +17,13 @@ from icosa.helpers.format_roles import (
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
     TILT_FORMAT,
 )
-from icosa.models import ASSET_STATE_UPLOADING, Asset, Format, Resource
+from icosa.models import (
+    ASSET_STATE_UPLOADING,
+    VALID_THUMBNAIL_MIME_TYPES,
+    Asset,
+    Format,
+    Resource,
+)
 from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
@@ -434,11 +440,14 @@ def upload_blocks_format(
     elif filetype in ["OBJ", "GLTF2", "GLTF"]:
         process_root(asset, f)
     elif filetype == "IMAGE" and f.file.name == "thumbnail.png":
-        asset.thumbnail = f.file
-        asset.thumbnail_contenttype = get_content_type(f.file.name)
-        # We save outside of this function too. Saving here is more explicit,
-        # but might reduce perf.
-        asset.save()
+        if validate_mime(next(f.file.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
+            asset.thumbnail = f.file
+            asset.thumbnail_contenttype = get_content_type(f.file.name)
+            # We save outside of this function too. Saving here is more explicit,
+            # but might reduce perf.
+            asset.save()
+        else:
+            raise HttpError(400, "Thumbnail must be png or jpg.")
     else:
         process_normally(asset, f)
 
