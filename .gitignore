@@ -177,3 +177,4 @@ uv.lock
 .envrc
 django/icosa/icosa/
 django/icosa/static
+django/media

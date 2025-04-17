@@ -13,7 +13,7 @@ from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q, QuerySet
 from django.urls import reverse
 from django.utils import timezone
@@ -862,7 +862,8 @@ class Asset(models.Model):
             else:
                 # This is not a file we care to mess with.
                 pass
-
+    
+    @transaction.atomic
     def save(self, *args, **kwargs):
         update_timestamps = kwargs.pop("update_timestamps", False)
         bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
