@@ -43,6 +43,7 @@ from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ASSET_STATE_BARE,
+    ASSET_STATE_FAILED,
     ASSET_STATE_UPLOADING,
     CATEGORY_LABEL_MAP,
     CATEGORY_LABELS,
@@ -317,18 +318,23 @@ def uploads(request):
                 owner=owner,
                 state=ASSET_STATE_UPLOADING,
             )
-            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                queue_upload_asset_web_ui(
-                    current_user=user,
-                    asset=asset,
-                    files=[request.FILES["file"]],
-                )
-            else:
-                upload(
-                    user,
-                    asset,
-                    [request.FILES["file"]],
-                )
+            try:
+                if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                    queue_upload_asset_web_ui(
+                        current_user=user,
+                        asset=asset,
+                        files=[request.FILES["file"]],
+                    )
+                else:
+                    upload(
+                        user,
+                        asset,
+                        [request.FILES["file"]],
+                    )
+            except Exception:
+                asset.state = ASSET_STATE_FAILED
+                asset.save()
+
             messages.add_message(request, messages.INFO, "Your upload has started.")
             return HttpResponseRedirect(reverse("uploads"))
     elif request.method == "GET":
