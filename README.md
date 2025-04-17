@@ -64,7 +64,8 @@ Once you have a superuser, you can log in to the admin at <example.com>/admin
 
 From there you, can change some settings for allowing signup and other site behaviours at <example.com>/admin/constance/config/
 
-**Note:** While this application supports uploading via an undocumented API, we would encourage users to only upload via the web UI until this area of the site is stabilised.
+> [!NOTE]
+> While this application supports uploading via an undocumented API, we would encourage users to only upload via the web UI until this area of the site is stabilised.
 
 ## Managements commands
 
