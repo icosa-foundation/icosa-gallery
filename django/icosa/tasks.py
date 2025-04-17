@@ -2,6 +2,7 @@ import time
 from typing import List, Optional
 
 from django.utils import timezone
+from django.db import transaction
 from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
 from icosa.api.schema import AssetFinalizeData
@@ -80,6 +81,7 @@ def queue_blocks_upload_format(
 
 
 @on_commit_task()
+@transaction.atomic
 def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
     asset = Asset.objects.get(url=asset_url)
 
@@ -145,11 +147,12 @@ def save_all_assets(
                 print(f"Process killed. Last updated: {save_log.last_id}")
             return
         try:
-            asset.save()
-            if verbose:
-                print(f"Saved Asset {asset.id}\t", end="\r")
-            save_log.last_id = asset.id
-            save_log.save(update_fields=["update_time", "last_id"])
+            with transaction.atomic():
+                asset.save()
+                if verbose:
+                    print(f"Saved Asset {asset.id}\t", end="\r")
+                save_log.last_id = asset.id
+                save_log.save(update_fields=["update_time", "last_id"])
             time.sleep(0.05)
         except Exception:
             save_log.finish_status = BulkSaveLog.FAILED

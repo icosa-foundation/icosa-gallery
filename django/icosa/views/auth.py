@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -122,11 +122,14 @@ def custom_login(request):
 
         # Claim any assets that were created before the user logged in
         # TODO: Improve and make it configurable (dedicated view, rules for claiming, etc.)
-        asset_owners = AssetOwner.objects.get_unclaimed_for_user(user)
-        for owner in asset_owners:
-            owner.django_user = user
-            owner.is_claimed = True
-            owner.save()
+        
+        with transaction.atomic():
+            asset_owners = AssetOwner.objects.get_unclaimed_for_user(user)
+        
+            for owner in asset_owners:
+                owner.django_user = user
+                owner.is_claimed = True
+                owner.save()
 
         return redirect("home")
     else:
@@ -151,13 +154,14 @@ def register(request):
             password = form.cleaned_data["password_new"]
             username = form.cleaned_data["username"]
             try:
-                user = User.objects.create_user(
-                    username=username,
-                    email=email,
-                    password=password,
-                )
-                user.is_active = False
-                user.save()
+                with transaction.atomic():
+                    user = User.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=password,
+                    )
+                    user.is_active = False
+                    user.save()
 
                 send_registration_email(request, user, to_email=form.cleaned_data.get("email"))
             except IntegrityError:
@@ -175,7 +179,6 @@ def register(request):
             "success": success,
         },
     )
-
 
 def activate_registration(request, uidb64, token):
     try:
@@ -299,16 +302,17 @@ def devicecode(request):
         code = User.generate_device_code()
         expiry_time = timezone.now() + timezone.timedelta(minutes=1)
 
-        # Delete all codes for this user
-        DeviceCode.objects.filter(user=user).delete()
-        # Delete all expired codes for any user
-        DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
+        with transaction.atomic():
+            # Delete all codes for this user
+            DeviceCode.objects.filter(user=user).delete()
+            # Delete all expired codes for any user
+            DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
 
-        DeviceCode.objects.create(
-            user=user,
-            devicecode=code,
-            expiry=expiry_time,
-        )
+            DeviceCode.objects.create(
+                user=user,
+                devicecode=code,
+                expiry=expiry_time,
+            )
 
         context = {
             "device_code": code.upper(),
