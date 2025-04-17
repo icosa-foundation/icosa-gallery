@@ -51,11 +51,21 @@ VALID_THUMBNAIL_EXTENSIONS = [
     "png",
 ]
 
+VALID_THUMBNAIL_MIME_TYPES = [
+    "image/jpeg",
+    "image/png",
+]
+
+VALID_IMAGE_MIME_TYPES = VALID_THUMBNAIL_MIME_TYPES + [
+    "image/bmp",
+    "image/tiff",
+    "image/webp",
+]
 VALID_IMAGE_EXTENSIONS = VALID_THUMBNAIL_EXTENSIONS + [
+    "bmp",
     "tif",
     "tiff",
     "webp",
-    "bmp",
 ]
 
 FILENAME_MAX_LENGTH = 1024

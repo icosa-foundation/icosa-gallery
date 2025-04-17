@@ -15,6 +15,7 @@ ENV PATH="/venv/bin:$PATH"
 RUN set -x \
     && BUILD_DEPS=" \
     build-essential \
+    libmagic-dev \
     libpq-dev \
     nodejs \
     npm \
@@ -46,6 +47,7 @@ RUN set -x \
     && BUILD_DEPS=" \
     git \
     libpq-dev \
+    libmagic-dev \
     htop \
     nodejs \
     " \

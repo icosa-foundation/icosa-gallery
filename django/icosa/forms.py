@@ -11,6 +11,7 @@ from django.forms.widgets import (
     PasswordInput,
 )
 from django.utils.translation import gettext_lazy as _
+from icosa.helpers.file import validate_mime
 from icosa.models import (
     PRIVATE,
     V3_CC_LICENSE_MAP,
@@ -19,6 +20,7 @@ from icosa.models import (
     V4_CC_LICENSE_CHOICES,
     V4_CC_LICENSE_MAP,
     V4_CC_LICENSES,
+    VALID_THUMBNAIL_MIME_TYPES,
     Asset,
     User,
 )
@@ -121,6 +123,10 @@ class AssetEditForm(forms.ModelForm):
                     field,
                     "You cannot modify this field because this work is not private and has a CC license.",
                 )
+        thumbnail = cleaned_data.get("thumbnail")
+        if thumbnail:
+            if not validate_mime(next(thumbnail.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
+                self.add_error("thumbnail", "Image is not a png or jpg.")
 
     thumbnail = forms.FileField(
         required=False, widget=CustomImageInput

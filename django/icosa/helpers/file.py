@@ -2,10 +2,12 @@ import base64
 import io
 import os
 import re
+from collections.abc import Buffer
 from dataclasses import dataclass
 from typing import List, Optional
 
 import ijson
+import magic
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from icosa.helpers.format_roles import (
     BLOCKS_FORMAT,
@@ -463,3 +465,8 @@ def b64_to_img(b64_image: str) -> InMemoryUploadedFile:
         image_bytes_out.getbuffer().nbytes,
         None,
     )
+
+
+def validate_mime(buffer: Buffer, valid_types: List[str]):
+    mime_type = magic.from_buffer(buffer, mime=True)
+    return mime_type in valid_types
