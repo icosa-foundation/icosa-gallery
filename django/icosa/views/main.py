@@ -362,7 +362,7 @@ def uploads(request):
 
 @never_cache
 def owner_show(request, slug):
-    template = "main/owner_show.html"
+    template = "main/user_show.html"
     owner = get_object_or_404(
         AssetOwner,
         url=slug,
