@@ -1,7 +1,7 @@
 # Icosa Gallery
 
 > [!NOTE]
-> This codebase is not currently at a stable release and everything is subject to change. If you want to use this then reach out to us. There may be breaking changes and refactors that you will want to know about first.
+> This codebase is not currently at a stable point in terms of readiness for customization and reuse. If you are interested in forking this project and wish to stay in sync with upstream changes then reach out to us. There may be breaking changes and refactors that you will want to know about first.
 
 Icosa Gallery is an open source 3D model hosting solution, intended as a replacement for Google's Poly.
 
