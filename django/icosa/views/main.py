@@ -306,10 +306,10 @@ def uploads(request):
             asset_token = secrets.token_urlsafe(8)
             owner, _ = AssetOwner.objects.get_or_create(
                 django_user=user,
+                email=user.email,
                 defaults={
-                    "email": user.email,
-                    "url": user.username,
-                    "displayname": user.displayname or user.username,
+                    "url": secrets.token_urlsafe(8),
+                    "displayname": user.displayname,
                 },
             )
             asset = Asset.objects.create(
