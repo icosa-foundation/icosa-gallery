@@ -32,6 +32,9 @@
         <div class="col-6">
             <form action="{% url 'uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
+                {% if form.file.errors %}
+                    {{ form.file.errors }}
+                {% endif %}
                 <input multiple type="file" class="form-control-file" name="file" required>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
