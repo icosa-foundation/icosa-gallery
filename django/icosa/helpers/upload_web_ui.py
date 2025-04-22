@@ -260,16 +260,18 @@ def upload(
         # TODO(james): This code will break in mysterious ways if we receive
         # more than one set of gltf/bin files and don't process the right bin
         # with the right gltf.
-        if valid_file.filetype == "BIN" and bin_to_convert is None:
-            bin_to_convert = write_files_to_convert(
-                valid_file,
-                asset_dir,
-            )
-        if valid_file.filetype == "GLTF" and gltf_to_convert is None:
-            gltf_to_convert = write_files_to_convert(
-                valid_file,
-                asset_dir,
-            )
+        # We will enable this once the upload process is stable.
+        if False:
+            if valid_file.filetype == "BIN" and bin_to_convert is None:
+                bin_to_convert = write_files_to_convert(
+                    valid_file,
+                    asset_dir,
+                )
+            if valid_file.filetype == "GLTF" and gltf_to_convert is None:
+                gltf_to_convert = write_files_to_convert(
+                    valid_file,
+                    asset_dir,
+                )
 
         if valid_file.mainfile is True:
             main_files.append(valid_file)
@@ -283,6 +285,8 @@ def upload(
             if splitext[0].lower() == "thumbnail" and valid_file.filetype == "IMAGE":
                 thumbnail = valid_file.file
 
+    # Currently a no-op, will return None. See where we assign gltf_to_convert
+    # and bin_to_convert.
     converted_gltf_path = convert_gltf(
         gltf_to_convert,
         bin_to_convert,
@@ -312,6 +316,8 @@ def upload(
             role,
         )
 
+    # Currently a no-op. # See where we assign gltf_to_convert and
+    # bin_to_convert.
     clean_up_conversion(
         gltf_to_convert,
         bin_to_convert,
