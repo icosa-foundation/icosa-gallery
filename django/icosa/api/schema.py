@@ -112,6 +112,8 @@ class FullUserSchema(Schema):
 
     @staticmethod
     def resolve_url(obj):
+        # TODO(james): This is a temporary fix until we get URL on the django
+        # user instead.
         if obj.assetowner_set.first():
             url = obj.assetowner_set.first().url
         else:
