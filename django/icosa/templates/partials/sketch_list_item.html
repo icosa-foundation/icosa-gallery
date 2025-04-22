@@ -42,7 +42,7 @@
         </h4>
         {% if not hide_byline %}
             <p class="sketch-byline">
-                <a href="{% url 'user_show' slug=asset.owner %}">{{ asset.owner.displayname }}</a>
+                <a href="{% url 'user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>
                 {% if owner_details %}&bull; {{ asset.create_time|date:"d/m/Y" }}{% endif %}
             </p>
         {% endif %}
