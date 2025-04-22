@@ -278,6 +278,11 @@ class AssetOwner(models.Model):
             instance = cls.objects.get(django_user=user)
         except (cls.DoesNotExist, TypeError):
             instance = None
+        except cls.MultipleObjectsReturned:
+            # TODO(james): this is most certainly not what we want, we used to
+            # have 1:1 and a lot of code relies on this. We are just making a
+            # guess here.
+            instance = cls.objects.filter(django_user=user).first()
         return instance
 
     @classmethod
