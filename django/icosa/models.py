@@ -296,6 +296,16 @@ class AssetOwner(models.Model):
         )
         return encoded_jwt
 
+    def get_displayname(self):
+        if self.django_user:
+            result = self.django_user.displayname or self.displayname
+        else:
+            result = self.displayname
+        return result
+
+    def get_absolute_url(self):
+        return reverse("owner_show", kwargs={"slug": self.url})
+
     def __str__(self):
         return self.displayname
 

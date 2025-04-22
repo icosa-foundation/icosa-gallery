@@ -41,11 +41,7 @@
             {% endspaceless %}
         </h4>
         <p class="sketch-byline">
-            {% if asset.owner.django_user %}
-            <a href="{% url 'user_show' user_username=asset.owner.django_user.username %}">{{ asset.owner.django_user.displayname | default:asset.owner.django_user.username}}</a>
-            {% else %}
-            {{ asset.owner.displayname | default:asset.owner.url }}
-            {% endif %}
+            <a href="{% url 'user_show' slug=asset.owner %}">{{ asset.owner.displayname }}</a>
             {% if owner_details %}&bull; {{ asset.create_time|date:"d/m/Y" }}{% endif %}
         </p>
         {% if owner_details %}

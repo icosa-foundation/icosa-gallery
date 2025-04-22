@@ -361,11 +361,11 @@ def uploads(request):
 
 
 @never_cache
-def owner_show(request, owner_url):
+def owner_show(request, slug):
     template = "main/owner_show.html"
     owner = get_object_or_404(
         AssetOwner,
-        url=owner_url,
+        url=slug,
     )
     asset_objs = owner.asset_set.filter(
         visibility=PUBLIC,
@@ -389,27 +389,51 @@ def owner_show(request, owner_url):
 
 
 @never_cache
-def user_show(request, user_username):
+def user_show(request, slug):
     template = "main/user_show.html"
 
-    user = get_object_or_404(
-        User,
-        username=user_username,
+    # A django User is always accessible via one of their AssetOwner instances
+    # and never directly.
+
+    # If a django User has no AssetOwner instances, we have no content to show
+    # anyway, so there is no need to provide a direct link.
+
+    # This view shows all assets for all Asset Owner instances associated with
+    # a django User.
+
+    owner = get_object_or_404(
+        AssetOwner,
+        url=slug,
     )
+    if owner.django_user is None:
+        owners = AssetOwner.objects.filter(pk=owner.pk)
+    else:
+        owners = owner.django_user.assetowner_set.all()
 
     asset_objs = Asset.objects.filter(
-        owner__in=user.assetowner_set.all(),
+        owner__in=owners,
         visibility=PUBLIC,
     ).order_by("-id")
+
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
+
+    if owners.count() > 1:
+        if owner.django_user:
+            page_title = f"{owner.django_user.displayname} and others"
+        else:
+            page_title = owner.displayname
+    else:
+        page_title = owner.get_displayname()
+
     context = {
         "user": request.user,
-        "page_user": user,
+        "owner": owner,
         "assets": assets,
-        "page_title": user.displayname or user.username,
+        "page_title": page_title,
         "paginator": paginator,
+        "is_multi_owner": bool(owners.count()),
     }
     return render(
         request,

@@ -4,7 +4,11 @@
 
 {% block extrahead %}
     {{ block.super }}
-    <link rel="canonical" href="{% clean_url %}">
+    {% if is_multi_owner %}
+        <link rel="canonical" href="{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}{{ owner.get_absolute_url }}">
+    {% else %}
+        <link rel="canonical" href="{% clean_url %}">
+    {% endif %}
 {% endblock extrahead %}
 
 {% block banner %}
@@ -18,20 +22,27 @@
         <div class="row">
             <div class="col">
                 <div>
-                    <h1>{{ page_title }}</h1>
-                    {% if page_user.description %}
-                        <p>{{ page_user.description|linebreaksbr }}</p>
-                    {% endif %}
                 </div>
             </div>
         </div>
-        <div class="sketch-list">
             {% if assets %}
-                {% for asset in assets %}
+            {% for asset in assets %}
+            {% with asset.owner as asset_owner %}
+                {% ifchanged asset_owner.displayname %}
+                    {% if not forloop.first %}
+                    </div>
+                    {% endif %}
+                    <h1 class="mt1">{{ asset_owner.displayname }}</h1>
+                    {% if asset_owner.description %}
+                        <p>{{ asset_owner.description|linebreaksbr }}</p>
+                    {% endif %}
+                    <div class="sketch-list">
+                {% endifchanged %}
                     {% include "partials/sketch_list_item.html" %}
+            {% endwith %}
                 {% endfor %}
             {% else %}
-                <p>{{ page_user.displayname | default:page_user.username }} hasn't created anything yet.</p>
+                <p>{{ owner.displayname }} hasn't created anything yet.</p>
             {% endif %}
         </div>
         {% include "partials/pagination.html" %}

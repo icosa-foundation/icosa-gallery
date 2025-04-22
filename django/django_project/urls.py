@@ -90,8 +90,8 @@ urlpatterns = [
     path("other", main_views.home_other, name="home_other"),
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
-    path("user/<str:user_username>", main_views.user_show, name="user_show"),
-    path("owner/<str:owner_url>", main_views.owner_show, name="owner_show"),
+    path("user/<str:slug>", main_views.user_show, name="user_show"),
+    path("owner/<str:slug>", main_views.owner_show, name="owner_show"),
     path("likes", main_views.my_likes, name="my_likes"),
     path(
         "view/<str:asset_url>",
