@@ -40,10 +40,12 @@
             {% endif %}
             {% endspaceless %}
         </h4>
-        <p class="sketch-byline">
-            <a href="{% url 'user_show' slug=asset.owner %}">{{ asset.owner.displayname }}</a>
-            {% if owner_details %}&bull; {{ asset.create_time|date:"d/m/Y" }}{% endif %}
-        </p>
+        {% if not hide_byline %}
+            <p class="sketch-byline">
+                <a href="{% url 'user_show' slug=asset.owner %}">{{ asset.owner.displayname }}</a>
+                {% if owner_details %}&bull; {{ asset.create_time|date:"d/m/Y" }}{% endif %}
+            </p>
+        {% endif %}
         {% if owner_details %}
             <p><small>Visibility: {{ asset.get_visibility_display }}<br>
             <span class="sketch-license">
