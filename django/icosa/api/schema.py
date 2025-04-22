@@ -108,6 +108,15 @@ class FullUserSchema(Schema):
     email: EmailStr
     displayName: str = Field(None, alias="displayname")
     description: Optional[str] = None
+    url: str
+
+    @staticmethod
+    def resolve_url(obj):
+        if obj.assetowner_set.first():
+            url = obj.assetowner_set.first().url
+        else:
+            url = ""
+        return url
 
 
 class PatchUserSchema(Schema):
