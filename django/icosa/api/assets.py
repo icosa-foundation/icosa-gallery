@@ -307,10 +307,10 @@ def upload_new_assets(
     user = request.user
     owner, _ = AssetOwner.objects.get_or_create(
         django_user=user,
+        email=user.email,
         defaults={
-            "email": user.email,
-            "url": user.username,
-            "displayname": user.displayname or user.username,
+            "url": secrets.token_urlsafe(8),
+            "displayname": user.displayname,
         },
     )
     job_snowflake = generate_snowflake()
