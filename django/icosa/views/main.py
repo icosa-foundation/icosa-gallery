@@ -374,7 +374,6 @@ def owner_show(request, slug):
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
-        "user": request.user,
         "owner": owner,
         "assets": assets,
         "page_title": owner.displayname,
@@ -427,7 +426,6 @@ def user_show(request, slug):
         page_title = owner.get_displayname()
 
     context = {
-        "user": request.user,
         "owner": owner,
         "assets": assets,
         "page_title": page_title,
