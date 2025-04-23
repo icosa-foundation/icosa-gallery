@@ -29,7 +29,7 @@
             {% endif %}
             <div class="sketch-info-details">
                 <h2>
-                    {{ asset.name }}{% if asset.owner == request_owner %}{% if asset.visibility == "PRIVATE" %} <span class="pill pill--danger">private</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span class="pill pill--warning">unlisted</span>{% endif %}{% endif %}
+                    {{ asset.name }}{% if user_owns_asset %}{% if asset.visibility == "PRIVATE" %} <span class="pill pill--danger">private</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span class="pill pill--warning">unlisted</span>{% endif %}{% endif %}
                     {% like_button request asset %}
                 </h2>
                 {% if asset.owner %}
@@ -44,9 +44,9 @@
                     {{ asset.get_license_icons }} {{ asset.get_license_display|default_if_none:" All rights reserved" }}
                 </p>
                 <p></p>
-                {% if asset.owner == request_owner or request.user.is_superuser %}
+                {% if user_owns_asset or request.user.is_superuser %}
                     <a class="btn btn-primary btn-sm" href="{% url 'asset_edit' asset_url=asset.url %}">
-                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser and asset.owner != request_owner %} (as superuser){% endif %}
+                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser and not user_owns_asset %} (as superuser){% endif %}
                     </a>
                 {% endif %}
                 <p>

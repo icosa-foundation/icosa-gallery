@@ -489,7 +489,7 @@ def asset_view(request, asset_url):
     )
 
     context = {
-        "request_owner": AssetOwner.from_django_user(request.user),
+        "user_owns_asset": asset.owner in request.user.assetowner_set.all(),
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
@@ -516,7 +516,6 @@ def asset_oembed(request, asset_url):
     format_override = request.GET.get("forceformat", "")
 
     context = {
-        "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
@@ -540,7 +539,6 @@ def asset_downloads(request, asset_url):
     check_user_can_view_asset(request.user, asset)
 
     context = {
-        "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
         "downloadable_formats": asset.get_all_downloadable_formats(),
         "page_title": f"Download {asset.name}",
