@@ -581,9 +581,10 @@ def asset_status(request, asset_url):
 def asset_edit(request, asset_url):
     template = "main/asset_edit.html"
     is_superuser = request.user.is_superuser
-    asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
     if is_superuser:
         asset = get_object_or_404(Asset, url=asset_url)
+    else:
+        asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
     # We need to disconnect the editable state from the form during validation.
     # Without this, if the form contains errors, some fields that need
     # correction cannot be edited.
