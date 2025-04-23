@@ -18,6 +18,7 @@ class Command(BaseCommand):
         except User.DoesNotExist:
             raise CommandError('User "%s" does not exist' % username)
 
+        # Move token generation to the django user
         asset_owner = AssetOwner.from_django_user(user)
         token = asset_owner.generate_access_token()
 

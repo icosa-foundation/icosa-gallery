@@ -15,6 +15,10 @@ def device_login(request, device_code: str):
             devicecode__iexact=device_code,
             expiry__gt=timezone.now(),
         )
+        # We might be able to avoid using from_django_user here if the token
+        # generation is instead called from the django user we have. This is
+        # how this code originally worked after the abstract user feature was
+        # merged in.
         asset_owner = AssetOwner.from_django_user(valid_code.user)
         access_token = asset_owner.generate_access_token()
 
