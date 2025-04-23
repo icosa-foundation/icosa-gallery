@@ -714,7 +714,6 @@ def report_asset(request, asset_url):
             if reporter is None:
                 reporter_email = None
             else:
-                reporter = AssetOwner.from_django_user(reporter)
                 reporter_email = reporter.email
                 asset.last_reported_by = reporter
             asset.save()

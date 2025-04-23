@@ -387,7 +387,7 @@ class Asset(models.Model):
     )
     curated = models.BooleanField(default=False)
     last_reported_by = models.ForeignKey(
-        "AssetOwner",
+        "User",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
