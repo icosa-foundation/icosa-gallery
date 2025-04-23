@@ -17,7 +17,7 @@ def user_asset_likes_processor(request):
     user = request.user
     liked_assets = []
     if user is not None and not user.is_anonymous:
-        liked_assets = [ ul.asset for ul in UserLike.objects.filter(user=user) ]
+        liked_assets = [ul.asset for ul in UserLike.objects.filter(user=user)]
     return {
         "user_liked_assets": liked_assets,
     }
