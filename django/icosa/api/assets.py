@@ -438,7 +438,8 @@ def get_assets(
     except FilterException as err:
         raise HttpError(400, f"{err}")
 
-    if filters.orderBy:
-        assets = sort_assets(filters.orderBy, assets)
+    order_by = filters.orderBy or filters.order_by or None
+    if order_by is not None:
+        assets = sort_assets(order_by, assets)
 
     return assets
