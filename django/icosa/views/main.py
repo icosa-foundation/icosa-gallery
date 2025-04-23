@@ -655,8 +655,7 @@ def asset_edit(request, asset_url):
 @login_required
 def delete_asset(request, asset_url):
     if request.method == "POST":
-        owner = AssetOwner.from_django_user(request.user)
-        asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+        asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
         if asset.name:
             asset_name = asset.name
         else:
