@@ -26,22 +26,22 @@
             </div>
         </div>
             {% if assets %}
-            {% for asset in assets %}
-            {% with asset.owner as asset_owner %}
-                {% ifchanged asset_owner.displayname %}
-                    {% if not forloop.first %}
-                    </div>
-                    {% endif %}
-                    <h1 class="mt1">{{ asset_owner.displayname }}</h1>
-                    {% if asset_owner.description %}
-                        <p>{{ asset_owner.description|linebreaksbr }}</p>
-                    {% endif %}
-                    <div class="sketch-list">
-                {% endifchanged %}
-                    {% with hide_byline=True %}
-                        {% include "partials/sketch_list_item.html" %}
+                {% for asset in assets %}
+                    {% with asset.owner as asset_owner %}
+                        {% ifchanged asset_owner.displayname %}
+                            {% if not forloop.first %}
+                            </div>
+                            {% endif %}
+                            <h1 class="mt1">{{ asset_owner.displayname }}</h1>
+                            {% if asset_owner.description %}
+                                <p>{{ asset_owner.description|linebreaksbr }}</p>
+                            {% endif %}
+                            <div class="sketch-list">
+                        {% endifchanged %}
+                        {% with hide_byline=True %}
+                            {% include "partials/sketch_list_item.html" %}
+                        {% endwith %}
                     {% endwith %}
-            {% endwith %}
                 {% endfor %}
             {% else %}
                 <p>{{ owner.displayname }} hasn't created anything yet.</p>
