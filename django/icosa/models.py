@@ -86,6 +86,11 @@ ASSET_VISIBILITY_CHOICES = [
 ]
 
 V4_CC_LICENSE_CHOICES = [
+    # ("CREATIVE_COMMONS_SA_4_0", "CC SA Attribution 4.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_ND_4_0", "CC ND Attribution 4.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_4_0", "CC NC Attribution 4.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_ND_4_0", "CC NC_ND Attribution 4.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_SA_4_0", "CC NC_SA Attribution 4.0 International"), # Not yet supported
     ("CREATIVE_COMMONS_BY_4_0", "CC BY Attribution 4.0 International"),
     (
         "CREATIVE_COMMONS_BY_ND_4_0",
@@ -95,6 +100,11 @@ V4_CC_LICENSE_CHOICES = [
 ]
 
 V3_CC_LICENSE_CHOICES = [
+    # ("CREATIVE_COMMONS_SA_3_0", "CC SA Attribution 3.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_ND_3_0", "CC ND Attribution 3.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_3_0", "CC NC Attribution 3.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_ND_3_0", "CC NC_ND Attribution 3.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_SA_3_0", "CC NC_SA Attribution 3.0 International"), # Not yet supported
     ("CREATIVE_COMMONS_BY_3_0", "CC BY Attribution 3.0 International"),
     (
         "CREATIVE_COMMONS_BY_ND_3_0",
@@ -466,6 +476,31 @@ class Asset(models.Model):
     @property
     def timestamp(self):
         return get_snowflake_timestamp(self.id)
+
+    def get_base_license(self) -> str:
+        # Transform our internal license representations to be compatible with
+        # the Google Poly API.
+        if self.license == "ALL_RIGHTS_RESERVED":
+            return self.license
+        if self.license == "CREATIVE_COMMONS_0":
+            return "CC0"
+        elif self.license in V3_CC_LICENSES:
+            return self.license.replace("_3_0", "")
+        elif self.license in V4_CC_LICENSES:
+            return self.license.replace("_4_0", "")
+        else:
+            # We shouldn't hit this, but it's a valid option in Google Poly.
+            return "UNKNOWN"
+
+    def get_license_version(self) -> Optional[str]:
+        if self.license in ["ALL_RIGHTS_RESERVED", "CREATIVE_COMMONS_0"]:
+            return None
+        if self.license in V3_CC_LICENSES:
+            return "3.0"
+        if self.license in V4_CC_LICENSES:
+            return "4.0"
+        else:
+            return None
 
     def handle_blocks_preferred_format(self):
         # TODO(james): This handler is specific to data collected from blocks.

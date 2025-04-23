@@ -208,7 +208,8 @@ class AssetSchema(ModelSchema):
     thumbnail: Optional[Thumbnail]
     triangleCount: int = Field(..., alias=("triangle_count"))
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
-    license: Optional[str] = Field(default=None)
+    license: str
+    licenseVersion: Optional[str]
 
     class Config:
         model = Asset
@@ -224,7 +225,11 @@ class AssetSchema(ModelSchema):
 
     @staticmethod
     def resolve_license(obj, context):
-        return obj.get_license_display
+        return obj.get_base_license()
+
+    @staticmethod
+    def resolve_licenseVersion(obj, context):
+        return obj.get_license_version()
 
     @staticmethod
     def resolve_url(obj, context):
