@@ -28,18 +28,20 @@
                         <h3 class="hide-when-collapsed">Me</h3>
                         <div>
                             {% if user is not None and not user.is_anonymous %}
-                                <li class="pro-menu-item">
-                                    <div class="pro-inner-item" tabindex="0" role="button">
-                                        <a href="/user/{{ user.username | urlencode }}">
-                                            <span class="pro-icon-wrapper">
-                                                <span class="pro-icon">
-                                                    {% fa_icon "solid" "user" %}
+                                {% if user.get_absolute_url %}
+                                    <li class="pro-menu-item">
+                                        <div class="pro-inner-item" tabindex="0" role="button">
+                                            <a href="{{ user.get_absolute_url }}">
+                                                <span class="pro-icon-wrapper">
+                                                    <span class="pro-icon">
+                                                        {% fa_icon "solid" "user" %}
+                                                    </span>
                                                 </span>
-                                            </span>
-                                            <span class="pro-item-content">My Profile</span>
-                                        </a>
-                                    </div>
-                                </li>
+                                                <span class="pro-item-content">My Profile</span>
+                                            </a>
+                                        </div>
+                                    </li>
+                                {% endif %}
                                 <li class="pro-menu-item">
                                     <div class="pro-inner-item" tabindex="0" role="button">
                                         <a href="/uploads">

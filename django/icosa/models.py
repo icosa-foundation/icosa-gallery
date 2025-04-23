@@ -227,7 +227,15 @@ class User(AbstractUser):
     displayname = models.CharField("Display Name", max_length=255)
 
     def get_absolute_url(self):
-        return f"/user/{self.username}"
+        owners = self.assetowner_set.all()
+        num_owners = owners.count()
+        if num_owners > 1:
+            url = reverse("user_show", kwargs={"slug": owners.first().url})
+        elif num_owners == 1:
+            url = owners.first().get_absolute_url()
+        else:
+            url = None
+        return url
 
     @staticmethod
     def generate_device_code(length=5):
