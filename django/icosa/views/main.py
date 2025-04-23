@@ -568,8 +568,7 @@ def asset_log_download(request, asset_url):
 @never_cache
 def asset_status(request, asset_url):
     template = "partials/asset_status.html"
-    owner = AssetOwner.from_django_user(request.user)
-    asset = get_object_or_404(Asset, url=asset_url, owner=owner)
+    asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
     context = {
         "asset": asset,
         "is_polling": True,
@@ -585,12 +584,10 @@ def asset_status(request, asset_url):
 @never_cache
 def asset_edit(request, asset_url):
     template = "main/asset_edit.html"
-    owner = AssetOwner.from_django_user(request.user)
     is_superuser = request.user.is_superuser
+    asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
     if is_superuser:
         asset = get_object_or_404(Asset, url=asset_url)
-    else:
-        asset = get_object_or_404(Asset, owner=owner, url=asset_url)
     # We need to disconnect the editable state from the form during validation.
     # Without this, if the form contains errors, some fields that need
     # correction cannot be edited.
