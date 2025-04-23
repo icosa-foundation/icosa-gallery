@@ -326,7 +326,6 @@ def upload_new_assets(
 
         try:
             upload_api_asset(
-                user,
                 asset,
                 files,
             )

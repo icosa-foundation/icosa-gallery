@@ -327,7 +327,6 @@ def uploads(request):
                     )
                 else:
                     upload(
-                        user,
                         asset,
                         [request.FILES["file"]],
                     )
@@ -624,13 +623,12 @@ def asset_edit(request, asset_url):
 
                 if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
                     queue_upload_asset_web_ui(
-                        current_user=owner,
+                        current_user=request.user,
                         asset=asset,
                         files=[request.FILES["zip_file"]],
                     )
                 else:
                     upload(
-                        owner,
                         asset,
                         [request.FILES["zip_file"]],
                     )

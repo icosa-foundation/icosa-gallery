@@ -222,7 +222,6 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
 
 
 def upload(
-    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):

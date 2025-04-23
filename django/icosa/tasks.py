@@ -43,12 +43,11 @@ def handle_upload_error(task, exc):
 
 @db_task()
 def queue_upload_asset_web_ui(
-    current_user: User, #TODO: change to User
+    current_user: User,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
     upload(
-        current_user,
         asset,
         files,
     )
@@ -56,12 +55,11 @@ def queue_upload_asset_web_ui(
 
 @db_task()
 def queue_upload_api_asset(
-    current_user: User, #TODO: change to User
+    current_user: User,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
     upload_api_asset(
-        current_user,
         asset,
         files,
     )
