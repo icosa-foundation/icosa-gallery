@@ -2,10 +2,6 @@ from django.conf import settings
 from icosa.models import AssetOwner, UserLike
 
 
-def owner_processor(request):
-    return {"owner": AssetOwner.from_django_user(request.user)}
-
-
 def settings_processor(request):
     can_view_in_maintenance = True
 

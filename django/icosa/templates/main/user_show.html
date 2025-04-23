@@ -12,7 +12,7 @@
 {% endblock extrahead %}
 
 {% block banner %}
-{% if not user.is_claimed %}
+{% if not owner.is_claimed %}
 {% include "partials/artist_info_banner.html" %}
 {% endif %}
 {% endblock banner %}
