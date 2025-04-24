@@ -108,13 +108,15 @@ if (
     # headers. See here (at time of writing):
     # https://www.backblaze.com/docs/cloud-storage-s3-compatible-api#unsupported-features
     if "backblazeb2.com" in DJANGO_STORAGE_URL:
-        AWS_S3_CLIENT_CONFIG = Config(
-            request_checksum_calculation="when_required",
-        )
-        # Effectively disable multipart uploads so that checksum calculation is
-        # never required.
-        AWS_S3_TRANSFER_CONFIG = TransferConfig(
-            multipart_threshold=5368709120,  # 5GiB in bytes
+        STORAGES["default"]["OPTIONS"].update(
+            {
+                "client_config": Config(
+                    request_checksum_calculation="when_required",
+                ),
+                "transfer_config": TransferConfig(
+                    multipart_threshold=5368709120,  # 5GiB in bytes
+                ),
+            }
         )
         MEDIA_ROOT = None
         MEDIA_URL = "/"  # unused with django-storages
