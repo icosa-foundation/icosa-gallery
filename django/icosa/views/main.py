@@ -486,8 +486,12 @@ def asset_view(request, asset_url):
         },
     )
 
+    if request.user.is_anonymous:
+        user_owns_asset = False
+    else:
+        user_owns_asset = asset.owner in request.user.assetowner_set.all()
     context = {
-        "user_owns_asset": asset.owner in request.user.assetowner_set.all(),
+        "user_owns_asset": user_owns_asset,
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
