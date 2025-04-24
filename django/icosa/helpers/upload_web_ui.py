@@ -135,10 +135,9 @@ def clean_up_conversion(gltf_file, bin_file, gltf_path, asset_dir):
 def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
     unzipped_files = []
     for file in files:
-        # Note, the mime type should be checked in the form. This function assumes the correct mime type for zip
+        # Note, the mime type should be checked in the form. This function
+        # assumes the correct mime type for zip or glb.
         if not file.name.endswith(".zip"):
-            # No further processing needed, though really we are not expecting
-            # extra files outside of a zip.
             unzipped_files.append(file)
             continue
 

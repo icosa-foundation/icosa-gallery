@@ -606,13 +606,12 @@ def asset_edit(request, asset_url):
                 image_file = b64_to_img(thumbnail_override_image)
                 asset.thumbnail = image_file
             form.save_m2m()
-            if is_editable:
-                if "_save_private" in request.POST:
-                    asset.visibility = PRIVATE
-                if "_save_public" in request.POST:
-                    asset.visibility = PUBLIC
-                if "_save_unlisted" in request.POST:
-                    asset.visibility = UNLISTED
+            if is_editable and "_save_private" in request.POST:
+                asset.visibility = PRIVATE
+            if "_save_public" in request.POST:
+                asset.visibility = PUBLIC
+            if "_save_unlisted" in request.POST:
+                asset.visibility = UNLISTED
             asset.save(update_timestamps=True)
 
             if request.FILES.get("zip_file"):

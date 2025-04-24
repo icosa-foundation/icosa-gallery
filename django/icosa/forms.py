@@ -46,7 +46,14 @@ class CameraButton(HiddenInput):
 
 
 class AssetUploadForm(forms.Form):
-    file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=["zip"])])
+    file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=["zip", "glb"])])
+
+    def clean(self):
+        cleaned_data = super().clean()
+        uploaded_file = cleaned_data.get("file")
+        if uploaded_file:
+            if not validate_mime(next(uploaded_file.chunks(chunk_size=2048)), ["application/zip", "model/gltf-binary"]):
+                self.add_error("file", "File is not a zip archive or a glb.")
 
 
 class AssetReportForm(forms.Form):
@@ -65,9 +72,7 @@ class AssetReportForm(forms.Form):
 class AssetEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance.model_is_editable:
-            del self.fields["visibility"]
-        else:
+        if not self.instance.model_is_editable:
             del self.fields["zip_file"]
         self.fields["name"].required = True
         license_value = self["license"].value()
@@ -99,19 +104,13 @@ class AssetEditForm(forms.ModelForm):
                     ("ALL_RIGHTS_RESERVED", "All rights reserved"),
                 ]
             )
-        if not self.instance.model_is_editable:
-            self.fields["visibility"].choices = (
-                ("PUBLIC", "Public"),
-                ("UNLISTED", "Unlisted"),
-            )
 
     def clean(self):
         cleaned_data = super().clean()
         license = cleaned_data.get("license")
-        visibility = cleaned_data.get("visibility")
-        if visibility in ["PUBLIC", "UNLISTED"] and not license:
+        if self.instance.visibility in ["PUBLIC", "UNLISTED"] and not license:
             self.add_error("license", "Please add a CC License.")
-        if not self.instance.model_is_editable and visibility == PRIVATE:
+        if not self.instance.model_is_editable and self.instance.visibility == PRIVATE:
             self.add_error(
                 "visibility",
                 "You cannot make this model private because you have published this work under a CC license.",
@@ -145,7 +144,6 @@ class AssetEditForm(forms.ModelForm):
         "thumbnail_override_data",
         "camera",
         "category",
-        "visibility",
         "tags",
     ]
 
@@ -161,7 +159,6 @@ class AssetEditForm(forms.ModelForm):
             "tags",
             "camera",
             "zip_file",
-            "visibility",
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(
