@@ -7,8 +7,8 @@ import os
 from pathlib import Path
 
 import sentry_sdk
-from boto3.s3.transfer import TransferConfig
-from botocore.config import Config
+from boto3.s3.transfer import TransferConfig as BotoTransferConfig
+from botocore.client import Config as BotoConfig
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -108,15 +108,12 @@ if (
     # headers. See here (at time of writing):
     # https://www.backblaze.com/docs/cloud-storage-s3-compatible-api#unsupported-features
     if "backblazeb2.com" in DJANGO_STORAGE_URL:
-        STORAGES["default"]["OPTIONS"].update(
-            {
-                "client_config": Config(
-                    request_checksum_calculation="when_required",
-                ),
-                "transfer_config": TransferConfig(
-                    multipart_threshold=5368709120,  # 5GiB in bytes
-                ),
-            }
+        AWS_S3_CLIENT_CONFIG = BotoConfig(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+        )
+        AWS_S3_TRANSFER_CONFIG = BotoTransferConfig(
+            multipart_threshold=5368709120,  # 5GiB in bytes
         )
         MEDIA_ROOT = None
         MEDIA_URL = "/"  # unused with django-storages
