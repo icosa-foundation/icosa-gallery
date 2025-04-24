@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
-from icosa.models import AssetOwner
 
 User = get_user_model()
 
@@ -18,8 +17,6 @@ class Command(BaseCommand):
         except User.DoesNotExist:
             raise CommandError('User "%s" does not exist' % username)
 
-        # Move token generation to the django user
-        asset_owner = AssetOwner.from_django_user(user)
-        token = asset_owner.generate_access_token()
+        token = user.generate_access_token()
 
         self.stdout.write(self.style.SUCCESS("%s" % token))

@@ -246,6 +246,18 @@ class User(AbstractUser):
         )
         return "".join(secrets.choice(characters) for i in range(length))
 
+    def generate_access_token(self):
+        ALGORITHM = "HS256"
+        to_encode = {"sub": f"{self.email}"}
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(
+            to_encode,
+            settings.JWT_KEY,
+            algorithm=ALGORITHM,
+        )
+        return encoded_jwt
+
 
 class AssetOwnerManager(models.Manager):
     def get_unclaimed_for_user(self, user: AbstractBaseUser) -> QuerySet:
@@ -289,35 +301,6 @@ class AssetOwner(models.Model):
     disable_profile = models.BooleanField(default=False)
 
     objects = AssetOwnerManager()
-
-    @classmethod
-    def from_django_user(cls, user: AbstractBaseUser) -> Optional[Self]:
-        try:
-            instance = cls.objects.get(django_user=user)
-        except (cls.DoesNotExist, TypeError):
-            instance = None
-        except cls.MultipleObjectsReturned:
-            # TODO(james): this is most certainly not what we want, we used to
-            # have 1:1 and a lot of code relies on this. We are just making a
-            # guess here.
-            instance = cls.objects.filter(django_user=user).first()
-        return instance
-
-    @classmethod
-    def from_django_request(cls, request) -> Optional[Self]:
-        return cls.from_django_user(request.user)
-
-    def generate_access_token(self):
-        ALGORITHM = "HS256"
-        to_encode = {"sub": f"{self.email}"}
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(
-            to_encode,
-            settings.JWT_KEY,
-            algorithm=ALGORITHM,
-        )
-        return encoded_jwt
 
     def get_displayname(self):
         if self.django_user:
