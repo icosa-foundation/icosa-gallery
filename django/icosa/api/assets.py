@@ -142,6 +142,7 @@ def get_my_id_asset(
 @router.get(
     "/{str:asset}",
     response=AssetSchema,
+    auth=JWTAuth(),  # TODO this should be maybe auth user
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))

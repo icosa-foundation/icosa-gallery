@@ -6,6 +6,8 @@ from .tokens import AccessToken, TokenError
 
 User = get_user_model()
 
+# TODO impl maybe auth user
+
 
 class JWTAuth(HttpBearer):
     def authenticate(self, request, token):
