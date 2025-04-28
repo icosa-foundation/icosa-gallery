@@ -17,7 +17,7 @@ from icosa.api import (
 )
 from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.jwt.authentication import JWTAuth
+from icosa.jwt.authentication import JWTAuth, MaybeJWTAuth
 from icosa.models import ALL_RIGHTS_RESERVED, PRIVATE, PUBLIC, Asset, AssetOwner
 from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
 from icosa.views.decorators import cache_per_user
@@ -142,10 +142,10 @@ def get_my_id_asset(
 @router.get(
     "/{str:asset}",
     response=AssetSchema,
-    auth=JWTAuth(),  # TODO this should be maybe auth user
+    auth=MaybeJWTAuth(),
     **COMMON_ROUTER_SETTINGS,
 )
-@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+# @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))  # TODO(safety) all users are anonymous at this point, even ones who get authenticated via jwt so this will leak information if an auth'd user views anything private. Disabling the cache til this is fixed.
 def get_asset(
     request,
     asset: str,
