@@ -462,7 +462,7 @@ class Asset(models.Model):
         # available for use in other models, we cannot allow changing anything
         # about it. Doing so would allow abuse.
         is_editable = True
-        if self.is_published and self.license != ALL_RIGHTS_RESERVED:
+        if self.is_published and self.license not in [None, ALL_RIGHTS_RESERVED]:
             is_editable = False
         return is_editable
 
