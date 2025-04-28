@@ -117,8 +117,11 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
                         # be ignored. This would go for textures named
                         # thumbnail.png if we already found a thumbnail.jpg.
                         # Unlikely, but possible.
-                        thumbnail = processed_file
-                        continue
+                        if validate_mime(content, VALID_THUMBNAIL_MIME_TYPES):
+                            thumbnail = processed_file
+                            continue
+                        else:
+                            raise HttpError(400, "Thumbnail must be png or jpg.")
                     if manifest is None and filename.lower() == "manifest.json":
                         manifest = json.load(processed_file.file)
                         continue
@@ -204,11 +207,7 @@ def upload_api_asset(
         )
 
     if upload_set.thumbnail:
-        thumbnail = upload_set.thumbnail
-        if validate_mime(next(thumbnail.file.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
-            add_thumbnail_to_asset(upload_set.thumbnail, asset)
-        else:
-            raise HttpError(400, "Thumbnail must be png or jpg.")
+        add_thumbnail_to_asset(upload_set.thumbnail, asset)
 
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
