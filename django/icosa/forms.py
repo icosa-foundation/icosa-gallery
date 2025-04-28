@@ -69,6 +69,20 @@ class AssetReportForm(forms.Form):
     )
 
 
+class AssetPublishForm(forms.ModelForm):
+    editable_fields = [
+        "name",
+    ]
+
+    class Meta:
+        model = Asset
+
+        fields = [
+            "name",
+            "license",
+        ]
+
+
 class AssetEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -32,6 +32,7 @@ from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
     AssetEditForm,
+    AssetPublishForm,
     AssetReportForm,
     AssetUploadForm,
     UserSettingsForm,
@@ -674,21 +675,23 @@ def delete_asset(request, asset_url):
 
 
 @login_required
+@never_cache
 def asset_publish(request, asset_url):
     template = "main/asset_edit.html"
     asset = get_object_or_404(Asset, url=asset_url)
     if request.user != asset.owner.django_user:
         raise Http404()
     if request.method == "GET":
-        form = AssetEditForm(instance=asset)
+        form = AssetPublishForm(instance=asset)
     elif request.method == "POST":
-        form = AssetEditForm(request.POST, request.FILES, instance=asset)
+        form = AssetPublishForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(reverse("uploads"))
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
+        "is_editable": asset.model_is_editable,
         "asset": asset,
         "form": form,
         "page_title": f"Publish {asset.name}",
