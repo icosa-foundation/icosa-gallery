@@ -4,7 +4,6 @@ from django.core.cache import cache as core_cache
 
 
 def cache_key(request):
-
     user_id = "anonymous" if request.user.is_anonymous else request.user.id
 
     q = getattr(request, request.method)
