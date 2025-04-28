@@ -327,7 +327,7 @@ def filter_assets(
     if filters.tag:
         q &= Q(tags__name__in=filters.tag)
     if filters.category:
-        category_str = filters.category.upper()
+        category_str = filters.category.value.upper()
         category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
         q &= Q(category__iexact=category_str)
     if filters.license:

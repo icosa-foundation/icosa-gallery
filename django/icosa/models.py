@@ -4,6 +4,7 @@ import secrets
 import string
 from collections import OrderedDict
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Optional, Self
 from urllib.parse import urlparse
 
@@ -152,29 +153,30 @@ def suffix(name):
     return name
 
 
-class Category(models.TextChoices):
-    MISCELLANEOUS = "MISCELLANEOUS", "Miscellaneous"
-    ANIMALS = "ANIMALS", "Animals & Pets"
-    ARCHITECTURE = "ARCHITECTURE", "Architecture"
-    ART = "ART", "Art"
-    CULTURE = "CULTURE", "Culture & Humanity"
-    EVENTS = "EVENTS", "Current Events"
-    FOOD = "FOOD", "Food & Drink"
-    HISTORY = "HISTORY", "History"
-    HOME = "HOME", "Furniture & Home"
-    NATURE = "NATURE", "Nature"
-    OBJECTS = "OBJECTS", "Objects"
-    PEOPLE = "PEOPLE", "People & Characters"
-    PLACES = "PLACES", "Places & Scenes"
-    SCIENCE = "SCIENCE", "Science"
-    SPORTS = "SPORTS", "Sports & Fitness"
-    TECH = "TECH", "Tools & Technology"
-    TRANSPORT = "TRANSPORT", "Transport"
-    TRAVEL = "TRAVEL", "Travel & Leisure"
+class Category(Enum):
+    MISCELLANEOUS = "Miscellaneous"
+    ANIMALS = "Animals & Pets"
+    ARCHITECTURE = "Architecture"
+    ART = "Art"
+    CULTURE = "Culture & Humanity"
+    EVENTS = "Current Events"
+    FOOD = "Food & Drink"
+    HISTORY = "History"
+    HOME = "Furniture & Home"
+    NATURE = "Nature"
+    OBJECTS = "Objects"
+    PEOPLE = "People & Characters"
+    PLACES = "Places & Scenes"
+    SCIENCE = "Science"
+    SPORTS = "Sports & Fitness"
+    TECH = "Tools & Technology"
+    TRANSPORT = "Transport"
+    TRAVEL = "Travel & Leisure"
 
 
-CATEGORY_LABELS = [x[0] for x in Category.choices]
-CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in Category.choices}
+CATEGORY_CHOICES = [(x.name, x.value) for x in Category]
+CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
+CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in CATEGORY_CHOICES}
 
 
 WEB_UI_DOWNLOAD_COMPATIBLE = [
@@ -406,7 +408,7 @@ class Asset(models.Model):
         max_length=255,
         null=True,
         blank=True,
-        choices=Category.choices,
+        choices=CATEGORY_CHOICES,
     )
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)

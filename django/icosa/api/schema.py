@@ -5,7 +5,7 @@ from typing import List, Literal, Optional
 from django.db.models import Q
 from django.urls import reverse_lazy
 from icosa.helpers.format_roles import role_display
-from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset, Category
+from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
@@ -346,6 +346,33 @@ class OembedOut(Schema):
     html: str
     width: int
     height: int
+
+
+class Category(Enum):
+    MISCELLANEOUS = "MISCELLANEOUS"
+    ANIMALS = "ANIMALS"
+    ARCHITECTURE = "ARCHITECTURE"
+    ART = "ART"
+    CULTURE = "CULTURE"
+    EVENTS = "EVENTS"
+    FOOD = "FOOD"
+    HISTORY = "HISTORY"
+    HOME = "HOME"
+    NATURE = "NATURE"
+    OBJECTS = "OBJECTS"
+    PEOPLE = "PEOPLE"
+    PLACES = "PLACES"
+    SCIENCE = "SCIENCE"
+    SPORTS = "SPORTS"
+    TECH = "TECH"
+    TRANSPORT = "TRANSPORT"
+    TRAVEL = "TRAVEL"
+
+    @classmethod
+    def _missing_(cls, name):
+        for member in cls:
+            if member.name.lower() == name.lower():
+                return member
 
 
 class FilterBase(Schema):
