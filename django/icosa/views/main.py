@@ -476,6 +476,7 @@ def asset_view(request, asset_url):
     asset.inc_views_and_rank()
     override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
+    experimental_js = request.GET.get("experimentaljs", "")
 
     embed_code = render_to_string(
         "partials/oembed_code.html",
@@ -496,6 +497,7 @@ def asset_view(request, asset_url):
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
+        "experimental_js": experimental_js,
         "downloadable_formats": bool(asset.get_all_downloadable_formats()),
         "page_title": asset.name,
         "embed_code": embed_code.strip(),
