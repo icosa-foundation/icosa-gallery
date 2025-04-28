@@ -40,9 +40,9 @@
                             <a class="btn btn-primary dropdown-toggle" href="#" role="button" id="savebtngroup" data-bs-toggle="dropdown" aria-expanded="false">Save</a>
                                 <ul class="dropdown-menu" aria-labelledby="savebtngroup">
                                     {% if is_editable %}
-                                        <li><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>
+                                        <li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>
                                     {% endif %}
-                                    <li><button type="submit" name="_save_public" class="dropdown-item">Publish</button></li>
+                                    <li id="publish-mode"><button type="submit" name="_save_public" class="dropdown-item">Publish</button></li>
                                     <li><button type="submit" name="_save_unlisted" class="dropdown-item">Publish (as unlisted)</button></li>
                                 </ul>
                         </div>
@@ -102,8 +102,34 @@
         }
         return false;
     }
-    thumbnailOverrideTrigger.addEventListener('input', handleThumbnail, false);
-    thumbnailOverrideRefresh.addEventListener('click', updateThumbnail, false);
+    if ( thumbnailOverrideTrigger ) {
+        thumbnailOverrideTrigger.addEventListener('input', handleThumbnail, false);
+        thumbnailOverrideRefresh.addEventListener('click', updateThumbnail, false);
+    }
+
+    function handlePublishChoices(event) {
+        let el = event.target;
+        license = el.value;
+        let wrap = document.createElement('div');
+        wrap.innerHTML = '<li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>';
+        let draftMode = wrap.firstChild;
+        let publishMode = document.querySelector("#publish-mode");
+
+        if ( license === "" || license === "ALL_RIGHTS_RESERVED") {
+            if (!document.querySelector("#draft-mode")) {
+                publishMode.parentNode.insertBefore(draftMode, publishMode);
+            }
+        } else {
+            if (document.querySelector("#draft-mode")) {
+                document.querySelector("#draft-mode").remove();
+            }
+        }
+    }
+
+    let licenseInput = document.querySelector("select[name='license']");
+    if ( licenseInput ) {
+        licenseInput.addEventListener('input', handlePublishChoices, false);
+    }
 </script>
 {{ form.media }}
 {% include "partials/viewer.html" %}
