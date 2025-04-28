@@ -73,6 +73,12 @@ class Order(Enum):
     AUTHOR_NAME_ASC = "AUTHOR_NAME"
     AUTHOR_NAME_DESC = "-AUTHOR_NAME"
 
+    @classmethod
+    def _missing_(cls, name):
+        for member in cls:
+            if member.name.lower() == name.lower():
+                return member
+
 
 ORDER_FIELD_MAP = {
     "NEWEST": ("create_time", SortDirection.DESC),
