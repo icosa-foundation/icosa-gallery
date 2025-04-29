@@ -1055,7 +1055,9 @@ class Format(models.Model):
                 "supporting_text": "Try the alternative download if the original doesn't work for you. We're working to fix this.",
                 "role": self.role,
             }
-        elif self.role == UPDATED_GLTF_FORMAT:
+        else:
+            resource_data = self.get_resource_data
+        if not resource_data and self.role == UPDATED_GLTF_FORMAT:
             # If we hit this branch, we have a format which doesn't
             # have an archive url, but also doesn't have local files.
             # At time of writing, we can't create a zip on the client
@@ -1078,8 +1080,6 @@ class Format(models.Model):
                 Format.MultipleObjectsReturned,
             ):
                 resource_data = {}
-        else:
-            resource_data = self.get_resource_data(resources)
         return resource_data
 
     class Meta:
