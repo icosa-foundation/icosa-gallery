@@ -164,9 +164,9 @@ def delete_asset(
 ):
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
-
-    asset.hide_media()
-    asset.delete()
+    with transaction.atomic():
+        asset.hide_media()
+        asset.delete()
     return 204
 
 

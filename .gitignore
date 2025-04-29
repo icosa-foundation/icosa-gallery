@@ -169,6 +169,7 @@ uploads.sh
 
 
 django/static
+django/media
 .direnv
 .python-version
 pyproject.toml
