@@ -330,7 +330,6 @@ def uploads(request):
                         )
                     else:
                         upload(
-                            user,
                             asset,
                             [request.FILES["file"]],
                         )
