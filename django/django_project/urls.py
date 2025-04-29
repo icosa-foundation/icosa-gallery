@@ -144,8 +144,8 @@ urlpatterns = [
     ),
     path(
         "delete/<str:asset_url>",
-        main_views.delete_asset,
-        name="delete_asset",
+        main_views.asset_delete,
+        name="asset_delete",
     ),
     path(
         "publish/<str:asset_url>",

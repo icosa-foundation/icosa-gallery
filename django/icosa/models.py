@@ -693,7 +693,7 @@ class Asset(models.Model):
         return f"/edit/{self.url}"
 
     def get_delete_url(self):
-        return f"/delete/{self.url}"
+        return reverse("asset_delete", kwargs={"asset_url": self.url})
 
     def get_thumbnail_url(self):
         thumbnail_url = "/static/images/nothumbnail.png?v=1"

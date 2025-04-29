@@ -660,7 +660,7 @@ def asset_edit(request, asset_url):
 
 
 @login_required
-def delete_asset(request, asset_url):
+def asset_delete(request, asset_url):
     if request.method == "POST":
         with transaction.atomic():
             asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
