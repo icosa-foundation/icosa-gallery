@@ -24,6 +24,12 @@
                 {% if can_edit_asset %}
                     {% if asset.state == "FAILED" %}
                         <p>{% fa_icon "solid" "triangle-exclamation" %} Asset failed to upload. Please try again or contact support.</p>
+                        <p>
+                        <form method="post" action="{% url "asset_delete" asset_url=asset.url %}" >
+                            {% csrf_token %}
+                            <input class="btn btn-xs btn-secondary" type="submit" value="remove">
+                        </form>
+                        </p>
                     {% endif %}
                     {% if asset.state == "UPLOADING" %}
                         <p>{% fa_icon "solid" "arrows-rotate" "fa-spin" %} Upload in progress&hellip;</p>
