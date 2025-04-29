@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q
 from django.http import (
     Http404,
@@ -305,35 +306,37 @@ def uploads(request):
         if form.is_valid():
             job_snowflake = generate_snowflake()
             asset_token = secrets.token_urlsafe(8)
-            owner, _ = AssetOwner.objects.get_or_create(
-                django_user=user,
-                email=user.email,
-                defaults={
-                    "url": secrets.token_urlsafe(8),
-                    "displayname": user.displayname,
-                },
-            )
-            asset = Asset.objects.create(
-                id=job_snowflake,
-                url=asset_token,
-                owner=owner,
-                state=ASSET_STATE_UPLOADING,
-            )
-            try:
-                if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                    queue_upload_asset_web_ui(
-                        current_user=user,
-                        asset=asset,
-                        files=[request.FILES["file"]],
-                    )
-                else:
-                    upload(
-                        asset,
-                        [request.FILES["file"]],
-                    )
-            except Exception:
-                asset.state = ASSET_STATE_FAILED
-                asset.save()
+            with transaction.atomic():
+                owner, _ = AssetOwner.objects.get_or_create(
+                    django_user=user,
+                    email=user.email,
+                    defaults={
+                        "url": secrets.token_urlsafe(8),
+                        "displayname": user.displayname,
+                    },
+                )
+                asset = Asset.objects.create(
+                    id=job_snowflake,
+                    url=asset_token,
+                    owner=owner,
+                    state=ASSET_STATE_UPLOADING,
+                )
+                try:
+                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                        queue_upload_asset_web_ui(
+                            current_user=user,
+                            asset=asset,
+                            files=[request.FILES["file"]],
+                        )
+                    else:
+                        upload(
+                            user,
+                            asset,
+                            [request.FILES["file"]],
+                        )
+                except Exception:
+                    asset.state = ASSET_STATE_FAILED
+                    asset.save()
 
             messages.add_message(request, messages.INFO, "Your upload has started.")
             return HttpResponseRedirect(reverse("uploads"))
@@ -375,6 +378,7 @@ def owner_show(request, slug):
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
+        "user": request.user,
         "owner": owner,
         "assets": assets,
         "page_title": owner.displayname,
@@ -602,36 +606,37 @@ def asset_edit(request, asset_url):
     elif request.method == "POST":
         form = AssetEditForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
-            asset = form.save(commit=False)
-            override_thumbnail = request.POST.get("thumbnail_override", False)
-            thumbnail_override_image = request.POST.get("thumbnail_override_image", None)
-            if override_thumbnail and thumbnail_override_image:
-                image_file = b64_to_img(thumbnail_override_image)
-                asset.thumbnail = image_file
-            form.save_m2m()
-            if is_editable and "_save_private" in request.POST:
-                asset.visibility = PRIVATE
-            if "_save_public" in request.POST:
-                asset.visibility = PUBLIC
-            if "_save_unlisted" in request.POST:
-                asset.visibility = UNLISTED
-            asset.save(update_timestamps=True)
-
-            if request.FILES.get("zip_file"):
-                asset.state = ASSET_STATE_UPLOADING
+            with transaction.atomic():
+                asset = form.save(commit=False)
+                override_thumbnail = request.POST.get("thumbnail_override", False)
+                thumbnail_override_image = request.POST.get("thumbnail_override_image", None)
+                if override_thumbnail and thumbnail_override_image:
+                    image_file = b64_to_img(thumbnail_override_image)
+                    asset.thumbnail = image_file
+                form.save_m2m()
+                if is_editable and "_save_private" in request.POST:
+                    asset.visibility = PRIVATE
+                if "_save_public" in request.POST:
+                    asset.visibility = PUBLIC
+                if "_save_unlisted" in request.POST:
+                    asset.visibility = UNLISTED
                 asset.save(update_timestamps=True)
 
-                if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                    queue_upload_asset_web_ui(
-                        current_user=request.user,
-                        asset=asset,
-                        files=[request.FILES["zip_file"]],
-                    )
-                else:
-                    upload(
-                        asset,
-                        [request.FILES["zip_file"]],
-                    )
+                if request.FILES.get("zip_file"):
+                    asset.state = ASSET_STATE_UPLOADING
+                    asset.save(update_timestamps=True)
+
+                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                        queue_upload_asset_web_ui(
+                            current_user=request.user,
+                            asset=asset,
+                            files=[request.FILES["zip_file"]],
+                        )
+                    else:
+                        upload(
+                            asset,
+                            [request.FILES["zip_file"]],
+                        )
             if is_superuser:
                 return HttpResponseRedirect(reverse("asset_view", kwargs={"asset_url": asset.url}))
             else:
@@ -658,14 +663,15 @@ def asset_edit(request, asset_url):
 @login_required
 def delete_asset(request, asset_url):
     if request.method == "POST":
-        asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
-        if asset.name:
-            asset_name = asset.name
-        else:
-            asset_name = "Unnamed asset"
+        with transaction.atomic():
+            asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
+            if asset.name:
+                asset_name = asset.name
+            else:
+                asset_name = "Unnamed asset"
 
-        asset.hide_media()
-        asset.delete()
+            asset.hide_media()
+            asset.delete()
         messages.add_message(
             request,
             messages.INFO,
@@ -688,7 +694,8 @@ def asset_publish(request, asset_url):
     elif request.method == "POST":
         form = AssetPublishForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                form.save()
             return HttpResponseRedirect(reverse("uploads"))
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
@@ -770,15 +777,16 @@ def user_settings(request):
     if request.method == "POST":
         form = UserSettingsForm(request.POST, instance=user)
         if form.is_valid():
-            form.save()
-            password_new = request.POST.get("password_new")
-            if password_new:
-                user.set_password(password_new)
-                need_login = True
-            email = request.POST.get("email")
-            if email:
-                user.email = email
-            user.save()
+            with transaction.atomic():
+                form.save()
+                password_new = request.POST.get("password_new")
+                if password_new:
+                    user.set_password(password_new)
+                    need_login = True
+                email = request.POST.get("email")
+                if email:
+                    user.email = email
+                user.save()
             if need_login:
                 logout(request)
 
@@ -936,12 +944,13 @@ def toggle_like(request):
         return error_return
 
     is_liked = asset.id in UserLike.objects.filter(user=user).values_list("asset__id", flat=True)
-    if is_liked:
-        UserLike.objects.filter(user=user, asset=asset).delete()
-    else:
-        UserLike.objects.create(user=user, asset=asset)
-    # Triggers denorming of asset liked time, but not update_time.
-    asset.save()
+    with transaction.atomic():
+        if is_liked:
+            UserLike.objects.filter(user=user, asset=asset).delete()
+        else:
+            UserLike.objects.create(user=user, asset=asset)
+        # Triggers denorming of asset liked time, but not update_time.
+        asset.save()
     template = "main/tags/like_button.html"
     context = {
         "is_liked": not is_liked,
@@ -987,11 +996,12 @@ def make_asset_masthead_image(request, asset_url):
         create = {
             "asset": asset,
         }
-        masthead = MastheadSection.objects.create(**create)
-        # We need an instance ID to populate the image path in storage.
-        # So we need to save it separately after the create.
-        masthead.image = image_file
-        masthead.save()
+        with transaction.atomic():
+            masthead = MastheadSection.objects.create(**create)
+            # We need an instance ID to populate the image path in storage.
+            # So we need to save it separately after the create.
+            masthead.image = image_file
+            masthead.save()
         body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
 
         return HttpResponse(mark_safe(body))
