@@ -384,7 +384,7 @@ class UserAdmin(OriginalUserAdmin):
         "displayname",
         "username",
         "email",
-        "fist_name",
+        "first_name",
         "last_name",
         "is_staff",
         "id",
