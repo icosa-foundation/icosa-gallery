@@ -59,6 +59,7 @@ Usage:
             django_user.set_password(password)
             django_user.save()
         else:
+            print(f"Creating django user with username and email: {email}")
             django_user = DjangoUser.objects.create_user(
                 username=email,
                 email=email,
