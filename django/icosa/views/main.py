@@ -369,6 +369,10 @@ def owner_show(request, slug):
         AssetOwner,
         url=slug,
     )
+
+    if owner.disable_profile and not request.user.is_superuser:
+        raise Http404
+
     asset_objs = owner.asset_set.filter(
         visibility=PUBLIC,
     ).order_by("-id")
@@ -407,6 +411,10 @@ def user_show(request, slug):
         AssetOwner,
         url=slug,
     )
+
+    if owner.disable_profile and not request.user.is_superuser:
+        raise Http404
+
     if owner.django_user is None:
         owners = AssetOwner.objects.filter(pk=owner.pk)
     else:

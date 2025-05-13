@@ -9,6 +9,7 @@
   padding: 1rem;
   background-color: var(--color-primary-bright);
   text-align: center;
+  color: var(--color-base-dark);
 
   a {
     color: var(--color-base-dark);
@@ -17,5 +18,9 @@
     &:hover {
       color: var(--color-base-dark);
     }
+  }
+
+  &.warn {
+    background-color: var(--color-alert-warning);
   }
 }

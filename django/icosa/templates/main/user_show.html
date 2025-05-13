@@ -12,9 +12,11 @@
 {% endblock extrahead %}
 
 {% block banner %}
-{% if not owner.is_claimed %}
-{% include "partials/artist_info_banner.html" %}
-{% endif %}
+    {% if owner.disable_profile and request.user.is_superuser %}
+        {% include "partials/owner_disabled_banner.html" %}
+    {% elif not owner.is_claimed %}
+        {% include "partials/artist_info_banner.html" %}
+    {% endif %}
 {% endblock banner %}
 
 {% block content %}
