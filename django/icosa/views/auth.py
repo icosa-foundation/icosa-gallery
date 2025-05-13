@@ -33,12 +33,6 @@ User = get_user_model()
 
 def send_password_reset_email(request, user, to_email):
     site = get_current_site(request)
-    owner = None
-    try:
-        owner = AssetOwner.objects.get(django_user=user)
-    except AssetOwner.DoesNotExist:
-        # TODO(james): We should probably error out here
-        pass
 
     mail_subject = f"Reset your {site.name} account password."
     message = render_to_string(
@@ -46,7 +40,6 @@ def send_password_reset_email(request, user, to_email):
         {
             "request": request,
             "user": user,
-            "owner": owner,
             "domain": site.domain,
             "uid": urlsafe_base64_encode(force_bytes(user.pk)),
             "token": default_token_generator.make_token(user),
@@ -208,7 +201,7 @@ def password_reset(request):
         form = PasswordResetForm(request.POST)
         if form.is_valid():
             try:
-                user = User.objects.get(email=form.cleaned_data["email"])
+                user = User.objects.get(username=form.cleaned_data["email"])
                 send_password_reset_email(
                     request,
                     user,
