@@ -2,7 +2,7 @@
 
 <div class="user-info">
   {% if user is None or user.is_anonymous %}
-      {% if config.SIGNUP_OPEN %}
+      {% if config.LOGIN_OPEN %}
           <a href="{% url 'login' %}">Login / Register</a>
       {% else %}
           {% if config.WAITLIST_IF_SIGNUP_CLOSED %}

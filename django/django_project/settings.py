@@ -327,6 +327,11 @@ CONSTANCE_CONFIG = {
         "Enables the registration form.",
         bool,
     ),
+    "LOGIN_OPEN": (
+        False,
+        "Enables the login form.",
+        bool,
+    ),
     "WAITLIST_IF_SIGNUP_CLOSED": (
         False,
         "If Signup Open is False, this will enable the waitlist functionality. Does nothing if Signup Open is True.",

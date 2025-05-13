@@ -1,4 +1,14 @@
-<p><strong>Note:</strong> Login and account registration is currently restricted to invited users only while we iron a few things out.</p>
+<p><strong>Note:</strong>
+{% if not config.LOGIN_OPEN and not config.SIGNUP_OPEN %}
+    Login and account registration
+{% else %}
+    {% if not config.LOGIN_OPEN %}
+        Login
+    {% elif not config.SIGNUP_OPEN %}
+        Account registration
+    {% endif %}
+{% endif %}
+is currently restricted to invited users only while we iron a few things out.</p>
 <p>If you already hold an account with Icosa Gallery, don't worry, you'll be able to log in once we open back up to everyone.</p>
 {% if config.WAITLIST_IF_SIGNUP_CLOSED %}
     <p><a href="/waitlist">Sign up to the waitlist</a> to be notified when you can create an account.</p>

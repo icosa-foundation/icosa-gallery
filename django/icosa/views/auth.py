@@ -9,7 +9,11 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.db import IntegrityError, transaction
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseRedirect,
+)
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -101,7 +105,10 @@ def custom_login(request):
     if not request.user.is_anonymous:
         return redirect("home")
 
-    if request.method == "POST" and config.SIGNUP_OPEN:
+    if not config.LOGIN_OPEN:
+        raise Http404()
+
+    if request.method == "POST":
         username = request.POST.get("username", None)
         password = request.POST.get("password", None)
         # Creating the error response up front is slower for the happy path,
@@ -139,6 +146,9 @@ def custom_logout(request):
 
 @ratelimit(key="user_or_ip", rate="10/m", method="POST")
 def register(request):
+    if not config.SIGNUP_OPEN:
+        raise Http404()
+
     success = False
     if request.method == "POST":
         form = NewUserForm(request.POST)
