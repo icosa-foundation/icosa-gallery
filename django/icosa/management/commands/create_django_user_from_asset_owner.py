@@ -74,6 +74,7 @@ Usage:
             hashedpw = bcrypt.hashpw(new_password.encode(), salt)
             asset_owner.password = hashedpw
         asset_owner.migrated = True
+        asset_owner.django_user = django_user
         asset_owner.save()
 
         print(f"Finished migrating {email}")
