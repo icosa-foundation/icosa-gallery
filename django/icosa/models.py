@@ -231,8 +231,8 @@ class User(AbstractUser):
     def get_absolute_url(self):
         owners = self.assetowner_set.all()
         num_owners = owners.count()
-        if num_owners > 1:
-            url = reverse("user_show", kwargs={"slug": owners.first().url})
+        if num_owners > 1 and owners.first().url:
+            url = reverse("icosa:user_show", kwargs={"slug": owners.first().url})
         elif num_owners == 1:
             url = owners.first().get_absolute_url()
         else:
@@ -312,7 +312,10 @@ class AssetOwner(models.Model):
         return result
 
     def get_absolute_url(self):
-        return reverse("owner_show", kwargs={"slug": self.url})
+        if self.url:
+            return reverse("icosa:owner_show", kwargs={"slug": self.url})
+        else:
+            return ""            
 
     def __str__(self):
         return self.displayname
@@ -687,13 +690,13 @@ class Asset(models.Model):
         return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/icosa/{self.url}/archive.zip"
 
     def get_absolute_url(self):
-        return reverse("asset_view", kwargs={"asset_url": self.url})
+        return reverse("icosa:asset_view", kwargs={"asset_url": self.url})
 
     def get_edit_url(self):
-        return f"/edit/{self.url}"
+        return reverse("icosa:asset_edit", kwargs={"asset_url": self.url})
 
     def get_delete_url(self):
-        return reverse("asset_delete", kwargs={"asset_url": self.url})
+        return reverse("icosa:asset_delete", kwargs={"asset_url": self.url})
 
     def get_thumbnail_url(self):
         thumbnail_url = "/static/images/nothumbnail.png?v=1"

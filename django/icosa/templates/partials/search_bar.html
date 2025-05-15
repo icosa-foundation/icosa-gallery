@@ -1,7 +1,7 @@
 {% load fontawesome_tags %}
 
 <div class="search-widget">
-    <form action="{% url 'search' %}" method="get">
+    <form action="{% url 'icosa:search' %}" method="get">
         <input type="search" class="searchbar" name="s" value="{% if search_query %}{{ search_query }}{% endif %}">
         <button class="searchbutton">
             {% fa_icon "solid" "magnifying-glass" %}
