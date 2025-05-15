@@ -106,9 +106,17 @@ Usage:
                 return
 
         assets = Asset.objects.filter(owner=source_owner)
-        likes = UserLike.objects.filter(user=source_owner.django_user)
-        reports = Asset.objects.filter(last_reported_by=source_owner)
-        device_codes = DeviceCode.objects.filter(user=source_owner)
+        if source_owner.django_user:
+            likes = UserLike.objects.filter(user=source_owner.django_user)
+            reports = Asset.objects.filter(last_reported_by=source_owner.django_user)
+            device_codes = DeviceCode.objects.filter(user=source_owner.django_user)
+        else:
+            likes = UserLike.objects.none()
+            reports = Asset.objects.none()
+            device_codes = DeviceCode.objects.none(user=source_owner.django_user)
+            print(
+                f"{source_repr} does not have an associated django user, so will not move any likes, reports or device codes."
+            )
 
         action = None
 
