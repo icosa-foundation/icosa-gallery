@@ -113,7 +113,7 @@ Usage:
         else:
             likes = UserLike.objects.none()
             reports = Asset.objects.none()
-            device_codes = DeviceCode.objects.none(user=source_owner.django_user)
+            device_codes = DeviceCode.objects.none()
             print(
                 f"{source_repr} does not have an associated django user, so will not move any likes, reports or device codes."
             )
