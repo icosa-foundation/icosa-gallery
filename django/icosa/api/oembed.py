@@ -64,7 +64,10 @@ def oembed(
     match = resolve(url)
     if match.url_name != "asset_oembed":
         raise HttpError(404, "Not found.")
-    asset = asset = Asset.objects.get(url=match.kwargs["asset_url"])
+    try:
+        asset = Asset.objects.get(url=match.kwargs["asset_url"])
+    except Asset.DoesNotExist:
+        raise HttpError(404, "Not found.")
 
     frame_width, frame_height = calc_dimensions(maxwidth, maxheight)
 
