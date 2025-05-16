@@ -34,7 +34,7 @@
                 </h2>
                 {% if asset.owner %}
                     <p class="sketch-byline">
-                        <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a> &bull; {{ asset.create_time|date:"d/m/Y" }}
+                        <a href="{% url 'icosa:user_show'  slug=asset.owner.url %}">{{ asset.owner.displayname }}</a> &bull; {{ asset.create_time|date:"d/m/Y" }}
                     </p>
                 {% endif %}
                 {% if asset.description %}
@@ -45,13 +45,13 @@
                 </p>
                 <p></p>
                 {% if user_owns_asset or request.user.is_superuser %}
-                    <a class="btn btn-primary btn-sm" href="{% url 'asset_edit' asset_url=asset.url %}">
+                    <a class="btn btn-primary btn-sm" href="{% url 'icosa:asset_edit' asset_url=asset.url %}">
                         {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser and not user_owns_asset %} (as superuser){% endif %}
                     </a>
                 {% endif %}
                 <p>
                     {% if downloadable_formats %}
-                        <a href="{% url 'asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
+                        <a href="{% url 'icosa:asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
                             {% fa_icon "solid" "download" %} Downloads
                         </a>
                     {% endif %}
@@ -65,8 +65,8 @@
                 </div>
                 <p class="text-right actions">
                     <small>
-                        <a href="{% url 'artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a>
-                        <a href="{% url "report_asset" asset_url=asset.url %}">
+                        <a href="{% url 'icosa:artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a>
+                        <a href="{% url "icosa:report_asset" asset_url=asset.url %}">
                             {% fa_icon "solid" "flag" %} Report
                         </a>
                     </small>

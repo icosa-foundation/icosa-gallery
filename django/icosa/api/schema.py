@@ -241,7 +241,7 @@ class AssetSchema(ModelSchema):
     def resolve_url(obj, context):
         request = context["request"]
         root_url = request.build_absolute_uri("/").rstrip("/")
-        return f"{root_url}{reverse_lazy('api-1.0.0:asset_list')}/{obj.url}"
+        return f"{root_url}{reverse_lazy('icosa:api:asset_list')}/{obj.url}"
 
     @staticmethod
     def resolve_assetId(obj, context):

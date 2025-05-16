@@ -2,7 +2,7 @@
 {% load fontawesome_tags %}
 
 {% if asset.state == "UPLOADING" %}
-    <article class="sketchbox" hx-trigger="every 2000ms" hx-get="{% url 'asset_status' asset_url=asset.url %}" hx-swap="outerHTML" hx-target="this">
+    <article class="sketchbox" hx-trigger="every 2000ms" hx-get="{% url 'icosa:asset_status' asset_url=asset.url %}" hx-swap="outerHTML" hx-target="this">
 {% else %}
     <article class="sketchbox">
 {% endif %}
@@ -48,7 +48,7 @@
         </h4>
         {% if not hide_byline %}
             <p class="sketch-byline">
-                <a href="{% url 'user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>
+                {% if asset.owner.url %}<a href="{% url 'icosa:user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>{% endif %}
                 {% if owner_details %}&bull; {{ asset.create_time|date:"d/m/Y" }}{% endif %}
             </p>
         {% endif %}

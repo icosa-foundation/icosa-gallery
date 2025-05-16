@@ -14,7 +14,7 @@
                             {% if error %}
                                 <div role="alert" class="fade alert alert-danger show">{{ error }}</div>
                             {% endif %}
-                            <form class="form-inline" action="{% url 'login' %}" method="post">
+                            <form class="form-inline" action="{% url 'icosa:login' %}" method="post">
                                 {% csrf_token %}
                                 <div class="form-group">
                                     <label class="form-label sr-only" for="username">Username:</label>
@@ -42,7 +42,7 @@
                                 <br>
                                 <button type="submit" class="btn btn-primary">Log in</button>
                             </form>
-                            <a href="{% url 'password_reset' %}">Forgot Password?</a>
+                            <a href="{% url 'icosa:password_reset' %}">Forgot Password?</a>
                         </div>
                     </div>
                 </div>
@@ -52,7 +52,7 @@
             <div class="text-center col-lg-6 offset-lg-3">
                 <br>
                 {% if config.SIGNUP_OPEN %}
-                    <a href="/register">Register a new account</a>
+                    <a href="{% url 'icosa:register' %}">Register a new account</a>
                 {% else %}
                     {% include "partials/login_notice.html" %}
                 {% endif %}

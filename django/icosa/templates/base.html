@@ -13,7 +13,7 @@
     {% endcompress %}
     <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}?v=2" type="image/x-icon">
     <title>{% if page_title %}{{ page_title }} | {% endif %}Icosa Gallery</title>
-    <script src="/static/js/htmx.min.js"></script>
+    <script src="{% static  'js/htmx.min.js' %}"></script>
     {% block extrahead %}{% endblock extrahead %}
 </head>
 

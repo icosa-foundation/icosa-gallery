@@ -30,7 +30,7 @@
     </div>
     <div class="row">
         <div class="col-6">
-            <form action="{% url 'uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
+            <form action="{% url 'icosa:uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 {% if form.file.errors %}
                     {{ form.file.errors }}

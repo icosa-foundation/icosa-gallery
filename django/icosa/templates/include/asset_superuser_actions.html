@@ -1,9 +1,9 @@
-<form id="super-thumbnail-form" action="{% url 'make_asset_thumbnail' asset_url=asset.url %}" method="post">
+<form id="super-thumbnail-form" action="{% url 'icosa:make_asset_thumbnail' asset_url=asset.url %}" method="post">
     {% csrf_token %}
     <input type="hidden" name="thumbnail_image">
     <input type="submit" class="btn btn-danger btn-inline" id="super-thumbnail-form-submit" value="Generate thumbnail image">
 </form>
-<form id="super-preview-form" action="{% url 'make_asset_masthead_image' asset_url=asset.url %}" method="post">
+<form id="super-preview-form" action="{% url 'icosa:make_asset_masthead_image' asset_url=asset.url %}" method="post">
     {% csrf_token %}
     <input type="hidden" name="masthead_image">
     <input type="submit" class="btn btn-danger btn-inline" id="super-masthead-form-submit" value="Generate masthead image section">

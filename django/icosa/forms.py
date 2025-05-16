@@ -176,7 +176,7 @@ class AssetEditForm(forms.ModelForm):
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(
-                url="tag-autocomplete",
+                url="icosa:tag-autocomplete",
             ),
             "camera": CameraButton(),
         }
