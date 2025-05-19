@@ -45,11 +45,11 @@ if DEPLOYMENT_ENV in [
     DEBUG = True
 
 DEPLOYMENT_SCHEME = "http://" if os.environ.get("DEPLOYMENT_NO_SSL") else "https://"
-DEPLOYMENT_FOLDER = os.environ.get("DEPLOYMENT_FOLDER", "/")
+DEPLOYMENT_PATH = os.environ.get("DEPLOYMENT_PATH", "/")
 
 SITE_ID = 1
 
-BASE_URL = os.environ.get("BASE_URL", f"{DEPLOYMENT_FOLDER}")
+BASE_URL = os.environ.get("BASE_URL", f"{DEPLOYMENT_PATH}")
 
 ALLOWED_HOSTS = [
     "localhost",
@@ -132,7 +132,7 @@ else:
         },
     }
     MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
-    MEDIA_URL = BASE_URL + "/media/"
+    MEDIA_URL = BASE_URL + "media/"
     DJANGO_STORAGE_MEDIA_ROOT = None
     LOCAL_MEDIA_STORAGE = True
 
