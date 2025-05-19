@@ -97,22 +97,14 @@ class AssetPagination(PaginationBase):
         **params,
     ):
         try:
-            page_size = (
-                int(pagination.pageSize)
-                or int(pagination.page_size)
-                or DEFAULT_PAGE_SIZE
-            )
+            page_size = int(pagination.pageSize) or int(pagination.page_size) or DEFAULT_PAGE_SIZE
         except (ValueError, TypeError):
             # pageSize could still be defined, but empty: `?pageSize=`).
             page_size = DEFAULT_PAGE_SIZE
         page_size = min(page_size, MAX_PAGE_SIZE)
 
         try:
-            page_token = (
-                int(pagination.pageToken)
-                or int(pagination.page_token)
-                or DEFAULT_PAGE_TOKEN
-            )
+            page_token = int(pagination.pageToken) or int(pagination.page_token) or DEFAULT_PAGE_TOKEN
         except (ValueError, TypeError):
             # pageToken could still be defined, but empty: `?pageToken=`).
             page_token = DEFAULT_PAGE_TOKEN
@@ -158,4 +150,3 @@ def build_format_q(formats: List) -> Q:
     else:
         choices = ", ".join([x.value for x in FormatFilter])
         raise FilterException(f"Format filter not one of {choices}")
-

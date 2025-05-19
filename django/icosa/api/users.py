@@ -38,6 +38,7 @@ router = Router()
 def get_users_me(request):
     return request.user
 
+
 @router.patch(
     "/me",
     auth=JWTAuth(),
@@ -50,10 +51,7 @@ def update_user(
     current_user = request.user
     url = getattr(patch_user, "url", "").strip() or current_user.url
 
-    if (
-        AssetOwner.objects.filter(url__iexact=url).count() != 0
-        and url != current_user.url
-    ):
+    if AssetOwner.objects.filter(url__iexact=url).count() != 0 and url != current_user.url:
         # Used to return 403. James believes this is the wrong status code.
         # Better to use Unprocessable Entity.
         raise HttpError(422, "This URL is already in use")
@@ -176,9 +174,7 @@ def get_me_likedassets(
     filters: AssetFilters = Query(...),
 ):
     user = request.user
-    assets = Asset.objects.filter(
-        id__in=user.likedassets.all().values_list("asset__id", flat=True)
-    )
+    assets = Asset.objects.filter(id__in=user.likedassets.all().values_list("asset__id", flat=True))
     q = Q(
         visibility__in=[PUBLIC, UNLISTED],
     )
