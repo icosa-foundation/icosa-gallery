@@ -3,6 +3,7 @@ from typing import Any, List, NoReturn, Optional
 from django.conf import settings
 from django.db.models import Q
 from django.http import HttpRequest
+from django.urls import reverse
 from icosa.api.exceptions import FilterException
 from icosa.api.schema import FormatFilter
 from icosa.models import (
@@ -27,7 +28,26 @@ DEFAULT_PAGE_SIZE = 20
 DEFAULT_PAGE_TOKEN = 1
 MAX_PAGE_SIZE = 100
 
+DEFAULT_CACHE_SECONDS = 10
+
 NOT_FOUND = HttpError(404, "Asset not found.")
+
+
+def get_publish_url(request, asset: Asset) -> str:
+    url = request.build_absolute_uri(
+        reverse(
+            "asset_publish",
+            kwargs={
+                "asset_url": asset.url,
+            },
+        )
+    )
+    if settings.DEPLOYMENT_HOST_API is not None:
+        url = url.replace(settings.DEPLOYMENT_HOST_API, settings.DEPLOYMENT_HOST_WEB)
+    return 200, {
+        "publishUrl": url,
+        "assetId": asset.url,
+    }
 
 
 def user_owns_asset(

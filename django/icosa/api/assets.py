@@ -3,19 +3,19 @@ import secrets
 from typing import List, Optional
 
 from constance import config
-from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
-from django.urls import reverse
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
+    DEFAULT_CACHE_SECONDS,
     NOT_FOUND,
     POLY_CATEGORY_MAP,
     AssetPagination,
     build_format_q,
     check_user_owns_asset,
     get_asset_by_url,
+    get_publish_url,
 )
 from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
@@ -54,26 +54,7 @@ from .schema import (
 router = Router()
 
 
-DEFAULT_CACHE_SECONDS = 10
-
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
-
-
-def get_publish_url(request, asset: Asset) -> str:
-    url = request.build_absolute_uri(
-        reverse(
-            "asset_publish",
-            kwargs={
-                "asset_url": asset.url,
-            },
-        )
-    )
-    if settings.DEPLOYMENT_HOST_API is not None:
-        url = url.replace(settings.DEPLOYMENT_HOST_API, settings.DEPLOYMENT_HOST_WEB)
-    return 200, {
-        "publishUrl": url,
-        "assetId": asset.url,
-    }
 
 
 @router.get(
@@ -92,6 +73,47 @@ def get_asset(
     if asset.visibility not in [PUBLIC, UNLISTED]:
         raise NOT_FOUND
     return asset
+
+
+@router.get(
+    "/{str:asset}/upload_state",
+    response={200: AssetStateSchema},
+    **COMMON_ROUTER_SETTINGS,
+    include_in_schema=False,  # TODO, should this be advertised?
+)
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+def asset_upload_state(
+    request,
+    asset: str,
+):
+    asset = get_asset_by_url(request, asset)
+    return asset
+
+
+@router.get(
+    "/{str:userurl}/{str:asseturl}",
+    response=AssetSchema,
+)
+@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
+def get_user_asset(
+    request,
+    userurl: str,
+    asseturl: str,
+):
+    try:
+        asset = Asset.objects.get(url=asseturl, owner__url=userurl)
+    except Asset.DoesNotExist:
+        raise NOT_FOUND
+    if asset.visibility not in [PUBLIC, UNLISTED]:
+        raise NOT_FOUND
+    return asset
+
+
+# ----------------------------------------------------------------------------
+# UPLOADS ENDPOINTS
+# (These are duplicated in api.users. Remove the ones defined here after
+# blocks/brush refactors have been done. )
+# ----------------------------------------------------------------------------
 
 
 # This endpoint is for internal Open Blocks use for now. It's more complex than
@@ -154,40 +176,6 @@ def finalize_asset(
     queue_finalize_asset(asset.url, data)
 
     return get_publish_url(request, asset)
-
-
-@router.get(
-    "/{str:asset}/upload_state",
-    response={200: AssetStateSchema},
-    **COMMON_ROUTER_SETTINGS,
-    include_in_schema=False,  # TODO, should this be advertised?
-)
-@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
-def asset_upload_state(
-    request,
-    asset: str,
-):
-    asset = get_asset_by_url(request, asset)
-    return asset
-
-
-@router.get(
-    "/{str:userurl}/{str:asseturl}",
-    response=AssetSchema,
-)
-@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
-def get_user_asset(
-    request,
-    userurl: str,
-    asseturl: str,
-):
-    try:
-        asset = Asset.objects.get(url=asseturl, owner__url=userurl)
-    except Asset.DoesNotExist:
-        raise NOT_FOUND
-    if asset.visibility not in [PUBLIC, UNLISTED]:
-        raise NOT_FOUND
-    return asset
 
 
 @router.post(

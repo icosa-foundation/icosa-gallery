@@ -1,28 +1,46 @@
-from typing import List
+import secrets
+from typing import List, Optional
 
 from django.db import transaction
 from django.db.models import Q
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
+    DEFAULT_CACHE_SECONDS,
+    NOT_FOUND,
     POLY_CATEGORY_MAP,
     AssetPagination,
     build_format_q,
     check_user_owns_asset,
     get_asset_by_url,
+    get_publish_url,
 )
 from icosa.api.assets import filter_assets, sort_assets
 from icosa.api.exceptions import FilterException
+from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
-from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetOwner, Tag
-from ninja import Query, Router
+from icosa.models import (
+    PRIVATE,
+    PUBLIC,
+    UNLISTED,
+    Asset,
+    AssetOwner,
+    Tag,
+)
+from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
+from icosa.views.decorators import cache_per_user
+from ninja import File, Query, Router
+from ninja.decorators import decorate_view
 from ninja.errors import HttpError
+from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
 from .schema import (
     AssetFilters,
+    AssetFinalizeData,
     AssetSchema,
     FullUserSchema,
     PatchUserSchema,
+    UploadJobSchemaOut,
     UserAssetFilters,
     get_keyword_q,
 )
@@ -189,3 +207,118 @@ def get_me_likedassets(
         assets = sort_assets(filters.orderBy, assets)
 
     return assets
+
+
+# ----------------------------------------------------------------------------
+# UPLOADS ENDPOINTS
+# (These are duplicated in api.assets. Remove the ones defined over there after
+# blocks/brush refactors have been done. )
+# ----------------------------------------------------------------------------
+
+
+# This endpoint is for internal Open Blocks use for now. It's more complex than
+# it needs to be until Open Blocks can send the formats data in a zip or some
+# other way.
+@router.post(
+    "/me/assets/{str:asset}/blocks_format",
+    auth=JWTAuth(),
+    response={200: UploadJobSchemaOut},
+    include_in_schema=False,  # TODO this route, coupled with finalize_asset
+    # has a race condition. If this route becomes public, this will probably
+    # need to be fixed.
+)
+@decorate_view(transaction.atomic)
+def add_blocks_asset_format(
+    request,
+    asset: str,
+    files: Optional[List[UploadedFile]] = File(None),
+):
+    user = request.user
+    asset = get_asset_by_url(request, asset)
+    check_user_owns_asset(request, asset)
+
+    if request.headers.get("content-type").startswith("multipart/form-data"):
+        print("***** REQUEST DEBUG START *****")
+        try:
+            print("FILES:")
+            print(request.FILES)
+            queue_blocks_upload_format(user, asset, files)
+        except HttpError:
+            print("HEADERS:")
+            print(request.headers)
+            print("POST DATA:")
+            print(request.POST)
+            raise
+    else:
+        raise HttpError(415, "Unsupported content type.")
+
+    asset.save()
+    return get_publish_url(request, asset)
+
+
+@router.post(
+    "/me/assets/{str:asset}/blocks_finalize",
+    auth=JWTAuth(),
+    response={200: UploadJobSchemaOut},
+    include_in_schema=False,  # TODO this route has a race condition with
+    # add_blocks_asset_format and will overwrite the last format uploaded. If this
+    # route becomes public, this will probably need to be fixed.
+)
+@decorate_view(transaction.atomic)
+def finalize_asset(
+    request,
+    asset: str,
+    data: AssetFinalizeData,
+):
+    asset = get_asset_by_url(request, asset)
+    check_user_owns_asset(request, asset)
+
+    queue_finalize_asset(asset.url, data)
+
+    return get_publish_url(request, asset)
+
+
+@router.post(
+    "/me/assets/",
+    response={201: UploadJobSchemaOut},
+    auth=JWTAuth(),
+    include_in_schema=False,
+)
+def upload_new_assets(
+    request,
+    files: Optional[List[UploadedFile]] = File(None),
+):
+    user = request.user
+    owner, _ = AssetOwner.objects.get_or_create(
+        django_user=user,
+        email=user.email,
+        defaults={
+            "url": secrets.token_urlsafe(8),
+            "displayname": user.displayname,
+        },
+    )
+    job_snowflake = generate_snowflake()
+    asset_token = secrets.token_urlsafe(8)
+    asset = Asset.objects.create(
+        id=job_snowflake,
+        url=asset_token,
+        owner=owner,
+        name="Untitled Asset",
+    )
+    if files is not None:
+        from icosa.helpers.upload import upload_api_asset
+
+        try:
+            upload_api_asset(
+                asset,
+                files,
+            )
+        except HttpError as err:
+            raise err
+
+        # queue_upload_api_asset(
+        #     user,
+        #     asset,
+        #     files,
+        # )
+    return get_publish_url(request, asset)
