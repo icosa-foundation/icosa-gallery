@@ -1,9 +1,16 @@
-from typing import Any, List, Optional
+from typing import Any, List, NoReturn, Optional
 
+from django.conf import settings
 from django.db.models import Q
+from django.http import HttpRequest
 from icosa.api.exceptions import FilterException
 from icosa.api.schema import FormatFilter
+from icosa.models import (
+    PRIVATE,
+    Asset,
+)
 from ninja import Schema
+from ninja.errors import HttpError
 from ninja.pagination import PaginationBase
 from pydantic.json_schema import SkipJsonSchema
 
@@ -19,6 +26,50 @@ POLY_CATEGORY_MAP = {
 DEFAULT_PAGE_SIZE = 20
 DEFAULT_PAGE_TOKEN = 1
 MAX_PAGE_SIZE = 100
+
+NOT_FOUND = HttpError(404, "Asset not found.")
+
+
+def user_owns_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> bool:
+    user = request.user
+    return user is not None and user == asset.owner.django_user
+
+
+def check_user_owns_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> NoReturn:
+    if not user_owns_asset(request, asset):
+        raise
+
+
+def user_can_view_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> bool:
+    if asset.visibility == PRIVATE:
+        return user_owns_asset(request, asset)
+    return True
+
+
+def get_asset_by_url(
+    request: HttpRequest,
+    asset: str,
+) -> Asset:
+    # get_object_or_404 raises the wrong error text
+    try:
+        asset = Asset.objects.get(url=asset)
+    except Asset.DoesNotExist:
+        raise NOT_FOUND
+    if not user_can_view_asset(request, asset):
+        if settings.DEBUG:
+            raise NOT_FOUND
+        else:
+            raise NOT_FOUND
+    return asset
 
 
 class AssetPagination(PaginationBase):

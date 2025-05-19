@@ -1,7 +1,15 @@
 from typing import List
 
-from icosa.api import (COMMON_ROUTER_SETTINGS, POLY_CATEGORY_MAP,
-                       AssetPagination, build_format_q)
+from django.db import transaction
+from django.db.models import Q
+from icosa.api import (
+    COMMON_ROUTER_SETTINGS,
+    POLY_CATEGORY_MAP,
+    AssetPagination,
+    build_format_q,
+    check_user_owns_asset,
+    get_asset_by_url,
+)
 from icosa.api.assets import filter_assets, sort_assets
 from icosa.api.exceptions import FilterException
 from icosa.jwt.authentication import JWTAuth
@@ -10,10 +18,14 @@ from ninja import Query, Router
 from ninja.errors import HttpError
 from ninja.pagination import paginate
 
-from django.db.models import Q
-
-from .schema import (AssetFilters, AssetSchema, FullUserSchema,
-                     PatchUserSchema, UserAssetFilters, get_keyword_q)
+from .schema import (
+    AssetFilters,
+    AssetSchema,
+    FullUserSchema,
+    PatchUserSchema,
+    UserAssetFilters,
+    get_keyword_q,
+)
 
 router = Router()
 
@@ -118,6 +130,38 @@ def get_me_assets(
         .prefetch_related("tags")
     )
     return assets
+
+
+@router.get(
+    "/me/assets/{str:asset}",
+    auth=JWTAuth(),
+    response=AssetSchema,
+    **COMMON_ROUTER_SETTINGS,
+)
+def get_me_asset(
+    request,
+    asset: str,
+):
+    asset = get_asset_by_url(request, asset)
+    check_user_owns_asset(request, asset)
+    return asset
+
+
+@router.delete(
+    "/me/assets/{str:asset}",
+    auth=JWTAuth(),
+    response={204: int},
+)
+def delete_asset(
+    request,
+    asset: str,
+):
+    asset = get_asset_by_url(request, asset)
+    check_user_owns_asset(request, asset)
+    with transaction.atomic():
+        asset.hide_media()
+        asset.delete()
+    return 204
 
 
 @router.get(

@@ -1,24 +1,32 @@
 import re
 import secrets
-from typing import List, NoReturn, Optional
+from typing import List, Optional
 
 from constance import config
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
-from django.http import HttpRequest
 from django.urls import reverse
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
+    NOT_FOUND,
     POLY_CATEGORY_MAP,
     AssetPagination,
     build_format_q,
+    check_user_owns_asset,
+    get_asset_by_url,
 )
 from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.jwt.authentication import JWTAuth, MaybeJWTAuth
-from icosa.models import ALL_RIGHTS_RESERVED, PRIVATE, PUBLIC, Asset, AssetOwner
+from icosa.jwt.authentication import JWTAuth
+from icosa.models import (
+    ALL_RIGHTS_RESERVED,
+    PUBLIC,
+    UNLISTED,
+    Asset,
+    AssetOwner,
+)
 from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
 from icosa.views.decorators import cache_per_user
 from ninja import File, Query, Router
@@ -68,106 +76,22 @@ def get_publish_url(request, asset: Asset) -> str:
     }
 
 
-def user_can_view_asset(
-    request: HttpRequest,
-    asset: Asset,
-) -> bool:
-    if asset.visibility == PRIVATE:
-        return user_owns_asset(request, asset)
-    return True
-
-
-def user_owns_asset(
-    request: HttpRequest,
-    asset: Asset,
-) -> bool:
-    # This probably needs to be done in from_ninja_request
-    # but putting requests stuff in models seemed wrong
-    # so probably needs a refactor
-    user = request.user
-    return user is not None and user == asset.owner.django_user
-
-
-def check_user_owns_asset(
-    request: HttpRequest,
-    asset: Asset,
-) -> NoReturn:
-    if not user_owns_asset(request, asset):
-        raise HttpError(404, "Asset not found.")
-
-
-def get_asset_by_id(
-    request: HttpRequest,
-    asset: int,
-) -> Asset:
-    # get_object_or_404 raises the wrong error text
-    try:
-        asset = Asset.objects.get(pk=asset)
-    except Asset.DoesNotExist:
-        raise HttpError(404, "Asset not found.")
-    if not user_can_view_asset(request, asset):
-        raise HttpError(404, "Asset not found.")
-    return asset
-
-
-def get_asset_by_url(
-    request: HttpRequest,
-    asset: str,
-) -> Asset:
-    # get_object_or_404 raises the wrong error text
-    try:
-        asset = Asset.objects.get(url=asset)
-    except Asset.DoesNotExist:
-        raise HttpError(404, "Asset not found.")
-    if not user_can_view_asset(request, asset):
-        if settings.DEBUG:
-            raise HttpError(401, "Not authorized.")
-        else:
-            raise HttpError(404, "Asset not found.")
-    return asset
-
-
-def get_my_id_asset(
-    request,
-    asset: int,
-):
-    try:
-        asset = get_asset_by_id(request, asset)
-    except Exception:
-        raise
-    check_user_owns_asset(request, asset)
-    return asset
-
-
 @router.get(
     "/{str:asset}",
     response=AssetSchema,
-    auth=MaybeJWTAuth(),
     **COMMON_ROUTER_SETTINGS,
 )
-# @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))  # TODO(safety) all users are anonymous at this point, even ones who get authenticated via jwt so this will leak information if an auth'd user views anything private. Disabling the cache til this is fixed.
 def get_asset(
     request,
     asset: str,
 ):
-    return get_asset_by_url(request, asset)
-
-
-@router.delete(
-    "/{str:asset}",
-    auth=JWTAuth(),
-    response={204: int},
-)
-def delete_asset(
-    request,
-    asset: str,
-):
-    asset = get_asset_by_url(request, asset)
-    check_user_owns_asset(request, asset)
-    with transaction.atomic():
-        asset.hide_media()
-        asset.delete()
-    return 204
+    try:
+        asset = Asset.objects.get(url=asset)
+    except Asset.DoesNotExist:
+        raise NOT_FOUND
+    if asset.visibility not in [PUBLIC, UNLISTED]:
+        raise NOT_FOUND
+    return asset
 
 
 # This endpoint is for internal Open Blocks use for now. It's more complex than
@@ -257,14 +181,12 @@ def get_user_asset(
     userurl: str,
     asseturl: str,
 ):
-    # get_object_or_404 raises the wrong error text
     try:
         asset = Asset.objects.get(url=asseturl, owner__url=userurl)
     except Asset.DoesNotExist:
-        raise HttpError(404, "Asset not found.")
-
-    if not user_can_view_asset(request, asset):
-        raise HttpError(404, "Asset not found.")
+        raise NOT_FOUND
+    if asset.visibility not in [PUBLIC, UNLISTED]:
+        raise NOT_FOUND
     return asset
 
 
