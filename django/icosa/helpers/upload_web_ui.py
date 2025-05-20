@@ -21,7 +21,6 @@ from icosa.helpers.upload import TYPE_ROLE_MAP
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
-    AssetOwner,
     Format,
     Resource,
 )

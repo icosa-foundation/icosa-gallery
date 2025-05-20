@@ -2,7 +2,7 @@ from django.utils import timezone
 from ninja import Router
 from ninja.errors import HttpError
 
-from ..models import AssetOwner, DeviceCode
+from ..models import DeviceCode
 from .schema import LoginToken
 
 router = Router()

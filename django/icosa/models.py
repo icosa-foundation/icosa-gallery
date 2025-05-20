@@ -5,7 +5,7 @@ import string
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional, Self
+from typing import Optional
 from urllib.parse import urlparse
 
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent

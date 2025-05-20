@@ -30,7 +30,6 @@ from icosa.models import (
     ASSET_STATE_UPLOADING,
     VALID_THUMBNAIL_MIME_TYPES,
     Asset,
-    AssetOwner,
     Format,
     Resource,
 )
