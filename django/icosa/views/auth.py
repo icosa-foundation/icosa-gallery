@@ -144,7 +144,7 @@ def custom_logout(request):
         return render(request, "auth/logout.html")
 
 
-@ratelimit(key="user_or_ip", rate="10/m", method="GET")
+@ratelimit(key="user_or_ip", rate="10/m", method="POST")
 def register(request):
     if not config.SIGNUP_OPEN:
         raise Http404()
