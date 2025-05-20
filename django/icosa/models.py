@@ -315,7 +315,7 @@ class AssetOwner(models.Model):
         if self.url:
             return reverse("icosa:owner_show", kwargs={"slug": self.url})
         else:
-            return ""            
+            return ""
 
     def __str__(self):
         return self.displayname
