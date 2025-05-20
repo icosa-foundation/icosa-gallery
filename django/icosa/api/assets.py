@@ -90,25 +90,6 @@ def asset_upload_state(
     return asset
 
 
-@router.get(
-    "/{str:userurl}/{str:asseturl}",
-    response=AssetSchema,
-)
-@decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
-def get_user_asset(
-    request,
-    userurl: str,
-    asseturl: str,
-):
-    try:
-        asset = Asset.objects.get(url=asseturl, owner__url=userurl)
-    except Asset.DoesNotExist:
-        raise NOT_FOUND
-    if asset.visibility not in [PUBLIC, UNLISTED]:
-        raise NOT_FOUND
-    return asset
-
-
 # ----------------------------------------------------------------------------
 # UPLOADS ENDPOINTS
 # (These are duplicated in api.users. Remove the ones defined here after
