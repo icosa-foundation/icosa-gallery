@@ -305,6 +305,7 @@ AXES_LOCKOUT_PARAMETERS = ["username"]
 # Ignore assigning a lambda function to a variable for brevity
 AXES_CLIENT_IP_CALLABLE = lambda x: None  # noqa: E731
 AXES_COOLOFF_TIME = timedelta(minutes=10)
+AXES_LOCKOUT_TEMPLATE = "auth/login.html"
 
 # Cors settings
 
