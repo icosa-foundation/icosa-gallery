@@ -10,32 +10,32 @@
                         </li>
                         {% if can_view_in_maintenance %}
                             <li>
-                                <a href="{{ settings.DEPLOYMENT_SCHEME }}{{ settings.API_SERVER }}{% url "api-1.0.0:openapi-view" %}">
+                                <a href="{{ settings.DEPLOYMENT_SCHEME }}{{ settings.API_SERVER }}{% url "icosa:api:openapi-view" %}">
                                     API Docs
                                 </a>
                             </li>
                         {% endif %}
                         <li class="last">
-                            <a href="/supporters">
+                            <a href="{% url 'icosa:supporters' %}">
                                 Our supporters
                             </a>
                         </li>
                         {% if can_view_in_maintenance %}
                             <li class="push">
                                 <strong>
-                                    <a href="{% url 'artist_info' %}">
+                                    <a href="{% url 'icosa:artist_info' %}">
                                         Why is my work here?
                                     </a>
                                 </strong>
                             </li>
                         {% endif %}
                         <li{% if not can_view_in_maintenance %} class="push"{% endif %}>
-                            <a href="{% url 'privacy_policy' %}">
+                            <a href="{% url 'icosa:privacy_policy' %}">
                                 Privacy Policy
                             </a>
                         </li>
                         <li class="last">
-                            <a href="{% url 'terms' %}">
+                            <a href="{% url 'icosa:terms' %}">
                                 Terms and Conditions
                             </a>
                         </li>

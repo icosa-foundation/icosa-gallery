@@ -338,7 +338,7 @@ def uploads(request):
                     asset.save()
 
             messages.add_message(request, messages.INFO, "Your upload has started.")
-            return HttpResponseRedirect(reverse("uploads"))
+            return HttpResponseRedirect(reverse("icosa:uploads"))
     elif request.method == "GET":
         form = AssetUploadForm()
     else:
@@ -645,9 +645,9 @@ def asset_edit(request, asset_url):
                             [request.FILES["zip_file"]],
                         )
             if is_superuser:
-                return HttpResponseRedirect(reverse("asset_view", kwargs={"asset_url": asset.url}))
+                return HttpResponseRedirect(reverse("icosa:asset_view", kwargs={"asset_url": asset.url}))
             else:
-                return HttpResponseRedirect(reverse("uploads"))
+                return HttpResponseRedirect(reverse("icosa:uploads"))
         else:
             if settings.DEBUG:
                 print(form.errors)
@@ -684,7 +684,7 @@ def asset_delete(request, asset_url):
             messages.INFO,
             f"Deleted '{asset_name}'.",
         )
-        return HttpResponseRedirect(reverse("uploads"))
+        return HttpResponseRedirect(reverse("icosa:uploads"))
     else:
         return HttpResponseNotAllowed(["POST"])
 
@@ -703,7 +703,7 @@ def asset_publish(request, asset_url):
         if form.is_valid():
             with transaction.atomic():
                 form.save()
-            return HttpResponseRedirect(reverse("uploads"))
+            return HttpResponseRedirect(reverse("icosa:uploads"))
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
@@ -753,7 +753,7 @@ def report_asset(request, asset_url):
                     },
                 )
                 spawn_send_html_mail(mail_subject, message, [to_email])
-            return HttpResponseRedirect(reverse("report_success"))
+            return HttpResponseRedirect(reverse("icosa:report_success"))
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {

@@ -46,12 +46,16 @@ if DEPLOYMENT_ENV in [
     DEBUG = True
 
 DEPLOYMENT_SCHEME = "http://" if os.environ.get("DEPLOYMENT_NO_SSL") else "https://"
+DEPLOYMENT_PATH = os.environ.get("DEPLOYMENT_PATH", "/")
 
 SITE_ID = 1
+
+BASE_URL = os.environ.get("BASE_URL", f"{DEPLOYMENT_PATH}")
 
 ALLOWED_HOSTS = [
     "localhost",
     f"{DEPLOYMENT_HOST_WEB}",
+    "host.containers.internal"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -129,7 +133,7 @@ else:
         },
     }
     MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
-    MEDIA_URL = "/media/"
+    MEDIA_URL = BASE_URL + "media/"
     DJANGO_STORAGE_MEDIA_ROOT = None
     LOCAL_MEDIA_STORAGE = True
 
@@ -195,12 +199,25 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "django_project.urls"
-LOGIN_URL = "/login"
+LOGIN_URL = BASE_URL + "/login"
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+
+STATIC_URL = BASE_URL + "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATICFILES_FINDERS = (
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+    "compressor.finders.CompressorFinder",
+)
+
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [STATIC_ROOT],
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -280,16 +297,6 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
-STATIC_URL = "static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
-STATICFILES_FINDERS = (
-    "django.contrib.staticfiles.finders.FileSystemFinder",
-    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "compressor.finders.CompressorFinder",
-)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

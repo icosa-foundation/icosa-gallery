@@ -1,4 +1,4 @@
 <link rel="alternate" type="application/json+oembed"
-    href="{{ settings.DEPLOYMENT_SCHEME }}{{ settings.API_SERVER }}{% url 'api-1.0.0:oembed' %}?url={% url 'asset_oembed' asset.url %}&format=json"
+    href="{{ settings.DEPLOYMENT_SCHEME }}{{ settings.API_SERVER }}{% url 'icosa:api:oembed' %}?url={% url 'icosa:asset_oembed' asset.url %}&format=json"
     title="{{ asset.name }} oEmbed Profile"
 />

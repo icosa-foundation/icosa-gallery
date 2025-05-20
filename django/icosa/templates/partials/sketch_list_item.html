@@ -2,7 +2,7 @@
 {% load fontawesome_tags %}
 
 {% if asset.state == "UPLOADING" %}
-    <article class="sketchbox" hx-trigger="every 2000ms" hx-get="{% url 'asset_status' asset_url=asset.url %}" hx-swap="outerHTML" hx-target="this">
+    <article class="sketchbox" hx-trigger="every 2000ms" hx-get="{% url 'icosa:asset_status' asset_url=asset.url %}" hx-swap="outerHTML" hx-target="this">
 {% else %}
     <article class="sketchbox">
 {% endif %}
@@ -25,7 +25,7 @@
                     {% if asset.state == "FAILED" %}
                         <p>{% fa_icon "solid" "triangle-exclamation" %} Asset failed to upload. Please try again or contact support.</p>
                         <p>
-                        <form method="post" action="{% url "asset_delete" asset_url=asset.url %}" >
+                        <form method="post" action="{% url "icosa:asset_delete" asset_url=asset.url %}" >
                             {% csrf_token %}
                             <input class="btn btn-xs btn-secondary" type="submit" value="remove">
                         </form>
@@ -48,8 +48,10 @@
         </h4>
         {% if not hide_byline %}
             <p class="sketch-byline">
-                <a href="{% url 'user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>
+            {% if asset.owner.url %}
+                <a href="{% url 'icosa:user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>
                 {% if owner_details %}&bull; {{ asset.create_time|date:"d/m/Y" }}{% endif %}
+            {% endif %}
             </p>
         {% endif %}
         {% if owner_details %}

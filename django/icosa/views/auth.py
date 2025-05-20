@@ -103,7 +103,7 @@ def render_login_error(request, error: Optional[str] = None):
 
 def custom_login(request):
     if not request.user.is_anonymous:
-        return redirect("home")
+        return redirect("icosa:home")
 
     if not config.LOGIN_OPEN:
         raise Http404()
@@ -131,7 +131,7 @@ def custom_login(request):
                 owner.is_claimed = True
                 owner.save()
 
-        return redirect("home")
+        return redirect("icosa:home")
     else:
         return render(request, "auth/login.html")
 
@@ -139,7 +139,7 @@ def custom_login(request):
 def custom_logout(request):
     if request.method == "POST":
         logout(request)
-        return redirect("home")
+        return redirect("icosa:home")
     else:
         return render(request, "auth/logout.html")
 
@@ -219,7 +219,7 @@ def password_reset(request):
                 )
             except User.DoesNotExist:
                 pass
-            return redirect(reverse("password_reset_done"))
+            return redirect(reverse("icosa:password_reset_done"))
     else:
         form = PasswordResetForm()
         return render(
@@ -265,7 +265,7 @@ def password_reset_confirm(request, uidb64, token):
                         user.save()
                         logout(request)
                         return HttpResponseRedirect(
-                            reverse("password_reset_complete"),
+                            reverse("icosa:password_reset_complete"),
                         )
         else:
             if default_token_generator.check_token(user, token):

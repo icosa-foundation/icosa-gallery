@@ -1,6 +1,4 @@
 {% extends "base.html" %}
-{% load timedelta_filter %}
-
 {% block content %}
     <div class="loginuser container">
         <div class="row">
@@ -19,7 +17,7 @@
                                 {% if error %}
                                     <div role="alert" class="fade alert alert-danger show">{{ error }}</div>
                                 {% endif %}
-                                <form class="form-inline" action="{% url 'login' %}" method="post">
+                                <form class="form-inline" action="{% url 'icosa:login' %}" method="post">
                                     {% csrf_token %}
                                     <div class="form-group">
                                         <label class="form-label sr-only" for="username">Username:</label>
@@ -47,8 +45,9 @@
                                     <br>
                                     <button type="submit" class="btn btn-primary">Log in</button>
                                 </form>
-                                <a href="{% url 'password_reset' %}">Forgot Password?</a>
+                                <a href="{% url 'icosa:password_reset' %}">Forgot Password?</a>
                             {% endif %}
+                           
                         </div>
                     </div>
                 </div>

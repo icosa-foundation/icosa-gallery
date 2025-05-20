@@ -8,7 +8,7 @@
         <div class="row">
             <div class="col-md-5 hidden-sm"></div>
             <div class="logo-col col-sm-12 col-md-2">
-                <a class="logo" href="/">
+                <a class="logo" href="{% url 'icosa:home' %}">
                     <img
                         alt="logo"
                         src="{% static 'images/logo.png' %}"
@@ -23,12 +23,12 @@
                 <small class="user-actions">
                     {% if config.LOGIN_OPEN %}
                         {% if user.is_authenticated %}
-                            <a href="{% url 'logout' %}">logout</a>
+                            <a href="{% url 'icosa:logout' %}">logout</a>
                         {% else %}
-                            <a href="{% url 'login' %}">login</a>
+                            <a href="{% url 'icosa:login' %}">login</a>
                         {% endif %}
                     {% elif config.WAITLIST_IF_SIGNUP_CLOSED %}
-                        <a href="/waitlist">Register Interest</a>
+                        <a href="{% url 'icosa:waitlist' %}">Register Interest</a>
                     {% endif %}
                 </small>
             </div>
