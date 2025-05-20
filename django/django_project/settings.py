@@ -52,11 +52,7 @@ SITE_ID = 1
 
 BASE_URL = os.environ.get("BASE_URL", f"{DEPLOYMENT_PATH}")
 
-ALLOWED_HOSTS = [
-    "localhost",
-    f"{DEPLOYMENT_HOST_WEB}",
-    "host.containers.internal"
-]
+ALLOWED_HOSTS = ["localhost", f"{DEPLOYMENT_HOST_WEB}", "host.containers.internal"]
 
 CSRF_TRUSTED_ORIGINS = [
     f"{DEPLOYMENT_SCHEME}*.127.0.0.1",
@@ -295,7 +291,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 
 # Default primary key field type
