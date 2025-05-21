@@ -49,8 +49,14 @@
         {% if not hide_byline %}
             <p class="sketch-byline">
             {% if asset.owner.url %}
-                <a href="{% url 'icosa:user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>
-                {% if owner_details %}&bull; {{ asset.create_time|date:"d/m/Y" }}{% endif %}
+                {% if can_edit_asset %}
+                    {% if not request.user.has_single_owner %}
+                        <a href="{% url 'icosa:user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>{% if owner_details %} &bull;{% endif %}
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'icosa:user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>{% if owner_details %} &bull; {% endif %}
+                {% endif %}
+                {% if owner_details %}{{ asset.create_time|date:"d/m/Y" }}{% endif %}
             {% endif %}
             </p>
         {% endif %}
