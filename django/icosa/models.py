@@ -260,6 +260,9 @@ class User(AbstractUser):
         )
         return encoded_jwt
 
+    def has_single_owner(self):
+        return self.assetowner_set.all().count() == 1
+
 
 class AssetOwnerManager(models.Manager):
     def get_unclaimed_for_user(self, user: AbstractBaseUser) -> QuerySet:
