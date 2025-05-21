@@ -3,7 +3,7 @@ from dal import autocomplete
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, validate_slug
 from django.forms.widgets import (
     ClearableFileInput,
     EmailInput,
@@ -247,6 +247,11 @@ class UserSettingsForm(forms.ModelForm):
         if self.instance.has_single_owner:
             owner = self.instance.assetowner_set.first()
             if url:
+                try:
+                    validate_slug(url)
+                except ValidationError as e:
+                    msg = "Enter a valid url consisting of letters, numbers, underscores or hyphens."
+                    self.add_error("url", msg)
                 # TODO(performance) This is to simulate saving the asset owner
                 # and returning errors from the db to the form. There must be a
                 # better way.
