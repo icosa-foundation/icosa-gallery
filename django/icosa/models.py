@@ -249,6 +249,7 @@ class User(AbstractUser):
         return "".join(secrets.choice(characters) for i in range(length))
 
     def generate_access_token(self):
+        # TODO don't use JWTs
         ALGORITHM = "HS256"
         to_encode = {"sub": f"{self.email}"}
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
