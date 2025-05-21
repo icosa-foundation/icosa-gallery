@@ -57,12 +57,16 @@ body {
   }
 }
 
-a {
+a, summary {
   color: var(--color-primary);
 
   &:hover {
     color: var(--color-primary-dim);
   }
+}
+
+details .details-content {
+  margin-block: 1em;
 }
 
 code {
