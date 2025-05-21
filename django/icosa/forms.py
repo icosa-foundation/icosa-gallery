@@ -249,7 +249,7 @@ class UserSettingsForm(forms.ModelForm):
             if url:
                 try:
                     validate_slug(url)
-                except ValidationError as e:
+                except ValidationError:
                     msg = "Enter a valid url consisting of letters, numbers, underscores or hyphens."
                     self.add_error("url", msg)
                 # TODO(performance) This is to simulate saving the asset owner
