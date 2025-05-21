@@ -194,7 +194,9 @@ class UserSettingsForm(forms.ModelForm):
             self.fields["url"] = forms.CharField(required=False)
             self.fields["url"].initial = owner.url
         self.fields["password_current"] = forms.CharField(required=False, widget=PasswordInput)
-        self.fields["password_new"] = forms.CharField(required=False, widget=PasswordInput)
+        self.fields["password_new"] = forms.CharField(
+            required=False, widget=PasswordInput, validators=[validate_password]
+        )
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
 
     def clean(self):
@@ -226,13 +228,6 @@ class UserSettingsForm(forms.ModelForm):
                     self.add_error("password_current", msg)
             except AttributeError:
                 self.add_error("password_current", msg)
-
-        if password_new:
-            try:
-                validate_password(password_new)
-            except ValidationError as e:
-                for msg in e.messages:
-                    self.add_error("password_new", msg)
 
         if email and email != self.instance.email:
             if email != email_confirm:
@@ -272,7 +267,9 @@ class UserSettingsForm(forms.ModelForm):
 class NewUserForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["password_new"] = forms.CharField(required=True, widget=PasswordInput)
+        self.fields["password_new"] = forms.CharField(
+            required=True, widget=PasswordInput, validators=[validate_password]
+        )
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
 
     def clean(self):
@@ -292,13 +289,6 @@ class NewUserForm(forms.ModelForm):
             msg = "Passwords must match"
             self.add_error("password_new", msg)
             self.add_error("password_confirm", msg)
-
-        if password_new:
-            try:
-                validate_password(password_new)
-            except ValidationError as e:
-                for msg in e.messages:
-                    self.add_error("password_new", msg)
 
     class Meta:
         model = User
@@ -322,7 +312,9 @@ class PasswordResetForm(forms.ModelForm):
 class PasswordResetConfirmForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["password_new"] = forms.CharField(required=True, widget=PasswordInput)
+        self.fields["password_new"] = forms.CharField(
+            required=True, widget=PasswordInput, validators=[validate_password]
+        )
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
 
     def clean(self):
@@ -335,13 +327,6 @@ class PasswordResetConfirmForm(forms.ModelForm):
             msg = "Passwords must match"
             self.add_error("password_new", msg)
             self.add_error("password_confirm", msg)
-
-        if password_new:
-            try:
-                validate_password(password_new)
-            except ValidationError as e:
-                for msg in e.messages:
-                    self.add_error("password_new", msg)
 
     class Meta:
         model = User
