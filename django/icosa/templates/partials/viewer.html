@@ -78,7 +78,7 @@
     {% endif %}
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-    var viewer = new Viewer("https://icosa-foundation.github.io/icosa-sketch-assets/");
+    var viewer = new Viewer("{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}/icosa-sketch-assets/");
 
     let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);
     let cameraSettings = presentationParams?.camera || {};
