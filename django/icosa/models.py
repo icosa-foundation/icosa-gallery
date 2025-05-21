@@ -261,6 +261,7 @@ class User(AbstractUser):
         )
         return encoded_jwt
 
+    @property
     def has_single_owner(self):
         return self.assetowner_set.all().count() == 1
 

@@ -22,6 +22,7 @@ from icosa.models import (
     V4_CC_LICENSES,
     VALID_THUMBNAIL_MIME_TYPES,
     Asset,
+    AssetOwner,
     User,
 )
 
@@ -186,6 +187,12 @@ class UserSettingsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["email_confirm"] = forms.CharField(required=False, widget=EmailInput)
+        if self.instance.has_single_owner:
+            owner = self.instance.assetowner_set.first()
+            self.fields["description"] = forms.CharField(required=False, widget=forms.Textarea)
+            self.fields["description"].initial = owner.description
+            self.fields["url"] = forms.CharField(required=False)
+            self.fields["url"].initial = owner.url
         self.fields["password_current"] = forms.CharField(required=False, widget=PasswordInput)
         self.fields["password_new"] = forms.CharField(required=False, widget=PasswordInput)
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
@@ -198,6 +205,7 @@ class UserSettingsForm(forms.ModelForm):
         password_confirm = cleaned_data.get("password_confirm")
         email = cleaned_data.get("email")
         email_confirm = cleaned_data.get("email_confirm")
+        url = cleaned_data.get("url")
 
         if not self.instance.check_password(password_current):
             self.add_error("password_current", "You must enter your password to make changes")
@@ -236,6 +244,16 @@ class UserSettingsForm(forms.ModelForm):
                     msg = "Cannot use this email address, please try another"
                     self.add_error("email", msg)
                     self.add_error("email_confirm", msg)
+        if self.instance.has_single_owner:
+            owner = self.instance.assetowner_set.first()
+            if url:
+                # TODO(performance) This is to simulate saving the asset owner
+                # and returning errors from the db to the form. There must be a
+                # better way.
+                is_not_unique = AssetOwner.objects.filter(url=url).exclude(pk=owner.pk).exists()
+                if is_not_unique:
+                    msg = "That url is already taken. Please choose another."
+                    self.add_error("url", msg)
 
     class Meta:
         model = User

@@ -794,6 +794,18 @@ def user_settings(request):
                 if email:
                     user.email = email
                 user.save()
+
+                if user.has_single_owner:
+                    description = form.cleaned_data.get("description", None)
+                    url = form.cleaned_data.get("url", None)
+                    print(description, url)
+                    owner = user.assetowner_set.first()
+                    if description is not None:
+                        owner.description = description
+                    if url is not None:
+                        owner.url = url
+                    owner.save()
+
             if need_login:
                 logout(request)
 
