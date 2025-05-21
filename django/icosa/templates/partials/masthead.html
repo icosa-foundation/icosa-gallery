@@ -9,7 +9,9 @@
                     <a href="{{ masthead.asset.get_absolute_url }}">
                         <h3 class="title">{{ masthead.asset.name }}</h3>
                     </a>
-                    <p>{{ masthead.asset.owner.displayname }}</p>
+                    <a href="{{ masthead.asset.owner.get_absolute_url }}">
+                        <p>{{ masthead.asset.owner.displayname }}</p>
+                    </a>
                 </div>
             </div>
         </div>
