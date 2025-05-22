@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from django.db import transaction
 from django.db.models import Q
+from django.views.decorators.cache import never_cache
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     POLY_CATEGORY_MAP,
@@ -50,6 +51,7 @@ router = Router()
     auth=JWTAuth(),
     response=FullUserSchema,
 )
+@decorate_view(never_cache)
 def get_users_me(request):
     return request.user
 
@@ -59,6 +61,7 @@ def get_users_me(request):
     auth=JWTAuth(),
     response=FullUserSchema,
 )
+@decorate_view(never_cache)
 def update_user(
     request,
     patch_user: PatchUserSchema,
@@ -83,6 +86,7 @@ def update_user(
     response=List[AssetSchema],
     **COMMON_ROUTER_SETTINGS,
 )
+@decorate_view(never_cache)
 @paginate(AssetPagination)
 def get_me_assets(
     request,
@@ -151,6 +155,7 @@ def get_me_assets(
     response=AssetSchema,
     **COMMON_ROUTER_SETTINGS,
 )
+@decorate_view(never_cache)
 def get_me_asset(
     request,
     asset: str,
@@ -183,6 +188,7 @@ def delete_asset(
     response=List[AssetSchema],
     **COMMON_ROUTER_SETTINGS,
 )
+@decorate_view(never_cache)
 @paginate(AssetPagination)
 def get_me_likedassets(
     request,
@@ -224,6 +230,7 @@ def get_me_likedassets(
     # has a race condition. If this route becomes public, this will probably
     # need to be fixed.
 )
+@decorate_view(never_cache)
 @decorate_view(transaction.atomic)
 def add_blocks_asset_format(
     request,
@@ -261,6 +268,7 @@ def add_blocks_asset_format(
     # add_blocks_asset_format and will overwrite the last format uploaded. If this
     # route becomes public, this will probably need to be fixed.
 )
+@decorate_view(never_cache)
 @decorate_view(transaction.atomic)
 def finalize_asset(
     request,
@@ -281,6 +289,7 @@ def finalize_asset(
     auth=JWTAuth(),
     include_in_schema=False,
 )
+@decorate_view(never_cache)
 def upload_new_assets(
     request,
     files: Optional[List[UploadedFile]] = File(None),
