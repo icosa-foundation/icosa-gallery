@@ -834,7 +834,7 @@ class Asset(models.Model):
             # licenses.
             return formats
 
-        if user is not None and self.owner in user.assetowner_set.all():
+        if user is not None and not user.is_anonymous and self.owner in user.assetowner_set.all():
             # The user owns this asset so can view all files.
             formats = self.format_set.all()
         elif self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
