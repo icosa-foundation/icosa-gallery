@@ -1064,7 +1064,7 @@ class Format(models.Model):
                 "role": self.role,
             }
         else:
-            resource_data = self.get_resource_data
+            resource_data = self.get_resource_data(resources)
         if not resource_data and self.role == UPDATED_GLTF_FORMAT:
             # If we hit this branch, we have a format which doesn't
             # have an archive url, but also doesn't have local files.
