@@ -93,13 +93,14 @@ V4_CC_LICENSE_CHOICES = [
     # ("CREATIVE_COMMONS_NC_ND_4_0", "CC NC_ND Attribution 4.0 International"), # Not yet supported
     # ("CREATIVE_COMMONS_NC_SA_4_0", "CC NC_SA Attribution 4.0 International"), # Not yet supported
     ("CREATIVE_COMMONS_BY_4_0", "CC BY Attribution 4.0 International"),
+    ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
+]
+V4_CC_LICENSE_CHOICES_PLUS_ND = V4_CC_LICENSE_CHOICES + [
     (
         "CREATIVE_COMMONS_BY_ND_4_0",
         "CC BY-ND Attribution-NoDerivatives 4.0 International",
     ),
-    ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
 ]
-
 V3_CC_LICENSE_CHOICES = [
     # ("CREATIVE_COMMONS_SA_3_0", "CC SA Attribution 3.0 International"), # Not yet supported
     # ("CREATIVE_COMMONS_ND_3_0", "CC ND Attribution 3.0 International"), # Not yet supported
@@ -115,14 +116,6 @@ V3_CC_LICENSE_CHOICES = [
 V3_CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES]
 V4_CC_LICENSES = [x[0] for x in V4_CC_LICENSE_CHOICES]
 V3_CC_LICENSE_MAP = {x[0]: x[1] for x in V3_CC_LICENSE_CHOICES}
-V4_CC_LICENSE_MAP = {x[0]: x[1] for x in V4_CC_LICENSE_CHOICES}
-V3_TO_V4_UPGRADE_MAP = {
-    x[0]: x[1]
-    for x in zip(
-        V3_CC_LICENSES,
-        V4_CC_LICENSES,
-    )
-}
 
 ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED"
 RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
@@ -470,7 +463,7 @@ class Asset(models.Model):
         # available for use in other models, we cannot allow changing anything
         # about it. Doing so would allow abuse.
         is_editable = True
-        if self.is_published and self.license not in [None, ALL_RIGHTS_RESERVED]:
+        if self.is_published and self.license not in [None, ALL_RIGHTS_RESERVED, "CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_3_0"]:
             is_editable = False
         return is_editable
 

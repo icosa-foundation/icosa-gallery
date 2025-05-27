@@ -16,9 +16,7 @@ from icosa.models import (
     PRIVATE,
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
-    V3_TO_V4_UPGRADE_MAP,
     V4_CC_LICENSE_CHOICES,
-    V4_CC_LICENSE_MAP,
     V4_CC_LICENSES,
     VALID_THUMBNAIL_MIME_TYPES,
     Asset,
@@ -103,9 +101,8 @@ class AssetEditForm(forms.ModelForm):
         ]
 
         if self.instance.license in V3_CC_LICENSES and license_value not in V4_CC_LICENSES:
-            upgrade_option = V3_TO_V4_UPGRADE_MAP[license_value]
             self.fields["license"].choices = [
-                (upgrade_option, V4_CC_LICENSE_MAP[upgrade_option]),
+                ("CREATIVE_COMMONS_BY_4_0", "CC BY Attribution 4.0 International"),
             ] + [
                 (license_value, V3_CC_LICENSE_MAP[license_value]),
             ]

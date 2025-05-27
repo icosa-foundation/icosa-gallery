@@ -114,8 +114,9 @@
         wrap.innerHTML = '<li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>';
         let draftMode = wrap.firstChild;
         let publishMode = document.querySelector("#publish-mode");
+        let assetVisibility = "{{ asset.visibility }}";
 
-        if ( license === "" || license === "ALL_RIGHTS_RESERVED") {
+        if ( license === "" || license === "ALL_RIGHTS_RESERVED" || assetVisibility === "PRIVATE") {
             if (!document.querySelector("#draft-mode")) {
                 publishMode.parentNode.insertBefore(draftMode, publishMode);
             }
