@@ -818,7 +818,8 @@ class Asset(models.Model):
                 file_list.append(resource.file.name)
         return file_list
 
-    def get_all_downloadable_formats(self):
+    def get_all_downloadable_formats(self, user=None):
+
         # Originally, Google Poly made these roles available for download:
         # - Original FBX File
         # - Original OBJ File
@@ -833,12 +834,19 @@ class Asset(models.Model):
             # licenses.
             return formats
 
-        compatible_roles = WEB_UI_DOWNLOAD_COMPATIBLE
-        if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
-            compatible_roles = ND_WEB_UI_DOWNLOAD_COMPATIBLE
-        for format in self.format_set.filter(
-            role__in=compatible_roles,
-        ):
+        if user is not None and self.owner in user.assetowner_set.all():
+            # The user owns this asset so can view all files.
+            formats = self.format_set.all()
+        elif self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
+            # We don't allow downoad of source files for ND-licensed work.
+            formats = self.format_set.filter(
+                role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE
+            )
+        else: 
+            formats = self.format_set.filter(
+                role__in=WEB_UI_DOWNLOAD_COMPATIBLE
+            )
+        for format in formats:
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
             if format.zip_archive_url:

@@ -481,9 +481,10 @@ def my_likes(request):
 @never_cache
 def asset_view(request, asset_url):
     template = "main/asset_view.html"
+    user = request.user
 
     asset = get_object_or_404(Asset, url=asset_url)
-    check_user_can_view_asset(request.user, asset)
+    check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()
     override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
@@ -499,17 +500,17 @@ def asset_view(request, asset_url):
         },
     )
 
-    if request.user.is_anonymous:
+    if user.is_anonymous:
         user_owns_asset = False
     else:
-        user_owns_asset = asset.owner in request.user.assetowner_set.all()
+        user_owns_asset = asset.owner in user.assetowner_set.all()
     context = {
         "user_owns_asset": user_owns_asset,
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
         "experimental_js": experimental_js,
-        "downloadable_formats": bool(asset.get_all_downloadable_formats()),
+        "downloadable_formats": bool(asset.get_all_downloadable_formats(user)),
         "page_title": asset.name,
         "embed_code": embed_code.strip(),
     }
@@ -525,8 +526,9 @@ def asset_view(request, asset_url):
 def asset_oembed(request, asset_url):
     template = "main/asset_embed.html"
 
+    user = request.user
     asset = get_object_or_404(Asset, url=asset_url)
-    check_user_can_view_asset(request.user, asset)
+    check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()  # TODO: do we count embedded views separately or at all?
     override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
@@ -535,7 +537,7 @@ def asset_oembed(request, asset_url):
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
-        "downloadable_formats": bool(asset.get_all_downloadable_formats()),
+        "downloadable_formats": bool(asset.get_all_downloadable_formats(user)),
         "page_title": f"embed {asset.name}",
     }
     return render(
@@ -550,13 +552,14 @@ def asset_downloads(request, asset_url):
     asset = get_object_or_404(Asset, url=asset_url)
     if asset.license == ALL_RIGHTS_RESERVED:
         raise Http404()
+    user = request.user
 
     template = "main/asset_downloads.html"
-    check_user_can_view_asset(request.user, asset)
+    check_user_can_view_asset(user, asset)
 
     context = {
         "asset": asset,
-        "downloadable_formats": asset.get_all_downloadable_formats(),
+        "downloadable_formats": asset.get_all_downloadable_formats(user),
         "page_title": f"Download {asset.name}",
     }
     return render(
