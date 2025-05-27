@@ -171,19 +171,23 @@ CATEGORY_CHOICES = [(x.name, x.value) for x in Category]
 CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
 CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in CATEGORY_CHOICES}
 
-
-WEB_UI_DOWNLOAD_COMPATIBLE = [
+ND_WEB_UI_DOWNLOAD_COMPATIBLE = [
     ORIGINAL_OBJ_FORMAT,
-    TILT_FORMAT,
     ORIGINAL_FBX_FORMAT,
-    BLOCKS_FORMAT,
     USD_FORMAT,
     GLB_FORMAT,
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
     USDZ_FORMAT,
     UPDATED_GLTF_FORMAT,
-    TILT_NATIVE_GLTF,
     USER_SUPPLIED_GLTF,
+]
+
+WEB_UI_DOWNLOAD_COMPATIBLE = ND_WEB_UI_DOWNLOAD_COMPATIBLE + [
+    # Assuming here that a Tilt-native gltf can be considered a "source file"
+    # and so not eligible for download and reuse.
+    TILT_NATIVE_GLTF,
+    TILT_FORMAT,
+    BLOCKS_FORMAT,
 ]
 
 API_DOWNLOAD_COMPATIBLE = [
@@ -829,8 +833,11 @@ class Asset(models.Model):
             # licenses.
             return formats
 
+        compatible_roles = WEB_UI_DOWNLOAD_COMPATIBLE
+        if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
+            compatible_roles = ND_WEB_UI_DOWNLOAD_COMPATIBLE
         for format in self.format_set.filter(
-            role__in=WEB_UI_DOWNLOAD_COMPATIBLE,
+            role__in=compatible_roles,
         ):
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
