@@ -4,6 +4,12 @@
 {% endif %}
 {% if field.name == "license" %}
     {% if not field.field.disabled %}
+        {% if asset.license == "CREATIVE_COMMONS_BY_ND_3_0" %}
+            <p><strong>
+            NOTE: When you chose a CC BY ND license for this work, were you aware it effectively restricts its use in almost all situations?</strong></p>
+             <p><strong>While nobody is allowed to modify this work, they are are also not - in almost all creative situations - allowed to include it their own work. This may not be what you intended. If that is the case, consider choosing a more permissive license.
+            </strong></p>
+        {% endif %}
         <p>We encourage users to share their work under a Creative Commons license to encourage remixing and reuse but you can also choose "All Rights Reserved". Only Creative Commons works will appear in the main site and searches. If you choose "All Rights Reserved then the work will only appear if users view your profile or have a direct link to that page.</p>
         <p>
         <details>
