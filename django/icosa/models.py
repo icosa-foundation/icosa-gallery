@@ -836,17 +836,17 @@ class Asset(models.Model):
 
         if user is not None and not user.is_anonymous and self.owner in user.assetowner_set.all():
             # The user owns this asset so can view all files.
-            formats = self.format_set.all()
+            dl_formats = self.format_set.all()
         elif self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
             # We don't allow downoad of source files for ND-licensed work.
-            formats = self.format_set.filter(
+            dl_formats = self.format_set.filter(
                 role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE
             )
         else: 
-            formats = self.format_set.filter(
+            dl_formats = self.format_set.filter(
                 role__in=WEB_UI_DOWNLOAD_COMPATIBLE
             )
-        for format in formats:
+        for format in dl_formats:
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
             if format.zip_archive_url:
