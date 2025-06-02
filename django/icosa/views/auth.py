@@ -36,6 +36,12 @@ INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
 User = get_user_model()
 
 
+def dummy_key(group, request):
+    # Return the same key every time. This essentially bypasses the key
+    # entirely and rate limits the route regardless of who is accessing it.
+    return "number9"
+
+
 def send_password_reset_email(request, user, to_email):
     site = get_current_site(request)
 
@@ -145,7 +151,9 @@ def custom_logout(request):
         return render(request, "auth/logout.html")
 
 
-@ratelimit(key="user_or_ip", rate="10/m", method="POST")
+@ratelimit(key="ip", rate="10/m", method="POST")
+@ratelimit(key="ip", rate="40/d", method="POST")
+@ratelimit(key="icosa.views.auth.dummy_key", rate="200/d", method="POST")
 @check_honeypot()
 def register(request):
     if not config.SIGNUP_OPEN:

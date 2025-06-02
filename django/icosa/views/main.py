@@ -17,6 +17,7 @@ from django.http import (
     Http404,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseRedirect,
 )
@@ -28,6 +29,7 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
 from honeypot.decorators import check_honeypot
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
@@ -117,6 +119,12 @@ def handler404(request, exception):
 
 def handler500(request):
     return render(request, "main/500.html", status=500)
+
+
+def handler403(request, exception=None):
+    if isinstance(exception, Ratelimited):
+        return render(request, "main/429.html", status=429)
+    return HttpResponseForbidden("Forbidden")
 
 
 @user_passes_test(lambda u: u.is_superuser)

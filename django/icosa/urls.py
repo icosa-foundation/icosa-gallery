@@ -14,6 +14,7 @@ from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 app_name = "icosa"
 
+handler403 = main_views.handler403
 handler404 = main_views.handler404
 handler500 = main_views.handler500
 

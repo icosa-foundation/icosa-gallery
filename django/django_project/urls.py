@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.urls import path
 from icosa import urls as icosa_urls
 
+handler403 = icosa_urls.handler403
 handler404 = icosa_urls.handler404
 handler500 = icosa_urls.handler500
 
