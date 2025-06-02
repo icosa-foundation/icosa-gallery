@@ -106,7 +106,7 @@ class AssetEditForm(forms.ModelForm):
                 ("CREATIVE_COMMONS_BY_4_0", "CC BY Attribution 4.0 International"),
                 (license_value, V3_CC_LICENSE_MAP[license_value]),
                 ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
-                ]
+            ]
         else:
             self.fields["license"].choices = (
                 [
