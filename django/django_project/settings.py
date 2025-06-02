@@ -421,7 +421,7 @@ if DEBUG_TOOLBAR_ENABLED:
 
 # Honeypot settings
 
-HONEYPOT_FIELD_NAME = "asset_ref"
+HONEYPOT_FIELD_NAME = os.environ.get("DJANGO_HONEYPOT_FIELD_NAME", "asset_ref")
 
 # Huey settings
 

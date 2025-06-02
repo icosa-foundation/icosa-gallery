@@ -22,6 +22,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.cache import never_cache
 from django_ratelimit.decorators import ratelimit
+from honeypot.decorators import check_honeypot
 from icosa.forms import (
     NewUserForm,
     PasswordResetConfirmForm,
@@ -145,6 +146,7 @@ def custom_logout(request):
 
 
 @ratelimit(key="user_or_ip", rate="10/m", method="POST")
+@check_honeypot()
 def register(request):
     if not config.SIGNUP_OPEN:
         raise Http404()
