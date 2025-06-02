@@ -285,6 +285,7 @@ def home_other(request):
     )
 
 
+@never_cache
 def category(request, category):
     category_label = category.upper()
     if category_label not in CATEGORY_LABELS:
@@ -459,6 +460,7 @@ def user_show(request, slug):
     )
 
 
+@never_cache
 @login_required
 def my_likes(request):
     template = "main/likes.html"
@@ -678,6 +680,7 @@ def asset_edit(request, asset_url):
     )
 
 
+@never_cache
 @login_required
 def asset_delete(request, asset_url):
     if request.method == "POST":
@@ -779,6 +782,7 @@ def report_asset(request, asset_url):
     )
 
 
+@never_cache
 def report_success(request):
     return template_view(
         request,
@@ -787,6 +791,7 @@ def report_success(request):
     )
 
 
+@never_cache
 @login_required
 def user_settings(request):
     need_login = False
@@ -917,6 +922,7 @@ def about(request):
     )
 
 
+@never_cache
 def search(request):
     query = request.GET.get("s")
     template = "main/search.html"
@@ -957,6 +963,7 @@ def search(request):
     )
 
 
+@never_cache
 def toggle_like(request):
     error_return = HttpResponse(status=422)
 

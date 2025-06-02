@@ -155,6 +155,7 @@ def custom_logout(request):
 @ratelimit(key="ip", rate="40/d", method="POST")
 @ratelimit(key="icosa.views.auth.dummy_key", rate="200/d", method="POST")
 @check_honeypot()
+@never_cache
 def register(request):
     if not config.SIGNUP_OPEN:
         raise Http404()
@@ -194,6 +195,7 @@ def register(request):
     )
 
 
+@never_cache
 def activate_registration(request, uidb64, token):
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
@@ -215,6 +217,7 @@ def activate_registration(request, uidb64, token):
     )
 
 
+@never_cache
 @ratelimit(key="user_or_ip", rate="5/m", method="POST")
 def password_reset(request):
     if request.method == "POST":
@@ -241,6 +244,7 @@ def password_reset(request):
         )
 
 
+@never_cache
 def password_reset_done(request):
     return render(
         request,
@@ -249,6 +253,7 @@ def password_reset_done(request):
     )
 
 
+@never_cache
 def password_reset_confirm(request, uidb64, token):
     valid_link = False
     redirected_url_token = "set-password"
@@ -299,6 +304,7 @@ def password_reset_confirm(request, uidb64, token):
     )
 
 
+@never_cache
 def password_reset_complete(request):
     return render(
         request,
