@@ -23,6 +23,7 @@ from icosa.models import (
     AssetOwner,
     User,
 )
+from simplemathcaptcha.fields import MathCaptchaField
 
 ARTIST_QUERY_SUBJECT_CHOICES = [
     ("WORK_REMOVED", "I want my work removed from this website"),
@@ -268,6 +269,7 @@ class NewUserForm(forms.ModelForm):
             required=True, widget=PasswordInput, validators=[validate_password]
         )
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
+        self.fields["captcha"] = MathCaptchaField()
 
     def clean(self):
         cleaned_data = super().clean()

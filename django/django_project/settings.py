@@ -161,7 +161,9 @@ INSTALLED_APPS = [
     "import_export",
     "maintenance_mode",
     "silk",
+    "simplemathcaptcha",
 ]
+
 
 AUTHENTICATION_BACKENDS = [
     # AxesStandaloneBackend should be the first backend in the AUTHENTICATION_BACKENDS list.
