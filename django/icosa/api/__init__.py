@@ -36,7 +36,7 @@ NOT_FOUND = HttpError(404, "Asset not found.")
 def get_publish_url(request, asset: Asset) -> str:
     url = request.build_absolute_uri(
         reverse(
-            "asset_publish",
+            "icosa:asset_publish",
             kwargs={
                 "asset_url": asset.url,
             },
