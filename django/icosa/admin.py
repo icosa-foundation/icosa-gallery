@@ -384,7 +384,7 @@ class UserAdmin(OriginalUserAdmin):
         "email",
         "date_joined",
         "last_login",
-        "display_owner_count",
+        "display_owners",
         "first_name",
         "last_name",
         "is_staff",
@@ -400,19 +400,26 @@ class UserAdmin(OriginalUserAdmin):
         "id",
     )
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(asset_owner_count=Count("assetowner"))
-
     fieldsets = OriginalUserAdmin.fieldsets + ((None, {"fields": ("displayname",)}),)
 
     inlines = (UserLikeInline,)
 
-    def display_owner_count(self, obj):
-        lister_url = f"{reverse('admin:icosa_assetowner_changelist')}?django_user__id__exact={obj.id}"
-        return mark_safe(f"<a href='{lister_url}'>{obj.assetowner_set.count()}</a>")
+    def display_owners(self, obj):
+        if obj.assetowner_set.exists():
+            if obj.assetowner_set.count() > 1:
+                url = f"{reverse('admin:icosa_assetowner_changelist')}?django_user__id__exact={obj.id}"
+                link_str = ", ".join([x.displayname for x in obj.assetowner_set.all()])
+            else:
+                owner = obj.assetowner_set.first()
+                url = f"{reverse('admin:icosa_assetowner_change', args=[owner.pk])}"
+                link_str = owner.displayname
+            link_html = f"<a href='{url}'>{link_str}</a>"
+        else:
+            link_html = ""
+        return mark_safe(link_html)
 
-    display_owner_count.short_description = "Asset Owners"
-    display_owner_count.admin_order_field = "asset_count"
+    display_owners.short_description = "Asset Owners"
+    display_owners.admin_order_field = "assetowner__displayname"
 
     @admin.action(description="Mark selected users as not staff")
     def make_not_staff(modeladmin, request, queryset):
