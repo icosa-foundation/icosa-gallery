@@ -2,12 +2,8 @@ from django.core.validators import FileExtensionValidator
 from django.db import models
 
 from .asset import Asset
-from .common import (
-    FILENAME_MAX_LENGTH,
-    PUBLIC,
-    VALID_THUMBNAIL_EXTENSIONS,
-    masthead_image_upload_path,
-)
+from .common import FILENAME_MAX_LENGTH, PUBLIC, VALID_THUMBNAIL_EXTENSIONS
+from .helpers import masthead_image_upload_path
 
 
 class MastheadSection(models.Model):

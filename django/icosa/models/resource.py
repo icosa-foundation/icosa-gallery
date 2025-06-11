@@ -6,8 +6,8 @@ from django.db import models
 from .asset import Asset
 from .common import (
     FILENAME_MAX_LENGTH,
-    format_upload_path,
 )
+from .helpers import format_upload_path
 
 
 class Resource(models.Model):

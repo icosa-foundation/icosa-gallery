@@ -24,15 +24,18 @@ from icosa.helpers.format_roles import (
     UPDATED_GLTF_FORMAT,
 )
 from icosa.helpers.snowflake import get_snowflake_timestamp
+from icosa.helpers.storage import get_b2_bucket
 
 from .common import (
     ALL_RIGHTS_RESERVED,
+    ARCHIVE_PREFIX,
     ASSET_STATE_CHOICES,
     ASSET_VISIBILITY_CHOICES,
     CATEGORY_CHOICES,
     CC_LICENSES,
     FILENAME_MAX_LENGTH,
     LICENSE_CHOICES,
+    ND_WEB_UI_DOWNLOAD_COMPATIBLE,
     PRIVATE,
     PUBLIC,
     STORAGE_PREFIX,
@@ -40,10 +43,10 @@ from .common import (
     V3_CC_LICENSES,
     V4_CC_LICENSES,
     VALID_THUMBNAIL_EXTENSIONS,
-    preview_image_upload_path,
-    suffix,
-    thumbnail_upload_path,
+    WEB_UI_DOWNLOAD_COMPATIBLE,
 )
+from .helpers import preview_image_upload_path, suffix, thumbnail_upload_path
+from .log import HiddenMediaFileLog
 
 LIKES_WEIGHT = 100
 VIEWS_WEIGHT = 0.1

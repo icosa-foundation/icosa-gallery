@@ -7,7 +7,8 @@ from icosa.helpers.format_roles import (
 )
 
 from .asset import Asset
-from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX, suffix
+from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
+from .helpers import suffix
 from .resource import Resource
 
 
