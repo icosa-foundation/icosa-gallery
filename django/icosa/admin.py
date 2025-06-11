@@ -382,6 +382,9 @@ class UserAdmin(OriginalUserAdmin):
         "username",
         "displayname",
         "email",
+        "date_joined",
+        "last_login",
+        "display_owner_count",
         "first_name",
         "last_name",
         "is_staff",
@@ -397,9 +400,19 @@ class UserAdmin(OriginalUserAdmin):
         "id",
     )
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(asset_owner_count=Count("assetowner"))
+
     fieldsets = OriginalUserAdmin.fieldsets + ((None, {"fields": ("displayname",)}),)
 
     inlines = (UserLikeInline,)
+
+    def display_owner_count(self, obj):
+        lister_url = f"{reverse('admin:icosa_assetowner_changelist')}?django_user__id__exact={obj.id}"
+        return mark_safe(f"<a href='{lister_url}'>{obj.assetowner_set.count()}</a>")
+
+    display_owner_count.short_description = "Asset Owners"
+    display_owner_count.admin_order_field = "asset_count"
 
     @admin.action(description="Mark selected users as not staff")
     def make_not_staff(modeladmin, request, queryset):
