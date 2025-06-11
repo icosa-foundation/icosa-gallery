@@ -378,7 +378,14 @@ class UserAdmin(OriginalUserAdmin):
         "make_not_staff",
     ]
 
-    list_display = ("username", "displayname", "email", "first_name", "last_name", "is_staff")
+    list_display = (
+        "username",
+        "displayname",
+        "email",
+        "first_name",
+        "last_name",
+        "is_staff",
+    )
 
     search_fields = (
         "displayname",
