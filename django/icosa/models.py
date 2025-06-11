@@ -285,7 +285,7 @@ class AssetOwner(models.Model):
     id = models.BigAutoField(primary_key=True)
     url = models.CharField("User Name / URL", max_length=255, unique=True)
     email = models.EmailField(max_length=255, null=True, blank=True)
-    displayname = models.CharField("Display Name", max_length=255)
+    displayname = models.CharField("Display Name", max_length=255, blank=False, default=None)
     description = models.TextField(blank=True, null=True)
     migrated = models.BooleanField(default=False)
     imported = models.BooleanField(default=False)
