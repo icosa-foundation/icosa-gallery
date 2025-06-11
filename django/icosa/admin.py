@@ -380,13 +380,10 @@ class UserAdmin(OriginalUserAdmin):
 
     list_display = (
         "username",
-        "displayname",
+        "display_owners",
         "email",
         "date_joined",
         "last_login",
-        "display_owners",
-        "first_name",
-        "last_name",
         "is_staff",
     )
 
@@ -398,6 +395,14 @@ class UserAdmin(OriginalUserAdmin):
         "last_name",
         "is_staff",
         "id",
+    )
+
+    list_filter = (
+        "is_staff",
+        "is_superuser",
+        "is_active",
+        "date_joined",
+        "last_login",
     )
 
     fieldsets = OriginalUserAdmin.fieldsets + ((None, {"fields": ("displayname",)}),)
