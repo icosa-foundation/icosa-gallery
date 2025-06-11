@@ -467,7 +467,12 @@ class Asset(models.Model):
         # available for use in other models, we cannot allow changing anything
         # about it. Doing so would allow abuse.
         is_editable = True
-        if self.is_published and self.license not in [None, ALL_RIGHTS_RESERVED, "CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_3_0"]:
+        if self.is_published and self.license not in [
+            None,
+            ALL_RIGHTS_RESERVED,
+            "CREATIVE_COMMONS_BY_ND_3_0",
+            "CREATIVE_COMMONS_BY_3_0",
+        ]:
             is_editable = False
         return is_editable
 
@@ -819,7 +824,6 @@ class Asset(models.Model):
         return file_list
 
     def get_all_downloadable_formats(self, user=None):
-
         # Originally, Google Poly made these roles available for download:
         # - Original FBX File
         # - Original OBJ File
@@ -839,13 +843,9 @@ class Asset(models.Model):
             dl_formats = self.format_set.all()
         elif self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
             # We don't allow downoad of source files for ND-licensed work.
-            dl_formats = self.format_set.filter(
-                role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE
-            )
-        else: 
-            dl_formats = self.format_set.filter(
-                role__in=WEB_UI_DOWNLOAD_COMPATIBLE
-            )
+            dl_formats = self.format_set.filter(role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE)
+        else:
+            dl_formats = self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE)
         for format in dl_formats:
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
