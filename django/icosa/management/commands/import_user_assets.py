@@ -8,7 +8,6 @@ from icosa.helpers.file import is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
     CATEGORY_CHOICES,
-    FORMAT_ROLE_CHOICES,
     Asset,
     Format,
     Resource,
@@ -21,15 +20,14 @@ IMPORT_SOURCE = "google_poly"
 POLY_JSON_DIR = "polygone_data"
 ASSETS_JSON_DIR = f"{POLY_JSON_DIR}/assets"
 
-FORMAT_ROLE_MAP = {x[1]: x[0] for x in FORMAT_ROLE_CHOICES}
 
 EXTENSION_ROLE_MAP = {
-    ".tilt": 1000,
-    ".blocks": 1001,
-    ".glb": 1002,
-    ".gltf": 1003,
-    ".obj": 1004,
-    ".fbx": 1005,
+    ".tilt": "POLYGONE_TILT_FORMAT",
+    ".blocks": "POLYGONE_BLOCKS_FORMAT",
+    ".glb": "POLYGONE_GLB_FORMAT",
+    ".gltf": "POLYGONE_GLTF_FORMAT",
+    ".obj": "POLYGONE_OBJ_FORMAT",
+    ".fbx": "POLYGONE_FBX_FORMAT",
 }
 
 CATEGORY_REVERSE_MAP = dict([(x[1], x[0]) for x in CATEGORY_CHOICES])

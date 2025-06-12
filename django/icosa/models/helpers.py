@@ -1,7 +1,6 @@
 import os
 
 from django.conf import settings
-from icosa.helpers.format_roles import ORIGINAL_TRIANGULATED_OBJ_FORMAT
 
 
 def get_cloud_media_root():

@@ -16,15 +16,6 @@ from icosa.helpers.file import (
     validate_file,
     validate_mime,
 )
-from icosa.helpers.format_roles import (
-    GLB_FORMAT,
-    ORIGINAL_FBX_FORMAT,
-    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    ROLE_STR_TO_INT,
-    TILT_FORMAT,
-    TILT_NATIVE_GLTF,
-    USER_SUPPLIED_GLTF,
-)
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     ASSET_STATE_UPLOADING,
@@ -45,10 +36,10 @@ SUB_FILE_MAP = {
 }
 
 TYPE_ROLE_MAP = {
-    "TILT": TILT_FORMAT,
-    "OBJ": ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    "FBX": ORIGINAL_FBX_FORMAT,
-    "GLB": GLB_FORMAT,
+    "TILT": "TILT_FORMAT",
+    "OBJ": "ORIGINAL_TRIANGULATED_OBJ_FORMAT",
+    "FBX": "ORIGINAL_FBX_FORMAT",
+    "GLB": "GLB_FORMAT",
 }
 
 
@@ -253,17 +244,16 @@ def get_role(
 ) -> str:
     manifest_role = None
     if manifest is not None:
-        role_str = manifest.get(mainfile.file.name, "")
-        manifest_role = ROLE_STR_TO_INT.get(role_str, None)
+        manifest_role = manifest.get(mainfile.file.name, None)
     if manifest_role is not None:
         return manifest_role
 
     type = mainfile.filetype
     if type.startswith("GLTF"):
         if override_for_tilt:
-            role = TILT_NATIVE_GLTF
+            role = "TILT_NATIVE_GLTF"
         else:
-            role = USER_SUPPLIED_GLTF
+            role = "USER_SUPPLIED_GLTF"
     else:
         role = TYPE_ROLE_MAP.get(type, None)
 

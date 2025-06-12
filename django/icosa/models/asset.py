@@ -10,19 +10,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-from icosa.helpers.format_roles import (
-    DOWNLOADABLE_FORMAT_NAMES,
-    GLB_FORMAT,
-    ORIGINAL_FBX_FORMAT,
-    ORIGINAL_GLTF_FORMAT,
-    ORIGINAL_OBJ_FORMAT,
-    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    POLYGONE_FBX_FORMAT,
-    POLYGONE_GLB_FORMAT,
-    POLYGONE_GLTF_FORMAT,
-    POLYGONE_OBJ_FORMAT,
-    UPDATED_GLTF_FORMAT,
-)
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
 
@@ -35,7 +22,6 @@ from .common import (
     CC_LICENSES,
     FILENAME_MAX_LENGTH,
     LICENSE_CHOICES,
-    ND_WEB_UI_DOWNLOAD_COMPATIBLE,
     PRIVATE,
     PUBLIC,
     STORAGE_PREFIX,
@@ -43,7 +29,6 @@ from .common import (
     V3_CC_LICENSES,
     V4_CC_LICENSES,
     VALID_THUMBNAIL_EXTENSIONS,
-    WEB_UI_DOWNLOAD_COMPATIBLE,
 )
 from .helpers import preview_image_upload_path, suffix, thumbnail_upload_path
 from .log import HiddenMediaFileLog
@@ -51,6 +36,61 @@ from .log import HiddenMediaFileLog
 LIKES_WEIGHT = 100
 VIEWS_WEIGHT = 0.1
 RECENCY_WEIGHT = 1
+
+ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES = [
+    "ORIGINAL_OBJ_FORMAT",
+    "ORIGINAL_FBX_FORMAT",
+    "USD_FORMAT",
+    "GLB_FORMAT",
+    "ORIGINAL_TRIANGULATED_OBJ_FORMAT",
+    "USDZ_FORMAT",
+    "UPDATED_GLTF_FORMAT",
+    "USER_SUPPLIED_GLTF",
+]
+
+WEB_UI_DOWNLOAD_COMPATIBLE_ROLES = ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES + [
+    # Assuming here that a Tilt-native gltf can be considered a "source file"
+    # and so not eligible for download and reuse.
+    "TILT_NATIVE_GLTF",
+    "TILT_FORMAT",
+    "BLOCKS_FORMAT",
+]
+
+DOWNLOADABLE_FORMAT_NAMES = {
+    "ORIGINAL_OBJ_FORMAT": "obj",
+    "TILT_FORMAT": "native tilt",
+    "UNKNOWN_GLTF_FORMAT_A": "unknown gltf a",
+    "ORIGINAL_FBX_FORMAT": "original fbx",
+    "BLOCKS_FORMAT": "native blocks",
+    "USD_FORMAT": "usd",
+    "HTML_FORMAT": "html",
+    "ORIGINAL_GLTF_FORMAT": "original gltf",
+    "TOUR_CREATOR_EXPERIENCE": "tour creator experience",
+    "JSON_FORMAT": "json",
+    "LULLMODEL_FORMAT": "lullmodel",
+    "SAND_FORMAT_A": "sand a",
+    "GLB_FORMAT": "glb",
+    "SAND_FORMAT_B": "sand b",
+    "SANDC_FORMAT": "sandc",
+    "PB_FORMAT": "pb",
+    "UNKNOWN_GLTF_FORMAT_B": "unknown gltf b",
+    "ORIGINAL_TRIANGULATED_OBJ_FORMAT": "triangulated obj",
+    "JPG_BUGGY": "jpg buggy",
+    "USDZ_FORMAT": "usdz",
+    "UPDATED_GLTF_FORMAT": "gltf",
+    "EDITOR_SETTINGS_PB_FORMAT": "editor settings pb",
+    "UNKNOWN_GLTF_FORMAT_C": "unknown gltf c",
+    "UNKNOWN_GLB_FORMAT_A": "unknown glb a",
+    "UNKNOWN_GLB_FORMAT_B": "unknown glb b",
+    "TILT_NATIVE_GLTF": "tilt native gltf",
+    "USER_SUPPLIED_GLTF": "user supplied gltf",
+    "POLYGONE_TILT_FORMAT": "polygone tilt",
+    "POLYGONE_BLOCKS_FORMAT": "polygone blocks",
+    "POLYGONE_GLB_FORMAT": "polygone glb",
+    "POLYGONE_GLTF_FORMAT": "polygone gltf",
+    "POLYGONE_OBJ_FORMAT": "polygone obj",
+    "POLYGONE_FBX_FORMAT": "polygone fbx",
+}
 
 
 class Asset(models.Model):
@@ -405,24 +445,24 @@ class Asset(models.Model):
         formats = {}
         for format in self.format_set.filter(triangle_count__gt=0):
             formats.setdefault(format.role, format.triangle_count)
-        if POLYGONE_GLTF_FORMAT in formats.keys():
-            return formats[POLYGONE_GLTF_FORMAT]
-        if ORIGINAL_TRIANGULATED_OBJ_FORMAT in formats.keys():
-            return formats[ORIGINAL_OBJ_FORMAT]
-        if UPDATED_GLTF_FORMAT in formats.keys():
-            return formats[UPDATED_GLTF_FORMAT]
-        if ORIGINAL_GLTF_FORMAT in formats.keys():
-            return formats[ORIGINAL_GLTF_FORMAT]
-        if POLYGONE_OBJ_FORMAT in formats.keys():
-            return formats[POLYGONE_OBJ_FORMAT]
-        if POLYGONE_GLB_FORMAT in formats.keys():
-            return formats[POLYGONE_GLB_FORMAT]
-        if GLB_FORMAT in formats.keys():
-            return formats[GLB_FORMAT]
-        if POLYGONE_FBX_FORMAT in formats.keys():
-            return formats[POLYGONE_FBX_FORMAT]
-        if ORIGINAL_FBX_FORMAT in formats.keys():
-            return formats[ORIGINAL_FBX_FORMAT]
+        if "POLYGONE_GLTF_FORMAT" in formats.keys():
+            return formats["POLYGONE_GLTF_FORMAT"]
+        if "ORIGINAL_TRIANGULATED_OBJ_FORMAT" in formats.keys():
+            return formats["ORIGINAL_OBJ_FORMAT"]
+        if "UPDATED_GLTF_FORMAT" in formats.keys():
+            return formats["UPDATED_GLTF_FORMAT"]
+        if "ORIGINAL_GLTF_FORMAT" in formats.keys():
+            return formats["ORIGINAL_GLTF_FORMAT"]
+        if "POLYGONE_OBJ_FORMAT" in formats.keys():
+            return formats["POLYGONE_OBJ_FORMAT"]
+        if "POLYGONE_GLB_FORMAT" in formats.keys():
+            return formats["POLYGONE_GLB_FORMAT"]
+        if "GLB_FORMAT" in formats.keys():
+            return formats["GLB_FORMAT"]
+        if "POLYGONE_FBX_FORMAT" in formats.keys():
+            return formats["POLYGONE_FBX_FORMAT"]
+        if "ORIGINAL_FBX_FORMAT" in formats.keys():
+            return formats["ORIGINAL_FBX_FORMAT"]
         return 0
 
     def denorm_triangle_count(self):
@@ -473,9 +513,9 @@ class Asset(models.Model):
             dl_formats = self.format_set.all()
         elif self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
             # We don't allow downoad of source files for ND-licensed work.
-            dl_formats = self.format_set.filter(role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE)
+            dl_formats = self.format_set.filter(role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES)
         else:
-            dl_formats = self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE)
+            dl_formats = self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE_ROLES)
         for format in dl_formats:
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
@@ -516,7 +556,7 @@ class Asset(models.Model):
                         resource_data = {}
 
             if resource_data:
-                format_name = DOWNLOADABLE_FORMAT_NAMES.get(format.get_role_display(), format.get_role_display())
+                format_name = DOWNLOADABLE_FORMAT_NAMES.get(format.role, format.role)
                 # TODO: Currently, we only offer the first format per role
                 # that we find. This might be a mistake. Should we include all
                 # duplicate roles?

@@ -1,9 +1,5 @@
 from django.db import models
 from django.db.models import Q
-from icosa.helpers.format_roles import (
-    POLYGONE_GLTF_FORMAT,
-    UPDATED_GLTF_FORMAT,
-)
 
 from .asset import Asset
 from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
@@ -67,7 +63,7 @@ class Format(models.Model):
         return resource_data
 
     def get_resource_data_by_role(self, resources, role):
-        if self.role == POLYGONE_GLTF_FORMAT:
+        if self.role == "POLYGONE_GLTF_FORMAT":
             # If we hit this branch, we are not clear on if all gltf files work
             # correctly. Try both the original data we ingested and include
             # the suffixed data which attempts to fix any errors. Add some
@@ -80,7 +76,7 @@ class Format(models.Model):
             }
         else:
             resource_data = self.get_resource_data(resources)
-        if not resource_data and self.role == UPDATED_GLTF_FORMAT:
+        if not resource_data and self.role == "UPDATED_GLTF_FORMAT":
             # If we hit this branch, we have a format which doesn't
             # have an archive url, but also doesn't have local files.
             # At time of writing, we can't create a zip on the client
@@ -88,7 +84,7 @@ class Format(models.Model):
             # list of files as if the role was 1003 using our suffixed
             # upload.
             try:
-                override_format = self.asset.format_set.get(role=POLYGONE_GLTF_FORMAT)
+                override_format = self.asset.format_set.get(role="POLYGONE_GLTF_FORMAT")
                 override_resources = list(override_format.resource_set.all())
                 override_format_root = override_format.root_resource
                 if override_format_root is not None:

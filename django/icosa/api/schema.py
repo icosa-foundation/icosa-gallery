@@ -4,12 +4,25 @@ from typing import List, Literal, Optional
 
 from django.db.models import Q
 from django.urls import reverse_lazy
-from icosa.helpers.format_roles import role_display
-from icosa.models import API_DOWNLOAD_COMPATIBLE, Asset
+from icosa.models import Asset
 from ninja import Field, ModelSchema, Schema
 from ninja.errors import HttpError
 from pydantic import EmailStr
 from pydantic.json_schema import SkipJsonSchema
+
+API_DOWNLOAD_COMPATIBLE_ROLES = [
+    "ORIGINAL_OBJ_FORMAT",
+    "TILT_FORMAT",
+    "ORIGINAL_FBX_FORMAT",
+    "BLOCKS_FORMAT",
+    "USD_FORMAT",
+    "GLB_FORMAT",
+    "ORIGINAL_TRIANGULATED_OBJ_FORMAT",
+    "USDZ_FORMAT",
+    "UPDATED_GLTF_FORMAT",
+    "TILT_NATIVE_GLTF",
+    "USER_SUPPLIED_GLTF",
+]
 
 
 class LicenseFilter(Enum):
@@ -184,10 +197,6 @@ class AssetFormat(Schema):
     )
 
     @staticmethod
-    def resolve_role(obj):
-        return role_display.get(obj.role, None)
-
-    @staticmethod
     def resolve_formatComplexity(obj):
         format_complexity = {
             "triangleCount": obj.triangle_count,
@@ -252,7 +261,7 @@ class AssetSchema(ModelSchema):
         return [
             f
             for f in obj.format_set.filter(
-                role__in=API_DOWNLOAD_COMPATIBLE,
+                role__in=API_DOWNLOAD_COMPATIBLE_ROLES,
             )
         ]
 

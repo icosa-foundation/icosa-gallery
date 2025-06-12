@@ -16,7 +16,6 @@ from icosa.helpers.file import (
     get_content_type,
     validate_file,
 )
-from icosa.helpers.format_roles import USER_SUPPLIED_GLTF
 from icosa.helpers.upload import TYPE_ROLE_MAP
 from icosa.models import (
     ASSET_STATE_COMPLETE,
@@ -51,7 +50,7 @@ VALID_WEB_FORMAT_TYPES = [
 def get_role(mainfile: UploadedFormat) -> str:
     type = mainfile.filetype
     if type.startswith("GLTF"):
-        role = USER_SUPPLIED_GLTF
+        role = "USER_SUPPLIED_GLTF"
     else:
         role = TYPE_ROLE_MAP.get(type, None)
     return role

@@ -9,14 +9,6 @@ from typing import List, Optional
 import ijson
 import magic
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from icosa.helpers.format_roles import (
-    BLOCKS_FORMAT,
-    ORIGINAL_FBX_FORMAT,
-    ORIGINAL_GLTF_FORMAT,
-    ORIGINAL_OBJ_FORMAT,
-    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    TILT_FORMAT,
-)
 from icosa.models import (
     ASSET_STATE_UPLOADING,
     VALID_THUMBNAIL_MIME_TYPES,
@@ -219,19 +211,19 @@ def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
     # will probably be triangulated OBJ.
     if filetype == "OBJ":
         if name == "model-triangulated":
-            return ORIGINAL_TRIANGULATED_OBJ_FORMAT
+            return "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
         if name == "model":
-            return ORIGINAL_OBJ_FORMAT
+            return "ORIGINAL_OBJ_FORMAT"
     # For tilt, have a new role, TILT_NATIVE_GLTF, which behaves like
     # UPDATED_GLTF currently.
     if filetype in ["GLTF", "GLTF2"]:
-        return ORIGINAL_GLTF_FORMAT
+        return "ORIGINAL_GLTF_FORMAT"
     if filetype == "FBX":
-        return ORIGINAL_FBX_FORMAT
+        return "ORIGINAL_FBX_FORMAT"
     if filetype == "TILT":
-        return TILT_FORMAT
+        return "TILT_FORMAT"
     if filetype == "BLOCKS":
-        return BLOCKS_FORMAT
+        return "BLOCKS_FORMAT"
     return None
 
 
@@ -247,7 +239,7 @@ def get_obj_non_triangulated(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role=ORIGINAL_OBJ_FORMAT,
+        role="ORIGINAL_OBJ_FORMAT",
     ).first()
     if format:
         resource = format.root_resource
@@ -258,7 +250,7 @@ def get_obj_triangulated(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+        role="ORIGINAL_TRIANGULATED_OBJ_FORMAT",
     ).first()
     if format:
         resource = format.root_resource
@@ -269,7 +261,7 @@ def get_gltf(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role=ORIGINAL_GLTF_FORMAT,
+        role="ORIGINAL_GLTF_FORMAT",
     ).first()
     if format:
         resource = format.root_resource
@@ -326,7 +318,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     if obj_non_triangulated is None:
         format_non_triangulated = Format.objects.create(
             **format_data,
-            role=ORIGINAL_OBJ_FORMAT,
+            role="ORIGINAL_OBJ_FORMAT",
         )
         obj_non_triangulated = Resource.objects.create(**resource_data)
         format.add_root_resource(obj_non_triangulated)
@@ -339,7 +331,7 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     if obj_triangulated is None:
         format_triangulated = Format.objects.create(
             **format_data,
-            role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+            role="ORIGINAL_TRIANGULATED_OBJ_FORMAT",
         )
         obj_triangulated = Resource.objects.create(**resource_data)
         format.add_root_resource(obj_triangulated)
@@ -375,7 +367,7 @@ def process_bin(asset: Asset, f: UploadedFormat):
         }
         format = Format.objects.create(
             **format_data,
-            role=ORIGINAL_GLTF_FORMAT,
+            role="ORIGINAL_GLTF_FORMAT",
         )
         resource_data = {
             "file": None,

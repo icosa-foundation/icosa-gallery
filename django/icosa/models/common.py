@@ -2,19 +2,6 @@ import re
 from enum import Enum
 
 from django.conf import settings
-from icosa.helpers.format_roles import (
-    BLOCKS_FORMAT,
-    GLB_FORMAT,
-    ORIGINAL_FBX_FORMAT,
-    ORIGINAL_OBJ_FORMAT,
-    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    TILT_FORMAT,
-    TILT_NATIVE_GLTF,
-    UPDATED_GLTF_FORMAT,
-    USD_FORMAT,
-    USDZ_FORMAT,
-    USER_SUPPLIED_GLTF,
-)
 
 PUBLIC = "PUBLIC"
 PRIVATE = "PRIVATE"
@@ -140,38 +127,6 @@ CATEGORY_CHOICES = [(x.name, x.value) for x in Category]
 CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
 CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in CATEGORY_CHOICES}
 
-ND_WEB_UI_DOWNLOAD_COMPATIBLE = [
-    ORIGINAL_OBJ_FORMAT,
-    ORIGINAL_FBX_FORMAT,
-    USD_FORMAT,
-    GLB_FORMAT,
-    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    USDZ_FORMAT,
-    UPDATED_GLTF_FORMAT,
-    USER_SUPPLIED_GLTF,
-]
-
-WEB_UI_DOWNLOAD_COMPATIBLE = ND_WEB_UI_DOWNLOAD_COMPATIBLE + [
-    # Assuming here that a Tilt-native gltf can be considered a "source file"
-    # and so not eligible for download and reuse.
-    TILT_NATIVE_GLTF,
-    TILT_FORMAT,
-    BLOCKS_FORMAT,
-]
-
-API_DOWNLOAD_COMPATIBLE = [
-    ORIGINAL_OBJ_FORMAT,
-    TILT_FORMAT,
-    ORIGINAL_FBX_FORMAT,
-    BLOCKS_FORMAT,
-    USD_FORMAT,
-    GLB_FORMAT,
-    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    USDZ_FORMAT,
-    UPDATED_GLTF_FORMAT,
-    TILT_NATIVE_GLTF,
-    USER_SUPPLIED_GLTF,
-]
 
 BLOCKS_VIEWABLE_TYPES = [
     "OBJ",
