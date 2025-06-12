@@ -126,10 +126,3 @@ class Category(Enum):
 CATEGORY_CHOICES = [(x.name, x.value) for x in Category]
 CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
 CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in CATEGORY_CHOICES}
-
-
-BLOCKS_VIEWABLE_TYPES = [
-    "OBJ",
-    "GLB",
-    "GLTF2",
-]
