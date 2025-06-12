@@ -47,7 +47,7 @@ def format_upload_path(instance, filename):
     ext = filename.split(".")[-1]
     if instance.format is None:  # proxy test for if this is a root resource.
         name = f"model.{ext}"
-    if ext == "obj" and instance.format.role == ORIGINAL_TRIANGULATED_OBJ_FORMAT:
+    elif ext == "obj" and instance.format.role == "ORIGINAL_TRIANGULATED_OBJ_FORMAT":
         name = f"model-triangulated.{ext}"
     else:
         name = filename
