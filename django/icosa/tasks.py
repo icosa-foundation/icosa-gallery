@@ -1,8 +1,8 @@
 import time
 from typing import List, Optional
 
-from django.utils import timezone
 from django.db import transaction
+from django.utils import timezone
 from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
 from icosa.api.schema import AssetFinalizeData
@@ -92,14 +92,14 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
 
     # Apply triangle counts to all formats and resources.
 
-    non_tri_roles = [1, 7]  # Original OBJ, BLOCKS
+    NON_TRI_ROLES = ["ORIGINAL_OBJ_FORMAT", "BLOCKS_FORMAT"]
 
-    non_triangulated_formats = asset.format_set.filter(role__in=non_tri_roles)
+    non_triangulated_formats = asset.format_set.filter(role__in=NON_TRI_ROLES)
     for format in non_triangulated_formats:
         format.triangle_count = data.objPolyCount
         format.save()
 
-    triangulated_formats = asset.format_set.exclude(role__in=non_tri_roles)
+    triangulated_formats = asset.format_set.exclude(role__in=NON_TRI_ROLES)
     for format in triangulated_formats:
         format.triangle_count = data.triangulatedObjPolyCount
         format.save()

@@ -270,7 +270,9 @@ class Asset(models.Model):
 
         # Return early if we can grab a Polygone resource first
         polygone_gltf = None
-        format = self.format_set.filter(role__in=[1002, 1003], root_resource__isnull=False).first()
+        format = self.format_set.filter(
+            role__in=["POLYGONE_GLB_FORMAT", "POLYGONE_GLTF_FORMAT"], root_resource__isnull=False
+        ).first()
         if format:
             polygone_gltf = format.root_resource
 
