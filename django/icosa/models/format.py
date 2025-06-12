@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models import Q
 from icosa.helpers.format_roles import (
-    FORMAT_ROLE_CHOICES,
     POLYGONE_GLTF_FORMAT,
     UPDATED_GLTF_FORMAT,
 )
@@ -18,10 +17,10 @@ class Format(models.Model):
     zip_archive_url = models.CharField(max_length=FILENAME_MAX_LENGTH, null=True, blank=True)
     triangle_count = models.PositiveIntegerField(null=True, blank=True)
     lod_hint = models.PositiveIntegerField(null=True, blank=True)
-    role = models.IntegerField(
+    role = models.CharField(
+        max_length=255,
         null=True,
         blank=True,
-        choices=FORMAT_ROLE_CHOICES,
     )
     root_resource = models.ForeignKey(
         "Resource",
