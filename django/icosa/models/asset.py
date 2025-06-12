@@ -54,29 +54,17 @@ RECENCY_WEIGHT = 1
 
 
 class Asset(models.Model):
-    COLOR_SPACES = [
-        ("LINEAR", "LINEAR"),
-        ("GAMMA", "GAMMA"),
-    ]
+    COLOR_SPACES = [("LINEAR", "LINEAR"), ("GAMMA", "GAMMA")]
     id = models.BigAutoField(primary_key=True)
     url = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
     owner = models.ForeignKey("AssetOwner", null=True, blank=True, on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
     formats = models.JSONField(null=True, blank=True)
-    visibility = models.CharField(
-        max_length=255,
-        default=PRIVATE,
-        choices=ASSET_VISIBILITY_CHOICES,
-        db_default=PRIVATE,
-    )
+    visibility = models.CharField(max_length=255, default=PRIVATE, choices=ASSET_VISIBILITY_CHOICES, db_default=PRIVATE)
     curated = models.BooleanField(default=False)
     last_reported_by = models.ForeignKey(
-        "User",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="reported_assets",
+        "User", null=True, blank=True, on_delete=models.SET_NULL, related_name="reported_assets"
     )
     last_reported_time = models.DateTimeField(null=True, blank=True)
     polyid = models.CharField(max_length=255, blank=True, null=True)
@@ -95,21 +83,12 @@ class Asset(models.Model):
         upload_to=preview_image_upload_path,
         validators=[FileExtensionValidator(allowed_extensions=VALID_THUMBNAIL_EXTENSIONS)],
     )
-    thumbnail_contenttype = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-    )
+    thumbnail_contenttype = models.CharField(max_length=255, blank=True, null=True)
     create_time = models.DateTimeField()
     update_time = models.DateTimeField(null=True, blank=True)
     license = models.CharField(max_length=50, null=True, blank=True, choices=LICENSE_CHOICES)
     tags = models.ManyToManyField("Tag", blank=True)
-    category = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True,
-        choices=CATEGORY_CHOICES,
-    )
+    category = models.CharField(max_length=255, null=True, blank=True, choices=CATEGORY_CHOICES)
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)
     presentation_params = models.JSONField(null=True, blank=True)
@@ -120,12 +99,7 @@ class Asset(models.Model):
     likes = models.PositiveIntegerField(default=0)
     views = models.PositiveIntegerField(default=0)
     downloads = models.PositiveIntegerField(default=0)
-    state = models.CharField(
-        max_length=255,
-        choices=ASSET_STATE_CHOICES,
-        default="BARE",
-        db_default="BARE",
-    )
+    state = models.CharField(max_length=255, choices=ASSET_STATE_CHOICES, default="BARE", db_default="BARE")
     preferred_viewer_format_override = models.OneToOneField(
         "Format",
         null=True,
@@ -212,10 +186,7 @@ class Asset(models.Model):
         if not self.has_gltf2:
             # There are some issues with displaying GLTF1 files from Blocks
             # so we have to return an OBJ and its associated MTL.
-            obj_format = self.format_set.filter(
-                format_type="OBJ",
-                root_resource__isnull=False,
-            ).first()
+            obj_format = self.format_set.filter(format_type="OBJ", root_resource__isnull=False).first()
             obj_resource = obj_format.root_resource
             mtl_resource = obj_format.resource_set.first()
 
@@ -245,83 +216,50 @@ class Asset(models.Model):
         filename = f"poly/{self.url}/{filename.split('/')[-1]}"
         # TODO(datacleanup): NUMBER_1 When we hit this block, we need to save the suffix to the file field
         url = f"{STORAGE_PREFIX}{suffix(filename)}"
-        return {
-            "format": blocks_format,
-            "url": url,
-            "resource": blocks_resource,
-        }
+        return {"format": blocks_format, "url": url, "resource": blocks_resource}
 
     @property
     def _preferred_viewer_format(self):
         if self.preferred_viewer_format_override is not None:
             format = self.preferred_viewer_format_override
             root_resource = format.root_resource
-            return {
-                "format": format,
-                "url": root_resource.internal_url_or_none,
-                "resource": root_resource,
-            }
+            return {"format": format, "url": root_resource.internal_url_or_none, "resource": root_resource}
 
         if self.has_blocks:
             return self.handle_blocks_preferred_format()
 
         # Return early if we can grab a Polygone resource first
         polygone_gltf = None
-        format = self.format_set.filter(
-            role__in=[1002, 1003],
-            root_resource__isnull=False,
-        ).first()
+        format = self.format_set.filter(role__in=[1002, 1003], root_resource__isnull=False).first()
         if format:
             polygone_gltf = format.root_resource
 
         if polygone_gltf:
-            return {
-                "format": format,
-                "url": polygone_gltf.internal_url_or_none,
-                "resource": polygone_gltf,
-            }
+            return {"format": format, "url": polygone_gltf.internal_url_or_none, "resource": polygone_gltf}
 
         # Return early with either of the role-based formats we care about.
         updated_gltf = None
-        format = self.format_set.filter(
-            root_resource__isnull=False,
-            role=30,
-        ).first()
+        format = self.format_set.filter(root_resource__isnull=False, role=30).first()
         if format:
             updated_gltf = format.root_resource
 
         if updated_gltf:
-            return {
-                "format": format,
-                "url": updated_gltf.internal_url_or_none,
-                "resource": updated_gltf,
-            }
+            return {"format": format, "url": updated_gltf.internal_url_or_none, "resource": updated_gltf}
 
         original_gltf = None
-        format = self.format_set.filter(
-            root_resource__isnull=False,
-            role=12,
-        ).first()
+        format = self.format_set.filter(root_resource__isnull=False, role=12).first()
         if format:
             original_gltf = format.root_resource
 
         if original_gltf:
-            return {
-                "format": format,
-                "url": original_gltf.internal_url_or_none,
-                "resource": original_gltf,
-            }
+            return {"format": format, "url": original_gltf.internal_url_or_none, "resource": original_gltf}
 
         # If we didn't get any role-based formats, find the remaining formats
         # we care about and choose the "best" one of those.
         formats = {}
         for format in self.format_set.all():
             root = format.root_resource
-            formats[format.format_type] = {
-                "format": format,
-                "url": root.internal_url_or_none,
-                "resource": root,
-            }
+            formats[format.format_type] = {"format": format, "url": root.internal_url_or_none, "resource": root}
         # GLB is our primary preferred format;
         if "GLB" in formats.keys():
             return formats["GLB"]
@@ -372,10 +310,7 @@ class Asset(models.Model):
         if self.license == ALL_RIGHTS_RESERVED or not self.license:
             return None
         updated_gltf = None
-        format = self.format_set.filter(
-            root_resource__isnull=False,
-            role=30,
-        ).first()
+        format = self.format_set.filter(root_resource__isnull=False, role=30).first()
         if format:
             updated_gltf = format.root_resource
 
@@ -613,10 +548,7 @@ class Asset(models.Model):
             elif file_name.startswith("icosa/"):
                 # This is a user file, so we are ok to delete/hide it.
                 bucket.hide_file(file_name)
-                HiddenMediaFileLog.objects.create(
-                    original_asset_id=self.pk,
-                    file_name=file_name,
-                )
+                HiddenMediaFileLog.objects.create(original_asset_id=self.pk, file_name=file_name)
             else:
                 # This is not a file we care to mess with.
                 pass
@@ -643,29 +575,9 @@ class Asset(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(
-                fields=[
-                    "is_viewer_compatible",
-                    "visibility",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "likes",
-                ]
-            ),
-            models.Index(
-                fields=[
-                    "owner",
-                ]
-            ),
+            models.Index(fields=["is_viewer_compatible", "visibility"]),
+            models.Index(fields=["likes"]),
+            models.Index(fields=["owner"]),
             # Index for paginator
-            models.Index(
-                fields=[
-                    "is_viewer_compatible",
-                    "last_reported_time",
-                    "visibility",
-                    "license",
-                ]
-            ),
+            models.Index(fields=["is_viewer_compatible", "last_reported_time", "visibility", "license"]),
         ]
