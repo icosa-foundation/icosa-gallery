@@ -149,6 +149,55 @@ def get_me_assets(
     return assets
 
 
+@router.post(
+    "/me/assets",
+    response={201: UploadJobSchemaOut},
+    auth=JWTAuth(),
+    include_in_schema=False,
+)
+@decorate_view(never_cache)
+def upload_new_assets(
+    request,
+    files: Optional[List[UploadedFile]] = File(None),
+):
+    if files is None:
+        raise HttpError(400, "Include files for upload.")
+    user = request.user
+    owner, _ = AssetOwner.objects.get_or_create(
+        django_user=user,
+        email=user.email,
+        defaults={
+            "url": secrets.token_urlsafe(8),
+            "displayname": user.displayname,
+        },
+    )
+    job_snowflake = generate_snowflake()
+    asset_token = secrets.token_urlsafe(8)
+    asset = Asset.objects.create(
+        id=job_snowflake,
+        url=asset_token,
+        owner=owner,
+        name="Untitled Asset",
+    )
+    if files is not None:
+        from icosa.helpers.upload import upload_api_asset
+
+        try:
+            upload_api_asset(
+                asset,
+                files,
+            )
+        except HttpError as err:
+            raise err
+
+        # queue_upload_api_asset(
+        #     user,
+        #     asset,
+        #     files,
+        # )
+    return get_publish_url(request, asset, 201)
+
+
 @router.get(
     "/me/assets/{str:asset}",
     auth=JWTAuth(),
@@ -280,51 +329,4 @@ def finalize_asset(
 
     queue_finalize_asset(asset.url, data)
 
-    return get_publish_url(request, asset)
-
-
-@router.post(
-    "/me/assets/",
-    response={201: UploadJobSchemaOut},
-    auth=JWTAuth(),
-    include_in_schema=False,
-)
-@decorate_view(never_cache)
-def upload_new_assets(
-    request,
-    files: Optional[List[UploadedFile]] = File(None),
-):
-    user = request.user
-    owner, _ = AssetOwner.objects.get_or_create(
-        django_user=user,
-        email=user.email,
-        defaults={
-            "url": secrets.token_urlsafe(8),
-            "displayname": user.displayname,
-        },
-    )
-    job_snowflake = generate_snowflake()
-    asset_token = secrets.token_urlsafe(8)
-    asset = Asset.objects.create(
-        id=job_snowflake,
-        url=asset_token,
-        owner=owner,
-        name="Untitled Asset",
-    )
-    if files is not None:
-        from icosa.helpers.upload import upload_api_asset
-
-        try:
-            upload_api_asset(
-                asset,
-                files,
-            )
-        except HttpError as err:
-            raise err
-
-        # queue_upload_api_asset(
-        #     user,
-        #     asset,
-        #     files,
-        # )
     return get_publish_url(request, asset)

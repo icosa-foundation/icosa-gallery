@@ -33,7 +33,7 @@ DEFAULT_CACHE_SECONDS = 10
 NOT_FOUND = HttpError(404, "Asset not found.")
 
 
-def get_publish_url(request, asset: Asset) -> str:
+def get_publish_url(request, asset: Asset, response_code=200) -> str:
     url = request.build_absolute_uri(
         reverse(
             "icosa:asset_publish",
@@ -44,7 +44,7 @@ def get_publish_url(request, asset: Asset) -> str:
     )
     if settings.DEPLOYMENT_HOST_API is not None:
         url = url.replace(settings.DEPLOYMENT_HOST_API, settings.DEPLOYMENT_HOST_WEB)
-    return 200, {
+    return response_code, {
         "publishUrl": url,
         "assetId": asset.url,
     }
