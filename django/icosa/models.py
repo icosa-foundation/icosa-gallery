@@ -1052,7 +1052,7 @@ class Format(models.Model):
             }
         elif all([x.file for x in resources]):
             resource_data = {
-                "files_to_zip": [f"{STORAGE_PREFIX}{suffix(x.file.name)}" for x in resources if x.file],
+                "files_to_zip": [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file],
                 "role": self.role,
             }
         else:
