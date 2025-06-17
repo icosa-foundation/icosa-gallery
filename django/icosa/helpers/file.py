@@ -115,7 +115,7 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
         if is_gltf2(file.file):
             filetype = "GLTF2"
         else:
-            filetype = "GLTF"
+            filetype = "GLTF1"
         mainfile = True
     if extension == "bin":
         filetype = "BIN"
@@ -155,7 +155,7 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
     # if this is a gltf1 and we have a converted file on disk, swap out the
     # uploaded file with the one we have on disk and change the format_type
     # to gltf2.
-    if format_type == "GLTF" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
+    if format_type == "GLTF1" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
         format_type = "GLB"
         name = f"{os.path.splitext(name)[0]}.glb"
         with open(gltf_to_convert, "rb") as f:
@@ -216,7 +216,7 @@ def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
             return "ORIGINAL_OBJ_FORMAT"
     # For tilt, have a new role, TILT_NATIVE_GLTF, which behaves like
     # UPDATED_GLTF currently.
-    if filetype in ["GLTF", "GLTF2"]:
+    if filetype in ["GLTF1", "GLTF2"]:
         return "ORIGINAL_GLTF_FORMAT"
     if filetype == "FBX":
         return "ORIGINAL_FBX_FORMAT"
@@ -261,7 +261,7 @@ def get_gltf(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        type__in=["GLTF", "GLTF2"],
+        type__in=["GLTF1", "GLTF2"],
     ).last()
     if format:
         resource = format.root_resource
@@ -360,7 +360,7 @@ def process_bin(asset: Asset, f: UploadedFormat):
         if is_gltf2(f.file):
             format_type = "GLTF2"
         else:
-            format_type = "GLTF"
+            format_type = "GLTF1"
         format_data = {
             "format_type": format_type,
             "asset": asset,
@@ -434,7 +434,7 @@ def upload_blocks_format(
         process_mtl(asset, f)
     elif filetype == "BIN":
         process_bin(asset, f)
-    elif filetype in ["OBJ", "GLTF2", "GLTF"]:
+    elif filetype in ["OBJ", "GLTF2", "GLTF1"]:
         process_root(asset, f)
     elif filetype == "IMAGE" and f.file.name == "thumbnail.png":
         if validate_mime(next(f.file.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):

@@ -193,7 +193,7 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
                 if is_gltf2(root_resource.file.file):
                     format.format_type = "GLTF2"
                 else:
-                    format.format_type = "GLTF"
+                    format.format_type = "GLTF1"
                 format.save()
 
         if format_json.get("resources", None) is not None:

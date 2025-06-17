@@ -175,7 +175,7 @@ def upload_api_asset(
 
     for mainfile in main_files:
         type = mainfile.filetype
-        if type.startswith("GLTF"):
+        if type in ["GLTF1", "GLTF2"]:
             sub_files_list = sub_files["GLTF"] + sub_files["GLB"]
         else:
             try:
@@ -249,7 +249,7 @@ def get_role(
         return manifest_role
 
     type = mainfile.filetype
-    if type.startswith("GLTF"):
+    if type in ["GLTF1", "GLTF2"]:
         if override_for_tilt:
             role = "TILT_NATIVE_GLTF"
         else:

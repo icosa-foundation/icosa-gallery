@@ -314,8 +314,8 @@ class Asset(models.Model):
         if "GLTF2" in formats.keys():
             return formats["GLTF2"]
         # GLTF1, if we must.
-        if "GLTF" in formats.keys():
-            return formats["GLTF"]
+        if "GLTF1" in formats.keys():
+            return formats["GLTF1"]
         # Last chance, OBJ
         if "OBJ" in formats.keys():
             return formats["OBJ"]
@@ -442,9 +442,9 @@ class Asset(models.Model):
             return
         self.has_tilt = self.format_set.filter(format_type="TILT").exists()
         self.has_blocks = self.format_set.filter(format_type="BLOCKS").exists()
-        self.has_gltf1 = self.format_set.filter(format_type="GLTF").exists()
+        self.has_gltf1 = self.format_set.filter(format_type="GLTF1").exists()
         self.has_gltf2 = self.format_set.filter(format_type="GLTF2").exists()
-        self.has_gltf_any = self.format_set.filter(format_type__in=["GLTF", "GLTF2"]).exists()
+        self.has_gltf_any = self.format_set.filter(format_type__in=["GLTF1", "GLTF2"]).exists()
         self.has_fbx = self.format_set.filter(format_type="FBX").exists()
         self.has_obj = self.format_set.filter(format_type="OBJ").exists()
 
