@@ -21,6 +21,7 @@ class Resource(models.Model):
         upload_to=format_upload_path,
     )
     external_url = models.CharField(max_length=FILENAME_MAX_LENGTH, null=True, blank=True)
+    hide_from_downloads = models.BooleanField(default=False)
 
     @property
     def url(self):

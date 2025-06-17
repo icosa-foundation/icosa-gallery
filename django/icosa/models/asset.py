@@ -30,72 +30,18 @@ from .common import (
     V4_CC_LICENSES,
     VALID_THUMBNAIL_EXTENSIONS,
 )
-from .helpers import preview_image_upload_path, suffix, thumbnail_upload_path
+from .helpers import (
+    preview_image_upload_path,
+    suffix,
+    thumbnail_upload_path,
+)
 from .log import HiddenMediaFileLog
 
 LIKES_WEIGHT = 100
 VIEWS_WEIGHT = 0.1
 RECENCY_WEIGHT = 1
 
-ND_WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES = [
-    "OBJ_TRI",
-    "OBJ_NGON",
-]
-ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES = [
-    "ORIGINAL_FBX_FORMAT",
-    "USD_FORMAT",
-    "GLB_FORMAT",
-    "USDZ_FORMAT",
-    "UPDATED_GLTF_FORMAT",
-    "USER_SUPPLIED_GLTF",
-]
-
-# Currently a no-op for ease of refactoring
-WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES = ND_WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES
-
-WEB_UI_DOWNLOAD_COMPATIBLE_ROLES = ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES + [
-    # Assuming here that a Tilt-native gltf can be considered a "source file"
-    # and so not eligible for download and reuse.
-    "TILT_NATIVE_GLTF",
-    "TILT_FORMAT",
-    "BLOCKS_FORMAT",
-]
-
-DOWNLOADABLE_FORMAT_NAMES = {
-    "ORIGINAL_OBJ_FORMAT": "obj",
-    "TILT_FORMAT": "native tilt",
-    "UNKNOWN_GLTF_FORMAT_A": "unknown gltf a",
-    "ORIGINAL_FBX_FORMAT": "original fbx",
-    "BLOCKS_FORMAT": "native blocks",
-    "USD_FORMAT": "usd",
-    "HTML_FORMAT": "html",
-    "ORIGINAL_GLTF_FORMAT": "original gltf",
-    "TOUR_CREATOR_EXPERIENCE": "tour creator experience",
-    "JSON_FORMAT": "json",
-    "LULLMODEL_FORMAT": "lullmodel",
-    "SAND_FORMAT_A": "sand a",
-    "GLB_FORMAT": "glb",
-    "SAND_FORMAT_B": "sand b",
-    "SANDC_FORMAT": "sandc",
-    "PB_FORMAT": "pb",
-    "UNKNOWN_GLTF_FORMAT_B": "unknown gltf b",
-    "ORIGINAL_TRIANGULATED_OBJ_FORMAT": "triangulated obj",
-    "JPG_BUGGY": "jpg buggy",
-    "USDZ_FORMAT": "usdz",
-    "UPDATED_GLTF_FORMAT": "gltf",
-    "EDITOR_SETTINGS_PB_FORMAT": "editor settings pb",
-    "UNKNOWN_GLTF_FORMAT_C": "unknown gltf c",
-    "UNKNOWN_GLB_FORMAT_A": "unknown glb a",
-    "UNKNOWN_GLB_FORMAT_B": "unknown glb b",
-    "TILT_NATIVE_GLTF": "tilt native gltf",
-    "USER_SUPPLIED_GLTF": "user supplied gltf",
-    "POLYGONE_TILT_FORMAT": "polygone tilt",
-    "POLYGONE_BLOCKS_FORMAT": "polygone blocks",
-    "POLYGONE_GLB_FORMAT": "polygone glb",
-    "POLYGONE_GLTF_FORMAT": "polygone gltf",
-    "POLYGONE_OBJ_FORMAT": "polygone obj",
-    "POLYGONE_FBX_FORMAT": "polygone fbx",
-}
+NON_REMIXABLE_FORMAT_TYPES = ["TILT", "BLOCKS"]
 
 
 class Asset(models.Model):
@@ -501,34 +447,22 @@ class Asset(models.Model):
         return file_list
 
     def get_all_downloadable_formats(self, user=None):
-        # Originally, Google Poly made these roles available for download:
-        # - Original FBX File
-        # - Original OBJ File
-        # - GLB File
-        # - Original Triangulated OBJ File
-        # - Original glTF File
-        # - USDZ File
-        # - Updated glTF File
-        formats = {}
         if self.license == ALL_RIGHTS_RESERVED:
             # We do not provide any downloads for assets with restrictive
             # licenses.
-            return formats
+            return {}
 
         if user is not None and not user.is_anonymous and self.owner in user.assetowner_set.all():
             # The user owns this asset so can view all files.
             dl_formats = self.format_set.all()
-        elif self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
-            # We don't allow downoad of source files for ND-licensed work.
-            dl_formats = self.format_set.filter(
-                Q(role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES)
-                | Q(format_type__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES)
-            )
         else:
-            dl_formats = self.format_set.filter(
-                Q(role__in=WEB_UI_DOWNLOAD_COMPATIBLE_ROLES)
-                | Q(format_type__in=WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES)
-            )
+            dl_formats = self.format_set.filter(hide_from_downloads=False)
+            if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
+                # We don't allow downoad of source files for ND-licensed work.
+                dl_formats = dl_formats.exclude(format_type__in=NON_REMIXABLE_FORMAT_TYPES)
+
+        formats = {}
+
         for format in dl_formats:
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
@@ -550,6 +484,9 @@ class Asset(models.Model):
                 # The second criteria is met if the resource's remote host is
                 # in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
                 if len(resources) > 1:
+                    #
+                    # TODO refactor to use db
+                    #
                     resource_data = format.get_resource_data_by_role(
                         resources,
                         format.role,
@@ -568,18 +505,15 @@ class Asset(models.Model):
                     else:
                         resource_data = {}
 
-            if resource_data:
-                format_name = DOWNLOADABLE_FORMAT_NAMES.get(format.role, format.role)
-                # TODO: Currently, we only offer the first format per role
-                # that we find. This might be a mistake. Should we include all
-                # duplicate roles?
-                formats.setdefault(format_name, resource_data)
-        formats = OrderedDict(
-            sorted(
-                formats.items(),
-                key=lambda x: x[0].lower(),
-            )
-        )
+            format_name = format.type.lower()
+
+        if resource_data:
+            # TODO: Currently, we only offer the first format per type (or
+            # role) that we find. This might be a mistake. Should we include
+            # all duplicates?
+            formats.setdefault(format_name, resource_data)
+
+        formats = OrderedDict(sorted(formats.items(), key=lambda x: x[0].lower()))
         return formats
 
     def hide_media(self):
