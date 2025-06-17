@@ -1,8 +1,9 @@
 from django.db import models
 from django.db.models import Q
 
-from .asset import Asset, Resource
+from .asset import Asset
 from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
+from .resource import Resource
 
 
 class Format(models.Model):
@@ -36,10 +37,10 @@ class Format(models.Model):
         resource.save()
 
     def get_all_resources(self, query: Q = Q()):
-        resources = format.resource_set.filter(query)
+        resources = self.resource_set.filter(query)
         # We can only union on another queryset, even though we just want one
         # instance.
-        root_resources = Resource.objects.filter(pk=format.root_resource.pk)
+        root_resources = Resource.objects.filter(pk=self.root_resource.pk)
         resources = resources.union(root_resources)
         return resources
 
