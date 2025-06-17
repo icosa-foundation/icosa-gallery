@@ -37,16 +37,21 @@ LIKES_WEIGHT = 100
 VIEWS_WEIGHT = 0.1
 RECENCY_WEIGHT = 1
 
+ND_WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES = [
+    "OBJ_TRI",
+    "OBJ_NGON",
+]
 ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES = [
-    "ORIGINAL_OBJ_FORMAT",
     "ORIGINAL_FBX_FORMAT",
     "USD_FORMAT",
     "GLB_FORMAT",
-    "ORIGINAL_TRIANGULATED_OBJ_FORMAT",
     "USDZ_FORMAT",
     "UPDATED_GLTF_FORMAT",
     "USER_SUPPLIED_GLTF",
 ]
+
+# Currently a no-op for ease of refactoring
+WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES = ND_WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES
 
 WEB_UI_DOWNLOAD_COMPATIBLE_ROLES = ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES + [
     # Assuming here that a Tilt-native gltf can be considered a "source file"
@@ -515,9 +520,15 @@ class Asset(models.Model):
             dl_formats = self.format_set.all()
         elif self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
             # We don't allow downoad of source files for ND-licensed work.
-            dl_formats = self.format_set.filter(role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES)
+            dl_formats = self.format_set.filter(
+                Q(role__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE_ROLES)
+                | Q(format_type__in=ND_WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES)
+            )
         else:
-            dl_formats = self.format_set.filter(role__in=WEB_UI_DOWNLOAD_COMPATIBLE_ROLES)
+            dl_formats = self.format_set.filter(
+                Q(role__in=WEB_UI_DOWNLOAD_COMPATIBLE_ROLES)
+                | Q(format_type__in=WEB_UI_DOWNLOAD_COMPATIBLE_FORMAT_TYPES)
+            )
         for format in dl_formats:
             # If the format in its entirety is on a remote host, just provide
             # the link to that.

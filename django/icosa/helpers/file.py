@@ -239,8 +239,8 @@ def get_obj_non_triangulated(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role="ORIGINAL_OBJ_FORMAT",
-    ).first()
+        role="OBJ_NGON",
+    ).last()
     if format:
         resource = format.root_resource
     return resource
@@ -250,8 +250,8 @@ def get_obj_triangulated(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role="ORIGINAL_TRIANGULATED_OBJ_FORMAT",
-    ).first()
+        type="OBJ_TRI",
+    ).last()
     if format:
         resource = format.root_resource
     return resource
@@ -261,8 +261,8 @@ def get_gltf(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role="ORIGINAL_GLTF_FORMAT",
-    ).first()
+        type__in=["GLTF", "GLTF2"],
+    ).last()
     if format:
         resource = format.root_resource
     return resource
@@ -352,8 +352,8 @@ def process_mtl(asset: Asset, f: UploadedFormat):
 
 
 def process_bin(asset: Asset, f: UploadedFormat):
-    # Get or create a GLTF root resource that correspond to this BIN along with
-    # the parent format.
+    # Get or create a GLTF root resource that corresponds to this BIN along
+    # with the parent format.
     gltf = get_gltf(asset)
 
     if gltf is None:
@@ -367,7 +367,7 @@ def process_bin(asset: Asset, f: UploadedFormat):
         }
         format = Format.objects.create(
             **format_data,
-            role="ORIGINAL_GLTF_FORMAT",
+            role="ORIGINAL_GLTF_FORMAT",  # TODO, I don't think we need to assign this any more.
         )
         resource_data = {
             "file": None,
