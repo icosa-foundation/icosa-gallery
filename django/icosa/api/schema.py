@@ -495,7 +495,7 @@ def filter_triangle_count(filters) -> Q:
     if max:
         q &= Q(triangle_count__lte=max)
     if min or max:
-        q &= Q(triangle_count__gt=0)
+        q &= Q(triangle_count__gte=0)
     return q
 
 

@@ -9,6 +9,7 @@ we should accept snake_case and camelCase url params and do the translation. The
 
 
 
+triangle_count could probably be nullable. We have >10k assets with triangle_count == 0 which is too many to just change it on a whim.
 
 
 
