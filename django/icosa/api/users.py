@@ -160,8 +160,6 @@ def upload_new_assets(
     request,
     files: Optional[List[UploadedFile]] = File(None),
 ):
-    if files is None:
-        raise HttpError(400, "Include files for upload.")
     user = request.user
     owner, _ = AssetOwner.objects.get_or_create(
         django_user=user,
