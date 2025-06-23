@@ -23,4 +23,7 @@
   &.warn {
     background-color: var(--color-alert-warning);
   }
+  &.front {
+    z-index: 100000;
+  }
 }
