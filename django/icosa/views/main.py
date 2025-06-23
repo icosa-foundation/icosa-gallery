@@ -76,7 +76,7 @@ MASTHEAD_CACHE_PREFIX = "mastheads"
 def set_experimental_js_session(request):
     experimental_js = request.GET.get("experimentaljs", None)
     if experimental_js is not None:
-        experimental_js = experimental_js.lower() in ["true", "yes", "1"]
+        experimental_js = experimental_js.lower() in ["true", "yes", "on", "1"]
         request.session["experimental_js"] = experimental_js
 
 
