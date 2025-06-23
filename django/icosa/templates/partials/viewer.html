@@ -71,7 +71,7 @@
     }
 </script>
 <script type="module">
-    {% if experimental_js %}
+    {% if request.session.experimental_js %}
     import {Viewer} from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
     {% else %}
     import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
