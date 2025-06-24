@@ -52278,7 +52278,10 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
         const parser = this.parser;
         const json = parser.json;
         let isTilt = this.isTiltGltf(json);
-        if (!isTilt) console.warn("Not TiltGltf Error", json);
+        if (!isTilt) {
+            console.error("Not TiltGltf Error", json);
+            return null;
+        }
         json.materials.forEach((material)=>{
             const extensionsDef = material.extensions;
             let nameOrGuid;
@@ -52311,9 +52314,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
     afterRoot(glTF) {
         const parser = this.parser;
         const json = parser.json;
-        // if (!this.isTiltGltf(json)) {
-        //     return null;
-        // }
+        if (!this.isTiltGltf(json)) return null;
         const shaderResolves = [];
         for (const scene of glTF.scenes)scene.traverse(async (object)=>{
             const association = parser.associations.get(object);
@@ -52357,40 +52358,16 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
         isTiltGltf ||= "extensions" in json && this.altName in json["extensions"];
         return isTiltGltf;
     }
-    async replaceMaterial(mesh, guidOrName) {
-        let renameAttribute = (mesh, oldName, newName)=>{
-            if (mesh.geometry.getAttribute(oldName)) mesh.geometry.setAttribute(newName, mesh.geometry.getAttribute(oldName));
-            delete mesh.oldName;
-        };
-        let copyFixColorAttribute = (mesh)=>{
-            function linearToSRGB(x) {
-                return x <= 0.0031308 ? x * 12.92 : 1.055 * Math.pow(x, 1.0 / 2.4) - 0.055;
-            }
-            let colorAttribute = mesh.geometry.getAttribute("color");
-            if (colorAttribute && colorAttribute.array instanceof Float32Array) {
-                const src = colorAttribute.array;
-                const itemSize = colorAttribute.itemSize;
-                const count = src.length / itemSize;
-                const normalizedColors = new Uint8Array(src.length);
-                for(let i = 0; i < count; ++i){
-                    normalizedColors[i * itemSize + 0] = Math.round(linearToSRGB(src[i * itemSize + 0]) * 255); // R
-                    normalizedColors[i * itemSize + 1] = Math.round(linearToSRGB(src[i * itemSize + 1]) * 255); // G
-                    normalizedColors[i * itemSize + 2] = Math.round(linearToSRGB(src[i * itemSize + 2]) * 255); // B
-                    if (itemSize > 3) normalizedColors[i * itemSize + 3] = Math.round(src[i * itemSize + 3] * 255); // A (linear)
-                }
-                colorAttribute = new THREE.BufferAttribute(normalizedColors, itemSize, true);
-                mesh.geometry.setAttribute("a_color", colorAttribute);
-            } else mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
-        };
+    async replaceMaterial(mesh, guid) {
         let shader;
-        switch(guidOrName){
+        switch(guid){
             case "0e87b49c-6546-3a34-3a44-8a556d7d6c3e":
             case "BlocksBasic":
             case "BlocksPaper":
                 mesh.geometry.name = "geometry_BlocksBasic";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 //mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("BlocksBasic");
                 shader.lights = true;
@@ -52404,7 +52381,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_BlocksGem";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 //mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("BlocksGem");
                 shader.lights = true;
@@ -52418,7 +52395,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_BlocksGlass";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 //mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("BlocksGlass");
                 shader.lights = true;
@@ -52431,14 +52408,13 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
             case "Bubbles":
                 mesh.geometry.name = "geometry_Bubbles";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                renameAttribute(mesh, "_tb_unity_normal", "a_normal");
-                renameAttribute(mesh, "normal", "a_normal");
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
-                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
-                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Bubbles");
                 shader.lights = true;
                 shader.fog = true;
@@ -52451,10 +52427,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_CelVinyl";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("CelVinyl");
                 shader.lights = true;
                 shader.fog = true;
@@ -52467,10 +52442,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_ChromaticWave";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ChromaticWave");
                 shader.lights = true;
                 shader.fog = true;
@@ -52484,10 +52458,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_CoarseBristles";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("CoarseBristles");
                 shader.lights = true;
                 shader.fog = true;
@@ -52500,10 +52473,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Comet";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Comet");
                 shader.lights = true;
                 shader.fog = true;
@@ -52516,10 +52488,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DiamondHull";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DiamondHull");
                 shader.lights = true;
                 shader.fog = true;
@@ -52532,10 +52503,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Disco";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Disco");
                 shader.lights = true;
                 shader.fog = true;
@@ -52548,10 +52518,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DotMarker";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DotMarker");
                 shader.lights = true;
                 shader.fog = true;
@@ -52563,14 +52532,13 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
             case "Dots":
                 mesh.geometry.name = "geometry_Dots";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                renameAttribute(mesh, "_tb_unity_normal", "a_normal");
-                renameAttribute(mesh, "normal", "a_normal");
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
-                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
-                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Dots");
                 shader.lights = true;
                 shader.fog = true;
@@ -52583,10 +52551,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DoubleTaperedFlat";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DoubleTaperedFlat");
                 shader.lights = true;
                 shader.fog = true;
@@ -52599,10 +52566,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DoubleTaperedMarker";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DoubleTaperedMarker");
                 shader.lights = true;
                 shader.fog = true;
@@ -52616,10 +52582,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DuctTape";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("DuctTape");
                 shader.lights = true;
                 shader.fog = true;
@@ -52632,12 +52597,11 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Electricity";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
-                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
-                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Electricity");
                 mesh.material = shader;
                 mesh.material.name = "material_Electricity";
@@ -52646,14 +52610,13 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
             case "Embers":
                 mesh.geometry.name = "geometry_Embers";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                renameAttribute(mesh, "_tb_unity_normal", "a_normal");
-                renameAttribute(mesh, "normal", "a_normal");
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
-                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
-                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Embers");
                 mesh.material = shader;
                 mesh.material.name = "material_Embers";
@@ -52663,10 +52626,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_EnvironmentDiffuse";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("EnvironmentDiffuse");
                 shader.lights = true;
                 shader.fog = true;
@@ -52679,10 +52641,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_EnvironmentDiffuseLightMap";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("EnvironmentDiffuseLightMap");
                 shader.lights = true;
                 shader.fog = true;
@@ -52695,10 +52656,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Fire";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Fire");
                 shader.lights = true;
                 shader.fog = true;
@@ -52713,10 +52673,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Flat";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Flat");
                 shader.lights = true;
                 shader.fog = true;
@@ -52729,10 +52688,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Highlighter";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Highlighter");
                 shader.lights = true;
                 shader.fog = true;
@@ -52746,10 +52704,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Hypercolor";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Hypercolor");
                 shader.lights = true;
                 shader.fog = true;
@@ -52762,12 +52719,11 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_HyperGrid";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
-                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
-                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("HyperGrid");
                 shader.lights = true;
                 shader.fog = true;
@@ -52780,10 +52736,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Icing";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Icing");
                 shader.lights = true;
                 shader.fog = true;
@@ -52797,10 +52752,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Ink";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Ink");
                 shader.lights = true;
                 shader.fog = true;
@@ -52814,10 +52768,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Leaves";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Leaves");
                 shader.lights = true;
                 shader.fog = true;
@@ -52830,28 +52783,24 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Light";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Light");
                 shader.lights = true;
                 shader.fog = true;
                 shader.uniformsNeedUpdate = true;
                 mesh.material = shader;
-                console.log(`Setting ${mesh.material.name}`);
                 mesh.material.name = "material_Light";
-                console.log(`Set material for mesh ${mesh.name} to ${mesh.material.name}`);
                 break;
             case "4391aaaa-df81-4396-9e33-31e4e4930b27":
             case "LightWire":
                 mesh.geometry.name = "geometry_LightWire";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("LightWire");
                 shader.lights = true;
                 shader.fog = true;
@@ -52864,10 +52813,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Lofted";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Lofted");
                 shader.lights = true;
                 shader.fog = true;
@@ -52880,10 +52828,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Marker";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Marker");
                 shader.lights = true;
                 shader.fog = true;
@@ -52896,7 +52843,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_MatteHull";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("MatteHull");
                 shader.lights = true;
                 shader.fog = true;
@@ -52909,10 +52856,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_NeonPulse";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("NeonPulse");
                 shader.lights = true;
                 shader.fog = true;
@@ -52926,10 +52872,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_OilPaint";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("OilPaint");
                 shader.lights = true;
                 shader.fog = true;
@@ -52943,10 +52888,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Paper";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Paper");
                 shader.lights = true;
                 shader.fog = true;
@@ -52959,10 +52903,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_PbrTemplate";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("PbrTemplate");
                 shader.lights = true;
                 shader.fog = true;
@@ -52975,10 +52918,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_PbrTransparentTemplate";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("PbrTransparentTemplate");
                 shader.lights = true;
                 shader.fog = true;
@@ -52991,10 +52933,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Petal";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Petal");
                 shader.lights = true;
                 shader.fog = true;
@@ -53007,10 +52948,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Plasma";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Plasma");
                 shader.lights = true;
                 shader.fog = true;
@@ -53023,10 +52963,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Rainbow";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Rainbow");
                 shader.lights = true;
                 shader.fog = true;
@@ -53039,10 +52978,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_ShinyHull";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ShinyHull");
                 shader.lights = true;
                 shader.fog = true;
@@ -53054,14 +52992,13 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
             case "Smoke":
                 mesh.geometry.name = "geometry_Smoke";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                renameAttribute(mesh, "_tb_unity_normal", "a_normal");
-                renameAttribute(mesh, "normal", "a_normal");
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
-                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
-                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Smoke");
                 shader.lights = true;
                 shader.fog = true;
@@ -53073,14 +53010,13 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
             case "Snow":
                 mesh.geometry.name = "geometry_Snow";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                renameAttribute(mesh, "_tb_unity_normal", "a_normal");
-                renameAttribute(mesh, "normal", "a_normal");
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
-                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
-                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Snow");
                 mesh.material = shader;
                 mesh.material.name = "material_Snow";
@@ -53090,10 +53026,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_SoftHighlighter";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("SoftHighlighter");
                 shader.lights = true;
                 shader.fog = true;
@@ -53106,10 +53041,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Spikes";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Spikes");
                 shader.lights = true;
                 shader.fog = true;
@@ -53123,10 +53057,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Splatter";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Splatter");
                 shader.lights = true;
                 shader.fog = true;
@@ -53138,14 +53071,13 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
             case "Stars":
                 mesh.geometry.name = "geometry_Stars";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                renameAttribute(mesh, "_tb_unity_normal", "a_normal");
-                renameAttribute(mesh, "normal", "a_normal");
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
-                renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
-                renameAttribute(mesh, "texcoord_1", "a_texcoord1");
+                if (mesh.geometry.getAttribute("_tb_unity_normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("_tb_unity_normal"));
+                if (mesh.geometry.getAttribute("normal")) mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("_tb_unity_texcoord_1"));
+                if (mesh.geometry.getAttribute("texcoord_1")) mesh.geometry.setAttribute("a_texcoord1", mesh.geometry.getAttribute("texcoord_1"));
                 shader = await this.tiltShaderLoader.loadAsync("Stars");
                 shader.lights = true;
                 shader.fog = true;
@@ -53158,10 +53090,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Streamers";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Streamers");
                 shader.lights = true;
                 shader.fog = true;
@@ -53174,10 +53105,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Taffy";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Taffy");
                 shader.lights = true;
                 shader.fog = true;
@@ -53191,10 +53121,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_TaperedFlat";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("TaperedFlat");
                 shader.lights = true;
                 shader.fog = true;
@@ -53208,10 +53137,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_TaperedMarker";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("TaperedMarker");
                 shader.lights = true;
                 shader.fog = true;
@@ -53225,10 +53153,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_ThickPaint";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("ThickPaint");
                 shader.lights = true;
                 shader.fog = true;
@@ -53241,7 +53168,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Toon";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Toon");
                 shader.lights = true;
                 shader.fog = true;
@@ -53254,7 +53181,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_UnlitHull";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("UnlitHull");
                 shader.fog = true;
                 mesh.material = shader;
@@ -53265,10 +53192,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_VelvetInk";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("VelvetInk");
                 shader.lights = true;
                 shader.fog = true;
@@ -53281,10 +53207,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Waveform";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("Waveform");
                 shader.lights = true;
                 shader.fog = true;
@@ -53298,10 +53223,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_WetPaint";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("WetPaint");
                 shader.lights = true;
                 shader.fog = true;
@@ -53315,10 +53239,9 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_WigglyGraphite";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
-                renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
-                renameAttribute(mesh, "texcoord_0", "a_texcoord0");
-                mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("uv"));
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
+                if (mesh.geometry.getAttribute("_tb_unity_texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("_tb_unity_texcoord_0"));
+                if (mesh.geometry.getAttribute("texcoord_0")) mesh.geometry.setAttribute("a_texcoord0", mesh.geometry.getAttribute("texcoord_0"));
                 shader = await this.tiltShaderLoader.loadAsync("WigglyGraphite");
                 shader.lights = true;
                 shader.fog = true;
@@ -53331,7 +53254,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Wire";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Wire");
                 mesh.material = shader;
                 mesh.material.name = "material_Wire";
@@ -53343,7 +53266,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_SvgTemplate";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("SvgTemplate");
                 mesh.material = shader;
                 mesh.material.name = "material_SvgTemplate";
@@ -53354,7 +53277,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Gouache";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Gouache");
                 mesh.material = shader;
                 mesh.material.name = "material_Gouache";
@@ -53365,7 +53288,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_MylarTube";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("MylarTube");
                 mesh.material = shader;
                 mesh.material.name = "material_MylarTube";
@@ -53376,7 +53299,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Rain";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Rain");
                 mesh.material = shader;
                 mesh.material.name = "material_Rain";
@@ -53387,7 +53310,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DryBrush";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("DryBrush");
                 mesh.material = shader;
                 mesh.material.name = "material_DryBrush";
@@ -53398,7 +53321,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_LeakyPen";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("LeakyPen");
                 mesh.material = shader;
                 mesh.material.name = "material_LeakyPen";
@@ -53409,7 +53332,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Sparks";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Sparks");
                 mesh.material = shader;
                 mesh.material.name = "material_Sparks";
@@ -53420,7 +53343,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Wind";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Wind");
                 mesh.material = shader;
                 mesh.material.name = "material_Wind";
@@ -53431,7 +53354,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Rising Bubbles";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Rising Bubbles");
                 mesh.material = shader;
                 mesh.material.name = "material_Rising Bubbles";
@@ -53442,7 +53365,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_TaperedWire";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("TaperedWire");
                 mesh.material = shader;
                 mesh.material.name = "material_TaperedWire";
@@ -53453,7 +53376,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_SquarePaper";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("SquarePaper");
                 mesh.material = shader;
                 mesh.material.name = "material_SquarePaper";
@@ -53464,7 +53387,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_ThickGeometry";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("ThickGeometry");
                 mesh.material = shader;
                 mesh.material.name = "material_ThickGeometry";
@@ -53475,7 +53398,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Wireframe";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Wireframe");
                 mesh.material = shader;
                 mesh.material.name = "material_Wireframe";
@@ -53486,7 +53409,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_CandyCane";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("CandyCane");
                 mesh.material = shader;
                 mesh.material.name = "material_CandyCane";
@@ -53497,7 +53420,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_HolidayTree";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("HolidayTree");
                 mesh.material = shader;
                 mesh.material.name = "material_HolidayTree";
@@ -53508,7 +53431,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Snowflake";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Snowflake");
                 mesh.material = shader;
                 mesh.material.name = "material_Snowflake";
@@ -53519,7 +53442,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Braid3";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Braid3");
                 mesh.material = shader;
                 mesh.material.name = "material_Braid3";
@@ -53530,7 +53453,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Muscle";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Muscle");
                 mesh.material = shader;
                 mesh.material.name = "material_Muscle";
@@ -53541,7 +53464,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Guts";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Guts");
                 mesh.material = shader;
                 mesh.material.name = "material_Guts";
@@ -53552,7 +53475,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Fire2";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Fire2");
                 mesh.material = shader;
                 mesh.material.name = "material_Fire2";
@@ -53563,7 +53486,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_TubeToonInverted";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("TubeToonInverted");
                 mesh.material = shader;
                 mesh.material.name = "material_TubeToonInverted";
@@ -53574,7 +53497,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_FacetedTube";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("FacetedTube");
                 mesh.material = shader;
                 mesh.material.name = "material_FacetedTube";
@@ -53585,7 +53508,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_WaveformParticles";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("WaveformParticles");
                 mesh.material = shader;
                 mesh.material.name = "material_WaveformParticles";
@@ -53596,7 +53519,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_BubbleWand";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("BubbleWand");
                 mesh.material = shader;
                 mesh.material.name = "material_BubbleWand";
@@ -53607,7 +53530,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DanceFloor";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("DanceFloor");
                 mesh.material = shader;
                 mesh.material.name = "material_DanceFloor";
@@ -53618,7 +53541,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_WaveformTube";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("WaveformTube");
                 mesh.material = shader;
                 mesh.material.name = "material_WaveformTube";
@@ -53629,7 +53552,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Drafting";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Drafting");
                 mesh.material = shader;
                 mesh.material.name = "material_Drafting";
@@ -53640,7 +53563,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_SingleSided";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("SingleSided");
                 mesh.material = shader;
                 mesh.material.name = "material_SingleSided";
@@ -53651,7 +53574,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DoubleFlat";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("DoubleFlat");
                 mesh.material = shader;
                 mesh.material.name = "material_DoubleFlat";
@@ -53662,7 +53585,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_TubeAdditive";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("TubeAdditive");
                 mesh.material = shader;
                 mesh.material.name = "material_TubeAdditive";
@@ -53673,7 +53596,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Feather";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Feather");
                 mesh.material = shader;
                 mesh.material.name = "material_Feather";
@@ -53684,7 +53607,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_DuctTapeGeometry";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("DuctTapeGeometry");
                 mesh.material = shader;
                 mesh.material.name = "material_DuctTapeGeometry";
@@ -53695,7 +53618,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_TaperedHueShift";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("TaperedHueShift");
                 mesh.material = shader;
                 mesh.material.name = "material_TaperedHueShift";
@@ -53706,7 +53629,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Lacewing";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Lacewing");
                 mesh.material = shader;
                 mesh.material.name = "material_Lacewing";
@@ -53717,7 +53640,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Marbled Rainbow";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Marbled Rainbow");
                 mesh.material = shader;
                 mesh.material.name = "material_Marbled Rainbow";
@@ -53728,7 +53651,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Charcoal";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Charcoal");
                 mesh.material = shader;
                 mesh.material.name = "material_Charcoal";
@@ -53739,7 +53662,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_KeijiroTube";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("KeijiroTube");
                 mesh.material = shader;
                 mesh.material.name = "material_KeijiroTube";
@@ -53750,7 +53673,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Lofted (Hue Shift)";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Lofted (Hue Shift)");
                 mesh.material = shader;
                 mesh.material.name = "material_Lofted (Hue Shift)";
@@ -53761,7 +53684,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Wire (Lit)";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Wire (Lit)");
                 mesh.material = shader;
                 mesh.material.name = "material_Wire (Lit)";
@@ -53772,7 +53695,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_WaveformFFT";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("WaveformFFT");
                 mesh.material = shader;
                 mesh.material.name = "material_WaveformFFT";
@@ -53783,7 +53706,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Fairy";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Fairy");
                 mesh.material = shader;
                 mesh.material.name = "material_Fairy";
@@ -53794,7 +53717,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Space";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Space");
                 mesh.material = shader;
                 mesh.material.name = "material_Space";
@@ -53805,7 +53728,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Digital";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Digital");
                 mesh.material = shader;
                 mesh.material.name = "material_Digital";
@@ -53816,7 +53739,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Race";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Race");
                 mesh.material = shader;
                 mesh.material.name = "material_Race";
@@ -53827,7 +53750,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_SmoothHull";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("SmoothHull");
                 mesh.material = shader;
                 mesh.material.name = "material_SmoothHull";
@@ -53838,7 +53761,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_Leaves2";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("Leaves2");
                 mesh.material = shader;
                 mesh.material.name = "material_Leaves2";
@@ -53849,7 +53772,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_InkGeometry";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("InkGeometry");
                 mesh.material = shader;
                 mesh.material.name = "material_InkGeometry";
@@ -53860,7 +53783,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_ConcaveHull";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("ConcaveHull");
                 mesh.material = shader;
                 mesh.material.name = "material_ConcaveHull";
@@ -53870,7 +53793,7 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 // TODO Set uniforms
                 mesh.geometry.name = "geometry_3D Printing Brush";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("3D Printing Brush");
                 mesh.material = shader;
                 mesh.material.name = "material_3D Printing Brush";
@@ -53881,13 +53804,13 @@ class $5a163a5102e7cfa5$export$2b011a5b12963d65 {
                 mesh.geometry.name = "geometry_PassthroughHull";
                 mesh.geometry.setAttribute("a_position", mesh.geometry.getAttribute("position"));
                 mesh.geometry.setAttribute("a_normal", mesh.geometry.getAttribute("normal"));
-                copyFixColorAttribute(mesh);
+                mesh.geometry.setAttribute("a_color", mesh.geometry.getAttribute("color"));
                 shader = await this.tiltShaderLoader.loadAsync("PassthroughHull");
                 mesh.material = shader;
                 mesh.material.name = "material_PassthroughHull";
                 break;
             default:
-                console.warn(`Could not find brush with guid ${guidOrName}!`);
+                console.warn(`Could not find brush with guid ${guid}!`);
         }
         mesh.onBeforeRender = (renderer, scene, camera, geometry, material, group)=>{
             if (material?.uniforms?.u_time) {
@@ -59405,9 +59328,7 @@ class $3c43f222267ed54b$export$2ec4afd9b3c16a85 {
         const guid = this.sketchMetadata?.EnvironmentGuid;
         if (guid) {
             const envUrl = new URL(`${guid}/${guid}.glb`, this.environmentPath);
-            // Use the standard GLTFLoader for environments
-            const standardLoader = new (0, $b4376e703aa0850c$export$aa93f11e7884f0f4)();
-            const envGltf = await standardLoader.loadAsync(envUrl.toString());
+            const envGltf = await this.gltfLoader.loadAsync(envUrl.toString());
             envGltf.scene.setRotationFromEuler(new $ea01ff4a5048cd08$exports.Euler(0, Math.PI, 0));
             envGltf.scene.scale.set(.1, .1, .1);
             scene.attach(envGltf.scene);
