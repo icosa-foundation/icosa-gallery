@@ -371,6 +371,9 @@ class Asset(models.Model):
     def __str__(self):
         return self.name if self.name else "(Un-named asset)"
 
+    def is_owned_by_django_user(self, user=None):
+        return user is not None and not user.is_anonymous and self.owner in user.assetowner_set.all()
+
     def update_search_text(self):
         if not self.pk:
             return
@@ -447,14 +450,14 @@ class Asset(models.Model):
         return file_list
 
     def get_all_downloadable_formats(self, user=None):
-        if self.license == ALL_RIGHTS_RESERVED:
-            # We do not provide any downloads for assets with restrictive
-            # licenses.
-            return {}
+        # The user owns this asset so can view all files.
+        if self.is_owned_by_django_user(user):
+            return self.format_set.all()
 
-        if user is not None and not user.is_anonymous and self.owner in user.assetowner_set.all():
-            # The user owns this asset so can view all files.
-            dl_formats = self.format_set.all()
+        # We do not provide any downloads for assets with restrictive licenses.
+        if self.license == ALL_RIGHTS_RESERVED:
+            return self.format_set.none()
+
         else:
             dl_formats = self.format_set.filter(hide_from_downloads=False)
             if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
@@ -484,13 +487,7 @@ class Asset(models.Model):
                 # The second criteria is met if the resource's remote host is
                 # in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
                 if len(resources) > 1:
-                    #
-                    # TODO refactor to use db
-                    #
-                    resource_data = format.get_resource_data_by_role(
-                        resources,
-                        format.role,
-                    )
+                    resource_data = format.get_resource_data(resources)
                 # If there is only one resource, there is no need to create
                 # a zip file; we can offer our local file, or a link to the
                 # external host.
@@ -505,13 +502,13 @@ class Asset(models.Model):
                     else:
                         resource_data = {}
 
-            format_name = format.type.lower()
+            format_name = format.format_type.lower()
 
-        if resource_data:
-            # TODO: Currently, we only offer the first format per type (or
-            # role) that we find. This might be a mistake. Should we include
-            # all duplicates?
-            formats.setdefault(format_name, resource_data)
+            if resource_data:
+                # TODO: Currently, we only offer the first format per type (or
+                # role) that we find. This might be a mistake. Should we include
+                # all duplicates?
+                formats.setdefault(format_name, resource_data)
 
         formats = OrderedDict(sorted(formats.items(), key=lambda x: x[0].lower()))
         return formats
