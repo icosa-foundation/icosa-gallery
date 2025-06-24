@@ -2,8 +2,7 @@ import json
 
 from django.core.management.base import BaseCommand
 from django.db.models import Q
-from icosa.models import Asset, Format, Resource
-from icosa.models.common import STORAGE_PREFIX
+from icosa.models import Asset, Format
 from icosa.models.helpers import suffix
 
 STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
@@ -46,31 +45,6 @@ def asset_inferred_downloads(asset, user=None):
     return dl_formats
 
 
-def format_process_download_resources(format):
-    # Query all resources which have either an external url or a
-    # file. Ignoring resources which have neither.
-    query = Q(external_url__isnull=False) & ~Q(external_url="")
-    query |= Q(file__isnull=False)
-    resources = format.get_all_resources(query)
-
-    # If there is more than one resource, this means we need to
-    # create a zip file of it on the client. We can only do this
-    # if either:
-    # a) the resource is hosted by Django
-    # b) all the resources we need to zip are accessible because
-    #    they are on the CORS allow list.
-    # The second criteria is met if the resource's remote host is
-    # in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
-    if len(resources) > 1:
-        resource_data = get_resource_data_by_role(
-            format,
-            resources,
-            format.role,
-        )
-
-    return (format.type.lower(), resource_data)
-
-
 class Command(BaseCommand):
     help = """Extracts format json into concrete models and converts to poly
     format."""
@@ -110,10 +84,7 @@ class Command(BaseCommand):
                 # need to decide what to do.
                 if format.role == "POLYGONE_GLTF_FORMAT":
                     # If we hit this branch, we are not clear on if all gltf
-                    # files work correctly. Try both the original data we
-                    # ingested and include the suffixed data which attempts to
-                    # fix any errors. Add some supporting text to make it clear
-                    # to the user this is the case.
+                    # files work correctly.
                     #
                     # We need to create a new format with the suffixed
                     # resources.
@@ -143,7 +114,7 @@ class Command(BaseCommand):
                         "asset": root_resource.asset.id,
                         "format": None,
                         "contenttype": root_resource.contenttype,
-                        "file": f"{STORAGE_PREFIX}{suffix(root_resource.file.name)}",
+                        "file": f"{suffix(root_resource.file.name)}",
                     }
                     new_format_data["root_resource"] = root_resource_data
                     new_format_data["resources"] = [
@@ -151,7 +122,7 @@ class Command(BaseCommand):
                             "asset": x.asset.id,
                             "format": x.format.id,
                             "contenttype": x.contenttype,
-                            "file": f"{STORAGE_PREFIX}{suffix(x.file.name)}",
+                            "file": f"{suffix(x.file.name)}",
                         }
                         for x in resources
                         if x.file
@@ -198,7 +169,7 @@ class Command(BaseCommand):
                             "asset": override_format_root.asset.id,
                             "format": None,
                             "contenttype": override_format_root.contenttype,
-                            "file": f"{STORAGE_PREFIX}{suffix(override_format_root.file.name)}",
+                            "file": f"{suffix(override_format_root.file.name)}",
                         }
                         new_format_data["root_resource"] = root_resource_data
                         new_format_data["resources"] = [
@@ -206,7 +177,7 @@ class Command(BaseCommand):
                                 "asset": x.asset.id,
                                 "format": x.format.id,
                                 "contenttype": x.contenttype,
-                                "file": f"{STORAGE_PREFIX}{suffix(x.file.name)}",
+                                "file": f"{suffix(x.file.name)}",
                             }
                             for x in override_resources
                             if x.file
