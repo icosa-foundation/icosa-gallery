@@ -3,28 +3,35 @@
 <div class="container logindevice">
     <div class="row">
         <div class="col text-center">
-            <h2>OPEN BRUSH LOGIN CODE</h2>
+            {% if client_secret %}
+                <h2>OPEN BRUSH LOGIN</h2>
+            {% else %}
+                <h2>OPEN BRUSH LOGIN CODE</h2>
+            {% endif %}
         </div>
     </div>
     <div class="row">
         <div class="col">&nbsp;</div>
     </div>
     <div class="row">
-        <div class="col">
+        <div class="col col-lg-6 offset-lg-3">
             <div class="text-center">
                 {% if request.user.is_authenticated and device_code %}
-                    <p class="device-code">{{ device_code }}</p>
-                    <p>Enter this code into Open Brush. This will log you in to your Icosa account.</p>
-                    <p><em>Only do this if you've downloaded your copy of Open Brush from a reputable source</em></p>
+                    {% if client_secret %}
+                        <p>Press the button below to send your login code to Open Brush.</p>
+                        <form action="{{ form_action }}" method="POST">
+                            <input type="hidden" name="client_secret" value="{{ client_secret }}">
+                            <input type="hidden" name="device_code" value="{{ device_code }}">
+                            <input type="submit" class="btn btn-primary" value="Login">
+                        </form>
+                    {% else %}
+                        <p class="device-code">{{ device_code }}</p>
+                        <p>Enter this code into Open Brush. This will log you in to your Icosa account.</p>
+                    {% endif %}
+                    <p class="warning"><em>Only do this if you've downloaded your copy of Open Brush from a reputable source</em></p>
                 {% else %}
-                <p>
-                    You must <a href="{% url 'icosa:login' %}">login</a> to get a device code.
-                </p>
-                <p>
-                    Or if it's easier visit <strong>
-                        <a href="{{ request.build_absolute_uri }}">{{ request.build_absolute_uri }}</a>
-                    </strong> on another device.
-                </p>
+                    <p>You must <a href="{% url 'icosa:login' %}">login</a> to get a device code.</p>
+                    <p>Or if it's easier visit <strong><a href="{{ request.build_absolute_uri }}">{{ request.build_absolute_uri }}</a></strong> on another device.</p>
                 {% endif %}
             </div>
         </div>

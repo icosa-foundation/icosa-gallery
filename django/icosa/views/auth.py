@@ -315,26 +315,43 @@ def password_reset_complete(request):
 
 @never_cache
 def devicecode(request):
+    # This function generates device codes for authenticated users which are
+    # exchanged for application keys at api/v1/device_login.
+    #
+    # If the querystring is populated, we instead present a form which posts to
+    # the user's local machine with the querystring and device code. The local
+    # server should accept these data and post to api/v1/device_login.
+    #
+    # This is a workaround for having a terrible keyboard experience on some
+    # headsets running Open Brush.
     template = "auth/device.html"
     user = request.user
     context = {}
     if user.is_authenticated:
-        code = User.generate_device_code()
-        expiry_time = timezone.now() + timezone.timedelta(minutes=1)
+        if request.method == "GET":
+            try:
+                client_secret = list(request.GET.keys())[0]
+            except IndexError:
+                client_secret = None
 
-        with transaction.atomic():
-            # Delete all codes for this user
-            DeviceCode.objects.filter(user=user).delete()
-            # Delete all expired codes for any user
-            DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
+            code = User.generate_device_code()
+            expiry_time = timezone.now() + timezone.timedelta(minutes=1)
 
-            DeviceCode.objects.create(
-                user=user,
-                devicecode=code,
-                expiry=expiry_time,
-            )
+            with transaction.atomic():
+                # Delete all codes for this user
+                DeviceCode.objects.filter(user=user).delete()
+                # Delete all expired codes for any user
+                DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
+
+                DeviceCode.objects.create(
+                    user=user,
+                    devicecode=code,
+                    expiry=expiry_time,
+                )
 
         context = {
             "device_code": code.upper(),
+            "client_secret": client_secret,
+            "form_action": "http://localhost:40074/device_login/v1",
         }
     return render(request, template, context)

@@ -1,7 +1,11 @@
 .logindevice {
     margin: 4em auto;
-    em {
-        color: red;
+    .warning {
+        margin-top: 1em;
+        background-color: var(--color-alert-danger);
+        color: var(--color-white);
+        padding: 1em;
+        border-radius: var(--border-radius-large);
     }
     .device-code
     {

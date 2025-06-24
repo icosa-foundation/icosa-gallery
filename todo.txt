@@ -1,3 +1,23 @@
+when we add the suffixed filename
+=================================
+
+We offer a version of gltf files with the suffix `_(GLTFupdated)` in a few scenarios (see usage for the `suffix` function):
+
+For the viewer
+--------------
+
+Only when asset.has_blocks, inside the handle_blocks_preferred_format function
+
+For downloads (per format)
+--------------------------
+
+When these conditions are met:
+
+- The format has more than resource without an external url AND
+- EITHER the role is POLYGONE_GLTF_FORMAT (in which case we offer both the suffixed and non-suffixed version)
+- OR the role is UPDATED_GLTF_FORMAT and we have no local files
+
+
 this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
 
 orderBy is currently:
@@ -56,31 +76,3 @@ Import the sql data:
 `\i /opt/db.sql`
 
 
-## Running updated versions of the code
-
-TODO - how are people meant to distinguish between 2 and 3?
-Give them a single, safe default action even if it's a bit slower
-Is (3) even needed? Seems to happen automatically for me.
-
-There are 3 possible scenarios:
-
-
-### 1. You've updated your own .env files
-
-```
-docker compose down
-docker compose build
-docker compose up
-```
-
-### 2. Incoming code has updated requirements.txt/requirements.in
-
-```
-docker compose down`
-docker compose build`
-docker compose up
-```
-
-### 3. Incoming code has updated anything else
-
-`docker compose restart`

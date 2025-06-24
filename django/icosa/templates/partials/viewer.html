@@ -71,7 +71,7 @@
     }
 </script>
 <script type="module">
-    {% if experimental_js %}
+    {% if request.session.experimental_js %}
     import {Viewer} from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
     {% else %}
     import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
@@ -95,26 +95,18 @@
     window.viewer = viewer;
     window.THREE = viewer.three;
 
-    {% if not asset.has_tilt and not override_suffix and not format_override %}
-
-        let formatType = "{{ asset.preferred_viewer_format.format.format_type }}".toLowerCase();
-        let url = "{{ asset.preferred_viewer_format.url }}";
-
+    {% if format_override %}
+        let formatType = "{{ format_override }}".toLowerCase();
     {% else %}
-
-        {% if format_override %}
-            let formatType = "{{ format_override }}".toLowerCase();
-        {% else %}
-            let formatType = "{{ asset.preferred_viewer_format.format.format_type }}".toLowerCase();
-        {% endif %}
-
-        {% if override_suffix %}
-            let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
-        {% else %}
-            let url = "{{ asset.preferred_viewer_format.url }}";
-        {% endif %}
-
+        let formatType = "{{ asset.preferred_viewer_format.format.format_type }}".toLowerCase();
     {% endif %}
+
+    {% if override_suffix %}
+        let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
+    {% else %}
+        let url = "{{ asset.preferred_viewer_format.url }}";
+    {% endif %}
+
 
     if (formatType === 'gltf2' || formatType === 'glb') {
         try {
@@ -198,7 +190,7 @@
         }
     };
 
-    const toggleTreeView = gui.add(guiParams, 'toggleTreeView').name("Toggle Hierarchy");
+    const toggleTreeView = gui.add(guiParams, 'toggleTreeView').name("Hierarchy Panel");
     const toggleEnvironmentControl = gui.add(guiParams, 'toggleEnvironment').name("Toggle Environment");
     const toggleSkyControl = gui.add(guiParams, 'toggleSky').name("Toggle Sky");
     const levelCameraControl = gui.add(guiParams, 'levelCamera').name("Level Camera");

@@ -73,6 +73,13 @@ MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
 
 
+def set_experimental_js_session(request):
+    experimental_js = request.GET.get("experimentaljs", None)
+    if experimental_js is not None:
+        experimental_js = experimental_js.lower() in ["true", "yes", "on", "1"]
+        request.session["experimental_js"] = experimental_js
+
+
 def get_default_q():
     try:
         if config.HIDE_REPORTED_ASSETS:
@@ -498,7 +505,8 @@ def asset_view(request, asset_url):
     asset.inc_views_and_rank()
     override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
-    experimental_js = request.GET.get("experimentaljs", "")
+
+    set_experimental_js_session(request)
 
     embed_code = render_to_string(
         "partials/oembed_code.html",
@@ -519,7 +527,6 @@ def asset_view(request, asset_url):
         "asset": asset,
         "override_suffix": override_suffix,
         "format_override": format_override,
-        "experimental_js": experimental_js,
         "downloadable_formats": bool(asset.get_all_downloadable_formats(user)),
         "page_title": asset.name,
         "embed_code": embed_code.strip(),
@@ -542,6 +549,8 @@ def asset_oembed(request, asset_url):
     asset.inc_views_and_rank()  # TODO: do we count embedded views separately or at all?
     override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
+
+    set_experimental_js_session(request)
 
     context = {
         "asset": asset,
@@ -666,6 +675,8 @@ def asset_edit(request, asset_url):
                 print(form.errors)
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
+
+    set_experimental_js_session(request)
 
     context = {
         "asset": asset,
