@@ -1,11 +1,15 @@
 {% if request.session.viewer_js_version %}
-<div class="infobanner warn front">
+<div class="infobanner warn front oneline">
     {% if request.session.viewer_js_version == "experimental" %}
-        <p>Using the experimental viewer. Things might look broken.</p>
-        <p><a href="{{ request.path }}?viewerjs=normal">Use normal version</a> | <a href="{{ request.path }}?viewerjs=previous">Use previous version</a>
+        <p>
+        Using the experimental viewer. Things might look broken.
+        <a href="{{ request.path }}?viewerjs=normal">Use normal version</a>, <a href="{{ request.path }}?viewerjs=previous">Use previous version</a>.
+        </p>
     {% elif request.session.viewer_js_version == "previous" %}
-        <p>Using the previous version of the viewer. Things might look broken.</p>
-        <p><a href="{{ request.path }}?viewerjs=normal">Use normal version</a> | <a href="{{ request.path }}?viewerjs=experimental">Use experimental version</a>
+        <p>
+        Using the previous version of the viewer. Things might look broken.
+        <a href="{{ request.path }}?viewerjs=normal">Use normal version</a>, <a href="{{ request.path }}?viewerjs=experimental">Use experimental version</a>
+        </p>
     {% endif %}
 </div>
 {% endif %}
