@@ -73,11 +73,15 @@ MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
 
 
-def set_experimental_js_session(request):
-    experimental_js = request.GET.get("experimentaljs", None)
-    if experimental_js is not None:
-        experimental_js = experimental_js.lower() in ["true", "yes", "on", "1"]
-        request.session["experimental_js"] = experimental_js
+def set_viewer_js_version(request):
+    viewer_js_version = request.GET.get("viewerjs", None)
+    if viewer_js_version is not None:
+        viewer_js_version = viewer_js_version.lower()
+        if viewer_js_version in ["experimental", "previous"]:
+            request.session["viewer_js_version"] = viewer_js_version
+        else:
+            if request.session.get("viewer_js_version", None) is not None:
+                del request.session["viewer_js_version"]
 
 
 def get_default_q():
@@ -506,7 +510,7 @@ def asset_view(request, asset_url):
     override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
 
-    set_experimental_js_session(request)
+    set_viewer_js_version(request)
 
     embed_code = render_to_string(
         "partials/oembed_code.html",
@@ -550,7 +554,7 @@ def asset_oembed(request, asset_url):
     override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
 
-    set_experimental_js_session(request)
+    set_viewer_js_version(request)
 
     context = {
         "asset": asset,
@@ -676,7 +680,7 @@ def asset_edit(request, asset_url):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    set_experimental_js_session(request)
+    set_viewer_js_version(request)
 
     context = {
         "asset": asset,
