@@ -101,22 +101,19 @@ Some of the original gltf2 files associated with our polygone dataset did not wo
 
 They differ in that the suffix "_(GLTFupdated)" was added to the filename, and the base folder in our storage was changed from "icosa" to "poly".
 
-when we add the suffixed filename
-=================================
+## when we add the suffixed filename
 
-We offer a version of gltf files with the suffix `_(GLTFupdated)` in a few scenarios (see usage for the `suffix` function):
+To summarise and collect from the steps above: we offer a version of gltf files with the suffix `_(GLTFupdated)` in a few scenarios (see usage for the `suffix` function in the codebase):
 
-For the viewer
---------------
+### For the viewer
 
-Only when asset.has_blocks, inside the handle_blocks_preferred_format function
+Only when `asset.has_blocks == True`, inside the `handle_blocks_preferred_format` function.
 
-For downloads (per format)
---------------------------
+### For downloads (per format)
 
 When these conditions are met:
 
-- The format has more than resource without an external url AND
-- EITHER the role is POLYGONE_GLTF_FORMAT (in which case we offer both the suffixed and non-suffixed version)
-- OR the role is UPDATED_GLTF_FORMAT and we have no local files
+- The format has more than resource without an external url AND:
+- EITHER the role is POLYGONE_GLTF_FORMAT (in which case we offer both the suffixed and non-suffixed version);
+- OR the role is UPDATED_GLTF_FORMAT and we have no local files.
 
