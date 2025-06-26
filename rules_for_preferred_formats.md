@@ -37,13 +37,13 @@ Choosing a format is a two-pass process. Firstly, we would try each of the follo
 In the general flow, we hit this decision tree if the asset has at least one format of type BLOCKS:
 
 1. Check if the asset has at least one format of type GLTF2. If not...
-  1. Find the asset's first format which has a type of OBJ and has an existing `root_resource`.
-  2. Find this format's first non-root resource and assume (but don't check) that this is an mtl file.
-  3. Populate and return a _format dict_ with the additional `materialUrl` key taken from the previous step.
-  4. If we didn't find a format in step 1, return `None`.
+    1. Find the asset's first format which has a type of OBJ and has an existing `root_resource`.
+    2. Find this format's first non-root resource and assume (but don't check) that this is an mtl file.
+    3. Populate and return a _format dict_ with the additional `materialUrl` key taken from the previous step.
+    4. If we didn't find a format in step 1, return `None`.
 2. ...if we did find a GLTF2 format:
-  1. Try to get that format's `root_resource` and return `None` if it doesn't have one.
-  2. If we have a format with a `root_resource`, populate the _format dict_ but, for the `url`, add our suffixed version that was uploaded to a different location in our storage. (See Suffixing, below).
+    1. Try to get that format's `root_resource` and return `None` if it doesn't have one.
+    2. If we have a format with a `root_resource`, populate the _format dict_ but, for the `url`, add our suffixed version that was uploaded to a different location in our storage. (See Suffixing, below).
 3. Return the first of what we got from steps 1 or 2.
 
 
@@ -53,10 +53,10 @@ In the general flow, we hit this decision tree if we could not return anything f
 
 1. Gather a dictionary of all formats and populate a _format dict_ from each one. The keys for this are each format's `format_type`.
 2. If we find a `format_type` we are interested in, in the dictionary's keys, return that _format dict_. We check for the existence of each key **in order** from the following list:
-  1. GLB
-  2. GLTF2
-  3. GLTF1 (named GLTF at the time)
-  4. OBJ
+    - GLB
+    - GLTF2
+    - GLTF1 (named GLTF at the time)
+    - OBJ
 3. If none of the above exists, return `None`.
 4. Continue to the Second Pass.
 
@@ -67,18 +67,18 @@ We chose what formats to show in the download list using these rules:
 1. If the logged-in user owns the asset, show all formats, otherwise:
 2. If the asset's license is all rights reserved, show nothing.
 3. If the asset's license is non-remixable, show formats with the following roles:
-  - ORIGINAL_OBJ_FORMAT
-  - ORIGINAL_FBX_FORMAT
-  - USD_FORMAT
-  - GLB_FORMAT
-  - ORIGINAL_TRIANGULATED_OBJ_FORMAT
-  - USDZ_FORMAT
-  - UPDATED_GLTF_FORMAT
-  - USER_SUPPLIED_GLTF
+    - ORIGINAL_OBJ_FORMAT
+    - ORIGINAL_FBX_FORMAT
+    - USD_FORMAT
+    - GLB_FORMAT
+    - ORIGINAL_TRIANGULATED_OBJ_FORMAT
+    - USDZ_FORMAT
+    - UPDATED_GLTF_FORMAT
+    - USER_SUPPLIED_GLTF
 4. If the asset's licence is remixable, show formats from rule 3, plus:
-  - TILT_NATIVE_GLTF
-  - TILT_FORMAT
-  - BLOCKS_FORMAT
+    - TILT_NATIVE_GLTF
+    - TILT_FORMAT
+    - BLOCKS_FORMAT
 
 For each of the formats shown, we then chose how to compile the download pack of resource data based on the following rules:
 
