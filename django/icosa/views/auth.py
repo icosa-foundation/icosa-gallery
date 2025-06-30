@@ -329,10 +329,29 @@ def devicecode(request):
     context = {}
     if user.is_authenticated:
         if request.method == "GET":
-            try:
+            client_secret = None
+            client_id = None
+            form_action = None
+
+            if len(request.GET.keys()) == 1:
+                # Deprecated form where the one query param key is the client
+                # secret. Comes from Open Brush
                 client_secret = list(request.GET.keys())[0]
-            except IndexError:
-                client_secret = None
+                # Check that the secret query param is an empty key. If it has
+                # a value, the request is malformed.
+                if client_secret and not request.GET.get(client_secret):
+                    client_id = "Open Brush"
+                    form_action = "http://localhost:40074/device_login/v1"
+            elif len(request.GET.keys()) == 2:
+                client_secret = request.GET.get("secret", None)
+                client_id = request.GET.get("appId", None)
+
+            if client_id == "openblocks":
+                client_id = "Open Blocks"
+                form_action = "http://localhost:40084/api/v1/device_login"
+            if client_id == "openbrush":
+                client_id = "Open Brush"
+                form_action = "http://localhost:40074/device_login/v1"
 
             code = User.generate_device_code()
             expiry_time = timezone.now() + timezone.timedelta(minutes=1)
@@ -352,6 +371,7 @@ def devicecode(request):
         context = {
             "device_code": code.upper(),
             "client_secret": client_secret,
-            "form_action": "http://localhost:40074/device_login/v1",
+            "client_id": client_id,
+            "form_action": form_action,
         }
     return render(request, template, context)

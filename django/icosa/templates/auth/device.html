@@ -3,11 +3,13 @@
 <div class="container logindevice">
     <div class="row">
         <div class="col text-center">
-            {% if client_secret %}
-                <h2>OPEN BRUSH LOGIN</h2>
-            {% else %}
-                <h2>OPEN BRUSH LOGIN CODE</h2>
-            {% endif %}
+            <h2 class="uppercase">
+                {% if client_secret %}
+                    {% if client_id %}{{ client_id }} Login{% else %}Login Code{% endif %}
+                {% else %}
+                    Login Code
+                {% endif %}
+            </h2>
         </div>
     </div>
     <div class="row">
@@ -17,7 +19,7 @@
         <div class="col col-lg-6 offset-lg-3">
             <div class="text-center">
                 {% if request.user.is_authenticated and device_code %}
-                    {% if client_secret %}
+                    {% if client_secret and form_action %}
                         <p>Press the button below to send your login code to Open Brush.</p>
                         <form action="{{ form_action }}" method="POST">
                             <input type="hidden" name="client_secret" value="{{ client_secret }}">
