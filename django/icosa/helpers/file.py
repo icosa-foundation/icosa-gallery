@@ -320,7 +320,6 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     resource_data = {
         "file": None,
         "asset": asset,
-        "format": format,
         "contenttype": "text/plain",
     }
     if obj_non_triangulated is None:
