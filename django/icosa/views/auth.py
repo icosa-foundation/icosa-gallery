@@ -167,10 +167,12 @@ def register(request):
             email = form.cleaned_data["email"]
             password = form.cleaned_data["password_new"]
             username = form.cleaned_data["username"]
+            displayname = form.cleaned_data["displayname"]
             try:
                 with transaction.atomic():
                     user = User.objects.create_user(
                         username=username,
+                        displayname=displayname,
                         email=email,
                         password=password,
                     )
