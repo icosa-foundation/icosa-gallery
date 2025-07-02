@@ -252,6 +252,10 @@ class Asset(models.Model):
         formats = {}
         for format in self.format_set.all():
             root = format.root_resource
+            if root is None:
+                # We can't get a url for a Format without a root resource.
+                # This is an exceptional circumstance.
+                return None
             formats[format.format_type] = {"format": format, "url": root.internal_url_or_none, "resource": root}
         # GLB is our primary preferred format;
         if "GLB" in formats.keys():
