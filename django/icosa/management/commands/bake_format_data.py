@@ -3,6 +3,7 @@ import json
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from icosa.models import Asset, Format
+from icosa.models.common import STORAGE_PREFIX
 from icosa.models.helpers import suffix
 
 STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
@@ -45,20 +46,148 @@ def asset_inferred_downloads(asset, user=None):
     return dl_formats
 
 
+def handle_blocks_preferred_format(asset):
+    # TODO(james): This handler is specific to data collected from blocks.
+    # We should use this logic to populate the database with the correct
+    # information. But for now, we don't know this method is 100% correct,
+    # so I'm leaving this here.
+    if not asset.has_gltf2:
+        # There are some issues with displaying GLTF1 files from Blocks
+        # so we have to return an OBJ and its associated MTL.
+        obj_format = asset.format_set.filter(format_type="OBJ", root_resource__isnull=False).first()
+        obj_resource = obj_format.root_resource
+        mtl_resource = obj_format.resource_set.first()
+
+        if not obj_resource:
+            # TODO: If we fail to find an obj, do we want to handle this
+            # with an error?
+            return None
+        return {
+            "format": obj_format,
+            "url": obj_resource.internal_url_or_none,
+            "materialUrl": mtl_resource.url,
+            "resource": obj_resource,
+        }
+    # We have a gltf2, but we must currently return the suffixed version we
+    # have in storage; the non-suffixed version currently does not work.
+    blocks_format = asset.format_set.filter(format_type="GLTF2").first()
+    blocks_resource = None
+    if blocks_format is not None:
+        blocks_resource = blocks_format.root_resource
+    if blocks_format is None or blocks_resource is None:
+        # TODO: If we fail to find a gltf2, do we want to handle this with
+        # an error?
+        return None
+    filename = blocks_resource.url
+    if filename is None:
+        return None
+    filename = f"poly/{asset.url}/{filename.split('/')[-1]}"
+    # NUMBER_1 When we hit this block, we need to save the suffix to the file field
+    url = f"{STORAGE_PREFIX}{suffix(filename)}"
+    return {"format": blocks_format, "url": url, "resource": blocks_resource, "is_blocks_to_suffix": True}
+
+
+def preferred_viewer_format(asset):
+    # Skip the override check; we want to know what the preferred format would have been.
+    # if self.preferred_viewer_format_override is not None:
+    #     format = self.preferred_viewer_format_override
+    #     root_resource = format.root_resource
+    #     return {"format": format, "url": root_resource.internal_url_or_none, "resource": root_resource}
+
+    if asset.has_blocks:
+        return handle_blocks_preferred_format(asset)
+
+    # Return early if we can grab a Polygone resource first
+    polygone_gltf = None
+    format = asset.format_set.filter(
+        role__in=["POLYGONE_GLB_FORMAT", "POLYGONE_GLTF_FORMAT"], root_resource__isnull=False
+    ).first()
+    if format:
+        polygone_gltf = format.root_resource
+
+    if polygone_gltf:
+        return {"format": format, "url": polygone_gltf.internal_url_or_none, "resource": polygone_gltf}
+
+    # Return early with either of the role-based formats we care about.
+    updated_gltf = None
+    format = asset.format_set.filter(root_resource__isnull=False, role=30).first()
+    if format:
+        updated_gltf = format.root_resource
+
+    if updated_gltf:
+        return {"format": format, "url": updated_gltf.internal_url_or_none, "resource": updated_gltf}
+
+    original_gltf = None
+    format = asset.format_set.filter(root_resource__isnull=False, role=12).first()
+    if format:
+        original_gltf = format.root_resource
+
+    if original_gltf:
+        return {"format": format, "url": original_gltf.internal_url_or_none, "resource": original_gltf}
+
+    # If we didn't get any role-based formats, find the remaining formats
+    # we care about and choose the "best" one of those.
+    formats = {}
+    for format in asset.format_set.all():
+        root = format.root_resource
+        if root is None:
+            # We can't get a url for a Format without a root resource.
+            # This is an exceptional circumstance.
+            return None
+        formats[format.format_type] = {"format": format, "url": root.internal_url_or_none, "resource": root}
+    # GLB is our primary preferred format;
+    if "GLB" in formats.keys():
+        return formats["GLB"]
+    # GLTF2 is the next best option;
+    if "GLTF2" in formats.keys():
+        return formats["GLTF2"]
+    # GLTF1, if we must.
+    if "GLTF1" in formats.keys():
+        return formats["GLTF1"]
+    # Last chance, OBJ
+    if "OBJ" in formats.keys():
+        return formats["OBJ"]
+    return None
+
+
 class Command(BaseCommand):
     help = """Extracts format json into concrete models and converts to poly
     format."""
 
     def handle(self, *args, **options):
-        formats_to_create = []
-        formats_to_hide = []
+        # These two lists are for downloads:
+        formats_to_create = []  # These formats comprise runtime data that we are instead adding to the database as new, unhidden formats.
+        formats_to_hide = []  # These formats are not eligible for download.
+
+        # These two lists are for preferred formats:
+        format_resources_to_suffix = {}  # Blocks GLTF2 resources need to have the suffix added. It's more efficient to change the url than to create a whole new format just for this purpose.
+        formats_to_prefer = []  # These are the ones we will mark as preferred.
 
         assets = Asset.objects.all()
         print(f"todo: {assets.count()} assets.")
         for i, asset in enumerate(assets):
             if i % 1000 == 0:
                 print(f"done {i}")
+
+            # ==================================
+            # Compute data for preferred formats
+            # ==================================
+
+            p_format = preferred_viewer_format(asset)
+            if p_format is None:
+                continue
+            if p_format["url"] is None:
+                continue
+            formats_to_prefer.append(p_format["format"].id)
+            if p_format.get("is_blocks_to_suffix", False) is True:
+                format_resources_to_suffix.update({p_format["resource"].id: p_format["url"]})
+
+            # ==========================
+            # Compute data for downloads
+            # ==========================
+
             downloadable_formats = asset_inferred_downloads(asset, None)
+
             asset_formats_to_hide = list(
                 Format.objects.filter(asset=asset)
                 .exclude(id__in=[x.id for x in downloadable_formats])
@@ -195,3 +324,9 @@ class Command(BaseCommand):
 
         with open("formats-to-create.json", "w") as f:
             json.dump(formats_to_create, f, ensure_ascii=False, indent=4)
+
+        with open("format-resources-to-suffix.json", "w", encoding="utf-8") as f:
+            json.dump(format_resources_to_suffix, f, ensure_ascii=False)
+
+        with open("formats-to-prefer.json", "w", encoding="utf-8") as f:
+            json.dump(formats_to_prefer, f, ensure_ascii=False)
