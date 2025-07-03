@@ -209,34 +209,36 @@ class Asset(models.Model):
         url = f"{STORAGE_PREFIX}{suffix(filename)}"
         return {"format": blocks_format, "url": url, "resource": blocks_resource}
 
+    def get_preferred_viewer_format(self):
+        formats = self.format_set.filter(root_resource__isnull=False)
+        # GLB is our primary preferred format;
+        inst = formats.filter(format_type="GLB").last()
+        if inst is not None:
+            return inst
+
+        # GLTF2 is the next best option;
+        inst = formats.filter(format_type="GLTF2").last()
+        if inst is not None:
+            return inst
+
+        # GLTF1, if we must.
+        inst = formats.filter(format_type="GLTF1").last()
+        if inst is not None:
+            return inst
+
+        # Last chance, OBJ
+        inst = formats.filter(format_type="OBJ").last()
+        if inst is not None:
+            return inst
+
+        return None
+
     @property
     def preferred_viewer_format(self):
         if self.preferred_viewer_format_override is not None:
             return self.preferred_viewer_format_override
 
         return self.format_set.filter(is_preferred_for_gallery_viewer=True).first()
-        # Original prefereces
-        # # GLB is our primary preferred format;
-        # inst = formats.filter(format_type="GLB").last()
-        # if inst is not None:
-        #     return inst
-
-        # # GLTF2 is the next best option;
-        # inst = formats.filter(format_type="GLTF2").last()
-        # if inst is not None:
-        #     return inst
-
-        # # GLTF1, if we must.
-        # inst = formats.filter(format_type="GLTF1").last()
-        # if inst is not None:
-        #     return inst
-
-        # # Last chance, OBJ
-        # inst = formats.filter(format_type="OBJ").last()
-        # if inst is not None:
-        #     return inst
-
-        # return None
 
     @property
     def has_cors_allowed_preferred_format(self):
