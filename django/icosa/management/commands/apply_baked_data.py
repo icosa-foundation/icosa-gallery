@@ -29,7 +29,7 @@ class Command(BaseCommand):
         print("Suffixing resource urls...")
         for id, url in format_resources_to_suffix.items():
             resource = Resource.objects.get(id=id)
-            resource.url = url
+            resource.file = url
             resource.save()
 
         print("Creating formats for download...")
