@@ -331,6 +331,7 @@ def devicecode(request):
     context = {}
     if user.is_authenticated:
         if request.method == "GET":
+            query_dict = {k.lower(): v for k, v in request.GET.items()}
             client_secret = None
             client_id = None
             form_action = None
@@ -345,8 +346,8 @@ def devicecode(request):
                     client_id = "Open Brush"
                     form_action = "http://localhost:40074/device_login/v1"
             elif len(request.GET.keys()) == 2:
-                client_secret = request.GET.get("secret", None)
-                client_id = request.GET.get("appId", None)
+                client_secret = query_dict.get("secret", None)
+                client_id = query_dict.get("appid", None)
 
             if client_id == "openblocks":
                 client_id = "Open Blocks"
