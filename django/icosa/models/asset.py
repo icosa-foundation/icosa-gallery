@@ -210,76 +210,33 @@ class Asset(models.Model):
         return {"format": blocks_format, "url": url, "resource": blocks_resource}
 
     @property
-    def _preferred_viewer_format(self):
-        if self.preferred_viewer_format_override is not None:
-            format = self.preferred_viewer_format_override
-            root_resource = format.root_resource
-            return {"format": format, "url": root_resource.internal_url_or_none, "resource": root_resource}
-
-        if self.has_blocks:
-            return self.handle_blocks_preferred_format()
-
-        # Return early if we can grab a Polygone resource first
-        polygone_gltf = None
-        format = self.format_set.filter(
-            role__in=["POLYGONE_GLB_FORMAT", "POLYGONE_GLTF_FORMAT"], root_resource__isnull=False
-        ).first()
-        if format:
-            polygone_gltf = format.root_resource
-
-        if polygone_gltf:
-            return {"format": format, "url": polygone_gltf.internal_url_or_none, "resource": polygone_gltf}
-
-        # Return early with either of the role-based formats we care about.
-        updated_gltf = None
-        format = self.format_set.filter(root_resource__isnull=False, role=30).first()
-        if format:
-            updated_gltf = format.root_resource
-
-        if updated_gltf:
-            return {"format": format, "url": updated_gltf.internal_url_or_none, "resource": updated_gltf}
-
-        original_gltf = None
-        format = self.format_set.filter(root_resource__isnull=False, role=12).first()
-        if format:
-            original_gltf = format.root_resource
-
-        if original_gltf:
-            return {"format": format, "url": original_gltf.internal_url_or_none, "resource": original_gltf}
-
-        # If we didn't get any role-based formats, find the remaining formats
-        # we care about and choose the "best" one of those.
-        formats = {}
-        for format in self.format_set.all():
-            root = format.root_resource
-            if root is None:
-                # We can't get a url for a Format without a root resource.
-                # This is an exceptional circumstance.
-                return None
-            formats[format.format_type] = {"format": format, "url": root.internal_url_or_none, "resource": root}
-        # GLB is our primary preferred format;
-        if "GLB" in formats.keys():
-            return formats["GLB"]
-        # GLTF2 is the next best option;
-        if "GLTF2" in formats.keys():
-            return formats["GLTF2"]
-        # GLTF1, if we must.
-        if "GLTF1" in formats.keys():
-            return formats["GLTF1"]
-        # Last chance, OBJ
-        if "OBJ" in formats.keys():
-            return formats["OBJ"]
-        return None
-
-    @property
     def preferred_viewer_format(self):
-        format = self._preferred_viewer_format
-        if format is None:
-            return None
-        if format["url"] is None:
-            return None
-        # TODO(datacleanup): NUMBER_2 Mark this as the preferred format in the database
-        return format
+        if self.preferred_viewer_format_override is not None:
+            return self.preferred_viewer_format_override
+
+        return self.format_set.filter(is_preferred_for_gallery_viewer=True).first()
+        # Original prefereces
+        # # GLB is our primary preferred format;
+        # inst = formats.filter(format_type="GLB").last()
+        # if inst is not None:
+        #     return inst
+
+        # # GLTF2 is the next best option;
+        # inst = formats.filter(format_type="GLTF2").last()
+        # if inst is not None:
+        #     return inst
+
+        # # GLTF1, if we must.
+        # inst = formats.filter(format_type="GLTF1").last()
+        # if inst is not None:
+        #     return inst
+
+        # # Last chance, OBJ
+        # inst = formats.filter(format_type="OBJ").last()
+        # if inst is not None:
+        #     return inst
+
+        # return None
 
     @property
     def has_cors_allowed_preferred_format(self):
