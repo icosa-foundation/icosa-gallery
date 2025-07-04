@@ -21,14 +21,14 @@
                 {% if request.user.is_authenticated and device_code %}
                     {% if client_secret and form_action %}
                         <p>Press the button below to send your login code to Open Brush.</p>
-                        <form action="{{ form_action }}" method="POST">
+                        <form id="deviceCodeForm" action="{{ form_action }}" method="POST">
                             <input type="hidden" name="client_secret" value="{{ client_secret }}">
                             <input type="hidden" name="device_code" value="{{ device_code }}">
                             <input type="submit" class="btn btn-primary" value="Login">
                         </form>
                         {% if form_as_json %}
                         <script>
-                            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+                            document.getElementById('deviceCodeForm').addEventListener('submit', async function(e) {
                                 e.preventDefault();
                                 const form = e.target;
                                 const data = {
