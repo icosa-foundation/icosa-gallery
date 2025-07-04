@@ -335,7 +335,6 @@ def devicecode(request):
             client_secret = None
             client_id = None
             form_action = None
-            form_as_json = False
 
             if len(request.GET.keys()) == 1:
                 # Deprecated form where the one query param key is the client
@@ -353,7 +352,6 @@ def devicecode(request):
             if client_id == "openblocks":
                 client_id = "Open Blocks"
                 form_action = "http://localhost:40084/api/v1/device_login"
-                form_as_json = True
             if client_id == "openbrush":
                 client_id = "Open Brush"
                 form_action = "http://localhost:40074/device_login/v1"
@@ -378,6 +376,5 @@ def devicecode(request):
             "client_secret": client_secret,
             "client_id": client_id,
             "form_action": form_action,
-            "form_as_json": form_as_json
         }
     return render(request, template, context)

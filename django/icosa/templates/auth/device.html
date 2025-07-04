@@ -26,31 +26,11 @@
                             <input type="hidden" name="device_code" value="{{ device_code }}">
                             <input type="submit" class="btn btn-primary" value="Login">
                         </form>
-                        {% if form_as_json %}
-                        <script>
-                            document.getElementById('loginForm').addEventListener('submit', async function(e) {
-                                e.preventDefault();
-                                const form = e.target;
-                                const data = {
-                                    client_secret: form.client_secret.value,
-                                    device_code: form.device_code.value
-                                };
-                                await fetch(form.action, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRFToken': '{{ csrf_token }}'
-                                    },
-                                    body: JSON.stringify(data)
-                                });
-                                // Optionally handle response here
-                            });
-                        </script>
                     {% else %}
                         <p class="device-code">{{ device_code }}</p>
-                        <p>Enter this code into your headset. This will log you in to your Icosa account.</p>
+                        <p>Enter this code into Open Brush. This will log you in to your Icosa account.</p>
                     {% endif %}
-                    <p class="warning"><em>Only do this if you are running an app that came from a source that you trust with access to your Icosa account</em></p>
+                    <p class="warning"><em>Only do this if you've downloaded your copy of Open Brush from a reputable source</em></p>
                 {% else %}
                     <p>You must <a href="{% url 'icosa:login' %}">login</a> to get a device code.</p>
                     <p>Or if it's easier visit <strong><a href="{{ request.build_absolute_uri }}">{{ request.build_absolute_uri }}</a></strong> on another device.</p>
