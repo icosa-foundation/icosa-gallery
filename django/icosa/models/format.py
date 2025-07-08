@@ -38,10 +38,11 @@ class Format(models.Model):
 
     def get_all_resources(self, query: Q = Q()):
         resources = self.resource_set.filter(query)
-        # We can only union on another queryset, even though we just want one
-        # instance.
-        root_resources = Resource.objects.filter(pk=self.root_resource.pk)
-        resources = resources.union(root_resources)
+        if self.root_resource:
+            # We can only union on another queryset, even though we just want one
+            # instance.
+            root_resource = Resource.objects.filter(pk=self.root_resource.pk)
+            resources = resources.union(root_resource)
         return resources
 
     def get_resource_data(self, resources):
