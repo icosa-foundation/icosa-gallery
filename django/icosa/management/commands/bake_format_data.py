@@ -83,7 +83,7 @@ def handle_blocks_preferred_format(asset):
         return None
     filename = f"poly/{asset.url}/{filename.split('/')[-1]}"
     # NUMBER_1 When we hit this block, we need to save the suffix to the file field
-    url = f"{STORAGE_PREFIX}{suffix(filename)}"
+    url = f"{suffix(filename)}"
     return {"format": blocks_format, "url": url, "resource": blocks_resource, "is_blocks_to_suffix": True}
 
 
