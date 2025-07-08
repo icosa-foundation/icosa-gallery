@@ -51,11 +51,13 @@ class FormatInline(admin.TabularInline):
     extra = 0
     model = Format
     show_change_link = True
+    readonly_fields = ("is_preferred_for_gallery_viewer",)
 
     fields = (
         "format_type",
         "zip_archive_url",
         "role",
+        "is_preferred_for_gallery_viewer",
     )
 
 
@@ -139,26 +141,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "has_fbx",
         "last_reported_by",
         "last_reported_time",
-        "display_preferred_viewer_format",
     )
-
-    def display_preferred_viewer_format(self, obj):
-        if obj.preferred_viewer_format:  # and obj.preferred_viewer_format.format:
-            try:
-                change_url = reverse(
-                    "admin:icosa_format_change",
-                    args=(obj.preferred_viewer_format["format"].id,),
-                )
-                role_text = obj.preferred_viewer_format["format"].role
-                html = f"<a href='{change_url}'>{role_text}</a>"
-            except Exception as e:
-                html = f"{e.message}"
-        else:
-            html = "-"
-        return mark_safe(html)
-
-    display_preferred_viewer_format.short_description = "Preferred viewer format"
-    display_preferred_viewer_format.allow_tags = True
 
     def display_thumbnail(self, obj):
         html = f"{obj.url}"
