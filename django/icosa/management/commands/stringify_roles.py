@@ -60,7 +60,8 @@ class Command(BaseCommand):
             elif role == "ORIGINAL_OBJ_FORMAT":
                 format.format_type = "OBJ_NGON"
             elif role == "POLYGONE_OBJ_FORMAT":
-                # TODO check this assumption
+                # We are working on the assumption that POLYGONE formats are
+                # never triangulated. This is up for debate later.
                 format.format_type = "OBJ_NGON"
             format.format_type
             format.save()
