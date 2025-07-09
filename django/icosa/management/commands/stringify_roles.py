@@ -52,7 +52,16 @@ class Command(BaseCommand):
             try:
                 role = int(format.role)
                 format.role = ROLE_MAP[role]
-                format.save()
             except ValueError:
                 pass
+            role = format.role
+            if role == "ORIGINAL_TRIANGULATED_OBJ_FORMAT":
+                format.format_type = "OBJ_TRI"
+            elif role == "ORIGINAL_OBJ_FORMAT":
+                format.format_type = "OBJ_NGON"
+            elif role == "POLYGONE_OBJ_FORMAT":
+                # TODO check this assumption
+                format.format_type = "OBJ_NGON"
+            format.format_type
+            format.save()
         print("finished", datetime.datetime.now())
