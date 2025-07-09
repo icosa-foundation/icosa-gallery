@@ -186,10 +186,9 @@ class Asset(models.Model):
                 # with an error?
                 return None
             return {
-                "format": obj_format,
-                "url": obj_resource.internal_url_or_none,
+                "format_type": obj_format.format_type,
+                "root_resource": {"url": obj_resource.internal_url_or_none},
                 "materialUrl": mtl_resource.url,
-                "resource": obj_resource,
             }
         # We have a gltf2, but we must currently return the suffixed version we
         # have in storage; the non-suffixed version currently does not work.
@@ -207,7 +206,12 @@ class Asset(models.Model):
         filename = f"poly/{self.url}/{filename.split('/')[-1]}"
         # TODO(datacleanup): NUMBER_1 When we hit this block, we need to save the suffix to the file field
         url = f"{STORAGE_PREFIX}{suffix(filename)}"
-        return {"format": blocks_format, "url": url, "resource": blocks_resource}
+        return {
+            "format_type": blocks_format.format_type,
+            "root_resource": {
+                "url": url,
+            },
+        }
 
     def get_preferred_viewer_format(self):
         formats = self.format_set.filter(root_resource__isnull=False)
@@ -234,8 +238,109 @@ class Asset(models.Model):
         return None
 
     @property
+    def _preferred_viewer_format(self):
+        if self.preferred_viewer_format_override is not None:
+            format = self.preferred_viewer_format_override
+            root_resource = format.root_resource
+            return {
+                "format": format,
+                "url": root_resource.internal_url_or_none,
+                "resource": root_resource,
+            }
+
+        if self.has_blocks:
+            return self.handle_blocks_preferred_format()
+
+        # Return early if we can grab a Polygone resource first
+        polygone_gltf = None
+        format = self.format_set.filter(
+            role__in=[1002, 1003],
+            root_resource__isnull=False,
+        ).first()
+        if format:
+            polygone_gltf = format.root_resource
+
+        if polygone_gltf:
+            return {
+                "format_type": format.format_type,
+                "root_resource": {
+                    "url": polygone_gltf.internal_url_or_none,
+                },
+            }
+
+        # Return early with either of the role-based formats we care about.
+        updated_gltf = None
+        format = self.format_set.filter(
+            root_resource__isnull=False,
+            role=30,
+        ).first()
+        if format:
+            updated_gltf = format.root_resource
+
+        if updated_gltf:
+            return {
+                "format_type": format.format_type,
+                "root_resource": {
+                    "url": updated_gltf.internal_url_or_none,
+                },
+            }
+
+        original_gltf = None
+        format = self.format_set.filter(
+            root_resource__isnull=False,
+            role=12,
+        ).first()
+        if format:
+            original_gltf = format.root_resource
+
+        if original_gltf:
+            return {
+                "format_type": format.format_type,
+                "root_resource": {"url": original_gltf.internal_url_or_none},
+            }
+
+        # If we didn't get any role-based formats, find the remaining formats
+        # we care about and choose the "best" one of those.
+        formats = {}
+        for format in self.format_set.all():
+            root = format.root_resource
+            if root is None:
+                # We can't get a url for a Format without a root resource.
+                # This is an exceptional circumstance.
+                return None
+            formats[format.format_type] = {
+                "format_type": format.format_type,
+                "root_resource": {
+                    "url": root.internal_url_or_none,
+                },
+            }
+        # GLB is our primary preferred format;
+        if "GLB" in formats.keys():
+            return formats["GLB"]
+        # GLTF2 is the next best option;
+        if "GLTF2" in formats.keys():
+            return formats["GLTF2"]
+        # GLTF1, if we must.
+        if "GLTF" in formats.keys():
+            return formats["GLTF"]
+        # Last chance, OBJ
+        if "OBJ" in formats.keys():
+            return formats["OBJ"]
+        return None
+
+    @property
     def preferred_viewer_format(self):
-        return self.format_set.filter(is_preferred_for_gallery_viewer=True).first()
+        if settings.FEATURE_USE_BAKED_DATA:
+            return self.format_set.filter(is_preferred_for_gallery_viewer=True).first()
+        else:
+            # TODO: All code in these paths can be removed once the above
+            # feature switch is permanently True.
+            format = self._preferred_viewer_format
+            if format is None:
+                return None
+            if format["url"] is None:
+                return None
+            return format
 
     @property
     def has_cors_allowed_preferred_format(self):

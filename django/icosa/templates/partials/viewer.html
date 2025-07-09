@@ -100,13 +100,13 @@
     {% if format_override %}
         let formatType = "{{ format_override }}".toLowerCase();
     {% else %}
-        let formatType = "{{ asset.preferred_viewer_format.format.format_type }}".toLowerCase();
+        let formatType = "{{ asset.preferred_viewer_format.format_type }}".toLowerCase();
     {% endif %}
 
     {% if override_suffix %}
-        let url = "{{ asset.preferred_viewer_format.url }}".replace("_%28GLTFupdated%29", "");
+        let url = "{{ asset.preferred_viewer_format.root_resource.url }}".replace("_%28GLTFupdated%29", "");
     {% else %}
-        let url = "{{ asset.preferred_viewer_format.url }}";
+        let url = "{{ asset.preferred_viewer_format.root_resource.url }}";
     {% endif %}
 
 
