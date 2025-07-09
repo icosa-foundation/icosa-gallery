@@ -3,15 +3,32 @@ import json
 from django.core.management.base import BaseCommand
 from icosa.models import Asset
 
+SMALL_SAMPLE = True
+
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        if SMALL_SAMPLE:
+            print("=" * 80)
+            print("Running on a sample of the data because SMALL_SAMPLE == True")
+            print("You do not want this in production.")
+            print("=" * 80)
+
         with open("runtime_preferred_formats.jsonl", "w") as pf, open("runtime_downloads.jsonl", "w") as dl:
             assets = Asset.objects.all()
-            print(f"todo: {assets.count()} assets.")
+            if SMALL_SAMPLE:
+                print(f"todo: {assets.count() / 100} assets.")
+            else:
+                print(f"todo: {assets.count()} assets.")
             for i, asset in enumerate(assets.iterator(chunk_size=1000)):
                 if i and i % 1000 == 0:
                     print(f"done {i}")
+
+                # It was getting tedious running this over and over.
+                # This makes it 100x faster and 100x less complete.
+                if i % 100 != 0 and SMALL_SAMPLE:
+                    continue
+
                 asset_id = asset.id
                 p_format = asset.preferred_viewer_format
                 if p_format:
