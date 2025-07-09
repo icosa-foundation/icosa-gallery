@@ -7,7 +7,7 @@ from icosa.models import Asset
 class Command(BaseCommand):
     def handle(self, *args, **options):
         with open("runtime_preferred_formats.jsonl", "w") as pf, open("runtime_downloads.jsonl", "w") as dl:
-            assets = Asset.objects.all()
+            assets = Asset.objects.all().order_by("pk")
             print(f"todo: {assets.count()} assets.")
             for i, asset in enumerate(assets.iterator(chunk_size=1000)):
                 if i and i % 1000 == 0:
