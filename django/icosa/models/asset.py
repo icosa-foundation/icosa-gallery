@@ -363,27 +363,6 @@ class Asset(models.Model):
 
         return is_allowed
 
-    @property
-    def download_url(self):
-        if self.license == ALL_RIGHTS_RESERVED or not self.license:
-            return None
-        updated_gltf = None
-        format = self.format_set.filter(root_resource__isnull=False, role=30).first()
-        if format:
-            updated_gltf = format.root_resource
-
-        preferred_format = self.preferred_viewer_format
-
-        if updated_gltf is not None:
-            if updated_gltf.format.zip_archive_url:
-                return f"https://web.archive.org/web/{updated_gltf.format.zip_archive_url}"
-        if preferred_format is not None:
-            if preferred_format["resource"].format.zip_archive_url:
-                return f"https://web.archive.org/web/{preferred_format['resource'].format.zip_archive_url}"
-            # TODO: "poly" is hardcoded here and will not necessarily be used
-            # for 3rd party installs.
-        return f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/icosa/{self.url}/archive.zip"
-
     def get_absolute_url(self):
         return reverse("icosa:asset_view", kwargs={"asset_url": self.url})
 
