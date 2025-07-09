@@ -88,11 +88,10 @@ def handle_blocks_preferred_format(asset):
 
 
 def preferred_viewer_format(asset):
-    # Skip the override check; we want to know what the preferred format would have been.
-    # if self.preferred_viewer_format_override is not None:
-    #     format = self.preferred_viewer_format_override
-    #     root_resource = format.root_resource
-    #     return {"format": format, "url": root_resource.internal_url_or_none, "resource": root_resource}
+    if asset.preferred_viewer_format_override is not None:
+        format = asset.preferred_viewer_format_override
+        root_resource = format.root_resource
+        return {"format": format, "url": root_resource.internal_url_or_none, "resource": root_resource}
 
     if asset.has_blocks:
         return handle_blocks_preferred_format(asset)

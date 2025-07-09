@@ -235,9 +235,6 @@ class Asset(models.Model):
 
     @property
     def preferred_viewer_format(self):
-        if self.preferred_viewer_format_override is not None:
-            return self.preferred_viewer_format_override
-
         return self.format_set.filter(is_preferred_for_gallery_viewer=True).first()
 
     @property
