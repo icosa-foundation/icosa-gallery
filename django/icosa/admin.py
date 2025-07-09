@@ -82,6 +82,8 @@ class FormatAdmin(ExportMixin, admin.ModelAdmin):
     list_filter = (
         "role",
         "format_type",
+        "is_preferred_for_gallery_viewer",
+        "hide_from_downloads",
     )
     raw_id_fields = [
         "asset",
