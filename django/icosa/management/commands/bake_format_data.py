@@ -149,20 +149,11 @@ def preferred_viewer_format(asset):
     return None
 
 
-SMALL_SAMPLE = True
-
-
 class Command(BaseCommand):
     help = """Extracts format json into concrete models and converts to poly
     format."""
 
     def handle(self, *args, **options):
-        if SMALL_SAMPLE:
-            print("=" * 80)
-            print("Running on a sample of the data because SMALL_SAMPLE == True")
-            print("You do not want this in production.")
-            print("=" * 80)
-
         # These two lists are for downloads:
         formats_to_create = []  # These formats comprise runtime data that we are instead adding to the database as new, unhidden formats.
         formats_to_hide = []  # These formats are not eligible for download.
@@ -171,19 +162,11 @@ class Command(BaseCommand):
         format_resources_to_suffix = {}  # Blocks GLTF2 resources need to have the suffix added. It's more efficient to change the url than to create a whole new format just for this purpose.
         formats_to_prefer = []  # These are the ones we will mark as preferred.
 
-        assets = Asset.objects.all().order_by("id")
-        if SMALL_SAMPLE:
-            print(f"todo: {assets.count() / 100} assets.")
-        else:
-            print(f"todo: {assets.count()} assets.")
+        assets = Asset.objects.all()
+        print(f"todo: {assets.count()} assets.")
         for i, asset in enumerate(assets):
             if i % 1000 == 0:
                 print(f"done {i}")
-
-            # It was getting tedious running this over and over.
-            # This makes it 100x faster and 100x less complete.
-            if i % 100 != 0 and SMALL_SAMPLE:
-                continue
 
             # ==================================
             # Compute data for preferred formats
