@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 pass
             role = format.role
             if role == "ORIGINAL_TRIANGULATED_OBJ_FORMAT":
-                format.format_type = "OBJ_TRI"
+                format.format_type = "OBJ"
             elif role == "ORIGINAL_OBJ_FORMAT":
                 format.format_type = "OBJ_NGON"
             elif role == "POLYGONE_OBJ_FORMAT":
