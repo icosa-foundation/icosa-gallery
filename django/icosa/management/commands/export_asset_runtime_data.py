@@ -20,12 +20,16 @@ class Command(BaseCommand):
                         format_data = {
                             "asset_id": asset_id,
                             "preferred_format": {
-                                "format_id": p_format["format"].id if p_format["format"] else None,
-                                "url": p_format["url"],
-                                "resource_id": p_format["resource"].id if p_format["resource"] else None,
+                                "format_id": p_format["id"] if p_format else None,
+                                "url": p_format["root_resource"]["internal_url_or_none"]
+                                if p_format.get("root_resource")
+                                else None,
+                                "resource_id": p_format["root_resource"]["id"]
+                                if p_format.get("root_resource")
+                                else None,
                             },
                         }
-                    except TypeError:
+                    except (TypeError, KeyError):
                         # We are now returning a format object directly, so
                         # must construct the data differently. The heuristic
                         # for this is `TypeError: 'Format' objects is not
