@@ -517,4 +517,4 @@ AUTH_USER_MODEL = "icosa.User"
 
 # Feature switches
 
-FEATURE_USE_BAKED_DATA = os.environ.get("FEATURE_USE_BAKED_DATA", False)
+FEATURE_USE_BAKED_DATA = bool(os.environ.get("FEATURE_USE_BAKED_DATA", False))
