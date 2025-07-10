@@ -104,9 +104,9 @@
     {% endif %}
 
     {% if override_suffix %}
-        let url = "{{ asset.preferred_viewer_format.root_resource.url }}".replace("_%28GLTFupdated%29", "");
+        let url = "{{ asset.preferred_viewer_format.root_resource.internal_url_or_none }}".replace("_%28GLTFupdated%29", "");
     {% else %}
-        let url = "{{ asset.preferred_viewer_format.root_resource.url }}";
+        let url = "{{ asset.preferred_viewer_format.root_resource.internal_url_or_none }}";
     {% endif %}
 
 

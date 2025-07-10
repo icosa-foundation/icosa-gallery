@@ -186,8 +186,12 @@ class Asset(models.Model):
                 # with an error?
                 return None
             return {
+                "id": obj_format.id,
                 "format_type": obj_format.format_type,
-                "root_resource": {"url": obj_resource.internal_url_or_none},
+                "root_resource": {
+                    "id": obj_resource.id,
+                    "internal_url_or_none": obj_resource.internal_url_or_none,
+                },
                 "materialUrl": mtl_resource.url,
             }
         # We have a gltf2, but we must currently return the suffixed version we
@@ -207,9 +211,11 @@ class Asset(models.Model):
         # TODO(datacleanup): NUMBER_1 When we hit this block, we need to save the suffix to the file field
         url = f"{STORAGE_PREFIX}{suffix(filename)}"
         return {
+            "id": blocks_format.id,
             "format_type": blocks_format.format_type,
             "root_resource": {
-                "url": url,
+                "id": blocks_resource.id,
+                "internal_url_or_none": url,
             },
         }
 
@@ -243,9 +249,12 @@ class Asset(models.Model):
             format = self.preferred_viewer_format_override
             root_resource = format.root_resource
             return {
-                "format": format,
-                "url": root_resource.internal_url_or_none,
-                "resource": root_resource,
+                "id": format.id,
+                "format_type": format.format_type,
+                "root_resource": {
+                    "id": root_resource.id,
+                    "internal_url_or_none": root_resource.internal_url_or_none,
+                },
             }
 
         if self.has_blocks:
@@ -254,7 +263,7 @@ class Asset(models.Model):
         # Return early if we can grab a Polygone resource first
         polygone_gltf = None
         format = self.format_set.filter(
-            role__in=[1002, 1003],
+            role__in=["POLYGONE_GLB_FORMAT", "POLYGONE_GLTF_FORMAT"],
             root_resource__isnull=False,
         ).first()
         if format:
@@ -262,9 +271,11 @@ class Asset(models.Model):
 
         if polygone_gltf:
             return {
+                "id": format.id,
                 "format_type": format.format_type,
                 "root_resource": {
-                    "url": polygone_gltf.internal_url_or_none,
+                    "id": polygone_gltf.id,
+                    "internal_url_or_none": polygone_gltf.internal_url_or_none,
                 },
             }
 
@@ -272,31 +283,37 @@ class Asset(models.Model):
         updated_gltf = None
         format = self.format_set.filter(
             root_resource__isnull=False,
-            role=30,
+            role="UPDATED_GLTF_FORMAT",
         ).first()
         if format:
             updated_gltf = format.root_resource
 
         if updated_gltf:
             return {
+                "id": format.id,
                 "format_type": format.format_type,
                 "root_resource": {
-                    "url": updated_gltf.internal_url_or_none,
+                    "id": updated_gltf.id,
+                    "internal_url_or_none": updated_gltf.internal_url_or_none,
                 },
             }
 
         original_gltf = None
         format = self.format_set.filter(
             root_resource__isnull=False,
-            role=12,
+            role="ORIGINAL_GLTF_FORMAT",
         ).first()
         if format:
             original_gltf = format.root_resource
 
         if original_gltf:
             return {
+                "id": format.id,
                 "format_type": format.format_type,
-                "root_resource": {"url": original_gltf.internal_url_or_none},
+                "root_resource": {
+                    "id": original_gltf.id,
+                    "internal_url_or_none": original_gltf.internal_url_or_none,
+                },
             }
 
         # If we didn't get any role-based formats, find the remaining formats
@@ -307,11 +324,13 @@ class Asset(models.Model):
             if root is None:
                 # We can't get a url for a Format without a root resource.
                 # This is an exceptional circumstance.
-                return None
+                continue
             formats[format.format_type] = {
+                "id": format.id,
                 "format_type": format.format_type,
                 "root_resource": {
-                    "url": root.internal_url_or_none,
+                    "id": root.id,
+                    "internal_url_or_none": root.internal_url_or_none,
                 },
             }
         # GLB is our primary preferred format;
@@ -338,7 +357,7 @@ class Asset(models.Model):
             format = self._preferred_viewer_format
             if format is None:
                 return None
-            if format["url"] is None:
+            if format["root_resource"]["internal_url_or_none"] is None:
                 return None
             return format
 
@@ -501,10 +520,10 @@ class Asset(models.Model):
         # We do not provide any downloads for assets with restrictive licenses.
         if self.license == ALL_RIGHTS_RESERVED:
             return self.format_set.none()
-        elif not settings.FEATURE_USE_BAKED_DATA:
-            # TODO: Return no downloads for the time that this feature is
-            # switched off. Should only be an hour or so.
-            return self.format_set.none()
+        # elif not settings.FEATURE_USE_BAKED_DATA:
+        #     # TODO: Return no downloads for the time that this feature is
+        #     # switched off. Should only be an hour or so.
+        #     return self.format_set.none()
         else:
             dl_formats = self.format_set.filter(hide_from_downloads=False)
             if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
