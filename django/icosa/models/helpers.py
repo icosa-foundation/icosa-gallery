@@ -14,6 +14,8 @@ def get_cloud_media_root():
 def suffix(name):
     if name is None:
         return None
+    if name.endswith("_%28GLTFupdated%29.gltf"):
+        return name
     if name.endswith(".gltf"):
         return "".join([f"{p[0]}_(GLTFupdated){p[1]}" for p in [os.path.splitext(name)]])
     return name
