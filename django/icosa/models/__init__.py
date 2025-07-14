@@ -1,4 +1,4 @@
-# X as X is required to keep linters happy when re-exporting.
+# Required to keep linters happy when re-exporting.
 __all__ = [
     "Asset",
     "AssetOwner",
