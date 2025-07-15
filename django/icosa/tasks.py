@@ -78,8 +78,9 @@ def queue_blocks_upload_format(
     )
 
 
+@on_commit_task()
 @transaction.atomic
-def finalize_asset_blocking(asset_url: str, data: AssetFinalizeData):
+def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
     asset = Asset.objects.get(url=asset_url)
 
     # Clean up formats with no root resource.
@@ -106,12 +107,6 @@ def finalize_asset_blocking(asset_url: str, data: AssetFinalizeData):
     asset.state = ASSET_STATE_COMPLETE
     asset.remix_ids = getattr(data, "remixIds", None)
     asset.save()
-
-
-@on_commit_task()
-@transaction.atomic
-def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
-    finalize_asset_blocking(asset_url, data)
 
 
 def save_all_assets(
