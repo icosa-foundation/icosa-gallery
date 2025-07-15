@@ -25,7 +25,7 @@ from icosa.models import (
     AssetOwner,
     Tag,
 )
-from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
+from icosa.tasks import finalize_asset_blocking, queue_blocks_upload_format
 from ninja import File, Query, Router
 from ninja.decorators import decorate_view
 from ninja.errors import HttpError
@@ -325,6 +325,6 @@ def finalize_asset(
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
 
-    queue_finalize_asset(asset.url, data)
+    finalize_asset_blocking(asset.url, data)
 
     return get_publish_url(request, asset)
