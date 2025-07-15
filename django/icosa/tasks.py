@@ -1,8 +1,8 @@
 import time
 from typing import List, Optional
 
-from django.utils import timezone
 from django.db import transaction
+from django.utils import timezone
 from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
 from icosa.api.schema import AssetFinalizeData
