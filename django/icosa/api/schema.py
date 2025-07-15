@@ -298,6 +298,10 @@ class AssetSchema(ModelSchema):
     #     return params
 
 
+class AssetSchemaWithState(AssetSchema):
+    state: str
+
+
 class AssetStateSchema(ModelSchema):
     class Config:
         model = Asset

@@ -36,6 +36,7 @@ from .schema import (
     AssetFilters,
     AssetFinalizeData,
     AssetSchema,
+    AssetSchemaWithState,
     FullUserSchema,
     PatchUserSchema,
     UploadJobSchemaOut,
@@ -199,7 +200,7 @@ def upload_new_assets(
 @router.get(
     "/me/assets/{str:asset}",
     auth=JWTAuth(),
-    response=AssetSchema,
+    response=AssetSchemaWithState,
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
