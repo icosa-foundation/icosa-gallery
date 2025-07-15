@@ -4,6 +4,7 @@ __all__ = [
     "AssetOwner",
     "DeviceCode",
     "Format",
+    "FormatRoleLabel",
     "BulkSaveLog",
     "HiddenMediaFileLog",
     "MastheadSection",
@@ -25,7 +26,7 @@ from .asset import Asset
 from .asset_owner import AssetOwner as AssetOwner
 from .common import *  # noqa
 from .device_code import DeviceCode
-from .format import Format
+from .format import Format, FormatRoleLabel
 from .helpers import (
     format_upload_path,
     get_cloud_media_root,

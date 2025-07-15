@@ -1,7 +1,43 @@
 import json
 
 from django.core.management.base import BaseCommand
-from icosa.models import Asset, Format, Resource
+from icosa.models import Asset, Format, FormatRoleLabel, Resource
+
+DOWNLOADABLE_FORMAT_NAMES = {
+    "ORIGINAL_OBJ_FORMAT": "obj",
+    "TILT_FORMAT": "native tilt",
+    "UNKNOWN_GLTF_FORMAT_A": "unknown gltf a",
+    "ORIGINAL_FBX_FORMAT": "original fbx",
+    "BLOCKS_FORMAT": "native blocks",
+    "USD_FORMAT": "usd",
+    "HTML_FORMAT": "html",
+    "ORIGINAL_GLTF_FORMAT": "original gltf",
+    "TOUR_CREATOR_EXPERIENCE": "tour creator experience",
+    "JSON_FORMAT": "json",
+    "LULLMODEL_FORMAT": "lullmodel",
+    "SAND_FORMAT_A": "sand a",
+    "GLB_FORMAT": "glb",
+    "SAND_FORMAT_B": "sand b",
+    "SANDC_FORMAT": "sandc",
+    "PB_FORMAT": "pb",
+    "UNKNOWN_GLTF_FORMAT_B": "unknown gltf b",
+    "ORIGINAL_TRIANGULATED_OBJ_FORMAT": "triangulated obj",
+    "JPG_BUGGY": "jpg buggy",
+    "USDZ_FORMAT": "usdz",
+    "UPDATED_GLTF_FORMAT": "gltf",
+    "EDITOR_SETTINGS_PB_FORMAT": "editor settings pb",
+    "UNKNOWN_GLTF_FORMAT_C": "unknown gltf c",
+    "UNKNOWN_GLB_FORMAT_A": "unknown glb a",
+    "UNKNOWN_GLB_FORMAT_B": "unknown glb b",
+    "TILT_NATIVE_GLTF": "tilt native gltf",
+    "USER_SUPPLIED_GLTF": "user supplied gltf",
+    "POLYGONE_TILT_FORMAT": "polygone tilt",
+    "POLYGONE_BLOCKS_FORMAT": "polygone blocks",
+    "POLYGONE_GLB_FORMAT": "polygone glb",
+    "POLYGONE_GLTF_FORMAT": "polygone gltf",
+    "POLYGONE_OBJ_FORMAT": "polygone obj",
+    "POLYGONE_FBX_FORMAT": "polygone fbx",
+}
 
 
 class Command(BaseCommand):
@@ -66,3 +102,11 @@ class Command(BaseCommand):
                     "contenttype": r["contenttype"],
                 }
                 Resource.objects.create(**resource_data)
+
+        print("Creating role labels...")
+        role_texts = set()
+        for f in Format.objects.filter(role__isnull=False):
+            role_texts.add(f.role)
+        for t in role_texts:
+            label = DOWNLOADABLE_FORMAT_NAMES.get(t)
+            role_label, _ = FormatRoleLabel.objects.get_or_create(role_text=t, defaults={"label": label})

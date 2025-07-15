@@ -1,9 +1,12 @@
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 from .asset import Asset
 from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
 from .resource import Resource
+
+ROLE_MAX_LENGTH = 255
 
 
 class Format(models.Model):
@@ -13,7 +16,7 @@ class Format(models.Model):
     triangle_count = models.PositiveIntegerField(null=True, blank=True)
     lod_hint = models.PositiveIntegerField(null=True, blank=True)
     role = models.CharField(
-        max_length=255,
+        max_length=ROLE_MAX_LENGTH,
         null=True,
         blank=True,
     )
@@ -60,6 +63,15 @@ class Format(models.Model):
             resource_data = {}
         return resource_data
 
+    def user_label(self):
+        # If self.role is None, then we avoid a db lookup by returning early.
+        if self.role is None:
+            return self.format_type
+        role_label = FormatRoleLabel.objects.filter(role_text=self.role).first()
+        if role_label is None:
+            return self.format_type
+        return role_label.label
+
     class Meta:
         indexes = [
             models.Index(
@@ -68,3 +80,31 @@ class Format(models.Model):
                 ]
             )
         ]
+
+
+class FormatRoleLabel(models.Model):
+    """This model is responsible for creating a user-facing label for a
+    format's role. There is no requirement for these records to be filled in.
+    User-facing format display implementations should either use a format's
+    format_type, or a friendly version of role.
+
+    See Format.user_label for an example of an implementation.
+    """
+
+    create_time = models.DateTimeField()
+    update_time = models.DateTimeField(null=True, blank=True)
+    role_text = models.CharField(max_length=ROLE_MAX_LENGTH)
+    label = models.CharField(max_length=1024)
+
+    def save(self, *args, **kwargs):
+        update_timestamps = kwargs.pop("update_timestamps", True)
+        now = timezone.now()
+        if self._state.adding:
+            self.create_time = now
+        else:
+            if update_timestamps:
+                self.update_time = now
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.role_text} => {self.label}"

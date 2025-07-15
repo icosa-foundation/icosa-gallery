@@ -10,6 +10,7 @@ from icosa.models import (
     BulkSaveLog,
     DeviceCode,
     Format,
+    FormatRoleLabel,
     HiddenMediaFileLog,
     MastheadSection,
     Oauth2Client,
@@ -89,6 +90,19 @@ class FormatAdmin(ExportMixin, admin.ModelAdmin):
         "asset",
         "root_resource",
     ]
+
+
+@admin.register(FormatRoleLabel)
+class FormatRoleLabelAdmin(admin.ModelAdmin):
+    list_display = (
+        "role_text",
+        "label",
+    )
+
+    list_filter = (
+        "role_text",
+        "label",
+    )
 
 
 @admin.register(Asset)
