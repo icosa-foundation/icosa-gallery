@@ -3,7 +3,6 @@ import json
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from icosa.models import Asset, Format
-from icosa.models.common import STORAGE_PREFIX
 from icosa.models.helpers import suffix
 
 STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
@@ -163,6 +162,7 @@ class Command(BaseCommand):
         formats_to_prefer = []  # These are the ones we will mark as preferred.
 
         assets = Asset.objects.all()
+        # assets = Asset.objects.filter(id=586142320819176293)
         print(f"todo: {assets.count()} assets.")
         for i, asset in enumerate(assets):
             if i % 1000 == 0:
