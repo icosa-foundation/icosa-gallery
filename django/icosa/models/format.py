@@ -38,6 +38,7 @@ class Format(models.Model):
         self.root_resource = resource
         resource.format = None
         resource.save()
+        self.save()
 
     def get_all_resources(self, query: Q = Q()):
         resources = self.resource_set.filter(query)
