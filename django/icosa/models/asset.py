@@ -564,7 +564,7 @@ class Asset(models.Model):
                     else:
                         resource_data = {}
 
-            format_name = format.format_type.lower()
+            format_name = format.user_label()
 
             if resource_data:
                 # TODO: Currently, we only offer the first format per type (or

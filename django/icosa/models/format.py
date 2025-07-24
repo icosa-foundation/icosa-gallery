@@ -66,10 +66,10 @@ class Format(models.Model):
     def user_label(self):
         # If self.role is None, then we avoid a db lookup by returning early.
         if self.role is None:
-            return self.format_type
+            return self.format_type.lower()
         role_label = FormatRoleLabel.objects.filter(role_text=self.role).first()
         if role_label is None:
-            return self.format_type
+            return self.format_type.lower()
         return role_label.label
 
     class Meta:
