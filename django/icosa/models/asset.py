@@ -520,10 +520,6 @@ class Asset(models.Model):
         # We do not provide any downloads for assets with restrictive licenses.
         if self.license == ALL_RIGHTS_RESERVED:
             return self.format_set.none()
-        # elif not settings.FEATURE_USE_BAKED_DATA:
-        #     # TODO: Return no downloads for the time that this feature is
-        #     # switched off. Should only be an hour or so.
-        #     return self.format_set.none()
         else:
             dl_formats = self.format_set.filter(hide_from_downloads=False)
             if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
