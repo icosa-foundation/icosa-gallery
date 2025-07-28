@@ -24,7 +24,6 @@ from .common import (
     LICENSE_CHOICES,
     PRIVATE,
     PUBLIC,
-    STORAGE_PREFIX,
     UNLISTED,
     V3_CC_LICENSES,
     V4_CC_LICENSES,
@@ -32,7 +31,6 @@ from .common import (
 )
 from .helpers import (
     preview_image_upload_path,
-    suffix,
     thumbnail_upload_path,
 )
 from .log import HiddenMediaFileLog
