@@ -161,7 +161,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        return
         # These two lists are for downloads:
         formats_to_create = []  # These formats comprise runtime data that we are instead adding to the database as new, unhidden formats.
         formats_to_hide = []  # These formats are not eligible for download.
