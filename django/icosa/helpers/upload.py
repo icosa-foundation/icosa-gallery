@@ -199,6 +199,7 @@ def upload_api_asset(
     if upload_set.thumbnail:
         add_thumbnail_to_asset(upload_set.thumbnail, asset)
 
+    asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
     return asset

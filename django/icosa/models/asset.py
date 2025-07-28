@@ -167,7 +167,7 @@ class Asset(models.Model):
         else:
             return None
 
-    def get_preferred_viewer_format(self):
+    def get_preferred_viewer_format_for_assignment(self):
         formats = self.format_set.filter(root_resource__isnull=False)
         # GLB is our primary preferred format;
         inst = formats.filter(format_type="GLB").last()
@@ -190,6 +190,13 @@ class Asset(models.Model):
             return inst
 
         return None
+
+    def assign_preferred_viewer_format(self):
+        preferred_format = self.get_preferred_viewer_format_for_assignment()
+        if preferred_format is not None:
+            preferred_format.is_preferred_for_gallery_viewer = True
+            preferred_format.save()
+        return preferred_format
 
     @property
     def preferred_viewer_format(self):

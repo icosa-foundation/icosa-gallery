@@ -328,10 +328,7 @@ def upload(
     # After this, we can mark each format as preferred.
     asset.save()
 
-    preferred_format = asset.get_preferred_viewer_format()
-    preferred_format.is_preferred_for_gallery_viewer = True
-    preferred_format.save()
-
+    asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
 
