@@ -151,7 +151,17 @@ def preferred_viewer_format(asset):
 class Command(BaseCommand):
     help = """Exports data for writing to the database based on runtime behavior. Bakes preferred format and downloadable formats."""
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--asset-ids",
+            nargs="*",
+            default=[],
+            type=int,
+            help="Space-separated list of asset ids to operate on. If blank, will operate on all assets.",
+        )
+
     def handle(self, *args, **options):
+        return
         # These two lists are for downloads:
         formats_to_create = []  # These formats comprise runtime data that we are instead adding to the database as new, unhidden formats.
         formats_to_hide = []  # These formats are not eligible for download.
@@ -160,7 +170,11 @@ class Command(BaseCommand):
         format_resources_to_suffix = {}  # Blocks GLTF2 resources need to have the suffix added. It's more efficient to change the url than to create a whole new format just for this purpose.
         formats_to_prefer = []  # These are the ones we will mark as preferred.
 
-        assets = Asset.objects.all()
+        asset_ids = options.get("asset_ids")
+        if asset_ids:
+            assets = Asset.objects.filter(id__in=asset_ids)
+        else:
+            assets = Asset.objects.all()
         # assets = Asset.objects.filter(id=586142320819176293)
         print(f"todo: {assets.count()} assets.")
         for i, asset in enumerate(assets):
