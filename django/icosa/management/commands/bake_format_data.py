@@ -149,8 +149,7 @@ def preferred_viewer_format(asset):
 
 
 class Command(BaseCommand):
-    help = """Extracts format json into concrete models and converts to poly
-    format."""
+    help = """Exports data for writing to the database based on runtime behavior. Bakes preferred format and downloadable formats."""
 
     def handle(self, *args, **options):
         # These two lists are for downloads:
