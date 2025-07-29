@@ -40,7 +40,7 @@ def export_assets(
 
     export_timestamp = timezone.now().strftime("%d-%m-%y_%H-%M-%S")
 
-    with open(f"asset_export{export_timestamp}.jsonl", "a") as f:
+    with open(f"asset_export-{export_timestamp}.jsonl", "a") as f:
         print(f"todo: {assets.count()} assets.")
         for i, asset in enumerate(assets.iterator(chunk_size=1000)):
             # TODO: We need to be careful of `remix_ids` on the Asset. These
