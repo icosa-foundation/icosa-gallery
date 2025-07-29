@@ -1,6 +1,7 @@
 import datetime
 
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from icosa.models import Format
 
 ROLE_MAP = {
@@ -45,9 +46,23 @@ ROLE_MAP = {
 class Command(BaseCommand):
     help = """Converts format roles from integers to strings."""
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--asset-ids",
+            nargs="*",
+            default=[],
+            type=int,
+            help="Space-separated list of asset ids to operate on. If blank, will operate on all assets.",
+        )
+
     def handle(self, *args, **options):
         print("started ", datetime.datetime.now())
-        formats = Format.objects.filter(role__isnull=False).exclude(role="")
+
+        asset_ids = options.get("asset_ids")
+        q = Q(role__isnull=False)
+        if asset_ids:
+            q &= Q(asset__id__in=asset_ids)
+        formats = Format.objects.filter(q).exclude(role="")
         for format in formats.iterator(chunk_size=1000):
             try:
                 role = int(format.role)
