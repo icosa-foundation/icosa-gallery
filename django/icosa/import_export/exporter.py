@@ -62,6 +62,7 @@ def export_assets(
                 del format_data["asset"]
                 if format.root_resource:
                     format_data["root_resource"] = obj_to_dict(format.root_resource)
+                    format_data["root_resource"]["file"] = prefix_storage_root(format_data["root_resource"]["file"])
                 else:
                     format_data["root_resource"] = None
                 format_data["resource_set"] = []
