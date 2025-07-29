@@ -66,6 +66,7 @@ def import_assets(file_name: str):
         for line in json_file:
             data = json.loads(line)
             asset_defaults = dict(data)
+            del asset_defaults["id"]
             del asset_defaults["owner"]
             del asset_defaults["format_set"]
             asset_defaults["thumbnail"] = strip_storage_root(asset_defaults["thumbnail"])
@@ -95,3 +96,33 @@ def import_assets(file_name: str):
                     resource_defaults["format"] = format
                     resource_defaults["file"] = strip_storage_root(resource_defaults["file"])
                     Resource.objects.create(**root_resource_defaults)
+
+            # Create asset owner
+            # TODO: do we change the `imported` field? Seems like `imported`
+            # should be a string, not a boolean.
+            asset_owner_data = data["owner"]
+            if asset_owner_data is None:
+                continue
+
+            asset_owner_defaults = dict(asset_owner_data)
+            del asset_owner_defaults["url"]
+            asset_owner_defaults["django_user"] = None
+            asset_owner, _ = AssetOwner.objects.get_or_create(
+                url=asset_owner_data["url"], defaults=asset_owner_defaults
+            )
+
+            # Create django user
+            django_user_data = data["owner"].get("django_user", None)
+            if django_user_data is None:
+                continue
+
+            django_user_defaults = dict(django_user_data)
+            del django_user_defaults["username"]
+            # We can't use the create_user helper method, because we have the
+            # password hash stored; create_user expects a raw password.
+            django_user, _ = User.objects.get_or_create(
+                username=django_user_data["username"], defaults=django_user_defaults
+            )
+
+            asset_owner.django_user = django_user
+            asset_owner.save()
