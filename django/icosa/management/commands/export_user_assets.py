@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from icosa.import_export.exporter import export_assets
 
 User = get_user_model()
