@@ -4,8 +4,6 @@ from icosa.import_export.exporter import export_assets
 
 User = get_user_model()
 
-STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
-
 
 class Command(BaseCommand):
     help = """Exports data for import into another instance of Icosa Gallery."""
