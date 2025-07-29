@@ -12,7 +12,10 @@ STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
 # Django's model_to_dict does not serialize all field types. This method gets
 # us more of the way there.
 def obj_to_dict(obj: Model) -> dict:
-    return json.loads(serialize("json", [obj]))[0]["fields"]
+    json_data = json.loads(serialize("json", [obj]))[0]
+    obj_data = json_data["fields"]
+    obj_data.update({"id": json_data["pk"]})
+    return obj_data
 
 
 def prefix_storage_root(s: str) -> str:
