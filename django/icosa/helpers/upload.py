@@ -1,6 +1,7 @@
 import io
 import json
 import os
+import time
 import zipfile
 from dataclasses import dataclass
 from typing import List, Optional
@@ -25,6 +26,7 @@ from icosa.helpers.format_roles import (
     TILT_NATIVE_GLTF,
     USER_SUPPLIED_GLTF,
 )
+from icosa.helpers.logger import icosa_log
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     ASSET_STATE_UPLOADING,
@@ -141,12 +143,19 @@ def upload_api_asset(
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
+    total_start = time.time()  # Logging
+
     asset.state = ASSET_STATE_UPLOADING
     asset.save()
     if files is None:
         raise HttpError(400, "Include files for upload.")
     try:
-        upload_set = process_files(files)
+        process_files_start = time.time()  # Logging
+        upload_set = process_files(files)  # Logging
+        process_files_end = time.time()
+        icosa_log(
+            f"Finish processing files for asset {asset.url} in {process_files_end - process_files_start} seconds."
+        )  # Logging
     except (ZipException, HttpError):
         raise HttpError(400, "Invalid zip archive.")
 
@@ -210,6 +219,10 @@ def upload_api_asset(
 
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
+
+    total_end = time.time()  # Logging
+    icosa_log(f"Finish uploading asset {asset.url} in {total_end - total_start} seconds.")  # Logging
+
     return asset
 
 
@@ -226,6 +239,8 @@ def make_formats(mainfile, sub_files, asset, role=None):
     }
     format = Format.objects.create(**format_data)
 
+    file_start = time.time()  # Logging
+
     root_resource_data = {
         "file": file,
         "asset": asset,
@@ -236,7 +251,14 @@ def make_formats(mainfile, sub_files, asset, role=None):
     format.add_root_resource(root_resource)
     format.save()
 
+    file_end = time.time()  # Logging
+    icosa_log(
+        f"Finish processing file {file.name} for asset {asset.url} in {file_end - file_start} seconds."
+    )  # Logging
+
     for subfile in sub_files:
+        file_start = time.time()  # Logging
+
         sub_resource_data = {
             "file": subfile.file,
             "format": format,
@@ -244,6 +266,11 @@ def make_formats(mainfile, sub_files, asset, role=None):
             "contenttype": get_content_type(subfile.file.name),
         }
         Resource.objects.create(**sub_resource_data)
+
+        file_end = time.time()  # Logging
+        icosa_log(
+            f"Finish processing file {subfile.file.name} for asset {asset.url} in {file_end - file_start} seconds."
+        )  # Logging
 
 
 def get_role(

@@ -2,6 +2,7 @@ import base64
 import io
 import os
 import re
+import time
 from collections.abc import Buffer
 from dataclasses import dataclass
 from typing import List, Optional
@@ -17,6 +18,7 @@ from icosa.helpers.format_roles import (
     ORIGINAL_TRIANGULATED_OBJ_FORMAT,
     TILT_FORMAT,
 )
+from icosa.helpers.logger import icosa_log
 from icosa.models import (
     ASSET_STATE_UPLOADING,
     VALID_THUMBNAIL_MIME_TYPES,
@@ -434,6 +436,8 @@ def upload_blocks_format(
         format__role=get_blocks_role_id(f), file__endswith=f.file.name
     ).first()
 
+    start = time.time()  # Logging
+
     if existing_resource is not None:
         existing_resource.file = f.file
         existing_resource.save()
@@ -454,6 +458,9 @@ def upload_blocks_format(
             raise HttpError(400, "Thumbnail must be png or jpg.")
     else:
         process_normally(asset, f)
+
+    end = time.time()  # Logging
+    icosa_log(f"Finished uploading {file} for asset {asset.url} in {end - start} seconds")  # Logging
 
     return asset
 

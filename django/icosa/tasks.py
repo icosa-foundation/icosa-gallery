@@ -7,6 +7,7 @@ from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
 from icosa.api.schema import AssetFinalizeData
 from icosa.helpers.file import upload_blocks_format
+from icosa.helpers.logger import icosa_log
 from icosa.helpers.upload import upload_api_asset
 from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
@@ -72,6 +73,7 @@ def queue_blocks_upload_format(
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
+    icosa_log(f"Start upload for asset {asset.url}")
     upload_blocks_format(
         asset,
         files,
@@ -81,6 +83,8 @@ def queue_blocks_upload_format(
 @on_commit_task()
 @transaction.atomic
 def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
+    start = time.time()  # Logging
+
     asset = Asset.objects.get(url=asset_url)
 
     # Clean up formats with no root resource.
@@ -107,6 +111,9 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
     asset.state = ASSET_STATE_COMPLETE
     asset.remix_ids = getattr(data, "remixIds", None)
     asset.save()
+
+    end = time.time()  # Logging
+    icosa_log(f"Finalized asset {asset.url} in {end - start} seconds.")  # Logging
 
 
 def save_all_assets(
