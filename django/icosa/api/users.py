@@ -290,16 +290,9 @@ def add_blocks_asset_format(
     check_user_owns_asset(request, asset)
 
     if request.headers.get("content-type").startswith("multipart/form-data"):
-        print("***** REQUEST DEBUG START *****")
         try:
-            print("FILES:")
-            print(request.FILES)
             queue_blocks_upload_format(user, asset, files)
         except HttpError:
-            print("HEADERS:")
-            print(request.headers)
-            print("POST DATA:")
-            print(request.POST)
             raise
     else:
         raise HttpError(415, "Unsupported content type.")
