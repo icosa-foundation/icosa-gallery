@@ -1,12 +1,14 @@
 import json
 
+from django.contrib.auth import get_user_model
 from django.core.serializers import serialize
 from django.db.models import Model, Q
 from django.utils import timezone
-from icosa.models import Asset
+from icosa.models import Asset, AssetOwner
 
 # TODO: Don't hard-code this
 STORAGE_ROOT = "https://f005.backblazeb2.com/file/icosa-gallery/"
+User = get_user_model()
 
 
 # Django's model_to_dict does not serialize all field types. This method gets
@@ -24,23 +26,40 @@ def prefix_storage_root(s: str) -> str:
     return f"{STORAGE_ROOT}{s}"
 
 
-def export_assets(
+def export_user(django_user):
+    # TODO: This exports the django user's password hash. Not
+    # as terrible as plain text, but perhaps we should warn the
+    # operating user that we are doing this.
+    return obj_to_dict(django_user)
+
+
+def export_owner(owner):
+    owner_data = obj_to_dict(owner)
+    if owner.django_user:
+        owner_data["django_user"] = export_user(owner.django_user)
+    return owner_data
+
+
+def do_export(
     asset_ids: list[int] = [],
     owner_ids: list[int] = [],
     user_ids: list[int] = [],
 ):
-    q = Q()
+    asset_q = Q()
     if asset_ids:
-        q &= Q(id__in=asset_ids)
+        asset_q &= Q(id__in=asset_ids)
     if owner_ids:
-        q &= Q(asset_owner__id__in=owner_ids)
+        asset_q &= Q(asset_owner__id__in=owner_ids)
     if user_ids:
-        q &= Q(asset_owner__django_user__id__in=user_ids)
-    assets = Asset.objects.filter(q)
+        asset_q &= Q(asset_owner__django_user__id__in=user_ids)
+    assets = Asset.objects.filter(asset_q)
 
     export_timestamp = timezone.now().strftime("%d-%m-%y_%H-%M-%S")
 
-    with open(f"asset_export-{export_timestamp}.jsonl", "a") as f:
+    exported_owner_ids = set()
+    exported_user_ids = set()
+
+    with open(f"export-{export_timestamp}.jsonl", "a") as f:
         print(f"todo: {assets.count()} assets.")
         for i, asset in enumerate(assets.iterator(chunk_size=1000)):
             # TODO: We need to be careful of `remix_ids` on the Asset. These
@@ -79,15 +98,35 @@ def export_assets(
             # wasteful, I should rethink this. We will need a more clever way of
             # making sure the right assets get the right owners, etc.
             if asset.owner:
-                owner_data = obj_to_dict(asset.owner)
+                exported_owner_ids.add(asset.owner.id)
                 if asset.owner.django_user:
-                    # TODO: This exports the django user's password hash. Not
-                    # as terrible as plain text, but perhaps we should warn the
-                    # operating user that we are doing this.
-                    owner_data["django_user"] = obj_to_dict(asset.owner.django_user)
-                asset_data["owner"] = owner_data
+                    exported_user_ids.add(asset.owner.django_user.id)
+                asset_data["owner"] = export_owner(asset.owner)
+            asset_data["object_type"] = "asset"
             line_out = json.dumps(asset_data)
             f.write(line_out + "\n")
 
             if i and i % 1000 == 0:
-                print(f"done {i}")
+                print(f"Exported {i} assets.")
+
+        if owner_ids:
+            owners = AssetOwner.objects.filter(id__in=owner_ids).exclude(id__in=list(exported_owner_ids))
+            for i, owner in enumerate(owners.iterator(chunk_size=1000)):
+                owner_data = export_owner(owner)
+                owner_data["object_type"] = "owner"
+                line_out = json.dumps(owner_data)
+                f.write(line_out + "\n")
+
+                if i and i % 1000 == 0:
+                    print(f"Exported {i} owners.")
+
+        if user_ids:
+            users = User.objects.filter(id__in=owner_ids).exclude(id__in=list(exported_user_ids))
+            for i, user in enumerate(users.iterator(chunk_size=1000)):
+                user_data = export_user(user)
+                user_data["object_type"] = "user"
+                line_out = json.dumps(user_data)
+                f.write(line_out + "\n")
+
+                if i and i % 1000 == 0:
+                    print(f"Exported {i} users.")

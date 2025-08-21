@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-from icosa.import_export.exporter import export_assets
+from icosa.import_export.exporter import do_export
 
 User = get_user_model()
 
@@ -36,7 +36,7 @@ class Command(BaseCommand):
         owner_ids = options.get("owner_ids", [])
         user_ids = options.get("user_ids", [])
 
-        export_assets(
+        do_export(
             asset_ids=asset_ids,
             owner_ids=owner_ids,
             user_ids=user_ids,

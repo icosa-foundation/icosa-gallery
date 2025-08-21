@@ -1,5 +1,5 @@
-from django.core.management.base import BaseCommand, CommandError
-from icosa.import_export.importer import import_assets
+from django.core.management.base import BaseCommand  # , CommandError
+from icosa.import_export.importer import do_import
 
 
 class Command(BaseCommand):
@@ -14,8 +14,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         file_name = options["file"]
-        import_assets(file_name)
+        do_import(file_name)
         # try:
-        #     import_assets(file_name)
+        #     do_import(file_name)
         # except Exception as e:
         #     raise CommandError(e)
