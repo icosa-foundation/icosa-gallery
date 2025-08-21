@@ -156,6 +156,7 @@ INSTALLED_APPS = [
     "constance",
     "constance.backends.database",
     "corsheaders",
+    "email_logger",
     "honeypot",
     "huey.contrib.djhuey",
     "import_export",

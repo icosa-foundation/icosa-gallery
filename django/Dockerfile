@@ -15,6 +15,7 @@ ENV PATH="/venv/bin:$PATH"
 RUN set -x \
     && BUILD_DEPS=" \
     build-essential \
+    git \
     libmagic-dev \
     libpq-dev \
     # nodejs \
