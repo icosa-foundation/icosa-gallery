@@ -49,9 +49,9 @@ def do_export(
     if asset_ids:
         asset_q &= Q(id__in=asset_ids)
     if owner_ids:
-        asset_q &= Q(asset_owner__id__in=owner_ids)
+        asset_q &= Q(owner__id__in=owner_ids)
     if user_ids:
-        asset_q &= Q(asset_owner__django_user__id__in=user_ids)
+        asset_q &= Q(owner__django_user__id__in=user_ids)
     assets = Asset.objects.filter(asset_q)
 
     export_timestamp = timezone.now().strftime("%d-%m-%y_%H-%M-%S")
@@ -60,7 +60,7 @@ def do_export(
     exported_user_ids = set()
 
     with open(f"export-{export_timestamp}.jsonl", "a") as f:
-        print(f"todo: {assets.count()} assets.")
+        print(f"Exporting {assets.count()} assets with their owners and users.")
         for i, asset in enumerate(assets.iterator(chunk_size=1000)):
             # TODO: We need to be careful of `remix_ids` on the Asset. These
             # IDs will be the source system's IDs and might either not be
@@ -107,21 +107,35 @@ def do_export(
             f.write(line_out + "\n")
 
             if i and i % 1000 == 0:
-                print(f"Exported {i} assets.")
+                print(f"Exported {i} of {len(assets)} assets.")
 
+        owner_q = Q()
         if owner_ids:
-            owners = AssetOwner.objects.filter(id__in=owner_ids).exclude(id__in=list(exported_owner_ids))
+            owner_q &= Q(id__in=owner_ids)
+        if user_ids:
+            owner_q &= Q(django_user__id__in=user_ids)
+
+        if owner_ids or user_ids:
+            owners = AssetOwner.objects.filter(owner_q).exclude(id__in=list(exported_owner_ids))
+            print(
+                f"Exporting {owners.count()} owners with their users. ({len(exported_owner_ids)} excluded as they were exported during asset export.)"
+            )
             for i, owner in enumerate(owners.iterator(chunk_size=1000)):
                 owner_data = export_owner(owner)
                 owner_data["object_type"] = "owner"
+                if owner.django_user:
+                    exported_user_ids.add(owner.django_user.id)
                 line_out = json.dumps(owner_data)
                 f.write(line_out + "\n")
 
                 if i and i % 1000 == 0:
-                    print(f"Exported {i} owners.")
+                    print(f"Exported {i} of {len(owners)} owners.")
 
         if user_ids:
-            users = User.objects.filter(id__in=owner_ids).exclude(id__in=list(exported_user_ids))
+            users = User.objects.filter(id__in=user_ids).exclude(id__in=list(exported_user_ids))
+            print(
+                f"Exporting {users.count()} users. ({len(exported_user_ids)} excluded as they were exported during owner export.)"
+            )
             for i, user in enumerate(users.iterator(chunk_size=1000)):
                 user_data = export_user(user)
                 user_data["object_type"] = "user"
@@ -129,4 +143,5 @@ def do_export(
                 f.write(line_out + "\n")
 
                 if i and i % 1000 == 0:
-                    print(f"Exported {i} users.")
+                    print(f"Exported {i} of {len(users)} users.")
+        print("Done")

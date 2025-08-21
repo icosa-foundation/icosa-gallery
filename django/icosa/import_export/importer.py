@@ -26,50 +26,87 @@ def validate_data(file_name: str) -> tuple[bool, int, str]:
     with open(file_name, "r") as json_file:
         for i, line in enumerate(json_file, 1):
             data = json.loads(line)
-            for key in keys_to_test:
-                try:
-                    data[key]
-                except KeyError as e:
-                    is_valid = False
-                    error_line = i
-                    error_message = e
-                    break
-            for key in subkeys_to_test:
-                try:
-                    k1 = data[key[0]]
-                    if type(k1) is list:
-                        for item in k1:
-                            item[key[1]]
-                    if type(k1) is dict:
-                        k1[key[1]]
-                except KeyError as e:
-                    is_valid = False
-                    error_line = i
-                    error_message = e
-                    break
+            # Currently only validating assets
+            if data.get("object_type", "") == "asset":
+                for key in keys_to_test:
+                    try:
+                        data[key]
+                    except KeyError as e:
+                        is_valid = False
+                        error_line = i
+                        error_message = e
+                        break
+                for key in subkeys_to_test:
+                    try:
+                        k1 = data[key[0]]
+                        if type(k1) is list:
+                            for item in k1:
+                                item[key[1]]
+                        if type(k1) is dict:
+                            k1[key[1]]
+                    except KeyError as e:
+                        is_valid = False
+                        error_line = i
+                        error_message = e
+                        break
     return (is_valid, error_line, error_message)
 
 
-def import_user():
-    pass
+def import_django_user(django_user_data):
+    django_user_defaults = dict(django_user_data)
+    del django_user_defaults["username"]
+    # We can't use the create_user helper method, because we have the password
+    # hash stored; create_user expects a raw password.
+    django_user, created = User.objects.get_or_create(
+        username=django_user_data["username"],
+        defaults=django_user_defaults,
+    )
+
+    if not created:
+        print(f"Skipped User {django_user_data['username']}. Already exists.")
+
+    return django_user
 
 
-def import_owner():
-    pass
+def import_owner(asset_owner_data):
+    asset_owner_defaults = dict(asset_owner_data)
+    del asset_owner_defaults["url"]
+    asset_owner_defaults["django_user"] = None
+    asset_owner, created = AssetOwner.objects.get_or_create(
+        url=asset_owner_data["url"],
+        defaults=asset_owner_defaults,
+    )
+    if not created:
+        print(f"Skipped AssetOwner {asset_owner_data['url']}. Already exists.")
+        return asset_owner
+
+    django_user_data = asset_owner_data.get("django_user", None)
+
+    if django_user_data is None:
+        return asset_owner
+
+    django_user = import_django_user(django_user_data)
+
+    asset_owner.django_user = django_user
+    asset_owner.save()
+
+    return asset_owner
 
 
 def import_asset(data):
     asset_defaults = dict(data)
     del asset_defaults["id"]
+    del asset_defaults["url"]
     del asset_defaults["owner"]
     del asset_defaults["format_set"]
     asset_defaults["thumbnail"] = strip_storage_root(asset_defaults["thumbnail"])
     asset_defaults["preview_image"] = strip_storage_root(asset_defaults["preview_image"])
-    asset, asset_created = Asset.objects.get_or_create(id=data["id"], defaults=asset_defaults)
+    asset, asset_created = Asset.objects.get_or_create(url=data["url"], defaults=asset_defaults)
 
     # The asset already exists. Currently, this means we will not create
     # formats and resources for it. This could change in future.
     if not asset_created:
+        print(f"Skipped Asset {data['url']}. Already exists.")
         return
 
     # Create formats and their resources
@@ -98,26 +135,9 @@ def import_asset(data):
     if asset_owner_data is None:
         return
 
-    import_owner(asset_owner_data)
-
-    asset_owner_defaults = dict(asset_owner_data)
-    del asset_owner_defaults["url"]
-    asset_owner_defaults["django_user"] = None
-    asset_owner, _ = AssetOwner.objects.get_or_create(url=asset_owner_data["url"], defaults=asset_owner_defaults)
-
-    # Create django user
-    django_user_data = data["owner"].get("django_user", None)
-    if django_user_data is None:
-        return
-
-    django_user_defaults = dict(django_user_data)
-    del django_user_defaults["username"]
-    # We can't use the create_user helper method, because we have the password
-    # hash stored; create_user expects a raw password.
-    django_user, _ = User.objects.get_or_create(username=django_user_data["username"], defaults=django_user_defaults)
-
-    asset_owner.django_user = django_user
-    asset_owner.save()
+    asset_owner = import_owner(asset_owner_data)
+    asset.owner = asset_owner
+    asset.save()
 
 
 def do_import(file_name: str):
@@ -140,8 +160,11 @@ def do_import(file_name: str):
                 print(f"Skipping line {i}: object_type not one of 'asset', 'owner', or 'user'.")
 
             if object_type == "user":
-                import_user(data)
+                print("Importing User")
+                import_django_user(data)
             if object_type == "owner":
+                print("Importing Owner")
                 import_owner(data)
             if object_type == "asset":
+                print("Importing Asset")
                 import_asset(data)
