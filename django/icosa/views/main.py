@@ -46,6 +46,7 @@ from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
+    ARCHIVED,
     ASSET_STATE_BARE,
     ASSET_STATE_FAILED,
     ASSET_STATE_UPLOADING,
@@ -111,7 +112,7 @@ def user_can_view_asset(
     user: AbstractBaseUser,
     asset: Asset,
 ) -> bool:
-    if asset.visibility == PRIVATE:
+    if asset.visibility in [PRIVATE, ARCHIVED]:
         return user.is_authenticated and asset.owner.django_user == user
     return True
 
