@@ -1,6 +1,7 @@
 import datetime
+import json
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
 from icosa.models import Format
 
@@ -54,14 +55,44 @@ class Command(BaseCommand):
             type=int,
             help="Space-separated list of asset ids to operate on. If blank, will operate on all assets.",
         )
+        parser.add_argument(
+            "--asset-ids-from-file",
+            default=None,
+            type=str,
+            help="Path to a file that contains a json list of Asset ids to operate on. If blank, will operate on all Assets.",
+        )
+        parser.add_argument(
+            "--exclude",
+            action="store_true",
+            help="With this flag present, any id lists supplied via arguments or files will be treated as ids to exclude. Applies globally to all other arguments.",
+        )
 
     def handle(self, *args, **options):
         print("started ", datetime.datetime.now())
 
-        asset_ids = options.get("asset_ids")
+        asset_ids_arg = options.get("asset_ids")
+        asset_ids_from_file = options.get("asset_ids_from_file")
+        exclude_flag = bool(options.get("exclude"))
+
         q = Q(role__isnull=False)
-        if asset_ids:
+
+        if asset_ids_arg:
+            asset_ids = asset_ids_arg
+        elif asset_ids_from_file:
+            ids_from_file = []
+            with open(asset_ids_from_file, "r") as f:
+                ids_from_file = json.load(f)
+                if type(ids_from_file) is not list:
+                    raise CommandError(f"No list of ids found in {asset_ids_from_file}.")
+                if not all(isinstance(item, int) for item in ids_from_file):
+                    raise CommandError(f"File, {asset_ids_from_file} must contain only integers.")
+            asset_ids = ids_from_file
+
+        if exclude_flag:
+            q &= ~Q(asset__id__in=asset_ids)
+        else:
             q &= Q(asset__id__in=asset_ids)
+
         formats = Format.objects.filter(q).exclude(role="")
         for format in formats.iterator(chunk_size=1000):
             try:
