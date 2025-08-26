@@ -123,7 +123,7 @@
             console.log("GLTF2 failed. Trying to load as GLTF1");
             await viewer.loadGltf1(url, true, overrides);
         }
-    } else if (formatType === 'gltf') {
+    } else if (formatType === 'gltf1') {
         try {
             console.log("Trying to load as GLTF1");
             await viewer.loadGltf1(url, true, overrides);
