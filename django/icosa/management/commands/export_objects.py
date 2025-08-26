@@ -64,14 +64,14 @@ class Command(BaseCommand):
             nargs="*",
             default=None,
             type=int,
-            help="Space-separated list of AssetOwner ids to export. If blank, will export all assets. Overrides this option's `-from-file` variant.",
+            help="Space-separated list of AssetOwner ids to export. Also exports all Assets by these Owners. If blank, will export all assets. Overrides this option's `-from-file` variant.",
         )
         parser.add_argument(
             "--user-ids",
             nargs="*",
             default=None,
             type=int,
-            help="Space-separated list of User ids to export. If blank, will export all assets. Overrides this option's `-from-file` variant.",
+            help="Space-separated list of User ids to export. Also exports all Assets by these Users. If blank, will export all assets. Overrides this option's `-from-file` variant.",
         )
         parser.add_argument(
             "--asset-ids-from-file",
@@ -83,13 +83,13 @@ class Command(BaseCommand):
             "--owner-ids-from-file",
             default=None,
             type=str,
-            help="Path to a file that contains a json list of AssetOwner ids to export. If blank, will export all assets.",
+            help="Path to a file that contains a json list of AssetOwner ids to export. Also exports all Assets by these Owners. If blank, will export all assets.",
         )
         parser.add_argument(
             "--user-ids-from-file",
             default=None,
             type=str,
-            help="Path to a file that contains a json list of User ids to export. If blank, will export all assets.",
+            help="Path to a file that contains a json list of User ids to export. Also exports all Assets by these Users. If blank, will export all assets.",
         )
         parser.add_argument(
             "--exclude",
