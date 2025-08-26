@@ -44,6 +44,7 @@ def do_export(
     asset_ids: list[int] = [],
     owner_ids: list[int] = [],
     user_ids: list[int] = [],
+    exclude_flag: bool = False,
 ):
     asset_q = Q()
     if asset_ids:
