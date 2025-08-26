@@ -44,15 +44,19 @@ def do_export(
     asset_ids: list[int] = [],
     owner_ids: list[int] = [],
     user_ids: list[int] = [],
+    exclude_flag: bool = False,
 ):
     asset_q = Q()
-    if asset_ids:
-        asset_q &= Q(id__in=asset_ids)
-    if owner_ids:
-        asset_q &= Q(owner__id__in=owner_ids)
-    if user_ids:
-        asset_q &= Q(owner__django_user__id__in=user_ids)
+    if not exclude_flag:
+        if asset_ids:
+            asset_q &= Q(id__in=asset_ids)
+        if owner_ids:
+            asset_q &= Q(owner__id__in=owner_ids)
+        if user_ids:
+            asset_q &= Q(owner__django_user__id__in=user_ids)
     assets = Asset.objects.filter(asset_q)
+    if exclude_flag:
+        assets = Asset.objects.exclude(id__in=asset_ids)
 
     export_timestamp = timezone.now().strftime("%d-%m-%y_%H-%M-%S")
 
@@ -110,13 +114,17 @@ def do_export(
                 print(f"Exported {i} of {len(assets)} assets.")
 
         owner_q = Q()
-        if owner_ids:
-            owner_q &= Q(id__in=owner_ids)
-        if user_ids:
-            owner_q &= Q(django_user__id__in=user_ids)
+        if not exclude_flag:
+            if owner_ids:
+                owner_q &= Q(id__in=owner_ids)
+            if user_ids:
+                owner_q &= Q(django_user__id__in=user_ids)
 
         if owner_ids or user_ids:
             owners = AssetOwner.objects.filter(owner_q).exclude(id__in=list(exported_owner_ids))
+            if exclude_flag:
+                owners = AssetOwner.objects.exclude(id__in=owner_ids)
+
             print(
                 f"Exporting {owners.count()} owners with their users. ({len(exported_owner_ids)} excluded as they were exported during asset export.)"
             )
@@ -132,7 +140,12 @@ def do_export(
                     print(f"Exported {i} of {len(owners)} owners.")
 
         if user_ids:
-            users = User.objects.filter(id__in=user_ids).exclude(id__in=list(exported_user_ids))
+            if exclude_flag:
+                users = User.objects.exclude(id__in=user_ids)
+            else:
+                users = User.objects.filter(id__in=user_ids)
+            users = users.exclude(id__in=list(exported_user_ids))
+
             print(
                 f"Exporting {users.count()} users. ({len(exported_user_ids)} excluded as they were exported during owner export.)"
             )
