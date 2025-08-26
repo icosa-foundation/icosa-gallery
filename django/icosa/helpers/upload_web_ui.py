@@ -16,7 +16,6 @@ from icosa.helpers.file import (
     get_content_type,
     validate_file,
 )
-from icosa.helpers.format_roles import USER_SUPPLIED_GLTF
 from icosa.helpers.upload import TYPE_ROLE_MAP
 from icosa.models import (
     ASSET_STATE_COMPLETE,
@@ -50,8 +49,8 @@ VALID_WEB_FORMAT_TYPES = [
 
 def get_role(mainfile: UploadedFormat) -> str:
     type = mainfile.filetype
-    if type.startswith("GLTF"):
-        role = USER_SUPPLIED_GLTF
+    if type in ["GLTF1", "GLTF2"]:
+        role = "USER_SUPPLIED_GLTF"
     else:
         role = TYPE_ROLE_MAP.get(type, None)
     return role
@@ -182,7 +181,7 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
     format_type = mainfile.filetype
     name = mainfile.file.name
     file = mainfile.file
-    if format_type == "GLTF" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
+    if format_type == "GLTF1" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
         format_type = "GLB"
         name = f"{os.path.splitext(name)[0]}.glb"
         with open(gltf_to_convert, "rb") as f:
@@ -264,7 +263,7 @@ def upload(
                     valid_file,
                     asset_dir,
                 )
-            if valid_file.filetype == "GLTF" and gltf_to_convert is None:
+            if valid_file.filetype == "GLTF1" and gltf_to_convert is None:
                 gltf_to_convert = write_files_to_convert(
                     valid_file,
                     asset_dir,
@@ -296,7 +295,7 @@ def upload(
 
     for mainfile in main_files:
         type = mainfile.filetype
-        if type.startswith("GLTF"):
+        if type.startswith("GLTF1"):
             sub_files_list = sub_files["GLTF"] + sub_files["GLB"]
         else:
             try:
@@ -325,6 +324,12 @@ def upload(
     if thumbnail is not None:
         add_thumbnail_to_asset(thumbnail, asset)
 
+    # Save here so all formats and resources are associated with the asset.
+    # After this, we can mark each format as preferred.
+    asset.save()
+
+    asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
+
     return asset

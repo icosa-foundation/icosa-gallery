@@ -56,3 +56,12 @@ Import the sql data:
 `\i /opt/db.sql`
 
 
+preferred format changes:
+
+- handle_blocks_format
+if not self.has_gltf2:
+	always pick local; cors good formats
+	always pick a triangulated obj
+	Make a report for any that we find that aren't local or do not match:
+	we have exactly 2 obj: one tri, one ngon.
+
