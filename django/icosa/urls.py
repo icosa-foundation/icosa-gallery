@@ -143,6 +143,11 @@ urlpatterns = [
         name="asset_edit",
     ),
     path(
+        "asset_admin_change/<str:asset_url>",
+        main_views.asset_forward_to_admin_change,
+        name="asset_admin_change",
+    ),
+    path(
         "delete/<str:asset_url>",
         main_views.asset_delete,
         name="asset_delete",

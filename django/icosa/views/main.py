@@ -543,6 +543,23 @@ def asset_view(request, asset_url):
     )
 
 
+@never_cache
+@user_passes_test(lambda u: u.is_superuser)
+def asset_forward_to_admin_change(request, asset_url):
+    # NOTE(safety) This view exists solely so as to not expose asset IDs on the
+    # front end. At time of writing, only superusers can see this, but I don't
+    # want putting links with IDs on the front end to become a practice.
+
+    asset = get_object_or_404(Asset, url=asset_url)
+
+    return HttpResponseRedirect(
+        reverse(
+            "admin:icosa_asset_change",
+            kwargs={"object_id": asset.id},
+        )
+    )
+
+
 @xframe_options_exempt
 @never_cache
 def asset_oembed(request, asset_url):
