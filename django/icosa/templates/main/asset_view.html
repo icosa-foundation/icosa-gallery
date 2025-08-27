@@ -47,7 +47,7 @@
                 <p></p>
                 {% if user_owns_asset or request.user.is_superuser %}
                     <a class="btn btn-primary btn-sm" href="{% url 'icosa:asset_edit' asset_url=asset.url %}">
-                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser and not user_owns_asset %} (as superuser){% endif %}
+                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser and not user_owns_asset %} (as a superuser){% endif %}
                     </a>
                 {% endif %}
                 <p>
