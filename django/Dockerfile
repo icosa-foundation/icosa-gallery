@@ -32,7 +32,9 @@ RUN set -x \
 # Virtualenv setup
 RUN python -m venv /venv
 COPY requirements.in .
+COPY requirements-dev.in .
 RUN pip install --no-cache-dir -r requirements.in
+RUN pip install --no-cache-dir -r requirements-dev.in
 
 ####
 # Slim app container
