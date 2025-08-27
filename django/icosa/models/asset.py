@@ -394,7 +394,7 @@ class Asset(models.Model):
                 # If there is only one resource, there is no need to create
                 # a zip file; we can offer our local file, or a link to the
                 # external host.
-                else:
+                elif len(resources) == 1:
                     resource = resources[0]
                     if resource.file:
                         storage = settings.DJANGO_STORAGE_URL
@@ -404,6 +404,8 @@ class Asset(models.Model):
                         resource_data = {"file": resource.external_url}
                     else:
                         resource_data = {}
+                else:
+                    resource_data = {}
 
             format_name = format.user_label()
 
