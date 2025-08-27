@@ -194,6 +194,7 @@ class Asset(models.Model):
     def assign_preferred_viewer_format(self):
         preferred_format = self.get_preferred_viewer_format_for_assignment()
         if preferred_format is not None:
+            # TODO(james) do we mark all other formats as not preferred?
             preferred_format.is_preferred_for_gallery_viewer = True
             preferred_format.save()
         return preferred_format
@@ -460,6 +461,7 @@ class Asset(models.Model):
                 self.denorm_liked_time()
                 if update_timestamps:
                     self.update_time = now
+            self.assign_preferred_viewer_format()
         super().save(*args, **kwargs)
 
     class Meta:
