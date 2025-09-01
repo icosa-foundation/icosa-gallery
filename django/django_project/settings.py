@@ -211,6 +211,8 @@ STATICFILES_FINDERS = (
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
     "compressor.finders.CompressorFinder",
 )
+# TODO(james): Does this need to be configurable?
+ICOSA_SKETCH_ASSETS_LOCATION = "icosa-sketch-assets"
 
 
 TEMPLATES = [
