@@ -94,7 +94,23 @@ JWT_SECRET_KEY=
 
 `MY_BAD_PASSWORD='pa$$word'`
 
-### Step 4 - Build and run the project
+### Step 4 - Add sketch assets dependencies
+
+We currently have a dependency on a separate project: https://github.com/icosa-foundation/icosa-sketch-assets
+
+We haven't yet settled on a build step for this dependency so for now, you will need to make sure that the `brushes`, `environments`, and `textures` directories of that project are placed inside the directory as defined in the settings file: `ICOSA_SKETCH_ASSETS_LOCATION`.
+
+A simple way to do this would be to clone the repository to your host machine and then copy the assets into this project using something like the following:
+
+``` bash
+git clone https://github.com/icosa-foundation/icosa-sketch-assets
+cd icosa-sketch-assets
+docker cp brushes ig-web:/opt/static/icosa-sketch-assets/brushes
+docker cp textures ig-web:/opt/static/icosa-sketch-assets/textures
+docker cp environments ig-web:/opt/static/icosa-sketch-assets/environments
+```
+
+### Step 5 - Build and run the project
 
 ``` bash
 docker compose build
@@ -111,7 +127,7 @@ docker compose down
 
 **Note:** The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
 
-### Step 5 - Setup an admin user
+### Step 6 - Setup an admin user
 
 Type the following commands to create an admin user. You'll then be able to log in as this user at http://example.localhost/admin
 
@@ -133,7 +149,7 @@ Exit the Docker container back to your normal shell:
 exit
 ```
 
-### Step 6 - Configure SSL
+### Step 7 - Configure SSL
 
 While this installation will listen to requests on https, we do not currently manage SSL certificates for you. The simplest option to secure your site with an SSL certificate and accept traffic over https is to configure a service like [cloudflare](cloudflare.com).
 
