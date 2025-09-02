@@ -461,7 +461,6 @@ class Asset(models.Model):
                 self.denorm_liked_time()
                 if update_timestamps:
                     self.update_time = now
-            self.assign_preferred_viewer_format()
         super().save(*args, **kwargs)
 
     class Meta:
