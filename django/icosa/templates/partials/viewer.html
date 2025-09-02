@@ -65,25 +65,37 @@
 <script type="importmap" class="es6_modules_map">
     {
         "imports": {
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/",
-            "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/"
+    {% if request.session.viewer_js_version == "experimental" %}
+        "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
+		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/",
+		"three-icosa": "./three-icosa.module.js",
+		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
+		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@0.1.8/dist/spark.module.js"
+    {% else %}
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/",
+		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/"
+    {% endif %}
         }
     }
 </script>
 <script type="module">
+
     {% if request.session.viewer_js_version == "experimental" %}
-    import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
+        import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
+        import * as THREE from "three";
     {% elif request.session.viewer_js_version == "previous" %}
-    import { Viewer } from "/static/js-experimental/_prev_icosa-viewer.module.js?v={% now "U" %}";
+        import { Viewer } from "/static/js-experimental/_prev_icosa-viewer.module.js?v={% now "U" %}";
     {% else %}
-    import { Viewer } from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
+        import { Viewer } from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
     {% endif %}
+
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     {% if request.session.viewer_js_version == "experimental" %}
-    var viewer = new Viewer("{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}/static/{{ settings.ICOSA_SKETCH_ASSETS_LOCATION }}-experimental/");
+        var viewer = new Viewer("{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}/static/{{ settings.ICOSA_SKETCH_ASSETS_LOCATION }}-experimental/");
     {% else %}
-    var viewer = new Viewer("{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}/static/{{ settings.ICOSA_SKETCH_ASSETS_LOCATION }}/");
+        var viewer = new Viewer("{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}/static/{{ settings.ICOSA_SKETCH_ASSETS_LOCATION }}/");
     {% endif %}
 
     let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);
@@ -99,7 +111,6 @@
 
     // For debugging
     window.viewer = viewer;
-    window.THREE = viewer.three;
 
     {% if format_override %}
         let formatType = "{{ format_override }}".toLowerCase();
@@ -163,11 +174,6 @@
     } else {
         console.error("Unsupported file format: " + formatType);
     }
-
-
-    // For debugging
-    window.viewer = viewer;
-    window.THREE = viewer.three;
 
 
     // Add lil-gui controls
