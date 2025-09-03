@@ -12,15 +12,15 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH="/venv/bin:$PATH"
 
 # Install build dependencies
-RUN set -x \
-    && BUILD_DEPS=" \
-    build-essential \
-    git \
-    libmagic-dev \
-    libpq-dev \
-    # nodejs \
-    # npm \
-    " \
+RUN set -x            \
+    && BUILD_DEPS="   \
+    build-essential   \
+    git               \
+    libmagic-dev      \
+    libpq-dev         \
+    # nodejs          \
+    # npm             \
+    "                 \
     && apt-get update \
     && apt-get install -y --no-install-recommends $BUILD_DEPS
 
@@ -45,14 +45,15 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PATH="/venv/bin:$PATH"
 
 # Install app dependencies
-RUN set -x \
-    && BUILD_DEPS=" \
-    git \
-    libpq-dev \
-    libmagic-dev \
-    htop \
-    # nodejs \
-    " \
+RUN set -x            \
+    && BUILD_DEPS="   \
+    git               \
+    libpq-dev         \
+    libmagic-dev      \
+    htop              \
+    libssl-dev        \
+    # nodejs          \
+    "                 \
     && apt-get update \
     && apt-get install -y --no-install-recommends $BUILD_DEPS
 
