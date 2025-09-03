@@ -1,4 +1,5 @@
 # Github requirements
+-e git+https://github.com/django-backup/django-backup.git@feature/django4#egg=django_backup
 -e git+https://github.com/Ixxy-Open-Source/ixxy-email-logger.git@feature/django4#egg=ixxy_email_logger
 
 # Standard requirements
