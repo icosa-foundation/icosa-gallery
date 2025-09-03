@@ -29,6 +29,7 @@ Django==5.1.8
 gunicorn==22.0.0
 huey==2.5.1
 ijson==3.3.0
+paramiko==2.12.0 # Pinned because of django-backup's requirement on pysftp
 passlib==1.7.4
 pillow==11.2.1
 psycopg2==2.9.10
