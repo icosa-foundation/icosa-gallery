@@ -159,7 +159,6 @@ INSTALLED_APPS = [
     "constance",
     "constance.backends.database",
     "corsheaders",
-    "django_backup",
     "email_logger",
     "honeypot",
     "huey.contrib.djhuey",
@@ -317,25 +316,6 @@ AXES_LOCKOUT_PARAMETERS = ["username"]
 AXES_CLIENT_IP_CALLABLE = lambda x: None  # noqa: E731
 AXES_COOLOFF_TIME = timedelta(minutes=10)
 AXES_LOCKOUT_TEMPLATE = "auth/login.html"
-
-# Backup Settings
-if os.environ.get("DJANGO_DO_BACKUP", False):
-    BACKUP_FTP_SERVER = os.environ.get("DJANGO_BACKUP_FTP_SERVER")
-    BACKUP_FTP_USERNAME = os.environ.get("DJANGO_BACKUP_FTP_USERNAME ")
-    BACKUP_SQLDUMP_PATH = ""
-
-    BACKUP_DATABASE_COPIES = {
-        "daily": 7,
-        "weekly": 4,
-        "monthly": 12,
-    }
-
-    BACKUP_MEDIA_COPIES = {
-        "daily": 7,
-        "weekly": 4,
-        "monthly": 12,
-    }
-
 
 # Cors settings
 
