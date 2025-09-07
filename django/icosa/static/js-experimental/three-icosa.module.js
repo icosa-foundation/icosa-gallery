@@ -1954,18 +1954,12 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
         glslVersion: $fugmd$GLSL3,
         vertexShader: "Flat-2d35bcf0-e4d8-452c-97b1-3311be063130/Flat-2d35bcf0-e4d8-452c-97b1-3311be063130-v10.0-vertex.glsl",
         fragmentShader: "Flat-2d35bcf0-e4d8-452c-97b1-3311be063130/Flat-2d35bcf0-e4d8-452c-97b1-3311be063130-v10.0-fragment.glsl",
-        side: 2,
+        side: 0,
         transparent: false,
         depthFunc: 2,
         depthWrite: true,
         depthTest: true,
-        blending: 5,
-        blendDstAlpha: 201,
-        blendDst: 201,
-        blendEquationAlpha: 100,
-        blendEquation: 100,
-        blendSrcAlpha: 201,
-        blendSrc: 201
+        blending: 0
     },
     "Highlighter": {
         uniforms: {
