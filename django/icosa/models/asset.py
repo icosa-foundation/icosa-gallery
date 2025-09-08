@@ -397,14 +397,11 @@ class Asset(models.Model):
                 # external host.
                 elif len(resources) == 1:
                     resource = resources[0]
-                    if resource.file:
-                        storage = settings.DJANGO_STORAGE_URL
-                        bucket = settings.DJANGO_STORAGE_BUCKET_NAME
-                        resource_data = {"file": f"{storage}/{bucket}/{resource.file.name}"}
-                    elif resource.external_url:
-                        resource_data = {"file": resource.external_url}
-                    else:
+                    file_url = resource.url
+                    if file_url is None:
                         resource_data = {}
+                    else:
+                        resource_data = {"file": file_url}
                 else:
                     resource_data = {}
 

@@ -1,6 +1,8 @@
+from typing import Optional
 from urllib.parse import urlparse
 
 from constance import config
+from django.conf import settings
 from django.db import models
 
 from .asset import Asset
@@ -24,12 +26,32 @@ class Resource(models.Model):
     hide_from_downloads = models.BooleanField(default=False)
 
     @property
-    def url(self):
-        url_str = None
+    def url(self) -> Optional[str]:
+        """
+        This function currently returns the resource's local file url or its external url. If the latter, we need to substitute out archive.org urls that link to an interstitial web page with our best guess at a link to the resource of the same type.
+        """
         if self.file:
-            url_str = self.file.url
+            storage = settings.DJANGO_STORAGE_URL
+            bucket = settings.DJANGO_STORAGE_BUCKET_NAME
+            url_str = f"{storage}/{bucket}/{self.file.name}"
         elif self.external_url:
-            url_str = self.external_url
+            ext_url = self.external_url
+            prefix = "https://web.archive.org/web/"
+            decider = "https://"
+            if ext_url.startswith(f"{prefix}{decider}"):
+                # If we are here it means we are linking to a non snapshotted
+                # version of the file, and so are returning a link to an html
+                # page. We need to force linking to a snapshot, so create a
+                # fake timestamp to guess at a snapshot. Archive.org, at time
+                # of writing, will notice there is no snapshot at that time,
+                # and will return a redirect to the latest snapshot it has.
+                #
+                # Clients will need to follow redirects for this to work
+                # properly for them.
+                fake_timestamp_path = "20250101010101id_/"
+                url_str = f"{prefix}{fake_timestamp_path}{ext_url[len(prefix) :]}"
+        else:
+            url_str = None
         return url_str
 
     @property
