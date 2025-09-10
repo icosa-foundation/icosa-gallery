@@ -440,7 +440,9 @@ def upload_blocks_format(
     elif filetype in ["OBJ", "GLTF2", "GLTF1"]:
         process_root(asset, f)
     elif filetype == "IMAGE" and f.file.name == "thumbnail.png":
-        if validate_mime(next(f.file.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
+        magic_bytes = next(f.file.chunks(chunk_size=2048))
+        f.file.seek(0)
+        if validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
             asset.thumbnail = f.file
             asset.thumbnail_contenttype = get_content_type(f.file.name)
             # We save outside of this function too. Saving here is more explicit,

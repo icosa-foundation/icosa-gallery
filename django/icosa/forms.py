@@ -52,7 +52,9 @@ class AssetUploadForm(forms.Form):
         cleaned_data = super().clean()
         uploaded_file = cleaned_data.get("file")
         if uploaded_file:
-            if not validate_mime(next(uploaded_file.chunks(chunk_size=2048)), ["application/zip", "model/gltf-binary"]):
+            magic_bytes = next(uploaded_file.chunks(chunk_size=2048))
+            uploaded_file.seek(0)
+            if not validate_mime(magic_bytes, ["application/zip", "model/gltf-binary"]):
                 self.add_error("file", "File is not a zip archive or a glb.")
 
 

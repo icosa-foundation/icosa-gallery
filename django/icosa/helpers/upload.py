@@ -66,9 +66,10 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
             unzipped_files.append(file)
             continue
 
-        if not validate_mime(next(file.chunks(chunk_size=2048)), ["application/zip"]):
-            raise HttpError(400, "Uploaded file is not a zip archive.")
+        magic_bytes = next(file.chunks(chunk_size=2048))
         file.seek(0)
+        if not validate_mime(magic_bytes, ["application/zip"]):
+            raise HttpError(400, "Uploaded file is not a zip archive.")
         unzip_start = timezone.now()
         total_size_bytes = 0
         # Read the file as a ZIP file
