@@ -337,7 +337,14 @@ class Asset(models.Model):
     def get_updated_rank(self):
         rank = (self.likes + self.historical_likes + 1) * LIKES_WEIGHT
         rank += (self.views + self.historical_views) * VIEWS_WEIGHT
-        rank += (1 / (datetime.now().timestamp() - self.create_time.timestamp())) * RECENCY_WEIGHT
+        now = datetime.now().timestamp()
+        create_time = self.create_time.timestamp()
+        # Prevent a divide by zero error if this function is called very soon
+        # after asset creation.
+        one_tick = 0.0001
+        elapsed = now - create_time
+        elapsed = elapsed or one_tick
+        rank += (1 / elapsed) * RECENCY_WEIGHT
         return rank
 
     def inc_views_and_rank(self):
