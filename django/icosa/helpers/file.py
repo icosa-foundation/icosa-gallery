@@ -252,7 +252,7 @@ def get_obj_triangulated(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        type="OBJ_TRI",
+        format_type="OBJ",
     ).last()
     if format:
         resource = format.root_resource
@@ -263,7 +263,7 @@ def get_gltf(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        type__in=["GLTF1", "GLTF2"],
+        format_type__in=["GLTF1", "GLTF2"],
     ).last()
     if format:
         resource = format.root_resource
