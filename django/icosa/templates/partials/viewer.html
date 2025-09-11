@@ -199,7 +199,15 @@
                     child.material.wireframe = !child.material.wireframe;
                 }
             });
-        }
+        },
+        // Lighting controls
+        ambientLightColor: '#ffffff',
+        light0Color: '#ffffff',
+        light0RotationX: 0,
+        light0RotationY: 0,
+        light1Color: '#ffffff',
+        light1RotationX: 0,
+        light1RotationY: 0
     };
 
     const toggleTreeView = gui.add(guiParams, 'toggleTreeView').name("Hierarchy Panel");
@@ -208,6 +216,102 @@
     const levelCameraControl = gui.add(guiParams, 'levelCamera').name("Level Camera");
     const frameSceneControl = gui.add(guiParams, 'frameScene').name("Frame Scene");
     const wireframeControl = gui.add(guiParams, 'wireframe').name("Toggle Wireframe");
+
+    // Lighting controls folder
+    const lightsFolder = gui.addFolder('Lighting');
+    
+    // Get references to lights after model is loaded
+    let ambientLight = null;
+    let directionalLight0 = null;
+    let directionalLight1 = null;
+    
+    viewer.scene.traverse((child) => {
+        if (child instanceof THREE.AmbientLight) {
+            ambientLight = child;
+        } else if (child instanceof THREE.DirectionalLight) {
+            if (!directionalLight0) {
+                directionalLight0 = child;
+            } else if (!directionalLight1) {
+                directionalLight1 = child;
+            }
+        }
+    });
+    
+    // Ambient light color control
+    if (ambientLight) {
+        guiParams.ambientLightColor = '#' + ambientLight.color.getHexString();
+        lightsFolder.addColor(guiParams, 'ambientLightColor').name('Ambient Light Color').onChange(() => {
+            ambientLight.color.setHex(parseInt(guiParams.ambientLightColor.replace('#', ''), 16));
+        });
+    }
+    
+    // Directional Light 0 controls
+    if (directionalLight0) {
+        guiParams.light0Color = '#' + directionalLight0.color.getHexString();
+        const light0Euler = new THREE.Euler().setFromQuaternion(directionalLight0.quaternion);
+        guiParams.light0RotationX = THREE.MathUtils.radToDeg(light0Euler.x);
+        guiParams.light0RotationY = THREE.MathUtils.radToDeg(light0Euler.y);
+        
+        const light0Folder = lightsFolder.addFolder('Light 0');
+        light0Folder.close();
+        light0Folder.addColor(guiParams, 'light0Color').name('Color').onChange(() => {
+            directionalLight0.color.setHex(parseInt(guiParams.light0Color.replace('#', ''), 16));
+        });
+        light0Folder.add(guiParams, 'light0RotationX', -180, 180).name('Rotation X').onChange(() => {
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(guiParams.light0RotationX),
+                THREE.MathUtils.degToRad(guiParams.light0RotationY),
+                0
+            );
+            const direction = new THREE.Vector3(0, 0, 1).applyEuler(euler);
+            directionalLight0.position.copy(direction.multiplyScalar(10));
+            directionalLight0.lookAt(0, 0, 0);
+        });
+        light0Folder.add(guiParams, 'light0RotationY', -180, 180).name('Rotation Y').onChange(() => {
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(guiParams.light0RotationX),
+                THREE.MathUtils.degToRad(guiParams.light0RotationY),
+                0
+            );
+            const direction = new THREE.Vector3(0, 0, 1).applyEuler(euler);
+            directionalLight0.position.copy(direction.multiplyScalar(10));
+            directionalLight0.lookAt(0, 0, 0);
+        });
+    }
+    
+    // Directional Light 1 controls
+    if (directionalLight1) {
+        guiParams.light1Color = '#' + directionalLight1.color.getHexString();
+        const light1Euler = new THREE.Euler().setFromQuaternion(directionalLight1.quaternion);
+        guiParams.light1RotationX = THREE.MathUtils.radToDeg(light1Euler.x);
+        guiParams.light1RotationY = THREE.MathUtils.radToDeg(light1Euler.y);
+        
+        const light1Folder = lightsFolder.addFolder('Light 1');
+        light1Folder.close();
+        light1Folder.addColor(guiParams, 'light1Color').name('Color').onChange(() => {
+            directionalLight1.color.setHex(parseInt(guiParams.light1Color.replace('#', ''), 16));
+        });
+        light1Folder.add(guiParams, 'light1RotationX', -180, 180).name('Rotation X').onChange(() => {
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(guiParams.light1RotationX),
+                THREE.MathUtils.degToRad(guiParams.light1RotationY),
+                0
+            );
+            const direction = new THREE.Vector3(0, 0, 1).applyEuler(euler);
+            directionalLight1.position.copy(direction.multiplyScalar(10));
+            directionalLight1.lookAt(0, 0, 0);
+        });
+        light1Folder.add(guiParams, 'light1RotationY', -180, 180).name('Rotation Y').onChange(() => {
+            const euler = new THREE.Euler(
+                THREE.MathUtils.degToRad(guiParams.light1RotationX),
+                THREE.MathUtils.degToRad(guiParams.light1RotationY),
+                0
+            );
+            const direction = new THREE.Vector3(0, 0, 1).applyEuler(euler);
+            directionalLight1.position.copy(direction.multiplyScalar(10));
+            directionalLight1.lookAt(0, 0, 0);
+        });
+    }
 
     if (!viewer.environmentObject) toggleEnvironmentControl.disable();
     if (!viewer.skyObject) toggleSkyControl.disable();
