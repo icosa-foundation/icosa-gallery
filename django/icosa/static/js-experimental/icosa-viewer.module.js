@@ -6000,7 +6000,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // 5. If there's neither custom metadata, an environment guid or explicit GLTF lights - create some default lighting.
         function convertTBEuler(rot) {
             const deg2rad = Math.PI / 180;
-            return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(-rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z), 'ZXY');
+            return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z));
         }
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
             const light = new $hBQxr$three.DirectionalLight(0xffffff, 1);
@@ -6012,11 +6012,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
         // Convert rotation to position for directional lights
         const light0Euler = convertTBEuler(this.sketchMetadata.SceneLight0Rotation);
-        const light0Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light0Euler);
+        const light0Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light0Euler);
         l0.position.copy(light0Direction.multiplyScalar(10));
         l0.lookAt(0, 0, 0);
         const light1Euler = convertTBEuler(this.sketchMetadata.SceneLight1Rotation);
-        const light1Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light1Euler);
+        const light1Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light1Euler);
         l1.position.copy(light1Direction.multiplyScalar(10));
         l1.lookAt(0, 0, 0);
         l0.castShadow = true;
