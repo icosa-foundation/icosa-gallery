@@ -4,10 +4,11 @@ from typing import List, Literal, Optional
 
 from django.db.models import Q
 from django.urls import reverse_lazy
+from icosa.api.exceptions import FilterException
 from icosa.models import Asset
-from ninja import Field, ModelSchema, Schema
+from ninja import Field, FilterSchema, ModelSchema, Schema
 from ninja.errors import HttpError
-from pydantic import EmailStr
+from pydantic import EmailStr, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
 API_DOWNLOAD_COMPATIBLE_ROLES = [
@@ -386,6 +387,7 @@ class Category(Enum):
     TECH = "TECH"
     TRANSPORT = "TRANSPORT"
     TRAVEL = "TRAVEL"
+    NONE = ""
 
     @classmethod
     def _missing_(cls, name):
@@ -394,132 +396,157 @@ class Category(Enum):
                 return member
 
 
-class FilterBase(Schema):
-    category: Optional[Category] = Field(default=None, example="ANIMALS")
-    curated: bool = Field(default=False)
-    format: Optional[List[FormatFilter]] = Field(default=None, description="Filter by format")
-    keywords: Optional[str] = Field(default=None)
-    name: Optional[str] = Field(default=None)
-    description: Optional[str] = Field(default=None)
-    tag: List[str] = Field(default=None, alias="tag")
-    orderBy: Optional[Order] = Field(
-        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
-        # it has `example`, which also accepts a list, but does not render it
-        # nicely at all.
-        # See: https://github.com/vitalik/django-ninja/issues/1342
-        # example=[
-        #     "LIKES (most first)",
-        #     "-LIKES (least first)",
-        # ],
-        default=None,
+class FilterBase(FilterSchema):
+    category: Optional[Category] = Field(default=None, example="ANIMALS", q="category__iexact")
+    curated: Optional[bool] = Field(default=False)
+    format: Optional[List[FormatFilter]] = Field(
+        default=None, description="Filter by format", q="format__format_type__in"
     )
-    order_by: SkipJsonSchema[Optional[Order]] = Field(default=None)  # For backwards compatibility
-    maxComplexity: Optional[Complexity] = Field(default=None)
+    keywords: Optional[str] = None
+    name: Optional[str] = Field(default=None, q="name__icontains")
+    description: Optional[str] = Field(default=None, q="description__icontains")
+    tag: List[str] = Field(default=None, q="tags__name__in")
     triangleCountMin: Optional[int] = None
     triangleCountMax: Optional[int] = None
-    zipArchiveUrl: Optional[str] = None
+    maxComplexity: Optional[Complexity] = Field(default=None)
+    zipArchiveUrl: Optional[str] = Field(default=None, q="format__zip_archive_url__icontains")
+
+    def filter_category(self, value: Category) -> Q:
+        POLY_CATEGORY_MAP = {
+            "TECHNOLOGY": "TECH",
+        }
+        if value is not None:
+            category_str = value.value.upper()
+            category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
+            return Q(category__iexact=category_str)
+
+    def filter_keywords(self, value: str) -> Q:
+        q = Q()
+        if value:
+            # The original API spec says "Multiple keywords should be separated
+            # by spaces.". I believe this could be implemented better to allow
+            # multi-word searches. Perhaps implemented in a different namespace,
+            # such as `search=` and have multiple queries as `search=a&search=b`.
+            keyword_list = value.split(" ")
+            if len(keyword_list) > 16:
+                raise HttpError(400, "Exceeded 16 space-separated keywords.")
+            for keyword in keyword_list:
+                q &= Q(search_text__icontains=keyword)
+        return q
+
+    def filter_triangleCountMin(self, value: int) -> Q:
+        return Q(triangle_count__gte=value) & Q(triangle_count__gte=0) if value else Q()
+
+    def filter_triangleCountMax(self, value: int) -> Q:
+        return Q(triangle_count__lte=value) & Q(triangle_count__gte=0) if value else Q()
+
+    def filter_format(self, value: List[FormatFilter]) -> Q:
+        q = Q()
+        if value:
+            valid_q = False
+            for format in value:
+                # Reliant on the fact that each of FILTERABLE_FORMATS has an
+                # associated has_<format> field in the db.
+                format_value = format.value
+                if format == FormatFilter.GLTF:
+                    format_value = "GLTF_ANY"
+                if format == FormatFilter.NO_GLTF:
+                    format_value = "-GLTF_ANY"
+                if format_value.startswith("-"):
+                    q |= Q(**{f"has_{format_value.lower()[1:]}": False})
+                else:
+                    q |= Q(**{f"has_{format_value.lower()}": True})
+                valid_q = True
+
+            if not valid_q:
+                choices = ", ".join([x.value for x in FormatFilter])
+                raise FilterException(f"Format filter not one of {choices}")
+        return q
+
+    def filter_maxComplexity(self, value: Complexity) -> Q:
+        q = Q()
+
+        # TODO are ninja filters aware of each other? See https://stackoverflow.com/a/71917466
+        # to modify a Q object after it is constructed.
+        # Ignore this filter if superceded by newer triangle count filters.
+        # if filters.triangleCountMin or filters.triangleCountMax:
+        #     return q
+
+        # See https://github.com/icosa-foundation/icosa-gallery/issues/107#issuecomment-2518016302
+        complex = 50000000
+        medium = 10000
+        simple = 1000
+
+        if value:
+            if value == Complexity.COMPLEX:
+                q = Q(triangle_count__lte=complex)
+            if value == Complexity.MEDIUM:
+                q = Q(triangle_count__lte=medium)
+            if value == Complexity.SIMPLE:
+                q = Q(triangle_count__lte=simple)
+            q &= Q(triangle_count__gt=1)
+        return q
+
+    # orderBy: Optional[Order] = Field(
+    # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
+    # it has `example`, which also accepts a list, but does not render it
+    # nicely at all.
+    # See: https://github.com/vitalik/django-ninja/issues/1342
+    # example=[
+    #     "LIKES (most first)",
+    #     "-LIKES (least first)",
+    # ],
+    # default=None,
+    # )
+    # order_by: SkipJsonSchema[Optional[Order]] = Field(default=None)  # For backwards compatibility
+
+    @model_validator(mode="before")
+    def remove_empty_strings(cls, values):
+        # changing empty strings to None
+        for f in cls.__pydantic_fields__:
+            if getattr(values, f, None) == "":
+                setattr(values, f, None)
+        return values
 
 
 class AssetFilters(FilterBase):
-    authorName: Optional[str] = None
-    author_name: SkipJsonSchema[Optional[str]] = None
+    authorName: Optional[str] = Field(default=None, q="owner__displayname__icontains")
+    author_name: SkipJsonSchema[Optional[str]] = Field(default=None, q="owner__displayname__icontains")
     license: Optional[LicenseFilter] = Field(default=None)
+
+    def filter_license(self, value: LicenseFilter) -> Q:
+        if value:
+            if value == LicenseFilter.CREATIVE_COMMONS_BY:
+                variants = [
+                    "CREATIVE_COMMONS_BY_3_0",
+                    "CREATIVE_COMMONS_BY_4_0",
+                ]
+            elif value == LicenseFilter.CREATIVE_COMMONS_BY_ND:
+                variants = [
+                    "CREATIVE_COMMONS_BY_ND_3_0",
+                    "CREATIVE_COMMONS_BY_ND_4_0",
+                ]
+            elif value == LicenseFilter.REMIXABLE:
+                variants = [
+                    "CREATIVE_COMMONS_BY_3_0",
+                    "CREATIVE_COMMONS_BY_4_0",
+                    "CREATIVE_COMMONS_0",
+                ]
+            elif value == LicenseFilter.ALL_CC:
+                variants = [
+                    "CREATIVE_COMMONS_BY_3_0",
+                    "CREATIVE_COMMONS_BY_4_0",
+                    "CREATIVE_COMMONS_BY_ND_3_0",
+                    "CREATIVE_COMMONS_BY_ND_4_0",
+                    "CREATIVE_COMMONS_0",
+                ]
+            else:
+                variants = None
+
+            return Q(license__in=variants) if variants else Q(license__iexact=value.value)
+        else:
+            return Q()
 
 
 class UserAssetFilters(FilterBase):
     visibility: Optional[str] = None
-
-
-def filter_license(filters) -> Q:
-    q = Q()
-    if filters.license:
-        license_variant = filters.license
-        if license_variant == LicenseFilter.CREATIVE_COMMONS_BY:
-            variants = [
-                "CREATIVE_COMMONS_BY_3_0",
-                "CREATIVE_COMMONS_BY_4_0",
-            ]
-        elif license_variant == LicenseFilter.CREATIVE_COMMONS_BY_ND:
-            variants = [
-                "CREATIVE_COMMONS_BY_ND_3_0",
-                "CREATIVE_COMMONS_BY_ND_4_0",
-            ]
-        elif license_variant == LicenseFilter.REMIXABLE:
-            variants = [
-                "CREATIVE_COMMONS_BY_3_0",
-                "CREATIVE_COMMONS_BY_4_0",
-                "CREATIVE_COMMONS_0",
-            ]
-        elif license_variant == LicenseFilter.ALL_CC:
-            variants = [
-                "CREATIVE_COMMONS_BY_3_0",
-                "CREATIVE_COMMONS_BY_4_0",
-                "CREATIVE_COMMONS_BY_ND_3_0",
-                "CREATIVE_COMMONS_BY_ND_4_0",
-                "CREATIVE_COMMONS_0",
-            ]
-        else:
-            variants = None
-        if variants is not None:
-            q = Q(license__in=variants)
-        else:
-            q = Q(license__iexact=license_variant.value)
-    return q
-
-
-def filter_complexity(filters) -> Q:
-    q = Q()
-
-    # Ignore this filter if superceded by newer triangle count filters.
-    if filters.triangleCountMin or filters.triangleCountMax:
-        return q
-
-    # See https://github.com/icosa-foundation/icosa-gallery/issues/107#issuecomment-2518016302
-    complex = 50000000
-    medium = 10000
-    simple = 1000
-
-    if filters.maxComplexity:
-        if filters.maxComplexity == Complexity.COMPLEX:
-            q = Q(triangle_count__lte=complex)
-        if filters.maxComplexity == Complexity.MEDIUM:
-            q = Q(triangle_count__lte=medium)
-        if filters.maxComplexity == Complexity.SIMPLE:
-            q = Q(triangle_count__lte=simple)
-        q &= Q(triangle_count__gt=1)
-    return q
-
-
-def filter_triangle_count(filters) -> Q:
-    q = Q()
-    min = filters.triangleCountMin
-    max = filters.triangleCountMax
-    if min:
-        q &= Q(triangle_count__gte=min)
-    if max:
-        q &= Q(triangle_count__lte=max)
-    if min or max:
-        q &= Q(triangle_count__gte=0)
-    return q
-
-
-def filter_zip_archive_url(filters) -> Q:
-    q = Q()
-    if filters.zipArchiveUrl:
-        q &= Q(format__zip_archive_url__icontains=filters.zipArchiveUrl)
-    return q
-
-
-def get_keyword_q(filters) -> Q:
-    q = Q()
-    if filters.keywords:
-        # The original API spec says "Multiple keywords should be separated
-        # by spaces.". I believe this could be implemented better to allow
-        # multi-word searches. Perhaps implemented in a different namespace,
-        # such as `search=` and have multiple queries as `search=a&search=b`.
-        keyword_list = filters.keywords.split(" ")
-        if len(keyword_list) > 16:
-            raise HttpError(400, "Exceeded 16 space-separated keywords.")
-        for keyword in keyword_list:
-            q &= Q(search_text__icontains=keyword)
-    return q

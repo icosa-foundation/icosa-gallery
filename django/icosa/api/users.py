@@ -8,12 +8,11 @@ from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     POLY_CATEGORY_MAP,
     AssetPagination,
-    build_format_q,
     check_user_owns_asset,
     get_asset_by_url,
     get_publish_url,
 )
-from icosa.api.assets import filter_assets, sort_assets
+from icosa.api.assets import sort_assets
 from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
@@ -37,14 +36,57 @@ from .schema import (
     AssetFinalizeData,
     AssetSchema,
     AssetSchemaWithState,
+    FormatFilter,
     FullUserSchema,
     PatchUserSchema,
     UploadJobSchemaOut,
     UserAssetFilters,
-    get_keyword_q,
 )
 
 router = Router()
+
+
+def build_format_q(formats: List) -> Q:
+    # TODO deprecate this function. /users/me/assets should use ninja filters
+    # properly.
+    q = Q()
+    valid_q = False
+    for format in formats:
+        # Reliant on the fact that each of FILTERABLE_FORMATS has an
+        # associated has_<format> field in the db.
+        format_value = format.value
+        if format == FormatFilter.GLTF:
+            format_value = "GLTF_ANY"
+        if format == FormatFilter.NO_GLTF:
+            format_value = "-GLTF_ANY"
+        if format_value.startswith("-"):
+            q |= Q(**{f"has_{format_value.lower()[1:]}": False})
+        else:
+            q |= Q(**{f"has_{format_value.lower()}": True})
+        valid_q = True
+
+    if valid_q:
+        return q
+    else:
+        choices = ", ".join([x.value for x in FormatFilter])
+        raise FilterException(f"Format filter not one of {choices}")
+
+
+def get_keyword_q(filters) -> Q:
+    # TODO deprecate this function. /users/me/assets should use ninja filters
+    # properly.
+    q = Q()
+    if filters.keywords:
+        # The original API spec says "Multiple keywords should be separated
+        # by spaces.". I believe this could be implemented better to allow
+        # multi-word searches. Perhaps implemented in a different namespace,
+        # such as `search=` and have multiple queries as `search=a&search=b`.
+        keyword_list = filters.keywords.split(" ")
+        if len(keyword_list) > 16:
+            raise HttpError(400, "Exceeded 16 space-separated keywords.")
+        for keyword in keyword_list:
+            q &= Q(search_text__icontains=keyword)
+    return q
 
 
 @router.get(
@@ -250,7 +292,17 @@ def get_me_likedassets(
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner__django_user=user)
 
     try:
-        assets = filter_assets(filters, assets, q)
+        assets = Asset.objects.all()
+        q &= filters.get_filter_expression()
+
+        assets = (
+            filters.filter(q)
+            .prefetch_related(
+                "resource_set",
+                "format_set",
+            )
+            .distinct()
+        )
     except FilterException as err:
         raise HttpError(400, f"{err}")
 

@@ -1,11 +1,8 @@
 from typing import Any, List, NoReturn, Optional
 
 from django.conf import settings
-from django.db.models import Q
 from django.http import HttpRequest
 from django.urls import reverse
-from icosa.api.exceptions import FilterException
-from icosa.api.schema import FormatFilter
 from icosa.models import (
     PRIVATE,
     Asset,
@@ -146,27 +143,3 @@ class AssetPagination(PaginationBase):
                 }
             )
         return pagination_data
-
-
-def build_format_q(formats: List) -> Q:
-    q = Q()
-    valid_q = False
-    for format in formats:
-        # Reliant on the fact that each of FILTERABLE_FORMATS has an
-        # associated has_<format> field in the db.
-        format_value = format.value
-        if format == FormatFilter.GLTF:
-            format_value = "GLTF_ANY"
-        if format == FormatFilter.NO_GLTF:
-            format_value = "-GLTF_ANY"
-        if format_value.startswith("-"):
-            q |= Q(**{f"has_{format_value.lower()[1:]}": False})
-        else:
-            q |= Q(**{f"has_{format_value.lower()}": True})
-        valid_q = True
-
-    if valid_q:
-        return q
-    else:
-        choices = ", ".join([x.value for x in FormatFilter])
-        raise FilterException(f"Format filter not one of {choices}")

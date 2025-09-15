@@ -10,9 +10,7 @@ from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     DEFAULT_CACHE_SECONDS,
     NOT_FOUND,
-    POLY_CATEGORY_MAP,
     AssetPagination,
-    build_format_q,
     check_user_owns_asset,
     get_asset_by_url,
     get_publish_url,
@@ -44,11 +42,6 @@ from .schema import (
     Order,
     SortDirection,
     UploadJobSchemaOut,
-    filter_complexity,
-    filter_license,
-    filter_triangle_count,
-    filter_zip_archive_url,
-    get_keyword_q,
 )
 
 router = Router()
@@ -211,70 +204,6 @@ def upload_new_assets(
     return get_publish_url(request, asset)
 
 
-def filter_assets(
-    filters: AssetFilters,
-    assets: QuerySet[Asset] = None,
-    q: Q = Q(visibility=PUBLIC),
-) -> QuerySet[Asset]:
-    if filters.tag:
-        q &= Q(tags__name__in=filters.tag)
-    if filters.category:
-        category_str = filters.category.value.upper()
-        category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
-        q &= Q(category__iexact=category_str)
-    if filters.license:
-        q &= filter_license(filters)
-    if filters.curated:
-        q &= Q(curated=True)
-    if filters.name:
-        q &= Q(name__icontains=filters.name)
-    if filters.description:
-        q &= Q(description__icontains=filters.description)
-    author_name = filters.authorName or filters.author_name or None
-    if author_name is not None:
-        q &= Q(owner__displayname__icontains=author_name)
-    if filters.format:
-        q &= build_format_q(filters.format)
-    try:
-        keyword_q = get_keyword_q(filters)
-    except HttpError:
-        raise
-    q &= filter_complexity(filters)
-    q &= filter_triangle_count(filters)
-    q &= filter_zip_archive_url(filters)
-
-    if config.HIDE_REPORTED_ASSETS:
-        ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(last_reported_time__isnull=False)
-    else:
-        ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
-
-    # Debug tests:
-    # from django.db import connection, reset_queries
-
-    # reset_queries()
-
-    if assets is None:
-        assets = Asset.objects.all()
-
-    assets = (
-        assets.filter(q, keyword_q)
-        .exclude(ex_q)
-        .select_related("owner")
-        .prefetch_related(
-            "resource_set",
-            "format_set",
-        )
-        .distinct()
-    )
-    # Debug tests:
-    # print(assets.explain())
-    # _ = list(assets)
-    # print(connection.queries)
-    # print(len(connection.queries))
-
-    return assets
-
-
 def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
     (sort_key, sort_direction) = ORDER_FIELD_MAP.get(key.value)
 
@@ -305,12 +234,28 @@ def get_assets(
     filters: AssetFilters = Query(...),
 ):
     try:
-        assets = filter_assets(filters)
+        assets = Asset.objects.all()
+        q = filters.get_filter_expression()
+
+        if config.HIDE_REPORTED_ASSETS:
+            ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(last_reported_time__isnull=False)
+        else:
+            ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
+
+        assets = (
+            assets.filter(q)
+            .exclude(ex_q)
+            .prefetch_related(
+                "resource_set",
+                "format_set",
+            )
+            .distinct()
+        )
     except FilterException as err:
         raise HttpError(400, f"{err}")
 
-    order_by = filters.orderBy or filters.order_by or None
-    if order_by is not None:
-        assets = sort_assets(order_by, assets)
+    # order_by = filters.orderBy or filters.order_by or None
+    # if order_by is not None:
+    #     assets = sort_assets(order_by, assets)
 
     return assets
