@@ -18,7 +18,7 @@
                                 {% if error %}
                                     <div role="alert" class="fade alert alert-danger show">{{ error }}</div>
                                 {% endif %}
-                                <form class="form-inline" action="{% url 'icosa:login' %}" method="post">
+                                <form class="form-inline" action="{% url 'icosa:login' %}{% if redirect_to %}?{{ redirect_to_field_name }}={{ redirect_to }}{% endif %}" method="post">
                                     {% csrf_token %}
                                     <div class="form-group">
                                         <label class="form-label sr-only" for="username">Username:</label>

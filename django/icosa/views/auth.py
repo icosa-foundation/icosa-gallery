@@ -4,7 +4,13 @@ from typing import Optional
 
 from constance import config
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth import (
+    REDIRECT_FIELD_NAME,
+    authenticate,
+    get_user_model,
+    login,
+    logout,
+)
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
@@ -109,7 +115,11 @@ def render_login_error(request, error: Optional[str] = None):
 
 
 def custom_login(request):
+    redirect_to = request.GET.get(REDIRECT_FIELD_NAME, None)
+
     if not request.user.is_anonymous:
+        if redirect_to is not None:
+            return HttpResponseRedirect(redirect_to)
         return redirect("icosa:home")
 
     if not config.LOGIN_OPEN:
@@ -138,9 +148,18 @@ def custom_login(request):
                 owner.is_claimed = True
                 owner.save()
 
+        if redirect_to is not None:
+            return HttpResponseRedirect(redirect_to)
         return redirect("icosa:home")
     else:
-        return render(request, "auth/login.html")
+        return render(
+            request,
+            "auth/login.html",
+            {
+                "redirect_to": redirect_to,
+                "redirect_to_field_name": REDIRECT_FIELD_NAME,
+            },
+        )
 
 
 def custom_logout(request):
