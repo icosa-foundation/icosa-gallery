@@ -120,16 +120,16 @@ class AssetSchema(ModelSchema):
     updateTime: Optional[datetime] = Field(..., alias=("update_time"))
     url: Optional[str]
     assetId: str
-    formats: List[AssetFormat]
     displayName: Optional[str]
     visibility: str
     tags: List[str] = []
     isCurated: Optional[bool] = Field(None, alias=("curated"))
     thumbnail: Optional[Thumbnail]
     triangleCount: int = Field(..., alias=("triangle_count"))
-    presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
     license: str
     licenseVersion: Optional[str]
+    presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
+    formats: List[AssetFormat]
 
     class Config:
         model = Asset
