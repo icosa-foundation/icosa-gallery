@@ -328,11 +328,12 @@ def filter_and_sort_assets(
         assets = (
             assets.filter(inc_q)
             .exclude(exc_q)
+            .select_related("owner")
             .prefetch_related(
                 "resource_set",
                 "format_set",
+                "tags",
             )
-            .prefetch_related("tags")
             .distinct()
         )
 
