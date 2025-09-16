@@ -6,14 +6,11 @@ from django.db.models import Q
 from django.views.decorators.cache import never_cache
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
-    POLY_CATEGORY_MAP,
     AssetPagination,
     check_user_owns_asset,
     get_asset_by_url,
     get_publish_url,
 )
-from icosa.api.assets import sort_assets
-from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
 from icosa.models import (
@@ -22,7 +19,6 @@ from icosa.models import (
     UNLISTED,
     Asset,
     AssetOwner,
-    Tag,
 )
 from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
 from ninja import File, Query, Router
@@ -36,58 +32,15 @@ from .schema import (
     AssetFinalizeData,
     AssetSchema,
     AssetSchemaWithState,
-    FormatFilter,
     FullUserSchema,
     OrderFilter,
     PatchUserSchema,
     UploadJobSchemaOut,
     UserAssetFilters,
+    filter_and_sort_assets,
 )
 
 router = Router()
-
-
-def build_format_q(formats: List) -> Q:
-    # TODO deprecate this function. /users/me/assets should use ninja filters
-    # properly.
-    q = Q()
-    valid_q = False
-    for format in formats:
-        # Reliant on the fact that each of FILTERABLE_FORMATS has an
-        # associated has_<format> field in the db.
-        format_value = format.value
-        if format == FormatFilter.GLTF:
-            format_value = "GLTF_ANY"
-        if format == FormatFilter.NO_GLTF:
-            format_value = "-GLTF_ANY"
-        if format_value.startswith("-"):
-            q |= Q(**{f"has_{format_value.lower()[1:]}": False})
-        else:
-            q |= Q(**{f"has_{format_value.lower()}": True})
-        valid_q = True
-
-    if valid_q:
-        return q
-    else:
-        choices = ", ".join([x.value for x in FormatFilter])
-        raise FilterException(f"Format filter not one of {choices}")
-
-
-def get_keyword_q(filters) -> Q:
-    # TODO deprecate this function. /users/me/assets should use ninja filters
-    # properly.
-    q = Q()
-    if filters.keywords:
-        # The original API spec says "Multiple keywords should be separated
-        # by spaces.". I believe this could be implemented better to allow
-        # multi-word searches. Perhaps implemented in a different namespace,
-        # such as `search=` and have multiple queries as `search=a&search=b`.
-        keyword_list = filters.keywords.split(" ")
-        if len(keyword_list) > 16:
-            raise HttpError(400, "Exceeded 16 space-separated keywords.")
-        for keyword in keyword_list:
-            q &= Q(search_text__icontains=keyword)
-    return q
 
 
 @router.get(
@@ -138,28 +91,15 @@ def get_me_assets(
     order: OrderFilter = Query(...),
 ):
     user = request.user
-    q = Q(
+    inc_q = Q(
         owner__django_user=user,
     )
-    try:
-        assets = Asset.objects.all()
-        q = filters.get_filter_expression()
-        assets = (
-            assets.filter(q)
-            .prefetch_related(
-                "resource_set",
-                "format_set",
-            )
-            .prefetch_related("tags")
-            .distinct()
-        )
-    except FilterException as err:
-        raise HttpError(400, f"{err}")
-
-    order_by = order.orderBy or order.order_by or None
-    if order_by is not None:
-        assets = sort_assets(order_by, assets)
-
+    assets = filter_and_sort_assets(
+        filters,
+        order,
+        assets=Asset.objects.all(),
+        inc_q=inc_q,
+    )
     return assets
 
 
@@ -257,31 +197,23 @@ def get_me_likedassets(
     order: OrderFilter = Query(...),
 ):
     user = request.user
-    assets = Asset.objects.filter(id__in=user.likedassets.all().values_list("asset__id", flat=True))
-    q = Q(
+    assets = Asset.objects.filter(
+        id__in=user.likedassets.all().values_list(
+            "asset__id",
+            flat=True,
+        )
+    )
+    inc_q = Q(
         visibility__in=[PUBLIC, UNLISTED],
     )
-    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner__django_user=user)
+    inc_q |= Q(visibility__in=[PRIVATE, UNLISTED], owner__django_user=user)
 
-    try:
-        q &= filters.get_filter_expression()
-
-        assets = (
-            assets.filter(q)
-            .prefetch_related(
-                "resource_set",
-                "format_set",
-            )
-            .prefetch_related("tags")
-            .distinct()
-        )
-    except FilterException as err:
-        raise HttpError(400, f"{err}")
-
-    order_by = order.orderBy or order.order_by or None
-    if order_by is not None:
-        assets = sort_assets(order_by, assets)
-
+    assets = filter_and_sort_assets(
+        filters,
+        order,
+        assets=assets,
+        inc_q=inc_q,
+    )
     return assets
 
 

@@ -2,7 +2,8 @@ from datetime import datetime
 from enum import Enum, auto
 from typing import List, Literal, Optional
 
-from django.db.models import Q
+from django.db.models import F, Q
+from django.db.models.query import QuerySet
 from django.urls import reverse_lazy
 from icosa.api.exceptions import FilterException
 from icosa.models import Asset
@@ -570,3 +571,41 @@ class OrderFilter(Schema):
         default=None,
     )
     order_by: SkipJsonSchema[Optional[Order]] = Field(default=None)  # For backwards compatibility
+
+
+def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
+    (sort_key, sort_direction) = ORDER_FIELD_MAP.get(key.value)
+
+    if sort_direction == SortDirection.DESC:
+        assets = assets.order_by(F(sort_key).desc(nulls_last=True))
+    if sort_direction == SortDirection.ASC:
+        assets = assets.order_by(F(sort_key).asc(nulls_last=True))
+    return assets
+
+
+def filter_and_sort_assets(
+    filters: FilterSchema,
+    order: Schema,
+    assets: QuerySet[Asset] = Asset.objects.all(),
+    inc_q: Q = Q(),
+    exc_q: Q = Q(),
+) -> QuerySet[Asset]:
+    inc_q &= filters.get_filter_expression()
+    try:
+        assets = (
+            assets.filter(inc_q)
+            .exclude(exc_q)
+            .prefetch_related(
+                "resource_set",
+                "format_set",
+            )
+            .prefetch_related("tags")
+            .distinct()
+        )
+
+        order_by = order.orderBy or order.order_by or None
+        if order_by is not None:
+            assets = sort_assets(order_by, assets)
+        return assets
+    except FilterException as err:
+        raise HttpError(400, f"{err}")

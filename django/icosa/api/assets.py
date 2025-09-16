@@ -4,8 +4,7 @@ from typing import List, Optional
 
 from constance import config
 from django.db import transaction
-from django.db.models import F, Q
-from django.db.models.query import QuerySet
+from django.db.models import Q
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     DEFAULT_CACHE_SECONDS,
@@ -15,7 +14,6 @@ from icosa.api import (
     get_asset_by_url,
     get_publish_url,
 )
-from icosa.api.exceptions import FilterException
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
 from icosa.models import (
@@ -34,15 +32,13 @@ from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
 from .schema import (
-    ORDER_FIELD_MAP,
     AssetFilters,
     AssetFinalizeData,
     AssetSchema,
     AssetStateSchema,
-    Order,
     OrderFilter,
-    SortDirection,
     UploadJobSchemaOut,
+    filter_and_sort_assets,
 )
 
 router = Router()
@@ -205,16 +201,6 @@ def upload_new_assets(
     return get_publish_url(request, asset)
 
 
-def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
-    (sort_key, sort_direction) = ORDER_FIELD_MAP.get(key.value)
-
-    if sort_direction == SortDirection.DESC:
-        assets = assets.order_by(F(sort_key).desc(nulls_last=True))
-    if sort_direction == SortDirection.ASC:
-        assets = assets.order_by(F(sort_key).asc(nulls_last=True))
-    return assets
-
-
 @router.get(
     "",
     response=List[AssetSchema],
@@ -232,33 +218,18 @@ def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def get_assets(
     request,
-    filters: AssetFilters = Query(...),
     order: OrderFilter = Query(...),
+    filters: AssetFilters = Query(...),
 ):
-    try:
-        assets = Asset.objects.all()
-        q = filters.get_filter_expression()
+    exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
+    if config.HIDE_REPORTED_ASSETS:
+        exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(last_reported_time__isnull=False)
 
-        if config.HIDE_REPORTED_ASSETS:
-            ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(last_reported_time__isnull=False)
-        else:
-            ex_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
-
-        assets = (
-            assets.filter(q)
-            .exclude(ex_q)
-            .prefetch_related(
-                "resource_set",
-                "format_set",
-            )
-            .prefetch_related("tags")
-            .distinct()
-        )
-    except FilterException as err:
-        raise HttpError(400, f"{err}")
-
-    order_by = order.orderBy or order.order_by or None
-    if order_by is not None:
-        assets = sort_assets(order_by, assets)
+    assets = filter_and_sort_assets(
+        filters,
+        order,
+        assets=Asset.objects.all(),
+        exc_q=exc_q,
+    )
 
     return assets
