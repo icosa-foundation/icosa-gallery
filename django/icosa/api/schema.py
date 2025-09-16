@@ -26,6 +26,13 @@ API_DOWNLOAD_COMPATIBLE_ROLES = [
 ]
 
 
+class VisibilityFilter(Enum):
+    UNSPECIFIED = "UNSPECIFIED"
+    PUBLISHED = "PUBLISHED"
+    PRIVATE = "PRIVATE"
+    UNLISTED = "UNLISTED"
+
+
 class LicenseFilter(Enum):
     REMIXABLE = "REMIXABLE"
     ALL_CC = "ALL_CC"
@@ -537,6 +544,17 @@ class AssetFilters(FilterBase):
 
 class UserAssetFilters(FilterBase):
     visibility: Optional[str] = None
+
+    def filter_visibility(self, value: Optional[str]) -> Q:
+        q = Q()
+        if value:
+            if value in [VisibilityFilter.PRIVATE, VisibilityFilter.UNLISTED]:
+                q = Q(value.value)
+            elif value == "PUBLISHED":
+                q = Q(visibility=VisibilityFilter.PUBLIC.value)
+            elif value == "UNSPECIFIED":
+                pass
+        return q
 
 
 class OrderFilter(Schema):

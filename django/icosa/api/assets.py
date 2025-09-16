@@ -251,6 +251,7 @@ def get_assets(
                 "resource_set",
                 "format_set",
             )
+            .prefetch_related("tags")
             .distinct()
         )
     except FilterException as err:

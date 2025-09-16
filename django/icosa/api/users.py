@@ -38,6 +38,7 @@ from .schema import (
     AssetSchemaWithState,
     FormatFilter,
     FullUserSchema,
+    OrderFilter,
     PatchUserSchema,
     UploadJobSchemaOut,
     UserAssetFilters,
@@ -134,61 +135,31 @@ def update_user(
 def get_me_assets(
     request,
     filters: UserAssetFilters = Query(...),
+    order: OrderFilter = Query(...),
 ):
-    # TODO(james): Standardise this with /me/likedassets
     user = request.user
     q = Q(
         owner__django_user=user,
     )
-    ex_q = Q()
-    if filters.visibility:
-        if filters.visibility in [
-            PRIVATE,
-            UNLISTED,
-        ]:
-            q &= Q(visibility=filters.visibility)
-        elif filters.visibility == "PUBLISHED":
-            q &= Q(visibility=PUBLIC)
-        elif filters.visibility == "UNSPECIFIED":
-            pass
-        else:
-            raise HttpError(
-                400,
-                "Unknown visibility specifier. Expected one of UNSPECIFIED, PUBLISHED, PRIVATE, UNLISTED.",  # TODO: brittle
-            )
-
-    if filters.format:
-        q &= build_format_q(filters.format)
-
-    if filters.tag:
-        tags = Tag.objects.filter(name__in=filters.tag)
-        q &= Q(tags__in=tags)
-    if filters.category:
-        category_str = filters.category.value.upper()
-        category_str = POLY_CATEGORY_MAP.get(category_str, category_str)
-        q &= Q(category__iexact=category_str)
-    if filters.curated:
-        q &= Q(curated=True)
-    if filters.name:
-        q &= Q(name__icontains=filters.name)
-    if filters.description:
-        q &= Q(description__icontains=filters.description)
     try:
-        keyword_q = get_keyword_q(filters)
-    except HttpError:
-        raise
-    # TODO: orderBy
-    assets = (
-        Asset.objects.filter(q, keyword_q)
-        .exclude(ex_q)
-        .distinct()
-        .select_related("owner")
-        .prefetch_related(
-            "format_set",
-            "resource_set",
+        assets = Asset.objects.all()
+        q = filters.get_filter_expression()
+        assets = (
+            assets.filter(q)
+            .prefetch_related(
+                "resource_set",
+                "format_set",
+            )
+            .prefetch_related("tags")
+            .distinct()
         )
-        .prefetch_related("tags")
-    )
+    except FilterException as err:
+        raise HttpError(400, f"{err}")
+
+    order_by = order.orderBy or order.order_by or None
+    if order_by is not None:
+        assets = sort_assets(order_by, assets)
+
     return assets
 
 
@@ -283,6 +254,7 @@ def delete_asset(
 def get_me_likedassets(
     request,
     filters: AssetFilters = Query(...),
+    order: OrderFilter = Query(...),
 ):
     user = request.user
     assets = Asset.objects.filter(id__in=user.likedassets.all().values_list("asset__id", flat=True))
@@ -292,22 +264,23 @@ def get_me_likedassets(
     q |= Q(visibility__in=[PRIVATE, UNLISTED], owner__django_user=user)
 
     try:
-        assets = Asset.objects.all()
         q &= filters.get_filter_expression()
 
         assets = (
-            filters.filter(q)
+            assets.filter(q)
             .prefetch_related(
                 "resource_set",
                 "format_set",
             )
+            .prefetch_related("tags")
             .distinct()
         )
     except FilterException as err:
         raise HttpError(400, f"{err}")
 
-    if filters.orderBy:
-        assets = sort_assets(filters.orderBy, assets)
+    order_by = order.orderBy or order.order_by or None
+    if order_by is not None:
+        assets = sort_assets(order_by, assets)
 
     return assets
 
