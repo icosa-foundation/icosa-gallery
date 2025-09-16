@@ -28,9 +28,9 @@ from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
 from .filters import (
-    AssetFilters,
-    OrderFilter,
-    UserAssetFilters,
+    FiltersAsset,
+    FiltersOrder,
+    FiltersUserAsset,
     filter_and_sort_assets,
 )
 from .schema import (
@@ -89,8 +89,8 @@ def update_user(
 @paginate(AssetPagination)
 def get_me_assets(
     request,
-    filters: UserAssetFilters = Query(...),
-    order: OrderFilter = Query(...),
+    filters: FiltersUserAsset = Query(...),
+    order: FiltersOrder = Query(...),
 ):
     user = request.user
     inc_q = Q(
@@ -195,8 +195,8 @@ def delete_asset(
 @paginate(AssetPagination)
 def get_me_likedassets(
     request,
-    filters: AssetFilters = Query(...),
-    order: OrderFilter = Query(...),
+    filters: FiltersAsset = Query(...),
+    order: FiltersOrder = Query(...),
 ):
     user = request.user
     assets = Asset.objects.filter(

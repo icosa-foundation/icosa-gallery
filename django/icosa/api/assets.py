@@ -32,8 +32,8 @@ from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
 from .filters import (
-    AssetFilters,
-    OrderFilter,
+    FiltersAsset,
+    FiltersOrder,
     filter_and_sort_assets,
 )
 from .schema import (
@@ -220,8 +220,8 @@ def upload_new_assets(
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def get_assets(
     request,
-    order: OrderFilter = Query(...),
-    filters: AssetFilters = Query(...),
+    order: FiltersOrder = Query(...),
+    filters: FiltersAsset = Query(...),
 ):
     exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
     if config.HIDE_REPORTED_ASSETS:
