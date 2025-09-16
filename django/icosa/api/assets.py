@@ -31,14 +31,16 @@ from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
-from .schema import (
+from .filters import (
     AssetFilters,
+    OrderFilter,
+    filter_and_sort_assets,
+)
+from .schema import (
     AssetFinalizeData,
     AssetSchema,
     AssetStateSchema,
-    OrderFilter,
     UploadJobSchemaOut,
-    filter_and_sort_assets,
 )
 
 router = Router()

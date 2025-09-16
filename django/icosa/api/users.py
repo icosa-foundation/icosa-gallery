@@ -27,17 +27,19 @@ from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from ninja.pagination import paginate
 
-from .schema import (
+from .filters import (
     AssetFilters,
+    OrderFilter,
+    UserAssetFilters,
+    filter_and_sort_assets,
+)
+from .schema import (
     AssetFinalizeData,
     AssetSchema,
     AssetSchemaWithState,
     FullUserSchema,
-    OrderFilter,
     PatchUserSchema,
     UploadJobSchemaOut,
-    UserAssetFilters,
-    filter_and_sort_assets,
 )
 
 router = Router()
