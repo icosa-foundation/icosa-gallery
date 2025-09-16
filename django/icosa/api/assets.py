@@ -40,6 +40,7 @@ from .schema import (
     AssetSchema,
     AssetStateSchema,
     Order,
+    OrderFilter,
     SortDirection,
     UploadJobSchemaOut,
 )
@@ -232,6 +233,7 @@ def sort_assets(key: Order, assets: QuerySet[Asset]) -> QuerySet[Asset]:
 def get_assets(
     request,
     filters: AssetFilters = Query(...),
+    order: OrderFilter = Query(...),
 ):
     try:
         assets = Asset.objects.all()
@@ -254,8 +256,8 @@ def get_assets(
     except FilterException as err:
         raise HttpError(400, f"{err}")
 
-    # order_by = filters.orderBy or filters.order_by or None
-    # if order_by is not None:
-    #     assets = sort_assets(order_by, assets)
+    order_by = order.orderBy or order.order_by or None
+    if order_by is not None:
+        assets = sort_assets(order_by, assets)
 
     return assets

@@ -487,19 +487,6 @@ class FilterBase(FilterSchema):
             q &= Q(triangle_count__gt=1)
         return q
 
-    # orderBy: Optional[Order] = Field(
-    # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
-    # it has `example`, which also accepts a list, but does not render it
-    # nicely at all.
-    # See: https://github.com/vitalik/django-ninja/issues/1342
-    # example=[
-    #     "LIKES (most first)",
-    #     "-LIKES (least first)",
-    # ],
-    # default=None,
-    # )
-    # order_by: SkipJsonSchema[Optional[Order]] = Field(default=None)  # For backwards compatibility
-
     @model_validator(mode="before")
     def remove_empty_strings(cls, values):
         # changing empty strings to None
@@ -550,3 +537,18 @@ class AssetFilters(FilterBase):
 
 class UserAssetFilters(FilterBase):
     visibility: Optional[str] = None
+
+
+class OrderFilter(Schema):
+    orderBy: Optional[Order] = Field(
+        # NOTE(james): Ninja doesn't use pydantic's `examples` list. Instead
+        # it has `example`, which also accepts a list, but does not render it
+        # nicely at all.
+        # See: https://github.com/vitalik/django-ninja/issues/1342
+        example=[
+            "LIKES (most first)",
+            "-LIKES (least first)",
+        ],
+        default=None,
+    )
+    order_by: SkipJsonSchema[Optional[Order]] = Field(default=None)  # For backwards compatibility
