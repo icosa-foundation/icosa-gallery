@@ -18,8 +18,12 @@ For the upload to process anything at all, it must at least contain one of these
 - `.mtl`
 - `.fbx`
 - `.fbm`
-
-(Support for `.ply`, `.stl`, `.usdx`, and `.vox` will be added soon.) 
+- `.ply`
+- `.stl`
+- `.usdx`
+- `.vox`
+- `.splat`
+- `.ksplat`
 
 Note that some of the above file types do not make sense on their own, e.g. `mtl`.
 
