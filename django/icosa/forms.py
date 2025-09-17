@@ -14,6 +14,7 @@ from django.utils.translation import gettext_lazy as _
 from icosa.helpers.file import validate_mime
 from icosa.models import (
     PRIVATE,
+    RESERVED_LICENSE,
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
     V4_CC_LICENSE_CHOICES,
@@ -72,6 +73,25 @@ class AssetReportForm(forms.Form):
 
 
 class AssetPublishForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        #  CC licenses are non-revokable, but are upgradeable. If the license
+        # is cc but not in our current menu of options, they can upgrade and so
+        # should be able to choose a different one.
+        self.fields["license"].disabled = self.instance.license in V4_CC_LICENSES and self.instance.visibility in [
+            "PUBLIC",
+            "UNLISTED",
+        ]
+
+        self.fields["license"].choices = (
+            [
+                ("", "No license chosen"),
+            ]
+            + V4_CC_LICENSE_CHOICES
+            + [RESERVED_LICENSE]
+        )
+
     editable_fields = [
         "name",
     ]
@@ -115,9 +135,7 @@ class AssetEditForm(forms.ModelForm):
                     ("", "No license chosen"),
                 ]
                 + V4_CC_LICENSE_CHOICES
-                + [
-                    ("ALL_RIGHTS_RESERVED", "All rights reserved"),
-                ]
+                + [RESERVED_LICENSE]
             )
 
     def clean(self):

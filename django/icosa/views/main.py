@@ -713,6 +713,50 @@ def asset_edit(request, asset_url):
     )
 
 
+@login_required
+@never_cache
+def asset_publish(request, asset_url):
+    # TODO(james): This view is very similar to asset_edit
+    template = "main/asset_edit.html"
+    asset = get_object_or_404(Asset, url=asset_url)
+    # We need to disconnect the editable state from the form during validation.
+    # Without this, if the form contains errors, some fields that need
+    # correction cannot be edited.
+    is_editable = asset.model_is_editable
+
+    if request.user != asset.owner.django_user:
+        raise Http404()
+
+    if request.method == "GET":
+        form = AssetPublishForm(instance=asset)
+    elif request.method == "POST":
+        form = AssetPublishForm(request.POST, request.FILES, instance=asset)
+        if form.is_valid():
+            with transaction.atomic():
+                asset = form.save()
+                if is_editable and "_save_private" in request.POST:
+                    asset.visibility = PRIVATE
+                if "_save_public" in request.POST:
+                    asset.visibility = PUBLIC
+                if "_save_unlisted" in request.POST:
+                    asset.visibility = UNLISTED
+                asset.save(update_timestamps=True)
+            return HttpResponseRedirect(reverse("icosa:uploads"))
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "is_editable": asset.model_is_editable,
+        "asset": asset,
+        "form": form,
+        "page_title": f"Publish {asset.name}",
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
 @never_cache
 @login_required
 def asset_delete(request, asset_url):
@@ -734,36 +778,6 @@ def asset_delete(request, asset_url):
         return HttpResponseRedirect(reverse("icosa:uploads"))
     else:
         return HttpResponseNotAllowed(["POST"])
-
-
-@login_required
-@never_cache
-def asset_publish(request, asset_url):
-    template = "main/asset_edit.html"
-    asset = get_object_or_404(Asset, url=asset_url)
-    if request.user != asset.owner.django_user:
-        raise Http404()
-    if request.method == "GET":
-        form = AssetPublishForm(instance=asset)
-    elif request.method == "POST":
-        form = AssetPublishForm(request.POST, request.FILES, instance=asset)
-        if form.is_valid():
-            with transaction.atomic():
-                form.save()
-            return HttpResponseRedirect(reverse("icosa:uploads"))
-    else:
-        return HttpResponseNotAllowed(["GET", "POST"])
-    context = {
-        "is_editable": asset.model_is_editable,
-        "asset": asset,
-        "form": form,
-        "page_title": f"Publish {asset.name}",
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
 
 
 @ratelimit(key="user_or_ip", rate="5/m", method="POST")
