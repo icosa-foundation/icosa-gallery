@@ -28,22 +28,22 @@ ASSET_NOT_FOUND = HttpError(404, "Asset not found.")
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
 VALID_FORMAT_TYPES = [
-    "tilt",
+    "bin",
+    "blocks",
+    "fbm",
+    "fbx",
     "glb",
     "gltf",
-    "bin",
-    "obj",
+    "ksplat",
     "mtl",
-    "fbx",
-    "fbm",
-    "blocks",
+    "obj",
+    "ply",
+    "tilt",
     "stl",
     "usdz",
     "vox",
-    "ply",
     "spz",
     "splat",
-    "ksplat"
 ]
 
 CONTENT_TYPE_MAP = {
@@ -59,6 +59,13 @@ CONTENT_TYPE_MAP = {
     "fbx": "application/octet-stream",
     "fbm": "application/octet-stream",
     "blocks": "application/octet-stream",
+    "stl": "application/octet-stream",
+    "usdz": "application/octet-stream",
+    "vox": "application/octet-stream",
+    "ply": "application/octet-stream",  # TODO: Technically, there are ascii ply files too.
+    "spz": "application/octet-stream",
+    "splat": "application/octet-stream",
+    "ksplat": "application/octet-stream",
 }
 
 
@@ -108,12 +115,18 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
     filetype = None
     mainfile = False
 
-    if extension == "tilt":
-        filetype = "TILT"
-        mainfile = True
-
-    if extension == "blocks":
-        filetype = "BLOCKS"
+    if extension in [
+        "blocks",
+        "ksplat",
+        "ply",
+        "stl",
+        "spz",
+        "splat",
+        "tilt",
+        "usdz",
+        "vox",
+    ]:
+        filetype = extension.upper()
         mainfile = True
 
     # GLTF/GLB/BIN
