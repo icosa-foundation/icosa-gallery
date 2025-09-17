@@ -1,78 +1,21 @@
 {% load asset_tags %}
 {% load fontawesome_tags %}
 
-{% if asset.state == "UPLOADING" %}
-    <article class="sketchbox" hx-trigger="every 2000ms" hx-get="{% url 'icosa:asset_status' asset_url=asset.url %}" hx-swap="outerHTML" hx-target="this">
-{% else %}
-    <article class="sketchbox">
-{% endif %}
-    {% if asset.state != "COMPLETE" %}
-        <div class="sketchimage {{ asset.state }}"
-            style="background-image: url('/static/images/nothumbnail.png?v=1');">
-        </div>
-    {% else %}
-        <a href="{% if can_edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}" role="presentation">
-            <div class="sketchimage">
-                <img src="{{ asset.get_thumbnail_url }}" alt="{{ asset.name }} by {{ asset.owner.displayname }}"" }}">
-            </div>
-        </a>
-    {% endif %}
+<article class="sketchbox">
+    {% include "partials/sketch_list_item_thumbnail.html" %}
     <div class="sketch-meta">
         <h4>
-            {% spaceless %}
-            {% if asset.state != "COMPLETE" %}
-                {% if can_edit_asset %}
-                    {% if asset.state == "FAILED" %}
-                        <p>{% fa_icon "solid" "triangle-exclamation" %} Asset failed to upload. Please try again or contact support.</p>
-                        <p>
-                        <form method="post" action="{% url "icosa:asset_delete" asset_url=asset.url %}" >
-                            {% csrf_token %}
-                            <input class="btn btn-xs btn-secondary" type="submit" value="remove">
-                        </form>
-                        </p>
-                    {% endif %}
-                    {% if asset.state == "UPLOADING" %}
-                        <p>{% fa_icon "solid" "arrows-rotate" "fa-spin" %} Upload in progress&hellip;</p>
-                    {% endif %}
-                {% endif %}
-                {{ asset.name|default_if_none:"" }}
-            {% else %}
-                <a href="{% if can_edit_asset %}{{ asset.get_edit_url }}{% else %}{{asset.get_absolute_url}}{% endif %}">
-                    {{ asset.name|default_if_none:"Untitled asset" }}
-                </a>
-            {% endif %}
-            {% if not can_edit_asset %}
-                {% like_button request asset %}
-            {% endif %}
-            {% endspaceless %}
+            <a href="{{asset.get_absolute_url}}">
+                {{ asset.name|default_if_none:"Untitled asset" }}
+            </a>
+            {% like_button request asset %}
         </h4>
         {% if not hide_byline %}
             <p class="sketch-byline">
-            {% if asset.owner.url %}
-                {% if can_edit_asset %}
-                    {% if not request.user.has_single_owner %}
-                        <a href="{% url 'icosa:user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>{% if owner_details %} &bull;{% endif %}
-                    {% endif %}
-                {% else %}
-                    <a href="{% url 'icosa:user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>{% if owner_details %} &bull; {% endif %}
+                {% if asset.owner.url %}
+                    <a href="{% url 'icosa:user_show' slug=asset.owner.url %}">{{ asset.owner.displayname }}</a>
                 {% endif %}
-                {% if owner_details %}{{ asset.create_time|date:"d/m/Y" }}{% endif %}
-            {% endif %}
             </p>
-        {% endif %}
-        {% if owner_details %}
-            <p><small>Visibility: {{ asset.get_visibility_display }}<br>
-            <span class="sketch-license">
-                {{ asset.get_license_icons }} {{ asset.get_license_display|default_if_none:" All rights reserved" }}
-            </small></span></p>
         {% endif %}
     </div>
 </article>
-{% if asset.state == "COMPLETE" and is_polling %}
-    <script>
-        let el = document.querySelector("#uploadmessages");
-        if (el !== null) {
-            el.remove();
-        }
-    </script>
-{% endif %}

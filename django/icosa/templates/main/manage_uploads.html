@@ -69,15 +69,15 @@
     </div>
     <div class="sketch-list">
         {% if assets %}
-            {% with can_edit_asset=True owner_details=True %}
-                {% for asset in assets %}
-                    {% include "partials/sketch_list_item.html" %}
-                {% endfor %}
-            {% endwith %}
+            {% for asset in assets %}
+                {% include "partials/sketch_list_item_owner.html" %}
+            {% endfor %}
         {% else %}
             <p>You haven't uploaded anything yet.</p>
         {% endif %}
     </div>
-    {% include "partials/pagination.html" %}
+    {% if assets %}
+        {% include "partials/pagination.html" %}
+    {% endif %}
 </div>
 {% endblock content %}
