@@ -861,7 +861,8 @@ def user_settings(request):
                 if user.has_single_owner:
                     description = form.cleaned_data.get("description", None)
                     url = form.cleaned_data.get("url", None)
-                    print(description, url)
+                    if settings.DEBUG:
+                        print(description, url)
                     owner = user.assetowner_set.first()
                     if description is not None:
                         owner.description = description
