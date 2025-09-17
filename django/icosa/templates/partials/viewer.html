@@ -163,9 +163,10 @@
         console.log("Trying to load obj");
         let mtlUrl = "{{ asset.preferred_viewer_format.resource_set.first }}";
         await viewer.loadObjWithMtl(url, mtlUrl, overrides);
-    } else if (formatType === 'ply') {
-        console.log("Trying to load ply");
-        await viewer.loadPly(url, overrides);
+    // PLYs are now assumed to be Gaussian splats
+    // } else if (formatType === 'ply') {
+    //     console.log("Trying to load ply");
+    //     await viewer.loadPly(url, overrides);
     } else if (formatType === 'stl') {
         console.log("Trying to load stl");
         await viewer.loadStl(url, overrides);
