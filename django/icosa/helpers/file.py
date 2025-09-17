@@ -37,6 +37,13 @@ VALID_FORMAT_TYPES = [
     "fbx",
     "fbm",
     "blocks",
+    "stl",
+    "usdz",
+    "vox",
+    "ply",
+    "spz",
+    "splat",
+    "ksplat"
 ]
 
 CONTENT_TYPE_MAP = {
