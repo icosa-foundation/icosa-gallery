@@ -33,6 +33,18 @@ ARTIST_QUERY_SUBJECT_CHOICES = [
     ("CREDITED_TO_SOMEONE_ELSE", "My work is credited to someone else"),
 ]
 
+ALLOWED_UPLOAD_EXTENSIONS = [
+    "zip",
+    "glb",
+    "ksplat",
+    "ply",
+    "stl",
+    "spz",
+    "splat",
+    "usdz",
+    "vox",
+]
+
 
 class CustomImageInput(ClearableFileInput):
     clear_checkbox_label = _("Remove")
@@ -47,7 +59,7 @@ class CameraButton(HiddenInput):
 
 
 class AssetUploadForm(forms.Form):
-    file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=["zip", "glb"])])
+    file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS)])
 
     def clean(self):
         cleaned_data = super().clean()
@@ -55,8 +67,10 @@ class AssetUploadForm(forms.Form):
         if uploaded_file:
             magic_bytes = next(uploaded_file.chunks(chunk_size=2048))
             uploaded_file.seek(0)
-            if not validate_mime(magic_bytes, ["application/zip", "model/gltf-binary"]):
-                self.add_error("file", "File is not a zip archive or a glb.")
+            if not validate_mime(
+                magic_bytes, ["application/zip", "model/gltf-binary", "application/octet-stream"]
+            ):  # TODO: "application/octet-stream" essentially makes this check redundant.
+                self.add_error("file", "File type is not supported.")
 
 
 class AssetReportForm(forms.Form):

@@ -44,6 +44,14 @@ VALID_WEB_FORMAT_TYPES = [
     "png",
     "webp",
     "bmp",
+    # new formats:
+    "ksplat",
+    "ply",
+    "stl",
+    "usdz",
+    "vox",
+    "spz",
+    "splat",
 ]
 
 
@@ -134,7 +142,7 @@ def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
     unzipped_files = []
     for file in files:
         # Note, the mime type should be checked in the form. This function
-        # assumes the correct mime type for zip or glb.
+        # assumes the correct mime type for zip or glb TODO: or binary file.
         if not file.name.endswith(".zip"):
             unzipped_files.append(file)
             continue
@@ -223,7 +231,7 @@ def upload(
     files: Optional[List[UploadedFile]] = File(None),
 ):
     main_files = []
-    # We need to see one of: glb or gltf, preferring glb. We are ignoring
+    # We need to see one of: glb or gltf, preferring glb.
     sub_files = {
         "GLB": [],  # All non-thumbnail images.
         "GLTF": [],  # All GLB's files plus BIN files.
