@@ -9,6 +9,16 @@
     {% include "partials/oembed_head.html" %}
 {% endblock extrahead %}
 
+{% block meta_opengraph %}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Icosa Gallery">
+    <meta property="og:title" content="{{ asset.name }} by {{ asset.owner.displayname }} on Icosa Gallery">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta name="og:image" content="{{ asset.get_thumbnail_url }}">
+    <meta name="og:image:alt" content="{{ asset.name }}{% if asset.owner.displayname %} by {{ asset.owner.displayname }}{% endif %}">
+    <meta property="og:description" content='Check out "{{ asset.name }}" {% if asset.owner.displayname %}and more work by {{ asset.owner.displayname }}{% endif %} on Icosa Gallery'>
+{% endblock meta_opengraph %}
+
 {% block banner %}
 {% if not asset.owner.is_claimed %}
 {% include "partials/artist_info_banner.html" %}

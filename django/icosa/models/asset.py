@@ -244,7 +244,9 @@ class Asset(models.Model):
         return reverse("icosa:asset_delete", kwargs={"asset_url": self.url})
 
     def get_thumbnail_url(self):
-        thumbnail_url = "/static/images/nothumbnail.png?v=1"
+        thumbnail_url = (
+            f"{settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}{settings.STATIC_URL}images/nothumbnail.png?v=1"
+        )
         if self.preview_image:
             thumbnail_url = self.preview_image.url
         elif self.thumbnail:
