@@ -11,6 +11,9 @@
 
 {% block meta_opengraph %}
     <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{{ asset.name }} by {{ asset.owner.displayname }} on Icosa Gallery">
+    <meta name="twitter:image" content="{{ asset.get_thumbnail_url }}">
+    <meta property="twitter:description" content='Check out "{{ asset.name }}" {% if asset.owner.displayname %}and more work by {{ asset.owner.displayname }}{% endif %} on Icosa Gallery'>
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Icosa Gallery">
     <meta property="og:title" content="{{ asset.name }} by {{ asset.owner.displayname }} on Icosa Gallery">
