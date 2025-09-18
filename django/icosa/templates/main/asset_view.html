@@ -16,6 +16,8 @@
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta name="og:image" content="{{ asset.get_thumbnail_url }}">
     <meta name="og:image:alt" content="{{ asset.name }}{% if asset.owner.displayname %} by {{ asset.owner.displayname }}{% endif %}">
+    <meta name="og:image:width" content="1280">
+    <meta name="og:image:height" content="720">
     <meta property="og:description" content='Check out "{{ asset.name }}" {% if asset.owner.displayname %}and more work by {{ asset.owner.displayname }}{% endif %} on Icosa Gallery'>
 {% endblock meta_opengraph %}
 
