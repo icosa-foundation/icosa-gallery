@@ -184,10 +184,20 @@ class Asset(models.Model):
         if inst is not None:
             return inst
 
-        # Last chance, OBJ
+        # OBJ, if we really must
         inst = formats.filter(format_type="OBJ").last()
         if inst is not None:
             return inst
+
+        # Last chance, can we get one of the newer format types?
+        # TODO: the ordering of these matters, but perhaps it is unlikely that
+        # a usdz and ksplat are present (for example).
+        for format_type in ["KSPLAT", "PLY", "STL", "SPZ", "SPLAT", "USDZ", "VOX"]:
+            inst = formats.filter(format_type=format_type).last()
+            if inst is not None:
+                # This will return the first we find from the list above; this
+                # is why ordering matters.
+                return inst
 
         return None
 
