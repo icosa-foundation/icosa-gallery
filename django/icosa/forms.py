@@ -68,8 +68,14 @@ class AssetUploadForm(forms.Form):
             magic_bytes = next(uploaded_file.chunks(chunk_size=2048))
             uploaded_file.seek(0)
             if not validate_mime(
-                magic_bytes, ["application/zip", "model/gltf-binary", "application/octet-stream"]
-            ):  # TODO: "application/octet-stream" essentially makes this check redundant.
+                magic_bytes,
+                [
+                    "application/zip",
+                    "application/gzip",  # spz
+                    "model/gltf-binary",
+                    "application/octet-stream",
+                ],
+            ):  # TODO: "application/octet-stream" essentially makes this check redundant, but is required for many file types.
                 self.add_error("file", "File type is not supported.")
 
 
