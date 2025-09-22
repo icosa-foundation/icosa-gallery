@@ -106,6 +106,8 @@ docker compose up -d
 
 If you've updated your `.env` file as above, visit http://example.localhost
 
+Unlike some Docker setups, you will need to visit your url on the normal port 80. The web service's internal port of 8000 will not work because nginx needs to serve requests to the web application.
+
 **Note:** The `-d` flag in the above command runs Docker Compose in the background so that you can continue to use your terminal or disconnect from your ssh session without stopping the server. If you wish to stop the server after using this command you can type the following:
 
 ``` bash
