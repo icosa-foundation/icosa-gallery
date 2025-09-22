@@ -24,7 +24,29 @@ cd icosa-gallery
 
 **Note:** Further steps assume you are now in the `icosa-gallery` directory.
 
-### Step 2 - Choose a domain configuration
+### Step 2 - Populate the .env file with your custom values
+
+You can configure Icosa Gallery to your needs using an `.env` file. Copy the provided example file into place and amend its default values.
+
+``` bash
+cp example.env .env
+```
+
+Complete documentation of every variable and its purpose can be found in the `.env` file itself.
+
+**Important:** The application will not start without you first having populated the following values
+with something secure, for instance the output of something like [this](https://django-secret-key-generator.netlify.app/):
+
+``` bash
+DJANGO_SECRET_KEY=
+JWT_SECRET_KEY=
+```
+
+**Note:** So that Docker can correctly parse your environment variables, try to ensure none of them contain the `$` character. If a value must contain `$`, then wrap the value in single quotes. For example:
+
+`MY_BAD_PASSWORD='pa$$word'`
+
+### Step 3 - Choose a domain configuration
 
 Icosa gallery has two main, public-facing, components: The Web UI and the API. These can be run at the same domain, e.g. `example.com` for the Web UI and `example.com/api` for the API.
 
@@ -72,29 +94,22 @@ You'll then need to configure your local hosts file so that these domains are ro
 127.0.0.1       api.example.localhost
 ```
 
-### Step 3 - Populate the .env file with your custom values
-
-You can configure Icosa Gallery to your needs using an `.env` file. Copy the provided example file into place and amend its default values.
+### Step 4 - Build and run the project
 
 ``` bash
-cp example.env .env
+docker compose build
+docker compose up -d
 ```
 
-Complete documentation of every variable and its purpose can be found in the `.env` file itself.
+If you've updated your `.env` file as above, visit http://example.localhost
 
-**Important:** The application will not start without you first having populated the following values
-with something secure, for instance the output of something like [this](https://django-secret-key-generator.netlify.app/):
+**Note:** The `-d` flag in the above command runs Docker Compose in the background so that you can continue to use your terminal or disconnect from your ssh session without stopping the server. If you wish to stop the server after using this command you can type the following:
 
 ``` bash
-DJANGO_SECRET_KEY=
-JWT_SECRET_KEY=
+docker compose down
 ```
 
-**Note:** So that Docker can correctly parse your environment variables, try to ensure none of them contain the `$` character. If a value must contain `$`, then wrap the value in single quotes. For example:
-
-`MY_BAD_PASSWORD='pa$$word'`
-
-### Step 4 - Add sketch assets dependencies
+### Step 5 - Add sketch assets dependencies
 
 We currently have a dependency on a separate project: https://github.com/icosa-foundation/icosa-sketch-assets
 
@@ -108,21 +123,6 @@ cd icosa-sketch-assets
 docker cp brushes ig-web:/opt/static/icosa-sketch-assets/brushes
 docker cp textures ig-web:/opt/static/icosa-sketch-assets/textures
 docker cp environments ig-web:/opt/static/icosa-sketch-assets/environments
-```
-
-### Step 5 - Build and run the project
-
-``` bash
-docker compose build
-docker compose up -d
-```
-
-If you've updated your `.env` file as above, visit http://example.localhost
-
-**Note:** The `-d` flag in the above command runs Docker Compose in the background so that you can continue to use your terminal or disconnect from your ssh session without stopping the server. If you wish to stop the server after using this command you can type the following:
-
-``` bash
-docker compose down
 ```
 
 **Note:** The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
