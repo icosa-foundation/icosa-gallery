@@ -52,10 +52,13 @@ Icosa gallery has two main, public-facing, components: The Web UI and the API. T
 
 You can alternatively choose to run the api at a subdomain of the main site, e.g `example.com` and `api.example.com` respectively.
 
+> [!NOTE]
+> You **must** choose one of these; there is no default and the application will fail to run if you do not choose.
+
 #### If you wish to use the single-domain configuration:
 
 ``` bash
-ln -s nginx/templates/api-no-subdomain.conf.template nginx/templates/default.conf.template
+cp nginx/templates/api-no-subdomain.conf.template nginx/templates/default.conf.template
 ```
 
 And edit the following values in your `.env` file:
@@ -68,7 +71,7 @@ DEPLOYMENT_HOST_API=example.com
 #### If you wish to run the api at a subdomain:
 
 ``` bash
-ln -s nginx/templates/api-subdomain.conf.template nginx/templates/default.conf.template
+cp nginx/templates/api-subdomain.conf.template nginx/templates/default.conf.template
 ```
 
 And edit the following values in your `.env` file:
