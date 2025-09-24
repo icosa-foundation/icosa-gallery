@@ -342,6 +342,8 @@ def process_mtl(asset: Asset, f: UploadedFormat):
             role="ORIGINAL_OBJ_FORMAT",
         )
         obj_non_triangulated = Resource.objects.create(**resource_data)
+        obj_non_triangulated.format = format_non_triangulated
+        obj_non_triangulated.save()
         format_non_triangulated.add_root_resource(obj_non_triangulated)
         format_non_triangulated.save()
     else:
@@ -355,6 +357,8 @@ def process_mtl(asset: Asset, f: UploadedFormat):
             role="ORIGINAL_TRIANGULATED_OBJ_FORMAT",
         )
         obj_triangulated = Resource.objects.create(**resource_data)
+        obj_triangulated.format = format_triangulated
+        obj_triangulated.save()
         format_triangulated.add_root_resource(obj_triangulated)
         format_triangulated.save()
     else:
