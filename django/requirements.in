@@ -33,6 +33,8 @@ pillow==11.2.1
 psycopg2==2.9.10
 pydantic[email]==2.10.6
 PyJWT==2.10.1
+pytest==8.4.2
+pytest-django==4.11.1
 python-magic==0.4.27
 requests==2.32.3
 s3transfer==0.11.4
