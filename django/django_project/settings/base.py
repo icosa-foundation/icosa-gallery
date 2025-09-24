@@ -15,7 +15,7 @@ from boto3.s3.transfer import TransferConfig as BotoTransferConfig
 from botocore.client import Config as BotoConfig
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if os.environ.get("DJANGO_DISABLE_CACHE"):
     CACHES = {
         "default": {
