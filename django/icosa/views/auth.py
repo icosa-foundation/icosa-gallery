@@ -187,20 +187,21 @@ def register(request):
             password = form.cleaned_data["password_new"]
             username = form.cleaned_data["username"]
             displayname = form.cleaned_data["displayname"]
-            try:
-                with transaction.atomic():
-                    user = User.objects.create_user(
-                        username=username,
-                        displayname=displayname,
-                        email=email,
-                        password=password,
-                    )
-                    user.is_active = False
-                    user.save()
+            if not User.objects.filter(email=email).exists():
+                try:
+                    with transaction.atomic():
+                        user = User.objects.create_user(
+                            username=username,
+                            displayname=displayname,
+                            email=email,
+                            password=password,
+                        )
+                        user.is_active = False
+                        user.save()
 
-                send_registration_email(request, user, to_email=form.cleaned_data.get("email"))
-            except IntegrityError:
-                pass
+                    send_registration_email(request, user, to_email=form.cleaned_data.get("email"))
+                except IntegrityError:
+                    pass
             success = True
             # Sleep a random amount of time to throw off timing attacks a bit more.
             time.sleep(random.randrange(0, 200) / 100)
