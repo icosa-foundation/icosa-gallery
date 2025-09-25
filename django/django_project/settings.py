@@ -308,7 +308,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Axes settings
 
-# Block by Username only (i.e.: Same user different IP is still blocked, but different user same IP is not)
+AXES_USERNAME_FORM_FIELD = "email"
+# Block by Email only (i.e.: Same user different IP is still blocked, but different user same IP is not)
 AXES_LOCKOUT_PARAMETERS = ["username"]
 
 # Disable logging the IP-Address of failed login attempts by returning None for attempts to get the IP

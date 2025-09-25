@@ -12,8 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 class User(AbstractUser):
     displayname = models.CharField(_("Display Name"), max_length=255)
-    # TODO: use this email field definition once the data can support uniqueness
-    # email = models.EmailField(_("email address"), blank=True, unique=True)
+    email = models.EmailField(_("email address"), blank=True, unique=True)
 
     def get_absolute_url(self):
         owners = self.assetowner_set.all()

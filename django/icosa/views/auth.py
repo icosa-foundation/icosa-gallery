@@ -126,15 +126,23 @@ def custom_login(request):
         raise Http404()
 
     if request.method == "POST":
-        username = request.POST.get("username", None)
+        email = request.POST.get("email", None)
         password = request.POST.get("password", None)
         # Creating the error response up front is slower for the happy path,
         # but makes the code perhaps more readable.
+
+        try:
+            username = User.objects.get(email=email).username
+        except (
+            User.DoesNotExist,
+            User.MultipleObjectsReturned,
+            ValueError,
+        ):
+            username = None
         user = authenticate(request, username=username, password=password)
         if user is None or not user.is_active:
             # Icosa user auth failed, so we return early.
-            return render_login_error(request, "Please enter a valid username or password")
-
+            return render_login_error(request, "Please enter a valid email or password")
         login(request, user)
 
         # Claim any assets that were created before the user logged in
