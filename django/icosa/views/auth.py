@@ -245,7 +245,7 @@ def password_reset(request):
         form = PasswordResetForm(request.POST)
         if form.is_valid():
             try:
-                user = User.objects.get(username=form.cleaned_data["email"])
+                user = User.objects.get(email=form.cleaned_data["email"])
                 send_password_reset_email(
                     request,
                     user,
