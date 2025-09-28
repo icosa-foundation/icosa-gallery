@@ -208,6 +208,7 @@
                 }
             });
         },
+        stochastic: false,
         // Lighting controls
         ambientLightColor: '#ffffff',
         light0Color: '#ffffff',
@@ -224,6 +225,14 @@
     const levelCameraControl = gui.add(guiParams, 'levelCamera').name("Level Camera");
     const frameSceneControl = gui.add(guiParams, 'frameScene').name("Frame Scene");
     const wireframeControl = gui.add(guiParams, 'wireframe').name("Toggle Wireframe");
+
+    const stochasticControl = gui.add(guiParams, 'stochastic').name("Splat Stochastic Rendering").onChange(() => {
+        viewer.scene.traverse((child) => {
+            if (child.constructor.name.includes('Spark') && child.defaultView) {
+                child.defaultView.stochastic = guiParams.stochastic;
+            }
+        });
+    });
 
     // Lighting controls folder
     const lightsFolder = gui.addFolder('Lighting');

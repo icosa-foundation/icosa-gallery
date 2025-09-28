@@ -4031,6 +4031,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
                 if (viewer1?.trackballControls) viewer1.trackballControls.update();
             }
+            // SparkRenderer stochastic setup is now handled by GUI toggle
             if (viewer1?.activeCamera) this.renderer.render(viewer1.scene, viewer1.activeCamera);
         };
         this.dataURLtoBlob = (dataURL)=>{
@@ -5797,7 +5798,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             const moduleName = "@sparkjsdev/spark";
             const sparkModule = await import(/* webpackIgnore: true */ moduleName);
             if (!sparkModule.SplatMesh) throw new Error("SplatMesh not found in Spark module exports");
-            return sparkModule.SplatMesh;
+            return sparkModule;
         } catch (error) {
             throw new Error(`Spark (@sparkjsdev/spark) is not available: ${error.message}`);
         }
@@ -5823,16 +5824,16 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 };
             }
             // Dynamic import for optional Spark dependency
-            let SplatMesh;
+            let SparkModule;
             try {
-                SplatMesh = await this.loadSparkModule();
+                SparkModule = await this.loadSparkModule();
             } catch (importError) {
                 console.error(importError.message);
                 this.showErrorIcon();
                 this.loadingError = true;
                 return;
             }
-            const splatModel = new SplatMesh({
+            const splatModel = new SparkModule.SplatMesh({
                 url: url
             });
             await splatModel.initialized;
