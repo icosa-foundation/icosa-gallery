@@ -265,13 +265,13 @@ def password_reset(request):
             return redirect(reverse("icosa:password_reset_done"))
     else:
         form = PasswordResetForm()
-        return render(
-            request,
-            "auth/password_reset.html",
-            {
-                "form": form,
-            },
-        )
+    return render(
+        request,
+        "auth/password_reset.html",
+        {
+            "form": form,
+        },
+    )
 
 
 @never_cache
