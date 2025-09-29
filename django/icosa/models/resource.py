@@ -53,7 +53,7 @@ class Resource(models.Model):
             else:
                 url_str = ext_url
         else:
-            url_str = None
+            url_str = ""
         return url_str
 
     @property
