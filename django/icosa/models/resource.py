@@ -50,6 +50,8 @@ class Resource(models.Model):
                 # properly for them.
                 fake_timestamp_path = "20250101010101id_/"
                 url_str = f"{prefix}{fake_timestamp_path}{ext_url[len(prefix) :]}"
+            else:
+                url_str = ext_url
         else:
             url_str = None
         return url_str
