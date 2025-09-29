@@ -339,13 +339,11 @@ class NewUserForm(forms.ModelForm):
         ]
 
 
-class PasswordResetForm(forms.ModelForm):
-    class Meta:
-        model = User
-
-        fields = [
-            "email",
-        ]
+class PasswordResetForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.TextInput(),
+        required=True,
+    )
 
 
 class PasswordResetConfirmForm(forms.ModelForm):
