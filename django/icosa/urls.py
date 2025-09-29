@@ -182,7 +182,7 @@ urlpatterns = [
     ),
 ]
 
-if settings.DEPLOYMENT_HOST_API:
+if settings.DEPLOYMENT_HOST_API and settings.DEPLOYMENT_HOST_API != settings.DEPLOYMENT_HOST_WEB:
     urlpatterns.append(
         path("v1/", api.urls),
     )
