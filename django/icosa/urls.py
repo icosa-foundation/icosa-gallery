@@ -182,6 +182,8 @@ urlpatterns = [
     ),
 ]
 
+# If _WEB and _API are the same, or _API is not set, then we need to place the
+# API route at api/, otherwise, we are running the API on a subdomain.
 if settings.DEPLOYMENT_HOST_API and settings.DEPLOYMENT_HOST_API != settings.DEPLOYMENT_HOST_WEB:
     urlpatterns.append(
         path("v1/", api.urls),
