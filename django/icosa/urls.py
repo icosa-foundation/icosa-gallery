@@ -35,12 +35,14 @@ if getattr(settings, "STAFF_ONLY_ACCESS", False):
         throttle=throttle_rules,
         servers=api_servers,
         urls_namespace="icosa:api",
+        title="Icosa Gallery API",
     )
 else:
     api = NinjaAPI(
         throttle=throttle_rules,
         servers=api_servers,
         urls_namespace="icosa:api",
+        title="Icosa Gallery API",
     )
 
 api.add_router("assets", assets_router, tags=["Assets"])
