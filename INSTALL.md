@@ -139,13 +139,26 @@ Unlike some Docker setups, you will need to visit your url on the normal port 80
 docker compose down
 ```
 
+> [!NOTE]
+> The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
+
 ### Step 5 - Add sketch assets dependencies
 
 We currently have a dependency on a separate project: https://github.com/icosa-foundation/icosa-sketch-assets
 
 We haven't yet settled on a build step for this dependency so for now, you will need to make sure that the `brushes`, `environments`, and `textures` directories of that project are placed inside the directory as defined in the settings file: `ICOSA_SKETCH_ASSETS_LOCATION`.
 
-A simple way to do this would be to clone the repository to your host machine and then copy the assets into this project using something like the following:
+For now, to do this manually, clone the repository to your host machine and then copy the assets into this project using something like the following.
+
+Create the necessary directories for the static assets inside the container:
+
+``` bash
+docker exec -it ig-web bash -c "mkdir -p /opt/static/icosa-sketch-assets/"
+docker exec -it ig-web bash -c "mkdir -p /opt/static/icosa-sketch-assets-experimental/"
+docker exec -it ig-web bash -c "mkdir -p /opt/static/icosa-sketch-assets-previous/"
+```
+
+Then copy the files from all three respective branches in the repo.
 
 ``` bash
 git clone https://github.com/icosa-foundation/icosa-sketch-assets
@@ -153,10 +166,21 @@ cd icosa-sketch-assets
 docker cp brushes ig-web:/opt/static/icosa-sketch-assets/brushes
 docker cp textures ig-web:/opt/static/icosa-sketch-assets/textures
 docker cp environments ig-web:/opt/static/icosa-sketch-assets/environments
+
+git checkout versions/previous && git pull
+docker cp brushes/. ig-web:/opt/static/icosa-sketch-assets-previous/brushes/
+docker cp textures/. ig-web:/opt/static/icosa-sketch-assets-previous/textures/
+docker cp environments/. ig-web:/opt/static/icosa-sketch-assets-previous/environments/
+
+git checkout versions/experimental && git pull
+docker cp brushes/. ig-web:/opt/static/icosa-sketch-assets-experimental/brushes/
+docker cp textures/. ig-web:/opt/static/icosa-sketch-assets-experimental/textures/
+docker cp environments/. ig-web:/opt/static/icosa-sketch-assets-experimental/environments/
 ```
 
-> [!NOTE]
-> The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
+Alternatively, link to the sketch assets somewhere on the web by putting the following in your `.env` file (for example):
+
+`ICOSA_SKETCH_ASSETS_LOCATION=https://icosa.gallery/static/sketch-assets`
 
 ### Step 6 - Setup an admin user
 

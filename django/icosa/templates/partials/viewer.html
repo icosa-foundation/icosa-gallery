@@ -94,11 +94,11 @@
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
     {% if request.session.viewer_js_version == "experimental" %}
-        var viewer = new Viewer("{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}/static/{{ settings.ICOSA_SKETCH_ASSETS_LOCATION }}-experimental/");
+        var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-experimental/");
     {% elif request.session.viewer_js_version == "previous" %}
-        var viewer = new Viewer("{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}/static/{{ settings.ICOSA_SKETCH_ASSETS_LOCATION }}-previous/");
+        var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-previous/");
     {% else %}
-        var viewer = new Viewer("{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}/static/{{ settings.ICOSA_SKETCH_ASSETS_LOCATION }}/");
+        var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}/");
     {% endif %}
 
     let presentationParams = JSON.parse(document.getElementById('presentation-params').textContent);

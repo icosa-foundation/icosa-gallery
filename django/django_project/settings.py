@@ -214,8 +214,12 @@ STATICFILES_FINDERS = (
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
     "compressor.finders.CompressorFinder",
 )
-# TODO(james): Does this need to be configurable?
-ICOSA_SKETCH_ASSETS_LOCATION = "icosa-sketch-assets"
+
+ICOSA_SKETCH_ASSETS_LOCATION = os.environ.get("DJANGO_ICOSA_SKETCH_ASSETS_LOCATION")
+if ICOSA_SKETCH_ASSETS_LOCATION:
+    BRUSHES_STATIC_URL = ICOSA_SKETCH_ASSETS_LOCATION.strip("/")
+else:
+    BRUSHES_STATIC_URL = f"{DEPLOYMENT_SCHEME}{DEPLOYMENT_HOST_WEB}{STATIC_URL}icosa-sketch-assets"
 
 
 TEMPLATES = [
