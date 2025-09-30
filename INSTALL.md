@@ -21,6 +21,27 @@ This guide assumes some familiarity with the command line on your chosen platfor
 git clone https://github.com/icosa-foundation/icosa-gallery.git
 cd icosa-gallery
 ```
+> [!TIP]
+> **Windows users** should make sure that line endings are configured correctly. Don't commit line ending changes; instead:
+
+Configure git to use Windows line endings:
+
+``` bash
+git config core.eol lf
+git config core.autocrlf input
+```
+Update git's attributes for all source files. Either edit `.git\info\attributes` directly or:
+
+``` bash
+Add-Content .git\info\attributes "* text eol=lf"
+```
+
+Clean up the repo (this shouldn't result in a commit):
+
+``` bash
+git rm --cached -r .
+git reset --hard
+```
 
 > [!NOTE]
 > Further steps assume you are now in the `icosa-gallery` directory.
