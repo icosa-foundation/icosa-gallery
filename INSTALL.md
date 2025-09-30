@@ -22,7 +22,8 @@ git clone https://github.com/icosa-foundation/icosa-gallery.git
 cd icosa-gallery
 ```
 
-**Note:** Further steps assume you are now in the `icosa-gallery` directory.
+> [!NOTE]
+> Further steps assume you are now in the `icosa-gallery` directory.
 
 ### Step 2 - Populate the .env file with your custom values
 
@@ -34,15 +35,16 @@ cp example.env .env
 
 Complete documentation of every variable and its purpose can be found in the `.env` file itself.
 
-**Important:** The application will not start without you first having populated the following values
-with something secure, for instance the output of something like [this](https://django-secret-key-generator.netlify.app/):
+> [!IMPORTANT]
+> The application will not start without you first having populated the following values with something secure, for instance the output of something like [this](https://django-secret-key-generator.netlify.app/):
 
 ``` bash
 DJANGO_SECRET_KEY=
 JWT_SECRET_KEY=
 ```
 
-**Note:** So that Docker can correctly parse your environment variables, try to ensure none of them contain the `$` character. If a value must contain `$`, then wrap the value in single quotes. For example:
+> [!NOTE]
+> So that Docker can correctly parse your environment variables, try to ensure none of them contain the `$` character. If a value must contain `$`, then wrap the value in single quotes. For example:
 
 `MY_BAD_PASSWORD='pa$$word'`
 
@@ -83,7 +85,8 @@ DEPLOYMENT_HOST_API=api.example.com
 
 #### For local deployment only
 
-**Note:** For either of the above domain configurations, if you are planning on running this software on your own machine instead of a web host, you'll want to set your `.env` file to something like:
+> [!NOTE]
+> For either of the above domain configurations, if you are planning on running this software on your own machine instead of a web host, you'll want to set your `.env` file to something like:
 
 ``` bash
 DEPLOYMENT_HOST_WEB=example.localhost
@@ -108,7 +111,8 @@ If you've updated your `.env` file as above, visit http://example.localhost
 
 Unlike some Docker setups, you will need to visit your url on the normal port 80. The web service's internal port of 8000 will not work because nginx needs to serve requests to the web application.
 
-**Note:** The `-d` flag in the above command runs Docker Compose in the background so that you can continue to use your terminal or disconnect from your ssh session without stopping the server. If you wish to stop the server after using this command you can type the following:
+> [!NOTE]
+> The `-d` flag in the above command runs Docker Compose in the background so that you can continue to use your terminal or disconnect from your ssh session without stopping the server. If you wish to stop the server after using this command you can type the following:
 
 ``` bash
 docker compose down
@@ -130,7 +134,8 @@ docker cp textures ig-web:/opt/static/icosa-sketch-assets/textures
 docker cp environments ig-web:/opt/static/icosa-sketch-assets/environments
 ```
 
-**Note:** The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
+> [!NOTE]
+> The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
 
 ### Step 6 - Setup an admin user
 
