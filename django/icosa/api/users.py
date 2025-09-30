@@ -65,18 +65,26 @@ def update_user(
     request,
     patch_user: PatchUserSchema,
 ):
-    current_user = request.user
-    url = getattr(patch_user, "url", "").strip() or current_user.url
+    user = request.user
+    if not user.has_single_owner:
+        # TODO: handle multiple owners.
+        raise HttpError(422, "Cannot identify which owner to update.")
+    owner = user.assetowner_set.first()
+    url = getattr(patch_user, "url", "").strip() or owner.url
 
-    if AssetOwner.objects.filter(url__iexact=url).count() != 0 and url != current_user.url:
-        # Used to return 403. James believes this is the wrong status code.
-        # Better to use Unprocessable Entity.
+    if AssetOwner.objects.filter(url__iexact=url).exclude(django_user=user).exists() and url != owner.url:
         raise HttpError(422, "This URL is already in use")
-    for key, value in patch_user.__dict__.items():
-        if getattr(patch_user, key, None) is not None:
-            setattr(current_user, key, value)
-    current_user.save()
-    return current_user
+    if getattr(patch_user, "displayName", None) is not None:
+        display_name = patch_user.displayName
+        user.displayname = display_name
+        owner.displayname = display_name
+    if getattr(patch_user, "url", None) is not None:
+        owner.url = patch_user.url
+    if getattr(patch_user, "description", None) is not None:
+        owner.description = patch_user.description
+    user.save()
+    owner.save()
+    return user
 
 
 @router.get(

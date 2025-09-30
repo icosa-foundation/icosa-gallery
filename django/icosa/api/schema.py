@@ -46,7 +46,10 @@ class FullUserSchema(Schema):
 
 
 class PatchUserSchema(Schema):
-    email: Optional[EmailStr] = None
+    # TODO(james): I don't think a user should be able to update their email
+    # via the api.
+    # email: Optional[EmailStr] = None
+    url: Optional[str] = None
     displayName: str = Field(None, alias="displayname")
     description: Optional[str] = None
 

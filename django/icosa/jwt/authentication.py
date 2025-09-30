@@ -56,7 +56,6 @@ class JWTAuth(HttpBearer):
             user = User.objects.get(email=email)
         except User.MultipleObjectsReturned:
             # headers={"WWW-Authenticate": "Bearer"},
-            # TODO: or do we want to return the first that we find?
             raise authentication_error
         if user is None:
             # headers={"WWW-Authenticate": "Bearer"},
