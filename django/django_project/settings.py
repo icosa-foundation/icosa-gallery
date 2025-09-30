@@ -42,10 +42,7 @@ DEPLOYMENT_ENV = os.environ.get("DEPLOYMENT_ENV")
 DEPLOYMENT_HOST_WEB = os.environ.get("DEPLOYMENT_HOST_WEB")
 DEPLOYMENT_HOST_API = os.environ.get("DEPLOYMENT_HOST_API")
 DEBUG = False
-if DEPLOYMENT_ENV in [
-    "development",
-    "local",
-]:
+if DEPLOYMENT_ENV in ["development", "local"]:
     DEBUG = True
 
 DEPLOYMENT_SCHEME = "http://" if os.environ.get("DEPLOYMENT_NO_SSL") else "https://"
