@@ -57,6 +57,9 @@ BASE_URL = os.environ.get("BASE_URL", f"{DEPLOYMENT_PATH}")
 
 ALLOWED_HOSTS = ["localhost", f"{DEPLOYMENT_HOST_WEB}", "host.containers.internal"]
 
+if DEPLOYMENT_ENV == "local":
+    ALLOWED_HOSTS.append("*")
+
 CSRF_TRUSTED_ORIGINS = [
     f"{DEPLOYMENT_SCHEME}*.127.0.0.1",
     f"{DEPLOYMENT_SCHEME}{DEPLOYMENT_HOST_WEB}",

@@ -71,14 +71,31 @@ JWT_SECRET_KEY=
 
 ### Step 3 - Choose a domain configuration
 
+> [!WARNING]
+> You **must** choose one of the below options; there is no default and the application will fail to run if you do not choose. 
+
+> [!NOTE]
+> For trying the software out on your local machine, skip to the [local configuration](#local-configuration) below. This is the easiest way to get started. For other options, read on.
+
 Icosa gallery has two main, public-facing, components: The Web UI and the API. These can be run at the same domain, e.g. `example.com` for the Web UI and `example.com/api` for the API.
 
 You can alternatively choose to run the api at a subdomain of the main site, e.g `example.com` and `api.example.com` respectively.
 
-> [!NOTE]
-> You **must** choose one of these; there is no default and the application will fail to run if you do not choose.
+#### local configuration:
 
-#### If you wish to use the single-domain configuration:
+``` bash
+cp nginx/templates/local.conf.template nginx/templates/default.conf.template
+```
+
+And edit the following values in your `.env` file:
+
+``` bash
+DEPLOYMENT_HOST_WEB=localhost
+DEPLOYMENT_HOST_API=localhost
+DEPLOYMENT_ENV=local
+```
+
+#### single-domain configuration:
 
 ``` bash
 cp nginx/templates/api-no-subdomain.conf.template nginx/templates/default.conf.template
@@ -91,7 +108,7 @@ DEPLOYMENT_HOST_WEB=example.com
 DEPLOYMENT_HOST_API=example.com
 ```
 
-#### If you wish to run the api at a subdomain:
+#### subdomain configuration:
 
 ``` bash
 cp nginx/templates/api-subdomain.conf.template nginx/templates/default.conf.template
@@ -103,18 +120,9 @@ And edit the following values in your `.env` file:
 DEPLOYMENT_HOST_WEB=example.com
 DEPLOYMENT_HOST_API=api.example.com
 ```
-
-#### For local deployment only
-
-> [!NOTE]
-> For either of the above domain configurations, if you are planning on running this software on your own machine instead of a web host, you'll want to set your `.env` file to something like:
-
-``` bash
-DEPLOYMENT_HOST_WEB=example.localhost
-DEPLOYMENT_HOST_API=api.example.localhost
-```
-
-You'll then need to configure your local hosts file so that these domains are routed properly. Your `/etc/hosts` file (on MacOS and Linux) or `C:\Windows\System32\drivers\etc\hosts` file (on Windows) would then look something like this:
+> [!TIP]
+> #### For advanced local deployment only
+> If you are planning on running this software on your own machine instead of a web host, and are not using the local configuration, you'll need to configure your local hosts file so that these domains are routed properly. Your `/etc/hosts` file (on MacOS and Linux) or `C:\Windows\System32\drivers\etc\hosts` file (on Windows) would then look something like this:
 
 ```
 127.0.0.1       example.localhost
