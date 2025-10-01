@@ -240,6 +240,11 @@ class FiltersBase(FilterSchema):
 class FiltersAsset(FiltersBase):
     authorName: Optional[str] = Field(default=None, q="owner__displayname__icontains")
     author_name: SkipJsonSchema[Optional[str]] = Field(default=None, q="owner__displayname__icontains")
+    # NOTE: Not using icontains for owner__url. This would allow enumerating
+    # users, which I'm not sure we want to allow just yet. displayname is
+    # different because the search space is much larger.
+    authorId: Optional[str] = Field(default=None, q="owner__url")
+    author_id: SkipJsonSchema[Optional[str]] = Field(default=None, q="owner__url")
     license: Optional[FilterLicense] = Field(default=None)
 
     def filter_license(self, value: FilterLicense) -> Q:
