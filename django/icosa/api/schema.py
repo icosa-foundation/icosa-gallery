@@ -219,6 +219,14 @@ class AssetSchemaWithState(AssetSchema):
     state: str
 
 
+class AssetSchemaPrivate(AssetSchema):
+    state: str
+
+    @staticmethod
+    def resolve_formats(obj, context):
+        return [f for f in obj.format_set.all()]
+
+
 class AssetStateSchema(ModelSchema):
     class Config:
         model = Asset

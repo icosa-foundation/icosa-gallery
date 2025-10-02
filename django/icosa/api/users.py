@@ -36,6 +36,7 @@ from .filters import (
 from .schema import (
     AssetFinalizeData,
     AssetSchema,
+    AssetSchemaPrivate,
     AssetSchemaWithState,
     FullUserSchema,
     PatchUserSchema,
@@ -90,12 +91,12 @@ def update_user(
 @router.get(
     "/me/assets",
     auth=JWTAuth(),
-    response=List[AssetSchema],
+    response=List[AssetSchemaPrivate],
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
 @paginate(AssetPagination)
-def get_me_assets(
+def get_assets(
     request,
     filters: FiltersUserAsset = Query(...),
     order: FiltersOrder = Query(...),
@@ -120,7 +121,7 @@ def get_me_assets(
     include_in_schema=False,
 )
 @decorate_view(never_cache)
-def upload_new_assets(
+def new_asset(
     request,
     files: Optional[List[UploadedFile]] = File(None),
 ):
@@ -163,11 +164,11 @@ def upload_new_assets(
 @router.get(
     "/me/assets/{str:asset}",
     auth=JWTAuth(),
-    response=AssetSchemaWithState,
+    response=AssetSchemaPrivate,
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def get_me_asset(
+def get_asset(
     request,
     asset: str,
 ):
@@ -201,7 +202,7 @@ def delete_asset(
 )
 @decorate_view(never_cache)
 @paginate(AssetPagination)
-def get_me_likedassets(
+def get_likedassets(
     request,
     filters: FiltersAsset = Query(...),
     order: FiltersOrder = Query(...),
