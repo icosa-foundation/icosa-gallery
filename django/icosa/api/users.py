@@ -37,7 +37,6 @@ from .schema import (
     AssetFinalizeData,
     AssetSchema,
     AssetSchemaPrivate,
-    AssetSchemaWithState,
     FullUserSchema,
     PatchUserSchema,
     UploadJobSchemaOut,
