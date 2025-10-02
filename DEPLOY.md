@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide is for trying out the project and assumes you'll be setting it up on a local machine. For deployment to a staging or production environment, see the [deploy guide](./DEPLOY.md).
+This guide is for deploying this software to a web target. If you want to try out the software locally first, see the [installation guide](./INSTALL.md).
 
 ## Software Requirements
 
@@ -9,6 +9,7 @@ Install the following software if you haven't already:
 - [git](https://git-scm.com/)
 - [Docker](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
+
 
 ## Install via Docker Compose
 
@@ -21,27 +22,6 @@ This guide assumes some familiarity with the command line on your chosen platfor
 ``` bash
 git clone https://github.com/icosa-foundation/icosa-gallery.git
 cd icosa-gallery
-```
-> [!TIP]
-> **Windows users** should make sure that line endings are configured correctly. Don't commit line ending changes; instead:
-
-Configure git to use Windows line endings:
-
-``` bash
-git config core.eol lf
-git config core.autocrlf input
-```
-Update git's attributes for all source files. Either edit `.git\info\attributes` directly or:
-
-``` bash
-Add-Content .git\info\attributes "* text eol=lf"
-```
-
-Clean up the repo (this shouldn't result in a commit):
-
-``` bash
-git rm --cached -r .
-git reset --hard
 ```
 
 > [!NOTE]
@@ -70,17 +50,57 @@ JWT_SECRET_KEY=
 
 `MY_BAD_PASSWORD='pa$$word'`
 
-### Step 3 - Copy the local nginx configuration files into place.
+### Step 3 - Choose a domain configuration
 
 > [!WARNING]
-> The application will fail to run if you do not complete this step.
+> You **must** choose one of the below options; there is no default and the application will fail to run if you do not choose. 
 
-The software comes with some pre-configured server behaviours. For the simplest setup experince, copy the local nginx template into place.
+> [!NOTE]
+> For trying the software out on your local machine, skip to the [local configuration](#local-configuration) below. This is the easiest way to get started. For other options, read on.
+
+Icosa gallery has two main, public-facing, components: The Web UI and the API. These can be run at the same domain, e.g. `example.com` for the Web UI and `example.com/api` for the API.
+
+You can alternatively choose to run the api at a subdomain of the main site, e.g `example.com` and `api.example.com` respectively.
+
+#### local configuration:
 
 ``` bash
 cp nginx/templates/local.conf.template nginx/templates/default.conf.template
 ```
 
+And edit the following values in your `.env` file:
+
+``` bash
+DEPLOYMENT_HOST_WEB=localhost
+DEPLOYMENT_HOST_API=localhost
+DEPLOYMENT_ENV=local
+```
+
+#### single-domain configuration:
+
+``` bash
+cp nginx/templates/api-no-subdomain.conf.template nginx/templates/default.conf.template
+```
+
+And edit the following values in your `.env` file:
+
+``` bash
+DEPLOYMENT_HOST_WEB=example.com
+DEPLOYMENT_HOST_API=example.com
+```
+
+#### subdomain configuration:
+
+``` bash
+cp nginx/templates/api-subdomain.conf.template nginx/templates/default.conf.template
+```
+
+And edit the following values in your `.env` file:
+
+``` bash
+DEPLOYMENT_HOST_WEB=example.com
+DEPLOYMENT_HOST_API=api.example.com
+```
 ### Step 4 - Build and run the project
 
 ``` bash
@@ -88,16 +108,7 @@ docker compose build
 docker compose up -d
 ```
 
-If you've updated your `.env` file as above, visit http://example.localhost
-
-Unlike some Docker setups, you will need to visit your url on the normal port 80. The web service's internal port of 8000 will not work because nginx needs to serve requests to the web application.
-
-> [!NOTE]
-> The `-d` flag in the above command runs Docker Compose in the background so that you can continue to use your terminal or disconnect from your ssh session without stopping the server. If you wish to stop the server after using this command you can type the following:
-
-``` bash
-docker compose down
-```
+If you've updated your `.env` file as above, visit http://example.
 
 > [!NOTE]
 > The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
@@ -137,11 +148,7 @@ Exit the Docker container back to your normal shell:
 exit
 ```
 
-> [!TIP]
-> #### Advanced local deployment
-> If you are planning on running this software on your own machine instead of a web host, and are not using the local configuration, you'll need to configure your local hosts file so that these domains are routed properly. Your `/etc/hosts` file (on MacOS and Linux) or `C:\Windows\System32\drivers\etc\hosts` file (on Windows) would then look something like this:
+### Step 7 - Configure SSL
 
-```
-127.0.0.1       example.localhost
-127.0.0.1       api.example.localhost
-```
+While this installation will listen to requests on https, we do not currently manage SSL certificates for you. The simplest option to secure your site with an SSL certificate and accept traffic over https is to configure a service like [cloudflare](cloudflare.com).
+
