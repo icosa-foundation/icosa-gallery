@@ -406,3 +406,16 @@ def devicecode(request):
             "form_action": form_action,
         }
     return render(request, template, context)
+
+
+def device_login_success(request):
+    template = "auth/device_login_success.html"
+    context = {
+        "page_title": "Login successful",
+    }
+
+    return render(
+        request,
+        template,
+        context,
+    )
