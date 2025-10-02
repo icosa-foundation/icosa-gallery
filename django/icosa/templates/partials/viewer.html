@@ -122,7 +122,7 @@
         let formatType = "{{ asset.preferred_viewer_format.format_type }}".toLowerCase();
     {% endif %}
 
-    let url = "{{ asset.preferred_viewer_format.root_resource.internal_url_or_none }}";
+    let url = "{{ asset.preferred_viewer_format.root_resource.internal_or_cors_url }}";
 
 
     if (formatType === 'gltf2' || formatType === 'glb') {
