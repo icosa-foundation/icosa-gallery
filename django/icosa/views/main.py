@@ -510,7 +510,6 @@ def asset_view(request, asset_url):
     asset = get_object_or_404(Asset, url=asset_url)
     check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()
-    override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
 
     set_viewer_js_version(request)
@@ -532,7 +531,6 @@ def asset_view(request, asset_url):
     context = {
         "user_owns_asset": user_owns_asset,
         "asset": asset,
-        "override_suffix": override_suffix,
         "format_override": format_override,
         "downloadable_formats": bool(asset.get_all_downloadable_formats(user)),
         "page_title": asset.name,
@@ -571,14 +569,12 @@ def asset_oembed(request, asset_url):
     asset = get_object_or_404(Asset, url=asset_url)
     check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()  # TODO: do we count embedded views separately or at all?
-    override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
 
     set_viewer_js_version(request)
 
     context = {
         "asset": asset,
-        "override_suffix": override_suffix,
         "format_override": format_override,
         "downloadable_formats": bool(asset.get_all_downloadable_formats(user)),
         "page_title": f"embed {asset.name}",
