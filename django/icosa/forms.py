@@ -39,6 +39,7 @@ ALLOWED_UPLOAD_EXTENSIONS = [
     "ksplat",
     "ply",
     "stl",
+    "sogs",
     "spz",
     "splat",
     "usdz",

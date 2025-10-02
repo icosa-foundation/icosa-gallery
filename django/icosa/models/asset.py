@@ -192,7 +192,7 @@ class Asset(models.Model):
         # Last chance, can we get one of the newer format types?
         # TODO: the ordering of these matters, but perhaps it is unlikely that
         # a usdz and ksplat are present (for example).
-        for format_type in ["KSPLAT", "PLY", "STL", "SPZ", "SPLAT", "USDZ", "VOX"]:
+        for format_type in ["KSPLAT", "PLY", "STL", "SOGS", "SPZ", "SPLAT", "USDZ", "VOX"]:
             inst = formats.filter(format_type=format_type).last()
             if inst is not None:
                 # This will return the first we find from the list above; this

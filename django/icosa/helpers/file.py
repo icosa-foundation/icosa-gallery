@@ -42,6 +42,7 @@ VALID_FORMAT_TYPES = [
     "stl",
     "usdz",
     "vox",
+    "sogs",
     "spz",
     "splat",
 ]
@@ -63,6 +64,7 @@ CONTENT_TYPE_MAP = {
     "usdz": "application/octet-stream",
     "vox": "application/octet-stream",
     "ply": "application/octet-stream",  # TODO: Technically, there are ascii ply files too.
+    "sogs": "application/octet-stream",
     "spz": "application/octet-stream",
     "splat": "application/octet-stream",
     "ksplat": "application/octet-stream",
@@ -120,6 +122,7 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
         "ksplat",
         "ply",
         "stl",
+        "sogs",
         "spz",
         "splat",
         "tilt",

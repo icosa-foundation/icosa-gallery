@@ -172,7 +172,7 @@
     } else if (formatType === 'vox') {
         console.log("Trying to load vox");
         await viewer.loadVox(url, overrides);
-    } else if (formatType === 'ply' || formatType === 'spz' || formatType === 'splat' || formatType === 'ksplat') {
+    } else if (formatType === 'ply' || formatType === 'sogs' || formatType === 'spz' || formatType === 'splat' || formatType === 'ksplat') {
         console.log("Trying to load Gaussian splat");
         await viewer.loadSplat(url, overrides);
     } else {
