@@ -84,12 +84,12 @@ class Resource(models.Model):
 
     @property
     def is_cors_allowed(self):
-        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
-            allowed_sources = tuple([x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")])
-        else:
-            allowed_sources = tuple([])
         if self.remote_host is None:
             # Local files (those served by Django storages) are always
             # considered cors-friendly.
             return True
+        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
+            allowed_sources = tuple([x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")])
+        else:
+            allowed_sources = tuple([])
         return self.remote_host in allowed_sources
