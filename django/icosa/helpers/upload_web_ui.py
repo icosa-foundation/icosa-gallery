@@ -50,7 +50,7 @@ VALID_WEB_FORMAT_TYPES = [
     "stl",
     "usdz",
     "vox",
-    "sogs",
+    "sog",
     "spz",
     "splat",
 ]
