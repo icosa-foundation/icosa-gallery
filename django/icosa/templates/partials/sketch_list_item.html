@@ -8,7 +8,9 @@
             <a href="{{asset.get_absolute_url}}">
                 {{ asset.name|default_if_none:"Untitled asset" }}
             </a>
-            {% like_button request asset %}
+            {% if not hide_like_button %}
+                {% like_button request asset %}
+            {% endif %}
         </h4>
         {% if not hide_byline %}
             <p class="sketch-byline">
