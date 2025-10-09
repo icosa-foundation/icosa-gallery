@@ -32,6 +32,17 @@ class AssetCollection(models.Model):
     )
     visibility = models.CharField(max_length=255, default=PRIVATE, choices=ASSET_VISIBILITY_CHOICES, db_default=PRIVATE)
 
+    def get_thumbnail_url(self):
+        thumbnail_url = (
+            f"{settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}{settings.STATIC_URL}images/nothumbnail.png?v=1"
+        )
+
+        collected_asset = self.collected_assets.first()
+        if collected_asset:
+            thumbnail_url = collected_asset.asset.get_thumbnail_url()
+
+        return thumbnail_url
+
     def save(self, *args, **kwargs):
         if self._state.adding:
             # TODO(james): this, or something like it should be used wherever
@@ -45,6 +56,18 @@ class AssetCollection(models.Model):
                 else:
                     return
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        owner = self.user.assetowner_set.first()
+        if not owner:
+            return None
+        return reverse(
+            "icosa:user_asset_collection_view",
+            kwargs={
+                "user_url": owner.url,
+                "collection_url": self.url,
+            },
+        )
 
     def __str__(self):
         return self.name or ""
