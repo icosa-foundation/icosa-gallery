@@ -204,10 +204,20 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
 @admin.register(AssetCollection)
 class AssetCollectionAdmin(admin.ModelAdmin):
     list_display = (
+        "name",
         "user",
         "create_time",
         "display_asset_count",
+        "visibility",
     )
+
+    search_fields = (
+        "name",
+        "url",
+        "user__displayname",
+    )
+
+    list_filter = ("visibility",)
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(asset_count=Count("assets"))
