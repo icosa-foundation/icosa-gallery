@@ -3,6 +3,7 @@ import secrets
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import IntegrityError, models, transaction
+from django.urls import reverse
 from icosa.models import Asset
 
 from .common import (
@@ -18,9 +19,9 @@ class AssetCollection(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True, null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_collections")
-    assets = models.ManyToManyField(Asset, null=True, blank=True, through="AssetCollectionAsset")
+    assets = models.ManyToManyField(Asset, blank=True, through="AssetCollectionAsset")
     url = models.CharField(max_length=255, unique=True)
-    name = models.CharField(max_length=255, blank=True, null=True)
+    name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(
         max_length=FILENAME_MAX_LENGTH,
