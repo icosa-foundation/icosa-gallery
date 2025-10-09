@@ -11,11 +11,15 @@
     <div class="container">
         <h1>Collections by {{ user.displayname }}</h1>
         <div class="sketch-list">
-            {% for collection in collections %}
-                {% with asset=collection hide_byline=True hide_like_button=True %}
-                    {% include "partials/sketch_list_item.html" %}
-                {% endwith %}
-            {% endfor %}
+            {% if collections %}
+                {% for collection in collections %}
+                    {% with asset=collection hide_byline=True hide_like_button=True %}
+                        {% include "partials/sketch_list_item.html" %}
+                    {% endwith %}
+                {% endfor %}
+            {% else %}
+                <p>{{ user.displayname }} hasn't created anything yet.</p>
+            {% endif %}
         </div>
         {% include "partials/pagination.html" %}
     </div>

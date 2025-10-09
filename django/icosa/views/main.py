@@ -483,7 +483,10 @@ def user_asset_collection_list(request, user_url: str):
     )
     user = owner.django_user
 
-    collections = AssetCollection.objects.filter(user=owner.django_user)
+    if user == request.user:
+        collections = AssetCollection.objects.filter(user=owner.django_user)
+    else:
+        collections = AssetCollection.objects.filter(user=owner.django_user, visibility__in=[PUBLIC, UNLISTED])
     context = {
         "collections": collections,
         "page_title": f"Collections by {user.displayname}",
@@ -502,10 +505,13 @@ def user_asset_collection_view(request, user_url: str, collection_url: str):
         AssetOwner,
         url=user_url,
     )
-    collection = get_object_or_404(
-        AssetCollection,
-        url=collection_url,
-    )
+    user = owner.django_user
+
+    if user == request.user:
+        collection = get_object_or_404(AssetCollection, url=collection_url)
+    else:
+        collection = get_object_or_404(AssetCollection, url=collection_url, visibility__in=[PUBLIC, UNLISTED])
+
     asset_objs = collection.collected_assets.filter(asset__visibility=PUBLIC)
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
