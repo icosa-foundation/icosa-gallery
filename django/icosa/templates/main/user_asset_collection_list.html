@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load paginator_tags %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="canonical" href="{% clean_url %}">
+{% endblock extrahead %}
+
+{% block content %}
+<div>
+    <div class="container">
+        <h1>Collections by {{ user.displayname }}</h1>
+        <div class="sketch-list">
+            {% for collection in collections %}
+                {% with asset=collection hide_byline=True hide_like_button=True %}
+                    {% include "partials/sketch_list_item.html" %}
+                {% endwith %}
+            {% endfor %}
+        </div>
+        {% include "partials/pagination.html" %}
+    </div>
+</div>
+{% endblock content %}

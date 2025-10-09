@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load paginator_tags %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="canonical" href="{% clean_url %}">
+{% endblock extrahead %}
+
+{% block content %}
+<div>
+    <div class="container">
+        <h1>{{ collection.name }} by {{ collection.user.displayname }}</h1>
+        {% if collection.description %}
+            {{ collection.description|linebreaks }}
+        {% endif %}
+
+        <div class="sketch-list">
+            {% for collected_asset in assets %}
+                {% with collected_asset.asset as asset %}
+                    {% include "partials/sketch_list_item.html" %}
+                {% endwith %}
+            {% endfor %}
+        </div>
+        {% include "partials/pagination.html" %}
+    </div>
+</div>
+{% endblock content %}
