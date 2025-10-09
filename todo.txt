@@ -1,19 +1,13 @@
 this sucks => import {Viewer} from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
 
+Asset.url should be unique
+
 orderBy is currently:
 BEST, NEWEST, OLDEST. Defaults to BEST, which ranks assets
 based on a combination of popularity and other features. 
 We should improve this, but probably keep the existing variants working. BEST could possibly be "number of likes" or something for now.
 
-we should accept snake_case and camelCase url params and do the translation. The openapi docs should list both as accepted styles. If we get both variants of the same param, just choose the value of whatever we got first.
-
-
-
 triangle_count could probably be nullable. We have >10k assets with triangle_count == 0 which is too many to just change it on a whim.
-
-
-
-Docs for potential inclusion TODO include some info on how to wrangle this with Windows:
 
 ## Seeding the database
 
@@ -54,14 +48,4 @@ You should see `You are now connected to database "icosa" as user "icosa".`
 Import the sql data:
 
 `\i /opt/db.sql`
-
-
-preferred format changes:
-
-- handle_blocks_format
-if not self.has_gltf2:
-	always pick local; cors good formats
-	always pick a triangulated obj
-	Make a report for any that we find that aren't local or do not match:
-	we have exactly 2 obj: one tri, one ngon.
 
