@@ -45,7 +45,7 @@ NON_REMIXABLE_FORMAT_TYPES = ["TILT", "BLOCKS"]
 class Asset(models.Model):
     COLOR_SPACES = [("LINEAR", "LINEAR"), ("GAMMA", "GAMMA")]
     id = models.BigAutoField(primary_key=True)
-    url = models.CharField(max_length=255, blank=True, null=True)
+    url = models.CharField(max_length=255, blank=True, null=True, unique=True)
     name = models.CharField(max_length=255, blank=True, null=True)
     owner = models.ForeignKey("AssetOwner", null=True, blank=True, on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
