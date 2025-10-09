@@ -44,7 +44,7 @@ class AssetCollection(models.Model):
         return thumbnail_url
 
     def save(self, *args, **kwargs):
-        if self._state.adding:
+        if self._state.adding or not self.url:
             # TODO(james): this, or something like it should be used wherever
             # we try to generate unique urls for things.
             while True:
@@ -79,10 +79,10 @@ class AssetCollectionAsset(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     order = models.PositiveIntegerField(default=0)
 
-    @transaction.atomic
-    def save(self, *args, **kwargs):
-        other_assets = self.collection.collected_assets.all()
-        print(other_assets)
+    # @transaction.atomic
+    # def save(self, *args, **kwargs):
+    #     other_assets = self.collection.collected_assets.all()
+    #     print(other_assets)
 
     def __str__(self):
         return f"{self.order}: {self.asset.name}"

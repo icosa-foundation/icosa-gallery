@@ -7,6 +7,7 @@ from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
     AssetCollection,
+    AssetCollectionAsset,
     AssetOwner,
     BulkSaveLog,
     DeviceCode,
@@ -201,6 +202,20 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
     ]
 
 
+class AssetCollectionAssetInline(admin.TabularInline):
+    extra = 0
+    model = AssetCollectionAsset
+
+    raw_id_fields = [
+        "asset",
+    ]
+
+    fields = (
+        "asset",
+        "order",
+    )
+
+
 @admin.register(AssetCollection)
 class AssetCollectionAdmin(admin.ModelAdmin):
     list_display = (
@@ -216,6 +231,8 @@ class AssetCollectionAdmin(admin.ModelAdmin):
         "url",
         "user__displayname",
     )
+
+    inlines = (AssetCollectionAssetInline,)
 
     list_filter = ("visibility",)
 
