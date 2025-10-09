@@ -42,7 +42,8 @@ class AssetCollection(models.Model):
                 except IntegrityError:
                     continue
                 else:
-                    break
+                    return
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
