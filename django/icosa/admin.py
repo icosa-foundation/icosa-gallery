@@ -6,6 +6,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
+    AssetCollection,
+    AssetCollectionAsset,
     AssetOwner,
     BulkSaveLog,
     DeviceCode,
@@ -20,6 +22,7 @@ from icosa.models import (
     Tag,
     UserLike,
 )
+
 from import_export.admin import ExportMixin
 
 User = get_user_model()
@@ -197,6 +200,50 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "owner",
         "preferred_viewer_format_override",
     ]
+
+
+class AssetCollectionAssetInline(admin.TabularInline):
+    extra = 0
+    model = AssetCollectionAsset
+
+    raw_id_fields = [
+        "asset",
+    ]
+
+    fields = (
+        "asset",
+        "order",
+    )
+
+
+@admin.register(AssetCollection)
+class AssetCollectionAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "user",
+        "create_time",
+        "display_asset_count",
+        "visibility",
+    )
+
+    search_fields = (
+        "name",
+        "url",
+        "user__displayname",
+    )
+
+    inlines = (AssetCollectionAssetInline,)
+
+    list_filter = ("visibility",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(asset_count=Count("assets"))
+
+    def display_asset_count(self, obj):
+        return obj.assets.count()
+
+    display_asset_count.short_description = "Assets"
+    display_asset_count.admin_order_field = "asset_count"
 
 
 @admin.register(DeviceCode)

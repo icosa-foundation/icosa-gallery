@@ -26,6 +26,11 @@ def masthead_image_upload_path(instance, filename):
     return f"{root}masthead_images/{instance.id}/{filename}"
 
 
+def collection_image_upload_path(instance, filename):
+    root = get_cloud_media_root()
+    return f"{root}collection_images/{instance.id}/{filename}"
+
+
 def thumbnail_upload_path(instance, filename):
     root = get_cloud_media_root()
     path = f"{root}{instance.owner.id}/{instance.id}/{filename}"

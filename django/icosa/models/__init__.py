@@ -1,6 +1,8 @@
 # Required to keep linters happy when re-exporting.
 __all__ = [
     "Asset",
+    "AssetCollection",
+    "AssetCollectionAsset",
     "AssetOwner",
     "DeviceCode",
     "Format",
@@ -24,6 +26,7 @@ __all__ = [
 ]
 from .asset import Asset
 from .asset_owner import AssetOwner as AssetOwner
+from .collection import AssetCollection, AssetCollectionAsset
 from .common import *  # noqa
 from .device_code import DeviceCode
 from .format import Format, FormatRoleLabel

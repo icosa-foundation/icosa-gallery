@@ -93,6 +93,12 @@ urlpatterns = [
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
     path("user/<str:slug>", main_views.user_show, name="user_show"),
+    path("user/<str:user_url>/collections", main_views.user_asset_collection_list, name="user_asset_collection_list"),
+    path(
+        "user/<str:user_url>/collections/<str:collection_url>",
+        main_views.user_asset_collection_view,
+        name="user_asset_collection_view",
+    ),
     path("owner/<str:slug>", main_views.owner_show, name="owner_show"),
     path("likes", main_views.my_likes, name="my_likes"),
     path(
