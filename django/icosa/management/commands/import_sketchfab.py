@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import mimetypes
 import zipfile
@@ -138,15 +137,27 @@ class SketchfabClient:
         self,
         *,
         user: str,
+        licenses: Optional[Iterable[str]] = None,
+        downloadable: bool = True,
         per_page: int = 24,
         sort_by: str = "-publishedAt",
     ) -> Generator[Dict, None, None]:
+        """List models for a user via the search endpoint.
+
+        Sketchfab's /models endpoint does not accept a user filter reliably; the documented
+        approach is the /search API with `type=models` and `user=<username>`.
+        """
         params = {
+            "type": "models",
             "user": user,
             "per_page": per_page,
             "sort_by": sort_by,
         }
-        url = f"{self.BASE}/models"
+        if licenses:
+            params["licenses"] = ",".join(licenses)
+        if downloadable is not None:
+            params["downloadable"] = str(downloadable).lower()
+        url = f"{self.BASE}/search"
         yield from self.paged(url, params)
 
     def download_info(self, uid: str) -> Optional[Dict]:
@@ -228,13 +239,17 @@ class Command(BaseCommand):
         client = SketchfabClient(token=token)
 
         count = 0
+        seen = 0
+        eligible = 0
         targets: Iterable[Dict]
 
         if users:
             # Iterate per-user, filtering by license locally if needed
             def iter_all():
                 for user in users:
-                    for model in client.list_user_models(user=user):
+                    if options.get("verbosity", 1) >= 2:
+                        self.stdout.write(f"Querying user='{user}' licenses={licenses} downloadable=true")
+                    for model in client.list_user_models(user=user, licenses=licenses, downloadable=True):
                         yield model
 
             targets = iter_all()
@@ -243,6 +258,7 @@ class Command(BaseCommand):
             targets = client.search_models(licenses=licenses)
 
         for model in targets:
+            seen += 1
             # Enforce license filter if the endpoint didn't do it for us
             lic = (model.get("license") or {}).get("label")
             lic_slug = None
@@ -257,6 +273,8 @@ class Command(BaseCommand):
                     # Heuristic for CC BY
                     lic_slug = "by"
             if users and licenses and lic_slug and lic_slug not in licenses:
+                if options.get("verbosity", 1) >= 3:
+                    self.stdout.write(f"Skipping by license: {model.get('uid')} label={lic}")
                 continue
 
             uid = model.get("uid")
@@ -269,7 +287,11 @@ class Command(BaseCommand):
 
             # Skip non-downloadable models when we cannot fetch direct file URLs
             if not model.get("isDownloadable", False):
+                if options.get("verbosity", 1) >= 2:
+                    self.stdout.write(f"Skipping not-downloadable: {model.get('uid')} {model.get('name')}")
                 continue
+
+            eligible += 1
 
             try:
                 asset = self.create_or_update_asset_from_model(client, model, update_existing=update_existing)
@@ -279,6 +301,8 @@ class Command(BaseCommand):
             except CommandError as exc:
                 self.stderr.write(f"Skipping {uid}: {exc}")
 
+        if options.get("verbosity", 1) >= 1:
+            self.stdout.write(f"Seen={seen}, eligible(downloadable+license)={eligible}, imported={count}")
         self.stdout.write(self.style.SUCCESS(f"Finished. Imported {count} models."))
 
     def create_or_update_asset_from_model(
