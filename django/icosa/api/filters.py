@@ -139,7 +139,7 @@ ORDER_FIELD_MAP = {
 
 class FiltersBase(FilterSchema):
     category: Optional[FilterCategory] = Field(default=None, example="ANIMALS", q="category__iexact")
-    curated: Optional[bool] = Field(default=False)
+    curated: Optional[bool] = Field(default=None)
     format: Optional[List[FilterFormat]] = Field(
         default=None, description="Filter by format", q="format__format_type__in"
     )
