@@ -65,6 +65,13 @@ V4_CC_LICENSE_CHOICES_PLUS_ND = V4_CC_LICENSE_CHOICES + [
         "CC BY-ND Attribution-NoDerivatives 4.0 International",
     ),
 ]
+V4_CC_LICENSE_CHOICES_EXTENDED = V4_CC_LICENSE_CHOICES + [
+    ("CREATIVE_COMMONS_BY_SA_4_0", "CC BY-SA Attribution-ShareAlike 4.0 International"),
+    ("CREATIVE_COMMONS_BY_ND_4_0", "CC BY-ND Attribution-NoDerivatives 4.0 International"),
+    ("CREATIVE_COMMONS_NC_4_0", "CC NC Attribution 4.0 International"),
+    ("CREATIVE_COMMONS_NC_SA_4_0", "CC NC-SA Attribution-NonCommercial-ShareAlike 4.0 International"),
+    ("CREATIVE_COMMONS_NC_ND_4_0", "CC NC-ND Attribution-NonCommercial-NoDerivatives 4.0 International"),
+]
 V3_CC_LICENSE_CHOICES = [
     # ("CREATIVE_COMMONS_SA_3_0", "CC SA Attribution 3.0 International"), # Not yet supported
     # ("CREATIVE_COMMONS_ND_3_0", "CC ND Attribution 3.0 International"), # Not yet supported
@@ -83,7 +90,7 @@ V3_CC_LICENSE_MAP = {x[0]: x[1] for x in V3_CC_LICENSE_CHOICES}
 
 ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED"
 RESERVED_LICENSE = (ALL_RIGHTS_RESERVED, "All rights reserved")
-CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES] + [x[0] for x in V4_CC_LICENSE_CHOICES]
+CC_LICENSES = [x[0] for x in V3_CC_LICENSE_CHOICES] + [x[0] for x in V4_CC_LICENSE_CHOICES_EXTENDED]
 
 REMIX_REGEX = re.compile("(^.*BY_[0-9]_|CREATIVE_COMMONS_0)")
 
