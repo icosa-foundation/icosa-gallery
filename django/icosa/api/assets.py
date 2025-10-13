@@ -230,7 +230,7 @@ def get_assets(
     assets = filter_and_sort_assets(
         filters,
         order,
-        assets=Asset.objects.all(),
+        assets=Asset.objects.filter(visibility__in=[PUBLIC]),
         exc_q=exc_q,
     )
 
