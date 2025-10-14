@@ -157,9 +157,16 @@
         await viewer.loadFbx(url, overrides);
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
-        let mtlUrl = "{{ asset.preferred_viewer_format.resource_set.first }}";
-        await viewer.loadObjWithMtl(url, mtlUrl, overrides);
+        {% with mtl_url=asset.preferred_viewer_format.resource_set.first %}
+            {%  if mtl_url %}
+                let mtlUrl = "{{ mtl_url }}";
+                await viewer.loadObjWithMtl(url, mtlUrl, overrides);
+            {% else %}
+                await viewer.loadObj(url, overrides);
+            {% endif %}
+        {% endwith %}
     // PLYs are now assumed to be Gaussian splats
+    // TODO allow override?
     // } else if (formatType === 'ply') {
     //     console.log("Trying to load ply");
     //     await viewer.loadPly(url, overrides);
