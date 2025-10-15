@@ -185,6 +185,9 @@ class FiltersBase(FilterSchema):
         q = Q()
         if value:
             valid_q = False
+            positive_q = None
+            negative_q = None
+            
             for format in value:
                 # Reliant on the fact that each of FILTERABLE_FORMATS has an
                 # associated has_<format> field in the db.
@@ -193,15 +196,38 @@ class FiltersBase(FilterSchema):
                     format_value = "GLTF_ANY"
                 if format == FilterFormat.NO_GLTF:
                     format_value = "-GLTF_ANY"
+                
                 if format_value.startswith("-"):
-                    q |= Q(**{f"has_{format_value.lower()[1:]}": False})
+                    # Negative formats: AND them together as exclusions
+                    new_q = Q(**{f"has_{format_value.lower()[1:]}": False})
+                    if negative_q is None:
+                        negative_q = new_q
+                    else:
+                        negative_q &= new_q
                 else:
-                    q |= Q(**{f"has_{format_value.lower()}": True})
+                    # Positive formats: OR them together
+                    new_q = Q(**{f"has_{format_value.lower()}": True})
+                    if positive_q is None:
+                        positive_q = new_q
+                    else:
+                        positive_q |= new_q
                 valid_q = True
 
             if not valid_q:
                 choices = ", ".join([x.value for x in FilterFormat])
                 raise FilterException(f"Format filter not one of {choices}")
+            
+            # Combine positive and negative queries
+            # If we have both positive and negative, AND them together
+            # If we only have positive, use positive_q
+            # If we only have negative, use negative_q
+            if positive_q is not None and negative_q is not None:
+                q = positive_q & negative_q
+            elif positive_q is not None:
+                q = positive_q
+            elif negative_q is not None:
+                q = negative_q
+                
         return q
 
     def filter_maxComplexity(self, value: FilterComplexity) -> Q:
