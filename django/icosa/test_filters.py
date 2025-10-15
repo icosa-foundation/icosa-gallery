@@ -37,7 +37,7 @@ Test scenarios:
 from django.db.models import Q
 from django.test import TestCase
 
-# Mock the FilterFormat enum for testing
+# Import the actual FilterFormat enum and FiltersBase for testing
 from icosa.api.filters import FilterFormat, FiltersBase
 
 

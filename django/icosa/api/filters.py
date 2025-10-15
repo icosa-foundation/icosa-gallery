@@ -185,10 +185,8 @@ class FiltersBase(FilterSchema):
         q = Q()
         if value:
             valid_q = False
-            positive_q = Q()
-            negative_q = Q()
-            has_positive = False
-            has_negative = False
+            positive_q = None
+            negative_q = None
             
             for format in value:
                 # Reliant on the fact that each of FILTERABLE_FORMATS has an
@@ -201,12 +199,12 @@ class FiltersBase(FilterSchema):
                 
                 if format_value.startswith("-"):
                     # Negative formats: AND them together as exclusions
-                    negative_q &= Q(**{f"has_{format_value.lower()[1:]}": False})
-                    has_negative = True
+                    new_q = Q(**{f"has_{format_value.lower()[1:]}": False})
+                    negative_q = negative_q & new_q if negative_q else new_q
                 else:
                     # Positive formats: OR them together
-                    positive_q |= Q(**{f"has_{format_value.lower()}": True})
-                    has_positive = True
+                    new_q = Q(**{f"has_{format_value.lower()}": True})
+                    positive_q = positive_q | new_q if positive_q else new_q
                 valid_q = True
 
             if not valid_q:
@@ -217,11 +215,11 @@ class FiltersBase(FilterSchema):
             # If we have both positive and negative, AND them together
             # If we only have positive, use positive_q
             # If we only have negative, use negative_q
-            if has_positive and has_negative:
+            if positive_q and negative_q:
                 q = positive_q & negative_q
-            elif has_positive:
+            elif positive_q:
                 q = positive_q
-            elif has_negative:
+            elif negative_q:
                 q = negative_q
                 
         return q
