@@ -185,6 +185,11 @@ class FiltersBase(FilterSchema):
         q = Q()
         if value:
             valid_q = False
+            positive_q = Q()
+            negative_q = Q()
+            has_positive = False
+            has_negative = False
+            
             for format in value:
                 # Reliant on the fact that each of FILTERABLE_FORMATS has an
                 # associated has_<format> field in the db.
@@ -193,15 +198,32 @@ class FiltersBase(FilterSchema):
                     format_value = "GLTF_ANY"
                 if format == FilterFormat.NO_GLTF:
                     format_value = "-GLTF_ANY"
+                
                 if format_value.startswith("-"):
-                    q |= Q(**{f"has_{format_value.lower()[1:]}": False})
+                    # Negative formats: AND them together as exclusions
+                    negative_q &= Q(**{f"has_{format_value.lower()[1:]}": False})
+                    has_negative = True
                 else:
-                    q |= Q(**{f"has_{format_value.lower()}": True})
+                    # Positive formats: OR them together
+                    positive_q |= Q(**{f"has_{format_value.lower()}": True})
+                    has_positive = True
                 valid_q = True
 
             if not valid_q:
                 choices = ", ".join([x.value for x in FilterFormat])
                 raise FilterException(f"Format filter not one of {choices}")
+            
+            # Combine positive and negative queries
+            # If we have both positive and negative, AND them together
+            # If we only have positive, use positive_q
+            # If we only have negative, use negative_q
+            if has_positive and has_negative:
+                q = positive_q & negative_q
+            elif has_positive:
+                q = positive_q
+            elif has_negative:
+                q = negative_q
+                
         return q
 
     def filter_maxComplexity(self, value: FilterComplexity) -> Q:
