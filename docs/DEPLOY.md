@@ -111,7 +111,7 @@ docker compose up -d
 If you've updated your `.env` file as above, visit http://example.
 
 > [!NOTE]
-> The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](./README.md) for more info.
+> The django service waits for postgres to come up before running itself. When running `docker compose up -d` for the first time, postgres might take longer than on subsequent runs. This is normal. See `Quirks` in the [main project readme](../README.md) for more info.
 
 ### Step 5 - Add sketch assets dependencies
 
