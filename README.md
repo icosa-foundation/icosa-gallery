@@ -3,7 +3,7 @@
 > [!NOTE]
 > This codebase is not currently at a stable release and everything is subject to change. If you want to use this then reach out to us. There may be breaking changes and refactors that you will want to know about first.
 
-![Icosa Gallery](docs/images/icosa-gallery-screenshot.png)
+![Icosa Gallery](https://github.com/icosa-foundation/icosa-gallery/blob/main/docs/images/icosa-gallery-screenshot.png?raw=true))
 
 Icosa Gallery is an open source 3D model hosting solution, intended as a replacement for the defunct [Google Poly](https://en.wikipedia.org/wiki/Poly_(website)).
 
@@ -34,7 +34,7 @@ See [the installation guide](docs/INSTALL.md) for details.
 
 ## API
 
-![api.png](docs/images/api.png)
+![api.png](https://github.com/icosa-foundation/icosa-gallery/blob/main/docs/images/api.png?raw=true))
 
 The official instance of the Icosa Gallery has OpenAPI docs here: [https://api.icosa.gallery/v1/docs](https://api.icosa.gallery/v1/docs).
 
@@ -44,7 +44,7 @@ If you deploy your own instance the docs will be at `api.yoursite.com/v1/docs/` 
 
 ### Web
 
-![gallery-viewer.png](docs/images/gallery-viewer.png)
+![gallery-viewer.png](https://github.com/icosa-foundation/icosa-gallery/blob/main/docs/images/gallery-viewer.png?raw=true))
 
 * Three.js based viewer: [Gallery Viewer](https://github.com/icosa-foundation/gallery-viewer)
 * Open Brush Material Importer (used by gallery-viewer): [Gallery Viewer](https://github.com/icosa-foundation/gallery-viewer)
@@ -53,25 +53,25 @@ We would like to add support for [Babylon.js](https://www.babylonjs.com/) and [P
 
 ### Unity 
 
-![unity-client.png](docs/images/unity-client.png)
+![unity-client.png](https://github.com/icosa-foundation/icosa-gallery/blob/main/docs/images/unity-client.png?raw=true))
 
 Asset browser and importer for editor and runtime use: [Icosa API Client](https://github.com/icosa-foundation/icosa-api-client-unity)
 
 ### Blender
 
-![blender.png](docs/images/blender.png)
+![blender.png](https://github.com/icosa-foundation/icosa-gallery/blob/main/docs/images/blender.png?raw=true))
 
 Plugin for browsing and importing assets from Icosa Gallery: [Icosa Gallery Blender Plugin](https://github.com/icosa-foundation/icosa-blender-plugin)
 
 ### Godot
 
-![godot.png](docs/images/godot.png)
+![godot.png](https://github.com/icosa-foundation/icosa-gallery/blob/main/docs/images/godot.png?raw=true))
 
 Asset browser and importer for editor and runtime use: [Godot Addon](https://github.com/icosa-foundation/icosa-godot-addon)
 
 ### Hubs
 
-![hubs.png](docs/images/hubs.png)
+![hubs.png](https://github.com/icosa-foundation/icosa-gallery/blob/main/docs/images/hubs.png?raw=true))
 
 We have pull requests to integrate Icosa Gallery as an asset source in [Hubs](https://hubsfoundation.org/):
 
