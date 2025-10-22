@@ -1,15 +1,82 @@
 # Icosa Gallery
 
 > [!NOTE]
-> This codebase is not currently at a stable point in terms of readiness for customization and reuse. If you are interested in forking this project and wish to stay in sync with upstream changes then reach out to us. There may be breaking changes and refactors that you will want to know about first.
+> This codebase is not currently at a stable release and everything is subject to change. If you want to use this then reach out to us. There may be breaking changes and refactors that you will want to know about first.
 
-Icosa Gallery is an open source 3D model hosting solution, intended as a replacement for Google's Poly.
+![Icosa Gallery](docs/images/icosa-gallery-screenshot.png)
 
-![Icosa Gallery](https://github.com/icosa-foundation/icosa-gallery/blob/main/icosa-gallery-screenshot.png?raw=true)
+Icosa Gallery is an open source 3D model hosting solution, intended as a replacement for the defunct [Google Poly](https://en.wikipedia.org/wiki/Poly_(website)).
+
+Our official instance is available at [https://icosa.gallery](https://icosa.gallery) and we have attempted to restore as much public content from Poly as possible. We'd like to thank [Archive Team](https://wiki.archiveteam.org/) volunteers for their timely preservation work and the [Internet Archive](https://archive.org) for hosting the historically valuable work.
+
+We aim to develop integration into a wide range of apps and platforms and current integrations including [Open Brush](https://openbrush.app), [Open Blocks](https://openblocks.app), [Blender](https://blender.org) and [Godot](https://godotengine.org). See the section below on "Clients, plugins and integrations" for more info.
+
+## Philosophy and Tech Stack
+
+The backend code is built on Django - a clean, mature and stable web framework with a strong ecosystem.
+
+We aim to avoid heavy javascript frameworks on the front end as we are firm believers in [progressive enhancement](https://en.wikipedia.org/wiki/Progressive_enhancement). We mainly use vanilla JS with a light scattering of HTMX where it is useful.
+
+Docker is currently used for deployment and development but we are working to become agnostic about deployment technologies.
+
+We currently support PostgreSQL as the database backend but this is not a hard dependency and it should be simple to swap out your relational database of choice (from local tests SQLite seems perfectly viable)
+
+* [Docker Compose](https://docs.docker.com/compose/)
+* [Django](https://www.djangoproject.com/)
+* [PostgreSQL](https://www.postgresql.org/)
+* [Django Ninja](https://django-ninja.rest-framework.com/)
+* [HTMX](https://htmx.org/)
+* [three.js](https://threejs.org/)
 
 ## Getting Started
 
-See [the installation guide](./INSTALL.md) for details.
+See [the installation guide](docs/INSTALL.md) for details.
+
+## API
+
+![api.png](docs/images/api.png)
+
+The official instance of the Icosa Gallery has OpenAPI docs here: [https://api.icosa.gallery/v1/docs](https://api.icosa.gallery/v1/docs).
+
+If you deploy your own instance the docs will be at `api.yoursite.com/v1/docs/` or `yoursite.com/api/v1/docs/` depending on your configuration.
+
+## Clients, plugins and integrations
+
+### Web
+
+![gallery-viewer.png](docs/images/gallery-viewer.png)
+
+* Three.js based viewer: [Gallery Viewer](https://github.com/icosa-foundation/gallery-viewer)
+* Open Brush Material Importer (used by gallery-viewer): [Gallery Viewer](https://github.com/icosa-foundation/gallery-viewer)
+
+We would like to add support for [Babylon.js](https://www.babylonjs.com/) and [PlayCanvas](https://playcanvas.com/) based viewers in the future. If you are interested in helping with this please get in touch.
+
+### Unity 
+
+![unity-client.png](docs/images/unity-client.png)
+
+Asset browser and importer for editor and runtime use: [Icosa API Client](https://github.com/icosa-foundation/icosa-api-client-unity)
+
+### Blender
+
+![blender.png](docs/images/blender.png)
+
+Plugin for browsing and importing assets from Icosa Gallery: [Icosa Gallery Blender Plugin](https://github.com/icosa-foundation/icosa-blender-plugin)
+
+### Godot
+
+![godot.png](docs/images/godot.png)
+
+Asset browser and importer for editor and runtime use: [Godot Addon](https://github.com/icosa-foundation/icosa-godot-addon)
+
+### Hubs
+
+![hubs.png](docs/images/hubs.png)
+
+We have pull requests to integrate Icosa Gallery as an asset source in [Hubs](https://hubsfoundation.org/):
+
+https://github.com/Hubs-Foundation/Spoke/pull/1301
+https://github.com/Hubs-Foundation/reticulum/pull/723
 
 ## Funding
 
@@ -51,96 +118,3 @@ if either:
 The second criteria is met if the resource's remote host is in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
 
 We also have some undocumented logic that is special to various data sets we are using on the flagship instance. This is extremely subject to change.
-
-### Docker's startup order
-
-Despite the web container depending on the postgres container, Docker makes no guarantees about the status of various services once the containers have started.
-
-We check for postgres availability by listening to `/dev/tcp/db/5432` from within the django container at the start of `entrypoint.sh`. This improves the initial run experience for new users, but can result in delayed startups if you change the postgres service name or port in `docker-compose.yml` for any reason. In that case, you will need to change the values in `entrypoint.sh`, too.
-
-# Usage and customisation
-
-Once you have a superuser, you can log in to the admin at <example.com>/admin
-
-From there you, can change some settings for allowing signup and other site behaviours at <example.com>/admin/constance/config/
-
-> [!NOTE]
-> While this application supports uploading via an undocumented API, we would encourage users to only upload via the web UI until this area of the site is stabilised.
-
-## Managements commands
-
-There are a number of managements commands you can run from the Django container to make administering the site easier.
-
-To run a management command, enter the Django container:
-
-`docker exec -it ig-web bash`
-
-Then run the command:
-
-`python manage.py <my_command>`
-
-The following custom commands are available:
-
-### `create_apikey [username]`
-
-Creates a JWT for the specified Django user, identified by their username, for accessing the API. Expires after two weeks, by default. Used as an alternative to the device login flow provided by Open Brush.
-
-Arguments:
-
-`--username`
-
-The username of the Django user.
-
-### `save_all_assets [options]`
-
-Runs a bulk save of all assets in the database. Most useful when denormalising metadata after, for example, bulk importing assets from somewhere.
-
-Options:
-
-`--verbose`
-
-Prints logs to stdout
-
-`--background`
-
-Queues the bulk save as a background task so that you are free to log out while the job continues.
-
-`--kill`
-
-Kills all running jobs.
-
-`--resume`
-
-Resumes the last killed job.
-
-### `create_django_user_from_asset_owner [id]`
-
-Creates a Django user based on an existing Asset Owner.
-
-Arguments:
-
-`--id`
-
-The primary key of the Asset Owner from which to create a Django User.
-
-## Customising the look and feel
-
-Some basic experience with working with Django is currently required. We are working to make customisations easier out of the box, but for now, follow the below instructions.
-
-First, you'll need to fork this repo. 
-
-Then, to make changes to any html template, you can do so without modifying the base application code by including your own templates in a new Django app.
-
-See (the Django tutorial for starting a new app)[https://docs.djangoproject.com/en/5.2/intro/tutorial01/#creating-the-polls-app]. You'll need to run Django commands from inside the docker container: `docker exec -it ig-web bash`.
-
-Then, add your new app to `INSTALLED_APPS` in `django/django_project/settings.py` *before* the `"icosa"` app.
-
-Inside your app's templates directory, duplicate the path of the template you'd like to override. For example to completely override the base template, create `base.html` inside `django/my_app/templates/`. You can include any custom styles and other static assets in your app's static folder: `django/my_app/static/`.
-
-# Contributing
-
-This project is still in its early days. If you've forked this repo or are using it as is and you'd like to contribute a change, fix or improvement, please get in touch; we'd love to chat!
-
-## Code style
-
-Currently running `ruff check --select I --fix - | ruff format --line-length 120 -` on python files. We'll provide official code style guidelines soon.
