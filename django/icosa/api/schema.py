@@ -103,6 +103,7 @@ class AssetFormat(Schema):
         description="This field is deprecated. Do not rely on it for anything.",
         deprecated=True,
     )
+    isPreferredForDownload: bool = Field(default=False, alias="is_preferred_for_download")
 
     @staticmethod
     def resolve_formatComplexity(obj):
