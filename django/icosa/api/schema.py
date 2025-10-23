@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import List, Literal, Optional
 
-from django.urls import reverse_lazy
-from icosa.models import Asset
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
+
+from django.urls import reverse_lazy
+from icosa.models import Asset
 
 API_DOWNLOAD_COMPATIBLE_ROLES = [
     "ORIGINAL_OBJ_FORMAT",
