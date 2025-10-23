@@ -382,7 +382,7 @@ class Asset(models.Model):
         if self.license == ALL_RIGHTS_RESERVED:
             return self.format_set.none()
         else:
-            dl_formats = self.format_set.filter(hide_from_downloads=False)
+            dl_formats = self.format_set.filter(is_preferred_for_download=True)
             if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
                 # We don't allow downoad of source files for ND-licensed work.
                 dl_formats = dl_formats.exclude(format_type__in=NON_REMIXABLE_FORMAT_TYPES)

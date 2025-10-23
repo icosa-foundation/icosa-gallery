@@ -62,7 +62,7 @@ class FormatInline(admin.TabularInline):
         "zip_archive_url",
         "role",
         "is_preferred_for_gallery_viewer",
-        "hide_from_downloads",
+        "is_preferred_for_download",
     )
 
 
@@ -88,7 +88,7 @@ class FormatAdmin(ExportMixin, admin.ModelAdmin):
         "role",
         "format_type",
         "is_preferred_for_gallery_viewer",
-        "hide_from_downloads",
+        "is_preferred_for_download",
     )
     raw_id_fields = [
         "asset",

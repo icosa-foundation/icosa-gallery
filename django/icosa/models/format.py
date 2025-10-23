@@ -28,7 +28,7 @@ class Format(models.Model):
         on_delete=models.SET_NULL,
     )
     is_preferred_for_gallery_viewer = models.BooleanField(default=False)
-    hide_from_downloads = models.BooleanField(default=False)
+    is_preferred_for_download = models.BooleanField(default=True)
 
     def add_root_resource(self, resource):
         if not resource.format:
