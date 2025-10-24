@@ -42,6 +42,18 @@ If you deploy your own instance the docs will be at `api.yoursite.com/v1/docs/` 
 
 ## Clients, plugins and integrations
 
+### Open Brush
+
+![openbrush.jpg](docs/images/openbrush.jpg)
+
+Browsing and publishing is built in directly to [Open Brush](https://openbrush.app)
+
+### Open Blocks
+
+![openblocks.jpg](docs/images/openblocks.jpg)
+
+Browsing and publishing is built in directly to [Open Blocks](https://openblocks.app)
+
 ### Web
 
 ![gallery-viewer.png](docs/images/gallery-viewer.jpg)
@@ -53,9 +65,9 @@ We would like to add support for [Babylon.js](https://www.babylonjs.com/) and [P
 
 ### Unity 
 
-![unity-client.png](docs/images/unity-client.jpg)
+![unity-client.png](docs/images/icosa-toolkit.jpg)
 
-Asset browser and importer for editor and runtime use: [Icosa API Client](https://github.com/icosa-foundation/icosa-api-client-unity)
+Asset browser and importer for editor and runtime: [Icosa Toolkit Unity](https://github.com/icosa-foundation/icosa-toolkit-unity)
 
 ### Blender
 
@@ -67,7 +79,7 @@ Plugin for browsing and importing assets from Icosa Gallery: [Icosa Gallery Blen
 
 ![godot.png](docs/images/godot.jpg)
 
-Asset browser and importer for editor and runtime use: [Godot Addon](https://github.com/icosa-foundation/icosa-godot-addon)
+Asset browser and importer for editor and runtime: [Godot Addon](https://github.com/icosa-foundation/icosa-godot-addon)
 
 ### Hubs
 
