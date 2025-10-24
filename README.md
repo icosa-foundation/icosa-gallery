@@ -1,11 +1,10 @@
 # Icosa Gallery
 
-> [!NOTE]
-> This codebase is not currently at a stable release and everything is subject to change. If you want to use this then reach out to us. There may be breaking changes and refactors that you will want to know about first.
-
 ![Icosa Gallery](docs/images/icosa-gallery-screenshot.jpg)
 
 Icosa Gallery is an open source 3D model hosting solution, intended as a replacement for the defunct [Google Poly](https://en.wikipedia.org/wiki/Poly_(website)).
+
+It's designed to be easy to self-host and customize. We hope organizations and individuals will run their own instances to host and share 3D models.
 
 Our official instance is available at [https://icosa.gallery](https://icosa.gallery) and we have attempted to restore as much public content from Poly as possible. We'd like to thank [Archive Team](https://wiki.archiveteam.org/) volunteers for their timely preservation work and the [Internet Archive](https://archive.org) for hosting the historically valuable work.
 
@@ -29,6 +28,9 @@ We currently support PostgreSQL as the database backend but this is not a hard d
 * [three.js](https://threejs.org/)
 
 ## Getting Started
+
+> [!NOTE]
+> This codebase is not currently at a stable release and we may still perform some significant refactoring. If you plan to fork Icosa Gallery to customize it for your own needs then we recommend you get in touch so we can keep you informed of anything you might need to know ahead of time. 
 
 See [the installation guide](docs/INSTALL.md) for details.
 
