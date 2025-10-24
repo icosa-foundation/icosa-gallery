@@ -59,7 +59,7 @@ Browsing and publishing is built in directly to [Open Blocks](https://openblocks
 ![gallery-viewer.png](docs/images/gallery-viewer.jpg)
 
 * Three.js based viewer: [Gallery Viewer](https://github.com/icosa-foundation/gallery-viewer)
-* Open Brush Material Importer (used by gallery-viewer): [Gallery Viewer](https://github.com/icosa-foundation/gallery-viewer)
+* Open Brush Material Importer (used by gallery-viewer): [three-icosa](https://github.com/icosa-foundation/three-icosa)
 
 We would like to add support for [Babylon.js](https://www.babylonjs.com/) and [PlayCanvas](https://playcanvas.com/) based viewers in the future. If you are interested in helping with this please get in touch.
 
