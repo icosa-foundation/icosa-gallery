@@ -1,5 +1,5 @@
 {{ asset.presentation_params|json_script:"presentation-params" }}
-{{ asset.camera|default_if_none:"{}"|json_script:"camera-data" }}
+{{ asset.camera|json_script:"camera-data" }}
 <style>
     .lil-gui {
         --title-background-color: rgba(0,0,0,0.25);
