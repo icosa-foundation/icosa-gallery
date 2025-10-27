@@ -72,7 +72,11 @@
         "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/",
-		"three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
+        {% if request.session.viewer_js_version == "experimental" %}
+            "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
+        {% else %}
+            "three-icosa": "/static/js/three-icosa.module.js?v={% now "U" %}",
+        {% endif %}
 		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/gh/sparkjsdev/spark@b60e9d9acbe621e67eda5d98417fcfdea5af6291/dist/spark.module.js"
     {% endif %}
@@ -158,7 +162,7 @@
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
         {% with mtl_url=asset.preferred_viewer_format.resource_set.first %}
-            {%  if mtl_url %}
+            {% if mtl_url %}
                 let mtlUrl = "{{ mtl_url }}";
                 await viewer.loadObjWithMtl(url, mtlUrl, overrides);
             {% else %}
