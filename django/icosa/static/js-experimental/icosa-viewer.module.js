@@ -3779,11 +3779,11 @@ class $677737c8a5cbea2f$var$SketchMetadata {
             let isValidEnvironmentPreset = this.EnvironmentPreset.Guid !== null;
             this.UseGradient = isValidEnvironmentPreset && this.EnvironmentPreset.UseGradient;
         } else this.UseGradient = JSON.parse(userData['TB_UseGradient'].toLowerCase());
-        this.SkyColorA = this.parseTBColorString(userData['TB_SkyColorA'], this.EnvironmentPreset.SkyColorA);
-        this.SkyColorB = this.parseTBColorString(userData['TB_SkyColorB'], this.EnvironmentPreset.SkyColorB);
+        this.SkyColorA = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_SkyColorA'], this.EnvironmentPreset.SkyColorA);
+        this.SkyColorB = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_SkyColorB'], this.EnvironmentPreset.SkyColorB);
         this.SkyGradientDirection = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SkyGradientDirection'], new $hBQxr$three.Vector3(0, 1, 0));
-        this.AmbientLightColor = this.parseTBColorString(userData['TB_AmbientLightColor'], this.EnvironmentPreset.AmbientLightColor);
-        this.FogColor = this.parseTBColorString(userData['TB_FogColor'], this.EnvironmentPreset.FogColor);
+        this.AmbientLightColor = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_AmbientLightColor'], this.EnvironmentPreset.AmbientLightColor);
+        this.FogColor = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_FogColor'], this.EnvironmentPreset.FogColor);
         this.FogDensity = userData['TB_FogDensity'] ?? this.EnvironmentPreset.FogDensity;
         this.SkyTexture = userData['TB_SkyTexture'] ?? this.EnvironmentPreset.SkyTexture;
         this.ReflectionTexture = userData['TB_ReflectionTexture'] ?? this.EnvironmentPreset.ReflectionTexture;
@@ -3803,22 +3803,8 @@ class $677737c8a5cbea2f$var$SketchMetadata {
         let light1col = userData['TB_SceneLight1Color'] ?? this.EnvironmentPreset.SceneLight1Color;
         this.SceneLight0Color = new $hBQxr$three.Color(light0col.r, light0col.g, light0col.b);
         this.SceneLight1Color = new $hBQxr$three.Color(light1col.r, light1col.g, light1col.b);
-        this.PoseTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseTranslation']);
-        this.PoseRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseRotation']);
-        this.PoseScale = userData['TB_PoseScale'] ?? 1;
-        this.CameraTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_CameraTranslation']);
-        this.CameraRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_CameraRotation']);
-    }
-    parseTBColorString(colorString, defaultValue) {
-        let r, g, b;
-        if (colorString) {
-            [r, g, b] = colorString.split(',').map(parseFloat);
-            return new $hBQxr$three.Color(r, g, b);
-        } else {
-            // Check if it's already a THREE.Color
-            if (defaultValue instanceof $hBQxr$three.Color) return defaultValue;
-            else return new $hBQxr$three.Color(defaultValue.r, defaultValue.g, defaultValue.b, defaultValue.a);
-        }
+        this.CameraTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_CameraTranslation'], null);
+        this.CameraRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_CameraRotation'], null);
     }
 }
 class $677737c8a5cbea2f$var$EnvironmentPreset {
@@ -3922,13 +3908,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.canvas.onmouseup = ()=>{
             this.canvas.classList.remove('grabbed');
         };
-        const renderer = new $hBQxr$three.WebGLRenderer({
+        this.renderer = new $hBQxr$three.WebGLRenderer({
             canvas: this.canvas,
             antialias: true
         });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.outputColorSpace = $hBQxr$three.SRGBColorSpace;
-        renderer.xr.enabled = true;
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.outputColorSpace = $hBQxr$three.SRGBColorSpace;
+        this.renderer.xr.enabled = true;
         function handleController(inputSource) {
             const gamepad = inputSource.gamepad;
             if (gamepad) return {
@@ -3939,23 +3925,24 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
         this.cameraRig = new $hBQxr$three.Group();
         this.selectedNode = null;
+        this.treeViewRoot = null;
         let controller0;
         let controller1;
         let controllerGrip0;
         let controllerGrip1;
         let previousLeftThumbstickX = 0;
-        controller0 = renderer.xr.getController(0);
+        controller0 = this.renderer.xr.getController(0);
         this.scene.add(controller0);
-        controller1 = renderer.xr.getController(1);
+        controller1 = this.renderer.xr.getController(1);
         this.scene.add(controller1);
         const controllerModelFactory = new (0, $hBQxr$XRControllerModelFactory)();
-        controllerGrip0 = renderer.xr.getControllerGrip(0);
+        controllerGrip0 = this.renderer.xr.getControllerGrip(0);
         controllerGrip0.add(controllerModelFactory.createControllerModel(controllerGrip0));
         this.scene.add(controllerGrip0);
-        controllerGrip1 = renderer.xr.getControllerGrip(1);
+        controllerGrip1 = this.renderer.xr.getControllerGrip(1);
         controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
         this.scene.add(controllerGrip1);
-        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(renderer);
+        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer);
         this.icosa_frame.appendChild(xrButton);
         function initCustomUi(viewerContainer) {
             const button = document.createElement('button');
@@ -3985,15 +3972,15 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 svgPath.setAttribute('stroke', 'white');
             });
         }
-        function animate() {
-            renderer.setAnimationLoop(render);
+        const animate = ()=>{
+            this.renderer.setAnimationLoop(render);
         // requestAnimationFrame( animate );
         // composer.render();
-        }
-        function render() {
+        };
+        const render = ()=>{
             const delta = clock.getDelta();
-            if (renderer.xr.isPresenting) {
-                let session = renderer.xr.getSession();
+            if (this.renderer.xr.isPresenting) {
+                let session = this.renderer.xr.getSession();
                 viewer1.activeCamera = viewer1?.xrCamera;
                 const inputSources = Array.from(session.inputSources);
                 const moveSpeed = 0.05;
@@ -4038,15 +4025,15 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 viewer1.activeCamera = viewer1?.flatCamera;
                 const needResize = viewer1.canvas.width !== viewer1.canvas.clientWidth || viewer1.canvas.height !== viewer1.canvas.clientHeight;
                 if (needResize && viewer1?.flatCamera) {
-                    renderer.setSize(viewer1.canvas.clientWidth, viewer1.canvas.clientHeight, false);
+                    this.renderer.setSize(viewer1.canvas.clientWidth, viewer1.canvas.clientHeight, false);
                     viewer1.flatCamera.aspect = viewer1.canvas.clientWidth / viewer1.canvas.clientHeight;
                     viewer1.flatCamera.updateProjectionMatrix();
                 }
                 if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
                 if (viewer1?.trackballControls) viewer1.trackballControls.update();
             }
-            if (viewer1?.activeCamera) renderer.render(viewer1.scene, viewer1.activeCamera);
-        }
+            if (viewer1?.activeCamera) this.renderer.render(viewer1.scene, viewer1.activeCamera);
+        };
         this.dataURLtoBlob = (dataURL)=>{
             let arr = dataURL.split(',');
             let mimeMatch = arr[0].match(/:(.*?);/);
@@ -4062,32 +4049,78 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             });
         };
         this.captureThumbnail = (width, height)=>{
+            // Store original renderer state
+            const originalRenderTarget = this.renderer.getRenderTarget();
+            const originalSize = this.renderer.getSize(new $hBQxr$three.Vector2());
+            const originalPixelRatio = this.renderer.getPixelRatio();
+            // Store original camera aspect ratio
+            const originalAspect = this.activeCamera.aspect;
+            // Create render target for offscreen rendering
+            const renderTarget = new $hBQxr$three.WebGLRenderTarget(width, height, {
+                format: $hBQxr$three.RGBAFormat,
+                type: $hBQxr$three.UnsignedByteType,
+                generateMipmaps: false,
+                minFilter: $hBQxr$three.LinearFilter,
+                magFilter: $hBQxr$three.LinearFilter
+            });
+            // Set render target and size
+            this.renderer.setRenderTarget(renderTarget);
+            this.renderer.setSize(width, height, false);
+            this.renderer.setPixelRatio(1); // Use 1:1 pixel ratio for consistent output
+            // Update camera aspect ratio to match thumbnail dimensions
+            this.activeCamera.aspect = width / height;
+            this.activeCamera.updateProjectionMatrix();
+            // Render the scene
+            this.renderer.render(this.scene, this.activeCamera);
+            // Read pixels from render target
+            const pixels = new Uint8Array(width * height * 4);
+            this.renderer.readRenderTargetPixels(renderTarget, 0, 0, width, height, pixels);
+            // Create canvas and draw pixels to it
             const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
-            const thumbnailRenderer = new $hBQxr$three.WebGLRenderer({
-                canvas: canvas,
-                antialias: true,
-                preserveDrawingBuffer: true // Important to allow toDataURL to work
-            });
-            thumbnailRenderer.setSize(width, height);
-            thumbnailRenderer.setPixelRatio(window.devicePixelRatio);
-            // If your scene requires specific renderer settings (e.g., tone mapping, shadow map), apply them here
-            // Example:
-            // thumbnailRenderer.toneMapping = renderer.toneMapping;
-            // thumbnailRenderer.shadowMap.enabled = renderer.shadowMap.enabled;
-            thumbnailRenderer.render(this.scene, this.activeCamera);
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(width, height);
+            // Copy pixels (note: WebGL coordinates are flipped compared to canvas)
+            for(let y = 0; y < height; y++)for(let x = 0; x < width; x++){
+                const srcIndex = ((height - y - 1) * width + x) * 4; // Flip Y
+                const dstIndex = (y * width + x) * 4;
+                imageData.data[dstIndex] = pixels[srcIndex]; // R
+                imageData.data[dstIndex + 1] = pixels[srcIndex + 1]; // G
+                imageData.data[dstIndex + 2] = pixels[srcIndex + 2]; // B
+                imageData.data[dstIndex + 3] = pixels[srcIndex + 3]; // A
+            }
+            ctx.putImageData(imageData, 0, 0);
             const dataUrl = canvas.toDataURL('image/png');
-            thumbnailRenderer.dispose();
-            canvas.width = canvas.height = 0;
+            // Restore original renderer state
+            this.renderer.setRenderTarget(originalRenderTarget);
+            this.renderer.setSize(originalSize.x, originalSize.y, false);
+            this.renderer.setPixelRatio(originalPixelRatio);
+            // Restore original camera aspect ratio
+            this.activeCamera.aspect = originalAspect;
+            this.activeCamera.updateProjectionMatrix();
+            // Clean up
+            renderTarget.dispose();
             return dataUrl;
         };
         animate();
     }
     static parseTBVector3(vectorString, defaultValue) {
-        if (!vectorString) return defaultValue ?? new $hBQxr$three.Vector3();
+        // Return default value if explicitly null, else return a default vector3
+        if (!vectorString) return defaultValue === undefined ? new $hBQxr$three.Vector3() : defaultValue;
         const [x, y, z] = vectorString.split(',').map((p)=>parseFloat(p.trim()));
         return new $hBQxr$three.Vector3(x, y, z);
+    }
+    static parseTBColorString(colorString, defaultValue) {
+        let r, g, b;
+        if (colorString) {
+            [r, g, b] = colorString.split(',').map(parseFloat);
+            return new $hBQxr$three.Color(r, g, b);
+        } else {
+            // Check if it's already a THREE.Color
+            if (defaultValue instanceof $hBQxr$three.Color) return defaultValue;
+            else return new $hBQxr$three.Color(defaultValue.r, defaultValue.g, defaultValue.b, defaultValue.a);
+        }
     }
     toggleFullscreen(controlButton) {
         if (this.icosa_frame?.requestFullscreen) this.icosa_frame?.requestFullscreen();
@@ -4105,8 +4138,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             }
         };
     }
-    initializeScene(overrides) {
-        let defaultBackgroundColor = overrides?.["defaultBackgroundColor"];
+    initializeScene() {
+        let defaultBackgroundColor = this.overrides?.["defaultBackgroundColor"];
         if (!defaultBackgroundColor) defaultBackgroundColor = "#000000";
         this.defaultBackgroundColor = new $hBQxr$three.Color(defaultBackgroundColor);
         if (!this.loadedModel) return;
@@ -5513,13 +5546,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
     }
     async loadGltf(url, loadEnvironment, overrides) {
-        try {
-            await this._loadGltf(url, loadEnvironment, overrides, false);
-        } catch (error) {
-            this.showErrorIcon();
-            console.error("Error loading glTFv2 model");
-            this.loadingError = true;
-        }
+        // try {
+        await this._loadGltf(url, loadEnvironment, overrides, false);
+    // } catch (error) {
+    //     this.showErrorIcon();
+    //     console.error("Error loading glTFv2 model");
+    //     this.loadingError = true;
+    // }
     }
     async replaceGltf1Materials(model, brushPath) {
         // Create a minimal mock parser object with the required options.manager
@@ -5563,89 +5596,58 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         } else sceneGltf = await this.gltfLoader.loadAsync(url);
         // The legacy loader has the latter structure
         let userData = (Object.keys(sceneGltf.userData || {}).length > 0 ? sceneGltf.userData : null) ?? sceneGltf.scene.userData;
+        this.scaleScene(sceneGltf, true);
         this.setupSketchMetaDataFromScene(sceneGltf.scene, userData);
-        if (loadEnvironment) await this.assignEnvironment(sceneGltf.scene);
+        if (loadEnvironment) await this.assignEnvironment(sceneGltf);
         if (overrides?.tiltUrl) this.tiltData = await this.tiltLoader.loadAsync(tiltUrl);
         this.loadedModel = sceneGltf.scene;
         this.sceneGltf = sceneGltf;
-        // Apply legacy scaling correction if needed
-        this.applyLegacyScaling(sceneGltf, isV1);
-        this.initializeScene(overrides);
+        this.initializeScene();
     }
-    applyLegacyScaling(sceneGltf, isV1) {
-        let isLegacyExporter = false;
-        if (isV1) {
-            // All GLTF1 files are assumed to be from legacy exporters
-            isLegacyExporter = true;
-            console.log('GLTF1 file detected - treating as legacy exporter');
+    isLegacyTiltExporter(sceneGltf) {
+        const generator = sceneGltf.asset?.generator;
+        return generator && !generator.includes('Tilt Brush');
+    }
+    isNewTiltExporter(sceneGltf) {
+        const generator = sceneGltf.asset?.generator;
+        return generator && generator.includes('Open Brush UnityGLTF Exporter');
+    }
+    scaleScene(sceneGltf, negate) {
+        const userData = sceneGltf.scene?.userData || sceneGltf.userData || {};
+        let poseTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseTranslation'], new $hBQxr$three.Vector3(0, 0, 0));
+        let poseRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseRotation'], new $hBQxr$three.Vector3(0, 0, 0));
+        let poseScale = userData['TB_PoseScale'] ?? 1;
+        if (this.isNewTiltExporter(sceneGltf)) poseScale *= negate ? 10 : 0.1;
+        if (negate) {
+            // Create inverse transformation matrix: (T * R * S)^-1 = S^-1 * R^-1 * T^-1
+            const inverseScale = 1.0 / poseScale;
+            const inverseRotation = new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(-poseRotation.x), $hBQxr$three.MathUtils.degToRad(-poseRotation.y), $hBQxr$three.MathUtils.degToRad(-poseRotation.z), 'ZYX' // Reverse order for inverse
+            );
+            const inverseTranslation = poseTranslation.clone().negate();
+            // Apply inverse transforms in reverse order: S^-1 * R^-1 * T^-1
+            sceneGltf.scene.scale.multiplyScalar(inverseScale);
+            sceneGltf.scene.setRotationFromEuler(inverseRotation);
+            // Transform the translation by the inverse rotation and scale
+            const rotMatrix = new $hBQxr$three.Matrix4().makeRotationFromEuler(inverseRotation);
+            inverseTranslation.applyMatrix4(rotMatrix);
+            inverseTranslation.multiplyScalar(inverseScale);
+            sceneGltf.scene.position.copy(inverseTranslation);
         } else {
-            // For GLTF2 files, check the generator string
-            const generator = sceneGltf.asset?.generator;
-            console.log('GLTF2 generator:', generator);
-            // Treat "Open Brush UnityGLTF Exporter" as modern, everything else as legacy
-            isLegacyExporter = generator && !generator.includes('Open Brush UnityGLTF Exporter');
-            console.log('GLTF2 is legacy exporter:', isLegacyExporter);
+            sceneGltf.scene.position.copy(poseTranslation);
+            sceneGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(poseRotation.x), $hBQxr$three.MathUtils.degToRad(poseRotation.y), $hBQxr$three.MathUtils.degToRad(poseRotation.z)));
+            sceneGltf.scene.scale.multiplyScalar(poseScale);
         }
-        if (isLegacyExporter) {
-            if (isV1 && this.environmentObject) {
-                console.log('Applying 0.1x environment scaling for GLTF1 legacy file');
-                // Scale down environment by 10x instead of scaling up sketch
-                // This keeps the overall scene scale correct for fog, camera, etc.
-                const envBox = new $hBQxr$three.Box3().setFromObject(this.environmentObject);
-                const envCenter = envBox.getCenter(new $hBQxr$three.Vector3());
-                // Translate to origin, scale, then translate back
-                this.environmentObject.position.sub(envCenter);
-                this.environmentObject.scale.multiplyScalar(0.1);
-                this.environmentObject.position.multiplyScalar(0.1);
-                this.environmentObject.position.add(envCenter.multiplyScalar(0.1));
-            } else if (!isV1) {
-                console.log('Applying pose transforms for GLTF2 legacy file');
-                // For GLTF2 legacy files, apply pose transforms to the sketch
-                this.applyPoseTransforms(sceneGltf.scene, sceneGltf);
-            }
-        }
-    }
-    applyPoseTransforms(sceneNode, sceneGltf) {
-        try {
-            const userData = sceneGltf.scene?.userData || sceneGltf.userData || {};
-            console.log('Available userData keys:', Object.keys(userData));
-            console.log('Raw pose values from userData:', {
-                translation: userData['TB_PoseTranslation'],
-                rotation: userData['TB_PoseRotation'],
-                scale: userData['TB_PoseScale']
-            });
-            const poseTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseTranslation']);
-            const poseRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseRotation']);
-            const poseScale = userData['TB_PoseScale'] ?? 1;
-            console.log('Parsed pose values:', {
-                poseTranslation: poseTranslation,
-                poseRotation: poseRotation,
-                poseScale: poseScale
-            });
-            if (poseTranslation && (poseTranslation.x !== 0 || poseTranslation.y !== 0 || poseTranslation.z !== 0)) {
-                console.log('Applying pose translation:', poseTranslation);
-                sceneNode.position.copy(poseTranslation);
-            }
-            if (poseRotation && (poseRotation.x !== 0 || poseRotation.y !== 0 || poseRotation.z !== 0)) {
-                console.log('Applying pose rotation (degrees):', poseRotation);
-                const rotationRad = new $hBQxr$three.Vector3($hBQxr$three.MathUtils.degToRad(poseRotation.x), $hBQxr$three.MathUtils.degToRad(poseRotation.y), $hBQxr$three.MathUtils.degToRad(poseRotation.z));
-                sceneNode.setRotationFromEuler(new $hBQxr$three.Euler(rotationRad.x, rotationRad.y, rotationRad.z));
-            }
-            if (poseScale && poseScale !== 1) {
-                console.log('Applying pose scale:', poseScale);
-                sceneNode.scale.multiplyScalar(poseScale);
-            }
-        } catch (error) {
-            console.error('Error applying pose transforms:', error);
-            throw error;
-        }
+        console.log(`scene Position: ${sceneGltf.scene.position.x}, ${sceneGltf.scene.position.y}, ${sceneGltf.scene.position.z}`);
+        console.log(`scene Rotation: ${sceneGltf.scene.rotation.x}, ${sceneGltf.scene.rotation.y}, ${sceneGltf.scene.rotation.z}`);
+        console.log(`scene Scale: ${sceneGltf.scene.scale.x}`);
     }
     async loadTilt(url, overrides) {
         try {
+            this.overrides = overrides;
             const tiltData = await this.tiltLoader.loadAsync(url);
             this.loadedModel = tiltData;
             this.setupSketchMetaData(tiltData);
-            this.initializeScene(overrides);
+            this.initializeScene();
         } catch (error) {
             this.showErrorIcon();
             console.error("Error loading Tilt model");
@@ -5663,6 +5665,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     // Defaults to assuming materials are vertex colored
     async loadObj(url, overrides) {
         try {
+            this.overrides = overrides;
             this.objLoader.loadAsync(url).then((objData)=>{
                 this.loadedModel = objData;
                 let defaultBackgroundColor = overrides?.["defaultBackgroundColor"];
@@ -5671,7 +5674,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 let withVertexColors = overrides?.["withVertexColors"];
                 if (withVertexColors) this.setAllVertexColors(this.loadedModel);
                 this.setupSketchMetaData(this.loadedModel);
-                this.initializeScene(overrides);
+                this.initializeScene();
             });
         } catch (error) {
             this.showErrorIcon();
@@ -5681,6 +5684,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     async loadObjWithMtl(objUrl, mtlUrl, overrides) {
         try {
+            this.overrides = overrides;
             this.mtlLoader.loadAsync(mtlUrl).then((materials)=>{
                 materials.preload();
                 this.objLoader.setMaterials(materials);
@@ -5692,7 +5696,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                     let withVertexColors = overrides?.["withVertexColors"];
                     if (withVertexColors) this.setAllVertexColors(this.loadedModel);
                     this.setupSketchMetaData(this.loadedModel);
-                    this.initializeScene(overrides);
+                    this.initializeScene();
                     this.frameScene(); // Not sure why the standard viewpoint heuristic isn't working here
                 });
             });
@@ -5704,10 +5708,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     async loadFbx(url, overrides) {
         try {
+            this.overrides = overrides;
             const fbxData = await this.fbxLoader.loadAsync(url);
             this.loadedModel = fbxData;
             this.setupSketchMetaData(fbxData);
-            this.initializeScene(overrides);
+            this.initializeScene();
             this.frameScene();
         } catch (error) {
             this.showErrorIcon();
@@ -5717,6 +5722,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     async loadPly(url, overrides) {
         try {
+            this.overrides = overrides;
             const plyData = await this.plyLoader.loadAsync(url);
             plyData.computeVertexNormals();
             const material = new $hBQxr$three.MeshStandardMaterial({
@@ -5726,7 +5732,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             const plyModel = new $hBQxr$three.Mesh(plyData, material);
             this.loadedModel = plyModel;
             this.setupSketchMetaData(plyModel);
-            this.initializeScene(overrides);
+            this.initializeScene();
             this.frameScene();
         } catch (error) {
             this.showErrorIcon();
@@ -5736,6 +5742,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     async loadStl(url, overrides) {
         try {
+            this.overrides = overrides;
             const stlData = await this.stlLoader.loadAsync(url);
             let material = new $hBQxr$three.MeshStandardMaterial({
                 color: 0xffffff,
@@ -5748,7 +5755,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             const stlModel = new $hBQxr$three.Mesh(stlData, material);
             this.loadedModel = stlModel;
             this.setupSketchMetaData(stlModel);
-            this.initializeScene(overrides);
+            this.initializeScene();
             this.frameScene();
         } catch (error) {
             this.showErrorIcon();
@@ -5758,10 +5765,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     async loadUsdz(url, overrides) {
         try {
+            this.overrides = overrides;
             const usdzData = await this.usdzLoader.loadAsync(url);
             this.loadedModel = usdzData;
             this.setupSketchMetaData(usdzData);
-            this.initializeScene(overrides);
+            this.initializeScene();
             this.frameScene();
         } catch (error) {
             this.showErrorIcon();
@@ -5771,6 +5779,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     async loadVox(url, overrides) {
         try {
+            this.overrides = overrides;
             let voxModel = new $hBQxr$three.Group();
             let chunks = await this.voxLoader.loadAsync(url);
             for(let i = 0; i < chunks.length; i++){
@@ -5781,7 +5790,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             }
             this.loadedModel = voxModel;
             this.setupSketchMetaData(voxModel);
-            this.initializeScene(overrides);
+            this.initializeScene();
             this.frameScene();
         } catch (error) {
             this.showErrorIcon();
@@ -5802,6 +5811,24 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     async loadSplat(url, overrides) {
         try {
+            this.overrides = overrides;
+            // Add default camera override for splat files if none supplied
+            if (!this.overrides?.camera || Object.keys(this.overrides.camera).length === 0) {
+                this.overrides = this.overrides || {};
+                this.overrides.camera = {
+                    translation: [
+                        0,
+                        0,
+                        3
+                    ],
+                    rotation: [
+                        0,
+                        0,
+                        0,
+                        1
+                    ] // Identity quaternion (no rotation, facing forward)
+                };
+            }
             // Dynamic import for optional Spark dependency
             let SplatMesh;
             try {
@@ -5816,12 +5843,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 url: url
             });
             await splatModel.initialized;
+            // Apply coordinate system correction - splat files are upside-down compared to other formats
+            splatModel.rotation.x = Math.PI;
             this.loadedModel = splatModel;
             this.setupSketchMetaData(splatModel);
             this.modelBoundingBox = splatModel.getBoundingBox(false);
             this.scene.add(this.loadedModel);
-            this.initializeScene(overrides);
-            this.frameScene();
+            this.initializeScene();
             // Manually trigger loading screen fade-out since SplatMesh doesn't use LoadingManager
             let loadscreen = document.getElementById('loadscreen');
             if (loadscreen && !loadscreen.classList.contains('loaderror')) loadscreen.classList.add('fade-out');
@@ -5831,7 +5859,9 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.loadingError = true;
         }
     }
-    async assignEnvironment(scene) {
+    async assignEnvironment(sceneGltf) {
+        console.log("assigning environment");
+        let scene = sceneGltf.scene;
         const guid = this.sketchMetadata?.EnvironmentGuid;
         if (guid) {
             const envUrl = new URL(`${guid}/${guid}.glb`, this.environmentPath);
@@ -5839,8 +5869,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 // Use the standard GLTFLoader for environments
                 const standardLoader = new (0, $hBQxr$GLTFLoader)();
                 const envGltf = await standardLoader.loadAsync(envUrl.toString());
-                envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
-                // envGltf.scene.scale.set(.2, .2, .2);
+                if (this.isNewTiltExporter(sceneGltf)) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
+                envGltf.scene.scale.set(.1, .1, .1);
                 scene.attach(envGltf.scene);
                 this.environmentObject = envGltf.scene;
             } catch (error) {
@@ -5897,16 +5927,38 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     initCameras() {
         let cameraOverrides = this.overrides?.camera;
-        let cameraPos = cameraOverrides?.translation || this.sketchMetadata?.CameraTranslation.toArray() || [
+        const userData = this.sceneGltf.scene?.userData || {};
+        console.log("userData", userData);
+        let poseTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseTranslation'], new $hBQxr$three.Vector3(0, 0, 0));
+        let poseRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseRotation'], new $hBQxr$three.Vector3(0, 0, 0));
+        let poseScale = userData['TB_PoseScale'] ?? 1;
+        let cameraPos = cameraOverrides?.translation || this.sketchMetadata?.CameraTranslation?.toArray() || [
             0,
-            1,
-            -1
+            0.25,
+            -3.5
         ];
-        let cameraRot = cameraOverrides?.rotation || this.sketchMetadata?.CameraRotation.toArray() || [
+        console.log(`Camera position from metadata/overrides: ${cameraPos[0]}, ${cameraPos[1]}, ${cameraPos[2]}`);
+        cameraPos = [
+            cameraPos[0] * poseScale,
+            cameraPos[1] * poseScale,
+            cameraPos[2] * poseScale
+        ];
+        console.log(`Camera position before tilt exporter adjustment: ${cameraPos[0]}, ${cameraPos[1]}, ${cameraPos[2]}`);
+        let cameraRot = cameraOverrides?.rotation || this.sketchMetadata?.CameraRotation?.toArray() || [
             0,
             0,
             0
         ]; // Could be euler angles or quaternion
+        if (this.isNewTiltExporter(this.sceneGltf)) {
+            // the scene scale is modified elsewhere but here we correct the camera to match
+            cameraPos = [
+                cameraPos[0] * 0.1,
+                cameraPos[1] * 0.1,
+                cameraPos[2] * 0.1
+            ];
+            cameraPos[1] -= 1;
+            cameraRot[1] += 180;
+        }
         // Fix handedness between Unity and gltf/three.js
         // Should we fix this on export?
         if (cameraRot.length == 3) {
@@ -6090,6 +6142,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             console.error('Tree view container not found');
             return;
         }
+        this.treeViewRoot = treeView;
         treeView.innerHTML = '';
         if (model) this.createTreeViewNode(model, treeView);
         else console.error('Model not loaded');
@@ -6145,6 +6198,56 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             });
         }
         parentElement.appendChild(nodeElement);
+    }
+    /**
+     * Generate a consistent path for an object in the scene hierarchy.
+     * Uses object names and child indices to create a unique, reproducible identifier.
+     */ getObjectPath(object, currentPath = '') {
+        if (!object.parent) return currentPath || '/';
+        const parent = object.parent;
+        const childIndex = parent.children.indexOf(object);
+        const nodeName = object.name || `${object.type}_${childIndex}`;
+        const newPath = `/${nodeName}${currentPath}`;
+        return this.getObjectPath(parent, newPath);
+    }
+    /**
+     * Get the current visibility state of all nodes in the scene hierarchy.
+     * Returns a map of object paths to visibility state.
+     * Object paths are consistent across sessions when loading the same file.
+     * @returns An object mapping paths to state information
+     */ getTreeViewState() {
+        const state = {};
+        const collectState = (object)=>{
+            const path = this.getObjectPath(object);
+            state[path] = {
+                visible: object.visible
+            };
+            if (object.children && object.children.length > 0) object.children.forEach((child)=>collectState(child));
+        };
+        if (this.scene) collectState(this.scene);
+        return state;
+    }
+    /**
+     * Restore the visibility state of nodes from a previously saved state.
+     * @param state - The state object returned from getTreeViewState()
+     */ setTreeViewState(state) {
+        const applyState = (object)=>{
+            const path = this.getObjectPath(object);
+            const savedState = state[path];
+            if (savedState !== undefined) object.visible = savedState.visible;
+            if (object.children && object.children.length > 0) object.children.forEach((child)=>applyState(child));
+        };
+        if (this.scene) applyState(this.scene);
+        // Refresh the tree view UI if it exists
+        this.refreshTreeView();
+    }
+    /**
+     * Refresh the tree view UI to match the current visibility state of objects.
+     * This updates all checkboxes in the tree view to reflect the actual visibility of objects.
+     */ refreshTreeView() {
+        if (!this.treeViewRoot || !this.scene) return;
+        // Recreate the tree view to reflect the current state
+        this.createTreeView(this.scene, this.treeViewRoot);
     }
 }
 
