@@ -196,7 +196,20 @@ def register(request):
             password = form.cleaned_data["password_new"]
             username = form.cleaned_data["username"]
             displayname = form.cleaned_data["displayname"]
-            if not User.objects.filter(email=email).exists():
+
+            existing_user = User.objects.filter(email=email)
+            if existing_user.exists():
+                # We should re-register an existing user who has never logged in and has never activated.
+                # Users who are active==False and have logged in are to be considered banned.
+                # TODO: We could have a policy of periodically deleting users who never completed registration.
+                if existing_user.active is False and existing_user.last_login is None:
+                    with transaction.atomic():
+                        existing_user.set_password(password)
+                        existing_user.username = username
+                        existing_user.displayname = displayname
+                        existing_user.save()
+            else:
+                # This is a normal, new user registration
                 try:
                     with transaction.atomic():
                         user = User.objects.create_user(
