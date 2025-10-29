@@ -293,7 +293,7 @@ def password_reset_confirm(request, uidb64, token):
     form = PasswordResetConfirmForm()
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
+        user = User.objects.get(pk=uid, active=True, last_login__is_null=False)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
     if user is not None:
