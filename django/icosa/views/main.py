@@ -116,6 +116,8 @@ def user_can_view_asset(
 ) -> bool:
     # Superusers should be able to view any asset. Preferably while showing a
     # banner and with the option to check the real access.
+    if user.is_staff or user.is_superuser:
+        return True
     if asset.visibility in [PRIVATE, ARCHIVED]:
         return user.is_authenticated and asset.owner.django_user == user
     return True
