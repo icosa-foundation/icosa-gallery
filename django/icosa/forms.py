@@ -1,5 +1,7 @@
 from constance import config
 from dal import autocomplete
+from simplemathcaptcha.fields import MathCaptchaField
+
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -24,7 +26,6 @@ from icosa.models import (
     AssetOwner,
     User,
 )
-from simplemathcaptcha.fields import MathCaptchaField
 
 ARTIST_QUERY_SUBJECT_CHOICES = [
     ("WORK_REMOVED", "I want my work removed from this website"),

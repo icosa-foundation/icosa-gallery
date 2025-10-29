@@ -2,13 +2,14 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+from ninja.errors import HttpError
+from ninja.security import HttpBearer
+from ninja.security.http import HttpAuthBase
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
-from ninja.errors import HttpError
-from ninja.security import HttpBearer
-from ninja.security.http import HttpAuthBase
 
 from .tokens import AccessToken, TokenError
 

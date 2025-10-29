@@ -2,6 +2,7 @@ from typing import Optional
 from urllib.parse import urlparse
 
 from constance import config
+
 from django.conf import settings
 from django.db import models
 

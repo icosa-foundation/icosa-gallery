@@ -3,6 +3,12 @@ import secrets
 from typing import List, Optional
 
 from constance import config
+from ninja import File, Query, Router
+from ninja.decorators import decorate_view
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+from ninja.pagination import paginate
+
 from django.db import transaction
 from django.db.models import Q
 from icosa.api import (
@@ -25,11 +31,6 @@ from icosa.models import (
 )
 from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
 from icosa.views.decorators import cache_per_user
-from ninja import File, Query, Router
-from ninja.decorators import decorate_view
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-from ninja.pagination import paginate
 
 from .filters import (
     FiltersAsset,

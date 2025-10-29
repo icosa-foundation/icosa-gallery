@@ -1,7 +1,8 @@
 import threading
 
-from django.core.mail import EmailMessage
 from email_logger.models import log_emails
+
+from django.core.mail import EmailMessage
 
 
 class EmailThread(threading.Thread):

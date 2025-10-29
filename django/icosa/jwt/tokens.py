@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
+
 from django.conf import settings
 
 ALGORITHM = "HS256"

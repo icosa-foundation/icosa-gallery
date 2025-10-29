@@ -1,6 +1,7 @@
-from django.utils import timezone
 from ninja import Router
 from ninja.errors import HttpError
+
+from django.utils import timezone
 
 from ..models import DeviceCode
 from .schema import LoginToken
