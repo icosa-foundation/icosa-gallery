@@ -5546,13 +5546,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
     }
     async loadGltf(url, loadEnvironment, overrides) {
-        // try {
-        await this._loadGltf(url, loadEnvironment, overrides, false);
-    // } catch (error) {
-    //     this.showErrorIcon();
-    //     console.error("Error loading glTFv2 model");
-    //     this.loadingError = true;
-    // }
+        try {
+            await this._loadGltf(url, loadEnvironment, overrides, false);
+        } catch (error) {
+            this.showErrorIcon();
+            console.error("Error loading glTFv2 model");
+            this.loadingError = true;
+        }
     }
     async replaceGltf1Materials(model, brushPath) {
         // Create a minimal mock parser object with the required options.manager
@@ -5609,8 +5609,12 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         return generator && !generator.includes('Tilt Brush');
     }
     isNewTiltExporter(sceneGltf) {
-        const generator = sceneGltf.asset?.generator;
+        const generator = sceneGltf?.asset?.generator;
         return generator && generator.includes('Open Brush UnityGLTF Exporter');
+    }
+    isAnyTiltExporter(sceneGltf) {
+        const generator = sceneGltf?.asset?.generator;
+        return generator && (generator.includes('Tilt Brush') || generator.includes('Open Brush UnityGLTF Exporter'));
     }
     scaleScene(sceneGltf, negate) {
         const userData = sceneGltf.scene?.userData || sceneGltf.userData || {};
@@ -5927,23 +5931,25 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     initCameras() {
         let cameraOverrides = this.overrides?.camera;
-        const userData = this.sceneGltf.scene?.userData || {};
-        console.log("userData", userData);
-        let poseTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseTranslation'], new $hBQxr$three.Vector3(0, 0, 0));
-        let poseRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseRotation'], new $hBQxr$three.Vector3(0, 0, 0));
-        let poseScale = userData['TB_PoseScale'] ?? 1;
-        let cameraPos = cameraOverrides?.translation || this.sketchMetadata?.CameraTranslation?.toArray() || [
+        // const userData = this.sceneGltf?.scene?.userData || {};
+        // let poseTranslation = Viewer.parseTBVector3(userData['TB_PoseTranslation'], new THREE.Vector3(0, 0, 0));
+        // let poseRotation = Viewer.parseTBVector3(userData['TB_PoseRotation'], new THREE.Vector3(0, 0, 0));
+        // let poseScale = (userData['TB_PoseScale'] ?? 1);
+        let sketchCam = this.sketchMetadata?.CameraTranslation?.toArray();
+        if (sketchCam) {
+            let poseScale = this.isAnyTiltExporter(this.sceneGltf) ? 0.1 : 1;
+            console.log("posescale", poseScale);
+            sketchCam = [
+                sketchCam[0] * poseScale,
+                sketchCam[1] * poseScale,
+                sketchCam[2] * poseScale
+            ];
+        }
+        let cameraPos = cameraOverrides?.translation || sketchCam || [
             0,
             0.25,
             -3.5
         ];
-        console.log(`Camera position from metadata/overrides: ${cameraPos[0]}, ${cameraPos[1]}, ${cameraPos[2]}`);
-        cameraPos = [
-            cameraPos[0] * poseScale,
-            cameraPos[1] * poseScale,
-            cameraPos[2] * poseScale
-        ];
-        console.log(`Camera position before tilt exporter adjustment: ${cameraPos[0]}, ${cameraPos[1]}, ${cameraPos[2]}`);
         let cameraRot = cameraOverrides?.rotation || this.sketchMetadata?.CameraRotation?.toArray() || [
             0,
             0,
@@ -5951,11 +5957,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         ]; // Could be euler angles or quaternion
         if (this.isNewTiltExporter(this.sceneGltf)) {
             // the scene scale is modified elsewhere but here we correct the camera to match
-            cameraPos = [
-                cameraPos[0] * 0.1,
-                cameraPos[1] * 0.1,
-                cameraPos[2] * 0.1
-            ];
+            //cameraPos = [cameraPos[0] * 0.1, cameraPos[1] * 0.1, cameraPos[2] * 0.1];
             cameraPos[1] -= 1;
             cameraRot[1] += 180;
         }
