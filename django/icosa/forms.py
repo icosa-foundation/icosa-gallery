@@ -313,6 +313,21 @@ class NewUserForm(forms.ModelForm):
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
         self.fields["captcha"] = MathCaptchaField()
 
+    def validate_unique(self):
+        exclude = self._get_validation_exclusions()
+        try:
+            self.instance.validate_unique(exclude=exclude)
+        except forms.ValidationError as e:
+            try:
+                # If email or username unique validation occurs it will be omitted and form.is_valid() method pass
+                # This is so we can re-register users who never completed registration
+                del e.error_dict["email"]
+                del e.error_dict["username"]
+            except Exception:
+                # If there are other errors in the form those will be returned to views and is_valid() method will fail.
+                pass
+            self._update_errors(e)
+
     def clean(self):
         cleaned_data = super().clean()
 

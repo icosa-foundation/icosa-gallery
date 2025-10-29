@@ -192,22 +192,27 @@ def register(request):
     if request.method == "POST":
         form = NewUserForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data["email"]
+            email_addr = form.cleaned_data["email"]
             password = form.cleaned_data["password_new"]
             username = form.cleaned_data["username"]
             displayname = form.cleaned_data["displayname"]
 
-            existing_user = User.objects.filter(email=email)
-            if existing_user.exists():
+            should_send_email = False
+            try:
+                user = User.objects.get(email=email_addr)
+            except User.DoesNotExist:
+                user = None
+            if user is not None:
                 # We should re-register an existing user who has never logged in and has never activated.
-                # Users who are active==False and have logged in are to be considered banned.
+                # Users who are is_active==False and have logged in are to be considered banned.
                 # TODO: We could have a policy of periodically deleting users who never completed registration.
-                if existing_user.active is False and existing_user.last_login is None:
+                if user.is_active is False and user.last_login is None:
                     with transaction.atomic():
-                        existing_user.set_password(password)
-                        existing_user.username = username
-                        existing_user.displayname = displayname
-                        existing_user.save()
+                        user.set_password(password)
+                        user.username = username
+                        user.displayname = displayname
+                        user.save()
+                        should_send_email = True
             else:
                 # This is a normal, new user registration
                 try:
@@ -215,15 +220,19 @@ def register(request):
                         user = User.objects.create_user(
                             username=username,
                             displayname=displayname,
-                            email=email,
+                            email=email_addr,
                             password=password,
                         )
                         user.is_active = False
                         user.save()
+                        should_send_email = True
 
-                    send_registration_email(request, user, to_email=form.cleaned_data.get("email"))
                 except IntegrityError:
                     pass
+
+            if should_send_email:
+                send_registration_email(request, user, to_email=email_addr)
+
             success = True
             # Sleep a random amount of time to throw off timing attacks a bit more.
             time.sleep(random.randrange(0, 200) / 100)
@@ -269,7 +278,7 @@ def password_reset(request):
         if form.is_valid():
             email_addr = form.cleaned_data.get("email")
             try:
-                user = User.objects.get(email=email_addr, active=True, last_login__isnull=False)
+                user = User.objects.get(email=email_addr, is_active=True, last_login__isnull=False)
                 send_password_reset_email(request, user, to_email=email_addr)
             except User.DoesNotExist:
                 pass
@@ -302,7 +311,7 @@ def password_reset_confirm(request, uidb64, token):
     form = PasswordResetConfirmForm()
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid, active=True, last_login__is_null=False)
+        user = User.objects.get(pk=uid, is_active=True, last_login__is_null=False)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
     if user is not None:
