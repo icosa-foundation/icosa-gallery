@@ -5614,7 +5614,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     isAnyTiltExporter(sceneGltf) {
         const generator = sceneGltf?.asset?.generator;
-        return generator && generator.includes('Tilt Brush');
+        return generator && (generator.includes('Tilt Brush') || generator.includes('Open Brush UnityGLTF Exporter'));
     }
     scaleScene(sceneGltf, negate) {
         const userData = sceneGltf.scene?.userData || sceneGltf.userData || {};
@@ -5937,7 +5937,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // let poseScale = (userData['TB_PoseScale'] ?? 1);
         let sketchCam = this.sketchMetadata?.CameraTranslation?.toArray();
         if (sketchCam) {
-            let poseScale = this.isAnyTiltExporter(this.sceneGltf) ? 0.1 : 1.0;
+            let poseScale = this.isAnyTiltExporter(this.sceneGltf) ? 0.1 : 1;
+            console.log("posescale", poseScale);
             sketchCam = [
                 sketchCam[0] * poseScale,
                 sketchCam[1] * poseScale,
