@@ -1,5 +1,10 @@
 from typing import Any, List, NoReturn, Optional
 
+from ninja import Schema
+from ninja.errors import HttpError
+from ninja.pagination import PaginationBase
+from pydantic.json_schema import SkipJsonSchema
+
 from django.conf import settings
 from django.http import HttpRequest
 from django.urls import reverse
@@ -7,10 +12,6 @@ from icosa.models import (
     PRIVATE,
     Asset,
 )
-from ninja import Schema
-from ninja.errors import HttpError
-from ninja.pagination import PaginationBase
-from pydantic.json_schema import SkipJsonSchema
 
 COMMON_ROUTER_SETTINGS = {
     "exclude_none": True,

@@ -1,3 +1,5 @@
+from import_export.admin import ExportMixin
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
@@ -22,8 +24,6 @@ from icosa.models import (
     Tag,
     UserLike,
 )
-
-from import_export.admin import ExportMixin
 
 User = get_user_model()
 

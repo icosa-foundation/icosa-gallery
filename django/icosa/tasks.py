@@ -1,10 +1,13 @@
 import time
 from typing import List, Optional
 
-from django.db import transaction
-from django.utils import timezone
 from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
+from ninja import File
+from ninja.files import UploadedFile
+
+from django.db import transaction
+from django.utils import timezone
 from icosa.api.schema import AssetFinalizeData
 from icosa.helpers.file import upload_blocks_format
 from icosa.helpers.logger import icosa_log
@@ -18,8 +21,6 @@ from icosa.models import (
     Format,
     User,
 )
-from ninja import File
-from ninja.files import UploadedFile
 
 
 @signal(signals.SIGNAL_ERROR)

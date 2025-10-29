@@ -1,3 +1,6 @@
+from ninja import NinjaAPI
+from ninja.throttling import AnonRateThrottle, AuthRateThrottle
+
 from django.conf import settings
 from django.urls import path
 from django.views.generic import RedirectView
@@ -9,8 +12,6 @@ from icosa.jwt.authentication import JWTAuth
 from icosa.views import auth as auth_views
 from icosa.views import autocomplete as autocomplete_views
 from icosa.views import main as main_views
-from ninja import NinjaAPI
-from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 app_name = "icosa"
 

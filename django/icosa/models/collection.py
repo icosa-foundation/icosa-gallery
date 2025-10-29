@@ -2,7 +2,7 @@ import secrets
 
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
-from django.db import IntegrityError, models, transaction
+from django.db import IntegrityError, models
 from django.urls import reverse
 from icosa.models import Asset
 

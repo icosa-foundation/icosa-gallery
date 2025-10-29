@@ -9,6 +9,11 @@ from typing import List, Optional
 
 import ijson
 import magic
+from ninja import File
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+from PIL import Image
+
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from icosa.helpers.logger import icosa_log
 from icosa.models import (
@@ -18,10 +23,6 @@ from icosa.models import (
     Format,
     Resource,
 )
-from ninja import File
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-from PIL import Image
 
 ASSET_NOT_FOUND = HttpError(404, "Asset not found.")
 
