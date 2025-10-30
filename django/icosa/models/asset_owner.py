@@ -57,7 +57,7 @@ class AssetOwner(models.Model):
 
     def get_absolute_url(self):
         if self.url:
-            return reverse("icosa:owner_show", kwargs={"slug": self.url})
+            return reverse("icosa:user_show", kwargs={"slug": self.url})
         else:
             return ""
 

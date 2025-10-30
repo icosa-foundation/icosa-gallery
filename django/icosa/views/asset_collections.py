@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseBadRequest, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 from icosa.models import (
@@ -12,27 +12,86 @@ from icosa.models import (
     AssetOwner,
 )
 
+COLLECTION_ADD = "ADD"
+COLLECTION_REMOVE = "REMOVE"
+COLLECTION_NEW = "NEW"
+
+COLLECTION_ACTIONS = {
+    "_add_to_collection": COLLECTION_ADD,
+    "_remove_from_collection": COLLECTION_REMOVE,
+    "_add_to_new_collection": COLLECTION_NEW,
+}
+
+
+def get_user_collections(request, user, asset):
+    if user == request.user:
+        collections = AssetCollection.objects.filter(user=user)
+    else:
+        collections = AssetCollection.objects.none()
+
+    # TODO(perf): slow
+    for collection in collections:
+        has_asset = asset in collection.assets.all()
+        collection.has_asset = has_asset
+
+    return collections
+
 
 def user_asset_collection_list(request, user_url: str):
     if request.method == "POST":
-        print(request.POST)
+        post_data = request.POST
         template = "modals/user_asset_collection_modal_content.html"
-        owner = get_object_or_404(
-            AssetOwner,
-            url=user_url,
-        )
-        asset = get_object_or_404(Asset, url=request.POST.get("asset_url"))
+
+        try:
+            owner = AssetOwner.objects.get(url=user_url)
+        except (AssetOwner.DoesNotExist, AssetOwner.MultipleObjectsReturned):
+            return HttpResponseBadRequest
         user = owner.django_user
 
-        if user == request.user:
-            collections = AssetCollection.objects.filter(user=owner.django_user)
-        else:
-            collections = AssetCollection.objects.none()
+        try:
+            asset = Asset.objects.get(url=post_data.get("asset_url"))
+        except (Asset.DoesNotExist, Asset.MultipleObjectsReturned):
+            return HttpResponseBadRequest("no valid asset")
 
-        # TODO(perf): slow
-        for collection in collections:
-            has_asset = asset in collection.assets.all()
-            collection.has_asset = has_asset
+        action = None
+        collection_url = None
+        for key in post_data.keys():
+            try:
+                action, collection_url = key.split("__")
+                action = COLLECTION_ACTIONS.get(action)
+                break
+            except ValueError:
+                pass
+            if key == "_add_to_new_collection":
+                action = COLLECTION_ACTIONS.get(key)
+                break
+
+        if action is None:
+            return HttpResponseBadRequest("no action")
+        if action in [COLLECTION_ADD, COLLECTION_REMOVE] and collection_url is None:
+            return HttpResponseBadRequest(f"action: {action}, collection: {collection_url}")
+        if action in [COLLECTION_ADD, COLLECTION_REMOVE]:
+            try:
+                collection = AssetCollection.objects.get(url=collection_url, user=request.user)
+            except (AssetCollection.DoesNotExist, AssetCollection.MultipleObjectsReturned):
+                return HttpResponseBadRequest("no collection")
+
+        if action == COLLECTION_ADD:
+            collection.assets.add(asset)
+        elif action == COLLECTION_REMOVE:
+            collection.assets.remove(asset)
+        elif action == COLLECTION_NEW:
+            name = post_data.get("new-collection-name")
+            if name is None:
+                return HttpResponseBadRequest("name is none")
+            collection_data = {
+                "user": user,
+                "name": name,
+            }
+            collection = AssetCollection.objects.create(**collection_data)
+            collection.assets.add(asset)
+
+        collections = get_user_collections(request, user, asset)
 
         context = {
             "collections": collections,
@@ -40,11 +99,7 @@ def user_asset_collection_list(request, user_url: str):
             "user": user,
             "asset": asset,
         }
-        return render(
-            request,
-            template,
-            context,
-        )
+        return render(request, template, context)
     elif request.method == "GET":
         template = "main/user_asset_collection_list.html"
         owner = get_object_or_404(
@@ -62,11 +117,7 @@ def user_asset_collection_list(request, user_url: str):
             "page_title": f"Collections by {user.displayname}",
             "user": user,
         }
-        return render(
-            request,
-            template,
-            context,
-        )
+        return render(request, template, context)
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
@@ -86,7 +137,7 @@ def user_asset_collection_list_modal(request, user_url: str, asset_url: str):
     user = owner.django_user
 
     if user == request.user:
-        collections = AssetCollection.objects.filter(user=owner.django_user)
+        collections = AssetCollection.objects.filter(user=user)
     else:
         collections = AssetCollection.objects.none()
 
@@ -101,11 +152,7 @@ def user_asset_collection_list_modal(request, user_url: str, asset_url: str):
         "user": user,
         "asset": asset,
     }
-    return render(
-        request,
-        template,
-        context,
-    )
+    return render(request, template, context)
 
 
 def user_asset_collection_view(request, user_url: str, collection_url: str):
@@ -134,8 +181,4 @@ def user_asset_collection_view(request, user_url: str, collection_url: str):
         "collection": collection,
         "owner": owner,
     }
-    return render(
-        request,
-        template,
-        context,
-    )
+    return render(request, template, context)
