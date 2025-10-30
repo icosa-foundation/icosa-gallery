@@ -8,10 +8,19 @@
         {% for collection in collections %}
         <div class="row">
             <div class="col col-sm-9">
-                <p style="margin: 1em 0;">{{ collection.name }} {% if collection.has_asset %}yes{% endif %}</p>
+                <p style="margin: 1em 0;">{{ collection.name }} </p>
             </div>
             <div class="col col-sm-3">
-                <input type="submit" value="Choose" name="_add_to_collection__{{ collection.url }}" class="btn btn-primary btn-xs btn-inline">
+                <input type="submit"
+                       class="btn btn-primary btn-xs btn-inline"
+                       {% if collection.has_asset %}
+                       value="Remove"
+                       name="_remove_from_collection__{{ collection.url }}"
+                       {% else %}
+                       value="Add"
+                       name="_remove_from_collection__{{ collection.url }}"
+                       {% endif %}
+                       >
             </div>
         </div>
         {% endfor %}
@@ -20,7 +29,7 @@
         <label for="new-collection-name">
             <input id="new-collection-name" type="text" name="new-collection-name">
         </label>
-        <input type="submit" value="Add" name="_add_to_new_collection" class="btn btn-primary btn-xs btn-inline">
+        <input type="submit" value="Create and add" name="_add_to_new_collection" class="btn btn-primary btn-xs btn-inline">
     </form>
 </div>
 <div class="modal-footer">
