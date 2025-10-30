@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import Http404
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 from icosa.models import (
@@ -14,27 +14,33 @@ from icosa.models import (
 
 
 def user_asset_collection_list(request, user_url: str):
-    template = "main/user_asset_collection_list.html"
-    owner = get_object_or_404(
-        AssetOwner,
-        url=user_url,
-    )
-    user = owner.django_user
+    if request.method == "POST":
+        print(request.POST)
+        return JsonResponse({"success": True})
+    elif request.method == "GET":
+        template = "main/user_asset_collection_list.html"
+        owner = get_object_or_404(
+            AssetOwner,
+            url=user_url,
+        )
+        user = owner.django_user
 
-    if user == request.user:
-        collections = AssetCollection.objects.filter(user=owner.django_user)
+        if user == request.user:
+            collections = AssetCollection.objects.filter(user=owner.django_user)
+        else:
+            collections = AssetCollection.objects.filter(user=owner.django_user, visibility__in=[PUBLIC, UNLISTED])
+        context = {
+            "collections": collections,
+            "page_title": f"Collections by {user.displayname}",
+            "user": user,
+        }
+        return render(
+            request,
+            template,
+            context,
+        )
     else:
-        collections = AssetCollection.objects.filter(user=owner.django_user, visibility__in=[PUBLIC, UNLISTED])
-    context = {
-        "collections": collections,
-        "page_title": f"Collections by {user.displayname}",
-        "user": user,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
+        return HttpResponseNotAllowed(["GET", "POST"])
 
 
 @login_required
@@ -65,6 +71,7 @@ def user_asset_collection_list_modal(request, user_url: str, asset_url: str):
         "collections": collections,
         "page_title": f"Collections by {user.displayname}",
         "user": user,
+        "asset": asset,
     }
     return render(
         request,
