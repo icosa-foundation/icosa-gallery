@@ -1,0 +1,27 @@
+<div class="modal fade" tabindex="-1" id="collections-modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <p>Loading collections...</p>
+        </div>
+    </div>
+</div>
+<script>
+    const modal = document.querySelector('#collections-modal');
+    modal.addEventListener('shown.bs.modal', function (e) {
+        const url = "{% url 'icosa:user_asset_collection_list_modal' user_url=request.user.get_url asset_url=asset.url %}";
+        const modalContent = modal.querySelector('.modal-content');
+        fetch(url, {cache: "no-store"})
+            .then(response => {
+                if (!response.ok) {
+                    return Promise.reject(response);
+                }
+                return response.text();
+            })
+            .then(html => {
+                modalContent.innerHTML = html;
+            })
+            .catch(error => {
+                modalContent.innerHTML = "An error occured. Please try again or contact support.";
+            });
+    });
+</script>

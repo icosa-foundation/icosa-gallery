@@ -1,0 +1,29 @@
+<div class="modal-header">
+    <h5 class="modal-title">Add to one of your existing collections&hellip;</h5>
+</div>
+<div class="modal-body">
+    <form>
+        {% csrf_token %}
+        {% if collections %}
+        {% for collection in collections %}
+        <div class="row">
+            <div class="col col-sm-9">
+                <p style="margin: 1em 0;">{{ collection.name }} {% if collection.has_asset %}yes{% endif %}</p>
+            </div>
+            <div class="col col-sm-3">
+                <input type="submit" value="Choose" name="_add_to_collection__{{ collection.url }}" class="btn btn-primary btn-xs btn-inline">
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        <h5>&hellip;or create a new collection.</h5>
+        <label for="new-collection-name">
+            <input id="new-collection-name" type="text" name="new-collection-name">
+        </label>
+        <input type="submit" value="Add" name="_add_to_new_collection" class="btn btn-primary btn-xs btn-inline">
+    </form>
+</div>
+<div class="modal-footer">
+</div>
+<script>
+</script>
