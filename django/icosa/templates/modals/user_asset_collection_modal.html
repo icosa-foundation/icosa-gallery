@@ -1,6 +1,6 @@
 <div class="modal fade" tabindex="-1" id="collections-modal">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content" id="collections-modal-content">
             <p>Loading collections...</p>
         </div>
     </div>
@@ -20,6 +20,7 @@
             })
             .then(html => {
                 modalContent.innerHTML = html;
+                htmx.process(modalContent);
             })
             .catch(error => {
                 modalContent.innerHTML = "An error occured. Please try again or contact support.";

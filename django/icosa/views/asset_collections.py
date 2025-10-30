@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import HttpResponseNotAllowed, JsonResponse
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 from icosa.models import (
@@ -16,7 +16,35 @@ from icosa.models import (
 def user_asset_collection_list(request, user_url: str):
     if request.method == "POST":
         print(request.POST)
-        return JsonResponse({"success": True})
+        template = "modals/user_asset_collection_modal_content.html"
+        owner = get_object_or_404(
+            AssetOwner,
+            url=user_url,
+        )
+        asset = get_object_or_404(Asset, url=request.POST.get("asset_url"))
+        user = owner.django_user
+
+        if user == request.user:
+            collections = AssetCollection.objects.filter(user=owner.django_user)
+        else:
+            collections = AssetCollection.objects.none()
+
+        # TODO(perf): slow
+        for collection in collections:
+            has_asset = asset in collection.assets.all()
+            collection.has_asset = has_asset
+
+        context = {
+            "collections": collections,
+            "page_title": f"Collections by {user.displayname}",
+            "user": user,
+            "asset": asset,
+        }
+        return render(
+            request,
+            template,
+            context,
+        )
     elif request.method == "GET":
         template = "main/user_asset_collection_list.html"
         owner = get_object_or_404(
@@ -65,7 +93,7 @@ def user_asset_collection_list_modal(request, user_url: str, asset_url: str):
     # TODO(perf): slow
     for collection in collections:
         has_asset = asset in collection.assets.all()
-        collection.has_asset=has_asset
+        collection.has_asset = has_asset
 
     context = {
         "collections": collections,

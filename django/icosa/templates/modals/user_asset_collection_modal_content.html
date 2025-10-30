@@ -2,9 +2,9 @@
     <h5 class="modal-title">Add to one of your existing collections&hellip;</h5>
 </div>
 <div class="modal-body">
-    <form id="collections-form" action="{% url 'icosa:user_asset_collection_list' user_url=request.user.get_url %}" method="post">
+    <form id="collections-form" hx-post="{% url 'icosa:user_asset_collection_list' user_url=request.user.get_url %}" hx-target="#collections-modal-content">
         {% csrf_token %}
-        <input type="hidden" name="asset_url" value="{{ asset_url }}">
+        <input type="hidden" name="asset_url" value="{{ asset.url }}">
         {% if collections %}
         {% for collection in collections %}
         <div class="row">
