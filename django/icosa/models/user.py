@@ -26,6 +26,12 @@ class User(AbstractUser):
             url = None
         return url
 
+    def get_url(self):
+        owners = self.assetowner_set.all()
+        if owners.exists():
+            return owners.first().url
+        return None
+
     @staticmethod
     def generate_device_code(length=5):
         # Define a string of characters to exclude

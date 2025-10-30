@@ -73,6 +73,13 @@
                     </a>
                 {% endif %}
                 <p>
+                    {% if request.user.is_authenticated %}
+                    {% if request.user.is_superuser %}
+                    <a id="collection-btn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#collections-modal">
+                        {% fa_icon "solid" "plus" %} Add to collection
+                    </a>
+                    {% endif %}
+                    {% endif %}
                     {% if downloadable_formats %}
                         <a href="{% url 'icosa:asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
                             {% fa_icon "solid" "download" %} Downloads
@@ -101,6 +108,7 @@
         </div>
     </div>
 </div>
+{% include "modals/user_asset_collection_modal.html" %}
 {% if asset.is_viewer_compatible %}
     {% include "partials/viewer.html" %}
 {% endif %}
