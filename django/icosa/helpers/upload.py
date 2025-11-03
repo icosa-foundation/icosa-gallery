@@ -178,10 +178,13 @@ def upload_api_asset(
     asset.name = asset_name
     asset.save()
 
-    is_tilt_upload = False
+    tilt_or_blocks = None
     for mainfile in main_files:
         if mainfile.filetype == "TILT":
-            is_tilt_upload = True
+            tilt_or_blocks = "tilt"
+            break
+        if mainfile.filetype == "BLOCKS":
+            tilt_or_blocks = "blocks"
             break
 
     for mainfile in main_files:
@@ -197,7 +200,7 @@ def upload_api_asset(
         role = get_role(
             upload_set.manifest,
             mainfile,
-            is_tilt_upload,
+            tilt_or_blocks,
         )
 
         make_formats(
@@ -270,7 +273,7 @@ def make_formats(mainfile, sub_files, asset, role=None):
 def get_role(
     manifest: Optional[dict],
     mainfile: UploadedFormat,
-    override_for_tilt: bool = False,
+    tilt_or_blocks: Optional[str] = None
 ) -> str:
     manifest_role = None
     if manifest is not None:
@@ -278,13 +281,19 @@ def get_role(
     if manifest_role is not None:
         return manifest_role
 
-    type = mainfile.filetype
-    if type in ["GLTF1", "GLTF2"]:
-        if override_for_tilt:
+    filetype = mainfile.filetype
+    if filetype in ["GLTF1", "GLTF2"]:
+        if tilt_or_blocks == "tilt":
             role = "TILT_NATIVE_GLTF"
         else:
             role = "USER_SUPPLIED_GLTF"
+    elif filetype == "OBJ" and tilt_or_blocks == "blocks":
+        name = os.path.splitext(mainfile.name)[0]
+        if name == "model-triangulated":
+            role = "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
+        if name == "model":
+            role = "ORIGINAL_OBJ_FORMAT"
     else:
-        role = TYPE_ROLE_MAP.get(type, None)
+        role = TYPE_ROLE_MAP.get(filetype, None)
 
     return role
