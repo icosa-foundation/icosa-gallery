@@ -203,6 +203,8 @@ def upload_api_asset(
             tilt_or_blocks,
         )
 
+        # TODO: it would be nice if we could set the tri count on blocks
+        # files using the upload_set.manifest or some other way
         make_formats(
             mainfile,
             sub_files_list,
