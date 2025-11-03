@@ -303,10 +303,10 @@ class FiltersOrder(Schema):
         # it has `example`, which also accepts a list, but does not render it
         # nicely at all.
         # See: https://github.com/vitalik/django-ninja/issues/1342
-        example=[
-            "LIKES (most first)",
-            "-LIKES (least first)",
-        ],
+        # example=[
+        #     "LIKES (most first)",
+        #     "-LIKES (least first)",
+        # ],
         default=None,
     )
     order_by: SkipJsonSchema[Optional[FilterOrder]] = Field(default=None)  # For backwards compatibility
