@@ -290,7 +290,7 @@ def get_role(
         else:
             role = "USER_SUPPLIED_GLTF"
     elif filetype == "OBJ" and tilt_or_blocks == "blocks":
-        name = os.path.splitext(mainfile.name)[0]
+        name = os.path.splitext(mainfile.file.name)[0]
         if name == "model-triangulated":
             role = "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
         if name == "model":
