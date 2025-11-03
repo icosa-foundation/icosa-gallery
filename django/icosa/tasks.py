@@ -109,6 +109,10 @@ def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
         format.triangle_count = data.triangulatedObjPolyCount
         format.save()
 
+    preferred_format = asset.format_set.filter(role="ORIGINAL_TRIANGULATED_OBJ_FORMAT").first()
+    if preferred_format is not None and preferred_format.root_resource and preferred_format.root_resource.file:
+        preferred_format.is_preferred_for_gallery_viewer = True
+        preferred_format.save()
     asset.state = ASSET_STATE_COMPLETE
     asset.remix_ids = getattr(data, "remixIds", None)
     asset.save()
