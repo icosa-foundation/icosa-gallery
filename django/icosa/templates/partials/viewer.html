@@ -161,9 +161,9 @@
         await viewer.loadFbx(url, overrides);
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
-        {% with mtl_url=asset.preferred_viewer_format.resource_set.first %}
-            {% if mtl_url %}
-                let mtlUrl = "{{ mtl_url }}";
+        {% with mtl_resource=asset.preferred_viewer_format.resource_set.first %}
+            {% if mtl_resource %}
+                let mtlUrl = "{{ mtl_resource.url }}";
                 await viewer.loadObjWithMtl(url, mtlUrl, overrides);
             {% else %}
                 await viewer.loadObj(url, overrides);
