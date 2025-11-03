@@ -67,7 +67,7 @@ class Resource(models.Model):
 
     @property
     def relative_path(self):
-        file_name = None
+        file_name = ""
         if self.file:
             file_name = self.file.name.split("/")[-1]
         elif self.external_url:
