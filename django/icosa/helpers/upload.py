@@ -275,7 +275,7 @@ def make_formats(mainfile, sub_files, asset, role=None):
 def get_role(
     manifest: Optional[dict],
     mainfile: UploadedFormat,
-    tilt_or_blocks: Optional[str] = None
+    tilt_or_blocks: Optional[str] = None,
 ) -> str:
     manifest_role = None
     if manifest is not None:
