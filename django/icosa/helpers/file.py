@@ -240,6 +240,7 @@ def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
             return "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
         if name == "model":
             return "ORIGINAL_OBJ_FORMAT"
+        return "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
     # For tilt, have a new role, TILT_NATIVE_GLTF, which behaves like
     # UPDATED_GLTF currently.
     if filetype in ["GLTF1", "GLTF2"]:
