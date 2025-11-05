@@ -191,7 +191,6 @@ def upload_api_asset(
                 sub_files_list = []
 
         role = get_role(
-            format_overrides,
             mainfile,
             tilt_or_blocks,
         )
