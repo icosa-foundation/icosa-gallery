@@ -8,7 +8,7 @@ from ninja.files import UploadedFile
 
 from django.db import transaction
 from django.utils import timezone
-from icosa.api.schema import AssetFinalizeData
+from icosa.api.schema import AssetMetaData
 from icosa.helpers.file import upload_blocks_format
 from icosa.helpers.logger import icosa_log
 from icosa.helpers.upload import upload_api_asset
@@ -83,7 +83,7 @@ def queue_blocks_upload_format(
 
 @on_commit_task()
 @transaction.atomic
-def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
+def queue_finalize_asset(asset_url: str, data: AssetMetaData):
     start = time.time()  # Logging
 
     asset = Asset.objects.get(url=asset_url)

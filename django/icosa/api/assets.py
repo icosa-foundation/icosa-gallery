@@ -38,7 +38,7 @@ from .filters import (
     filter_and_sort_assets,
 )
 from .schema import (
-    AssetFinalizeData,
+    AssetMetaData,
     AssetSchema,
     AssetStateSchema,
     UploadJobSchemaOut,
@@ -142,7 +142,7 @@ def add_blocks_asset_format(
 def finalize_asset(
     request,
     asset: str,
-    data: AssetFinalizeData,
+    data: AssetMetaData,
 ):
     asset = get_asset_by_url(request, asset)
     check_user_owns_asset(request, asset)
