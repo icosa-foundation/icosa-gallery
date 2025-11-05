@@ -239,9 +239,11 @@ def upload_api_asset(
 
 
 def get_format_overrides(data: AssetMetaData):
+    print("*"*80)
     overrides = {}
     if data.formatOverride is not None:
         for item in data.formatOverride:
+            print(item)
             splt = item.split(":")
             if len(splt) == 2:
                 filename = splt[0]
@@ -254,13 +256,15 @@ def get_format_overrides(data: AssetMetaData):
             if overrides.get(filename):
                 continue
             overrides.update({filename: format_override})
+    print(overrides)
     return overrides
 
 
 def make_formats(mainfile, sub_files, asset, role, format_overrides):
     file = mainfile.file
     name = mainfile.file.name
-
+    print("*"*80)
+    print(format_overrides)
     format_override = format_overrides.get(name)
     if format_override is None:
         format_type = mainfile.filetype
