@@ -1,5 +1,4 @@
 import io
-import json
 import os
 import time
 import zipfile
@@ -12,6 +11,7 @@ from ninja.files import UploadedFile
 
 from django.utils import timezone
 from icosa.api.exceptions import ZipException
+from icosa.api.schema import AssetMetaData
 from icosa.helpers.file import (
     MAX_UNZIP_BYTES,
     MAX_UNZIP_SECONDS,
@@ -30,7 +30,6 @@ from icosa.models import (
     Format,
     Resource,
 )
-from icosa.schema import AssetMetaData
 
 SUB_FILE_MAP = {
     "IMAGE": "GLB",
@@ -205,7 +204,6 @@ def upload_api_asset(
             format_overrides,
         )
 
-
     if upload_set.thumbnail:
         add_thumbnail_to_asset(upload_set.thumbnail, asset)
 
@@ -240,6 +238,7 @@ def upload_api_asset(
 
     return asset
 
+
 def get_format_overrides(data: AssetMetaData):
     overrides = {}
     for item in data.get("formatOverride", []):
@@ -256,6 +255,7 @@ def get_format_overrides(data: AssetMetaData):
             continue
         overrides.update({filename: format_override})
     return overrides
+
 
 def make_formats(mainfile, sub_files, asset, role, format_overrides):
     file = mainfile.file

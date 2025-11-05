@@ -2,23 +2,19 @@ import time
 from typing import List, Optional
 
 from huey import signals
-from huey.contrib.djhuey import db_task, on_commit_task, signal
+from huey.contrib.djhuey import db_task, signal
 from ninja import File, Form
 from ninja.files import UploadedFile
 
 from django.db import transaction
 from django.utils import timezone
 from icosa.api.schema import AssetMetaData
-from icosa.helpers.file import upload_blocks_format
-from icosa.helpers.logger import icosa_log
 from icosa.helpers.upload import upload_api_asset
 from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
-    ASSET_STATE_COMPLETE,
     ASSET_STATE_FAILED,
     Asset,
     BulkSaveLog,
-    Format,
     User,
 )
 
@@ -68,61 +64,6 @@ def queue_upload_api_asset(
         data,
         files,
     )
-
-
-@on_commit_task()
-def queue_blocks_upload_format(
-    current_user: User,
-    asset: Asset,
-    files: Optional[List[UploadedFile]] = File(None),
-):
-    icosa_log(f"Start upload for asset {asset.url}")
-    upload_blocks_format(
-        asset,
-        files,
-    )
-
-
-@on_commit_task()
-@transaction.atomic
-def queue_finalize_asset(asset_url: str, data: AssetMetaData):
-    start = time.time()  # Logging
-
-    asset = Asset.objects.get(url=asset_url)
-
-    # Clean up formats with no root resource.
-    # TODO(james): This can probably be done in one query
-    resources = asset.resource_set.filter(file="")
-    format_pks_non_root = list(set([x.format.pk for x in resources if x.format]))
-    format_pks_root = list(Format.objects.filter(root_resource__in=resources).values_list("pk", flat=True))
-    format_pks = format_pks_non_root + format_pks_root
-    formats = Format.objects.filter(pk__in=format_pks)
-    formats.delete()
-
-    # Apply triangle counts to all formats and resources.
-
-    NON_TRI_ROLES = ["ORIGINAL_OBJ_FORMAT", "BLOCKS_FORMAT"]
-
-    non_triangulated_formats = asset.format_set.filter(role__in=NON_TRI_ROLES)
-    for format in non_triangulated_formats:
-        format.triangle_count = data.objPolyCount
-        format.save()
-
-    triangulated_formats = asset.format_set.exclude(role__in=NON_TRI_ROLES)
-    for format in triangulated_formats:
-        format.triangle_count = data.triangulatedObjPolyCount
-        format.save()
-
-    preferred_format = asset.format_set.filter(role="ORIGINAL_TRIANGULATED_OBJ_FORMAT").first()
-    if preferred_format is not None and preferred_format.root_resource and preferred_format.root_resource.file:
-        preferred_format.is_preferred_for_gallery_viewer = True
-        preferred_format.save()
-    asset.state = ASSET_STATE_COMPLETE
-    asset.remix_ids = getattr(data, "remixIds", None)
-    asset.save()
-
-    end = time.time()  # Logging
-    icosa_log(f"Finalized asset {asset.url} in {end - start} seconds.")  # Logging
 
 
 def save_all_assets(

@@ -26,7 +26,6 @@ from icosa.models import (
     Asset,
     AssetOwner,
 )
-from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
 
 from .filters import (
     FiltersAsset,
@@ -229,67 +228,3 @@ def get_likedassets(
         inc_q=inc_q,
     )
     return assets
-
-
-# ----------------------------------------------------------------------------
-# UPLOADS ENDPOINTS
-# (These are duplicated in api.assets. Remove the ones defined over there after
-# blocks/brush refactors have been done. )
-# ----------------------------------------------------------------------------
-
-
-# This endpoint is for internal Open Blocks use for now. It's more complex than
-# it needs to be until Open Blocks can send the formats data in a zip or some
-# other way.
-@router.post(
-    "/me/assets/{str:asset}/blocks_format",
-    auth=JWTAuth(),
-    response={200: UploadJobSchemaOut},
-    include_in_schema=False,  # TODO this route, coupled with finalize_asset
-    # has a race condition. If this route becomes public, this will probably
-    # need to be fixed.
-)
-@decorate_view(never_cache)
-@decorate_view(transaction.atomic)
-def add_blocks_asset_format(
-    request,
-    asset: str,
-    files: Optional[List[UploadedFile]] = File(None),
-):
-    user = request.user
-    asset = get_asset_by_url(request, asset)
-    check_user_owns_asset(request, asset)
-
-    if request.headers.get("content-type").startswith("multipart/form-data"):
-        try:
-            queue_blocks_upload_format(user, asset, files)
-        except HttpError:
-            raise
-    else:
-        raise HttpError(415, "Unsupported content type.")
-
-    asset.save()
-    return get_publish_url(request, asset)
-
-
-@router.post(
-    "/me/assets/{str:asset}/blocks_finalize",
-    auth=JWTAuth(),
-    response={200: UploadJobSchemaOut},
-    include_in_schema=False,  # TODO this route has a race condition with
-    # add_blocks_asset_format and will overwrite the last format uploaded. If this
-    # route becomes public, this will probably need to be fixed.
-)
-@decorate_view(never_cache)
-@decorate_view(transaction.atomic)
-def finalize_asset(
-    request,
-    asset: str,
-    data: AssetMetaData,
-):
-    asset = get_asset_by_url(request, asset)
-    check_user_owns_asset(request, asset)
-
-    queue_finalize_asset(asset.url, data)
-
-    return get_publish_url(request, asset)
