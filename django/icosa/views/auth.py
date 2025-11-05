@@ -3,6 +3,9 @@ import time
 from typing import Optional
 
 from constance import config
+from django_ratelimit.decorators import ratelimit
+from honeypot.decorators import check_honeypot
+
 from django.conf import settings
 from django.contrib.auth import (
     REDIRECT_FIELD_NAME,
@@ -27,9 +30,6 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.cache import never_cache
-from django_ratelimit.decorators import ratelimit
-from honeypot.decorators import check_honeypot
-
 from icosa.forms import (
     NewUserForm,
     PasswordResetConfirmForm,
