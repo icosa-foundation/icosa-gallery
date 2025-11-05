@@ -248,7 +248,7 @@ def get_format_overrides(data: AssetMetaData):
             if len(splt) == 2:
                 filename = splt[0]
                 format_override = splt[1]
-            if len(splt) > 2:
+            elif len(splt) > 2:
                 filename = ":".join(splt[:-1])
                 format_override = splt[-1]
             else:
