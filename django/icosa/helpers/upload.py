@@ -241,19 +241,20 @@ def upload_api_asset(
 
 def get_format_overrides(data: AssetMetaData):
     overrides = {}
-    for item in data.get("formatOverride", []):
-        splt = item.split(":")
-        if len(splt) == 2:
-            filename = splt[0]
-            format_override = splt[1]
-        if len(splt) > 2:
-            filename = ":".join(splt[:-1])
-            format_override = splt[-1]
-        else:
-            continue
-        if overrides.get(filename):
-            continue
-        overrides.update({filename: format_override})
+    if data.formatOverride is not None:
+        for item in data.formatOverride:
+            splt = item.split(":")
+            if len(splt) == 2:
+                filename = splt[0]
+                format_override = splt[1]
+            if len(splt) > 2:
+                filename = ":".join(splt[:-1])
+                format_override = splt[-1]
+            else:
+                continue
+            if overrides.get(filename):
+                continue
+            overrides.update({filename: format_override})
     return overrides
 
 
