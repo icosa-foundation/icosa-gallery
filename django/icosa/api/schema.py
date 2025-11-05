@@ -243,10 +243,10 @@ class AssetPatchData(Schema):
 
 
 class AssetMetaData(Schema):
-    objPolyCount: Optional[int]
-    triangulatedObjPolyCount: Optional[int]
+    objPolyCount: Optional[int] = None
+    triangulatedObjPolyCount: Optional[int] = None
     remixIds: Optional[List[str]] = None
-    formatOverride: Optional[List[str]]
+    formatOverride: Optional[List[str]] = None
 
 
 class UploadJobSchemaOut(Schema):
