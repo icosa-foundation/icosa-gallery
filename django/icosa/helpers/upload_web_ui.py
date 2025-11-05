@@ -180,8 +180,7 @@ def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
                         name=filename,
                         file=io.BytesIO(content),
                     )
-                    # Add the file to the list of unzipped files to process. Do
-                    # not include the  manifest.
+                    # Add the file to the list of unzipped files to process.
                     unzipped_files.append(processed_file)
     return unzipped_files
 

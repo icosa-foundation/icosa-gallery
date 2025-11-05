@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from huey import signals
 from huey.contrib.djhuey import db_task, on_commit_task, signal
-from ninja import File
+from ninja import File, Form
 from ninja.files import UploadedFile
 
 from django.db import transaction
@@ -60,10 +60,12 @@ def queue_upload_asset_web_ui(
 def queue_upload_api_asset(
     current_user: User,
     asset: Asset,
+    data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
     upload_api_asset(
         asset,
+        data,
         files,
     )
 

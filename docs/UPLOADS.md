@@ -29,22 +29,7 @@ Note that some of the above file types do not make sense on their own, e.g. `mtl
 
 To add a thumbnail, include `thumbnail.png` or `thumbnail.jpg` in the root of the zip archive.
 
-## The manifest file
-
-Optionally, include `manifest.json` in the root of the zip archive to override our internal logic for assigning roles to certain files.
-
-Note: reliance on roles will be removed. Role will become used solely for install-specific notes.
-
-An example is:
-
-```json
-{
-  "upload.glb": "UNKNOWN_GLB_FORMAT_B",
-  "upload.gltf": "TILT_NATIVE_GLTF"
-}
-```
-
-The available roles at the time of writing were:
+The available roles that could have been assigned to an asset at the time of writing were:
 
 ```python
 LEGACY_ROLES = {

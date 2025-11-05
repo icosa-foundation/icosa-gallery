@@ -6,7 +6,7 @@ import zipfile
 from dataclasses import dataclass
 from typing import List, Optional
 
-from ninja import File
+from ninja import File, Form
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
@@ -30,6 +30,7 @@ from icosa.models import (
     Format,
     Resource,
 )
+from icosa.schema import AssetMetaData
 
 SUB_FILE_MAP = {
     "IMAGE": "GLB",
@@ -49,7 +50,6 @@ TYPE_ROLE_MAP = {
 @dataclass
 class UploadSet:
     files: List[UploadedFile]
-    manifest: Optional[dict] = None
     thumbnail: Optional[UploadedFile] = None
 
 
@@ -58,7 +58,6 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
     # The two are similar and complex enough. Need to update the callsite of
     # the web_ui version. Prefer this version.
     thumbnail = None
-    manifest = None
     unzipped_files = []
     for file in files:
         if not file.name.endswith(".zip"):
@@ -116,16 +115,9 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
                             continue
                         else:
                             raise HttpError(400, "Thumbnail must be png or jpg.")
-                    if manifest is None and filename.lower() == "manifest.json":
-                        manifest = json.load(processed_file.file)
-                        continue
-                    # Add the file to the list of unzipped files
-                    # to process. Do not include the thumbnail or
-                    # manifest.
                     unzipped_files.append(processed_file)
     return UploadSet(
         files=unzipped_files,
-        manifest=manifest,
         thumbnail=thumbnail,
     )
 
@@ -134,6 +126,7 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
 # common parts should be abstracted out to reduce duplication.
 def upload_api_asset(
     asset: Asset,
+    data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
 ):
     total_start = time.time()  # Logging
@@ -187,6 +180,7 @@ def upload_api_asset(
             tilt_or_blocks = "blocks"
             break
 
+    format_overrides = get_format_overrides(data)
     for mainfile in main_files:
         type = mainfile.filetype
         if type in ["GLTF1", "GLTF2"]:
@@ -198,24 +192,46 @@ def upload_api_asset(
                 sub_files_list = []
 
         role = get_role(
-            upload_set.manifest,
+            format_overrides,
             mainfile,
             tilt_or_blocks,
         )
 
-        # TODO: it would be nice if we could set the tri count on blocks
-        # files using the upload_set.manifest or some other way
         make_formats(
             mainfile,
             sub_files_list,
             asset,
             role,
+            format_overrides,
         )
+
 
     if upload_set.thumbnail:
         add_thumbnail_to_asset(upload_set.thumbnail, asset)
 
-    asset.assign_preferred_viewer_format()
+    asset.save()  # Denorm asset so far and save formats
+
+    # Apply triangle counts to all formats and resources.
+    non_triangulated_formats = asset.format_set.exclude(format_type="OBJ_NGON")
+    for format in non_triangulated_formats:
+        format.triangle_count = data.objPolyCount
+        format.save()
+
+    triangulated_formats = asset.format_set.filter(format_type="OBJ_NGON")
+    for format in triangulated_formats:
+        format.triangle_count = data.triangulatedObjPolyCount
+        format.save()
+
+    asset.remix_ids = getattr(data, "remixIds", None)
+
+    # TODO(james): We should move this blocks-related code into the flagship instance or trigger it some other way.
+    if asset.has_blocks:
+        preferred_format = asset.format_set.filter(format_type="OBJ").first()
+        if preferred_format is not None and preferred_format.root_resource and preferred_format.root_resource.file:
+            preferred_format.is_preferred_for_gallery_viewer = True
+            preferred_format.save()
+    else:
+        asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
 
@@ -224,12 +240,32 @@ def upload_api_asset(
 
     return asset
 
+def get_format_overrides(data: AssetMetaData):
+    overrides = {}
+    for item in data.get("formatOverride", []):
+        splt = item.split(":")
+        if len(splt) == 2:
+            filename = splt[0]
+            format_override = splt[1]
+        if len(splt) > 2:
+            filename = ":".join(splt[:-1])
+            format_override = splt[-1]
+        else:
+            continue
+        if overrides.get(filename):
+            continue
+        overrides.update({filename: format_override})
+    return overrides
 
-def make_formats(mainfile, sub_files, asset, role=None):
-    # Main files determine folder
-    format_type = mainfile.filetype
+def make_formats(mainfile, sub_files, asset, role, format_overrides):
     file = mainfile.file
     name = mainfile.file.name
+
+    format_override = format_overrides.get(name)
+    if format_override is None:
+        format_type = mainfile.filetype
+    else:
+        format_type = format_override
 
     format_data = {
         "format_type": format_type,
@@ -273,16 +309,9 @@ def make_formats(mainfile, sub_files, asset, role=None):
 
 
 def get_role(
-    manifest: Optional[dict],
     mainfile: UploadedFormat,
     tilt_or_blocks: Optional[str] = None,
 ) -> str:
-    manifest_role = None
-    if manifest is not None:
-        manifest_role = manifest.get(mainfile.file.name, None)
-    if manifest_role is not None:
-        return manifest_role
-
     filetype = mainfile.filetype
     if filetype in ["GLTF1", "GLTF2"]:
         if tilt_or_blocks == "tilt":

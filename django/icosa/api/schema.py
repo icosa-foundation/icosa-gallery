@@ -241,10 +241,13 @@ class AssetPatchData(Schema):
     description: Optional[str]
     visibility: Optional[str]
 
+
 class AssetMetaData(Schema):
-    objPolyCount: int
-    triangulatedObjPolyCount: int
+    objPolyCount: Optional[int]
+    triangulatedObjPolyCount: Optional[int]
     remixIds: Optional[List[str]] = None
+    formatOverride: Optional[List[str]]
+
 
 class UploadJobSchemaOut(Schema):
     publishUrl: str

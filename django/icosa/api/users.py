@@ -1,7 +1,7 @@
 import secrets
 from typing import List, Optional
 
-from ninja import File, Query, Router
+from ninja import File, Form, Query, Router
 from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
@@ -123,6 +123,7 @@ def get_assets(
 @decorate_view(never_cache)
 def new_asset(
     request,
+    data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
 ):
     user = request.user
@@ -148,6 +149,7 @@ def new_asset(
         try:
             upload_api_asset(
                 asset,
+                data,
                 files,
             )
         except HttpError as err:
@@ -156,6 +158,7 @@ def new_asset(
         # queue_upload_api_asset(
         #     user,
         #     asset,
+        #     data,
         #     files,
         # )
     return get_publish_url(request, asset, 201)
