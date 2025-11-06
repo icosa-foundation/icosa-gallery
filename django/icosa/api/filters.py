@@ -186,13 +186,13 @@ class FiltersBase(FilterSchema):
         q = Q()
         if value:
             valid_q = False
-            for format in value:
+            for format_type in value:
                 # Reliant on the fact that each of FILTERABLE_FORMATS has an
-                # associated has_<format> field in the db.
-                format_value = format.value
-                if format == FilterFormat.GLTF:
+                # associated has_<format_type> field in the db.
+                format_value = format_type.value
+                if format_type == FilterFormat.GLTF:
                     format_value = "GLTF_ANY"
-                if format == FilterFormat.NO_GLTF:
+                if format_type == FilterFormat.NO_GLTF:
                     format_value = "-GLTF_ANY"
                 if format_value.startswith("-"):
                     q &= Q(**{f"has_{format_value.lower()[1:]}": False})
