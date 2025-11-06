@@ -195,7 +195,7 @@ class FiltersBase(FilterSchema):
                 if format == FilterFormat.NO_GLTF:
                     format_value = "-GLTF_ANY"
                 if format_value.startswith("-"):
-                    q |= Q(**{f"has_{format_value.lower()[1:]}": False})
+                    q &= Q(**{f"has_{format_value.lower()[1:]}": False})
                 else:
                     q |= Q(**{f"has_{format_value.lower()}": True})
                 valid_q = True
