@@ -54,6 +54,7 @@ class FilterFormat(Enum):
     GLTF2 = "GLTF2"
     OBJ = "OBJ"
     FBX = "FBX"
+    VOX = "VOX"
     NO_TILT = "-TILT"
     NO_BLOCKS = "-BLOCKS"
     NO_GLTF = "-GLTF"
@@ -61,6 +62,7 @@ class FilterFormat(Enum):
     NO_GLTF2 = "-GLTF2"
     NO_OBJ = "-OBJ"
     NO_FBX = "-FBX"
+    NO_VOX = "-VOX"
 
 
 class FilterLicense(Enum):

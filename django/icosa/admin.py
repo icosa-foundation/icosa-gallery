@@ -142,6 +142,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "has_gltf_any",
         "has_obj",
         "has_fbx",
+        "has_vox",
         ("thumbnail", admin.EmptyFieldListFilter),
         "license",
         "category",
@@ -159,6 +160,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "has_gltf_any",
         "has_obj",
         "has_fbx",
+        "has_vox",
         "last_reported_by",
         "last_reported_time",
     )

@@ -112,6 +112,7 @@ class Asset(models.Model):
     has_gltf_any = models.BooleanField(default=False)
     has_fbx = models.BooleanField(default=False)
     has_obj = models.BooleanField(default=False)
+    has_vox = models.BooleanField(default=False)
 
     rank = models.FloatField(default=0)
 
@@ -313,6 +314,7 @@ class Asset(models.Model):
         self.has_gltf_any = self.format_set.filter(format_type__in=["GLTF1", "GLTF2"]).exists()
         self.has_fbx = self.format_set.filter(format_type="FBX").exists()
         self.has_obj = self.format_set.filter(format_type="OBJ").exists()
+        self.has_vox = self.format_set.filter(format_type="VOX").exists()
 
     def get_triangle_count(self):
         formats = {}
