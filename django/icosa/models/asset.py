@@ -484,6 +484,18 @@ class Asset(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["is_viewer_compatible", "visibility"]),
+            models.Index(
+                fields=[
+                    "has_tilt",
+                    "has_blocks",
+                    "has_gltf1",
+                    "has_gltf2",
+                    "has_gltf_any",
+                    "has_fbx",
+                    "has_obj",
+                    "has_vox",
+                ]
+            ),
             models.Index(fields=["likes"]),
             models.Index(fields=["owner"]),
             # Index for paginator
