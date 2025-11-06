@@ -183,7 +183,8 @@ class FiltersBase(FilterSchema):
         return Q(triangle_count__lte=value) & Q(triangle_count__gte=0) if value else Q()
 
     def filter_format(self, value: List[FilterFormat]) -> Q:
-        q = Q()
+        positive_q = Q()
+        negative_q = Q()
         if value:
             valid_q = False
             for format_type in value:
@@ -194,15 +195,22 @@ class FiltersBase(FilterSchema):
                     format_value = "GLTF_ANY"
                 if format_type == FilterFormat.NO_GLTF:
                     format_value = "-GLTF_ANY"
+
                 if format_value.startswith("-"):
-                    q &= Q(**{f"has_{format_value.lower()[1:]}": False})
+                    negative_q |= Q(**{f"has_{format_value.lower()[1:]}": False})
                 else:
-                    q |= Q(**{f"has_{format_value.lower()}": True})
+                    positive_q |= Q(**{f"has_{format_value.lower()}": True})
+
+                # TODO(james): valid_q should really check a list of valid types and break early if not in the list
                 valid_q = True
 
             if not valid_q:
                 choices = ", ".join([x.value for x in FilterFormat])
                 raise FilterException(f"Format filter not one of {choices}")
+
+        # The query we want is, for example Q: (AND: (OR: ('has_fbx', True), ('has_obj', True), ('has_gltf2', True)), (OR: ('has_blocks', False), ('has_tilt', False)))
+        q = positive_q
+        q &= negative_q
         return q
 
     def filter_maxComplexity(self, value: FilterComplexity) -> Q:
