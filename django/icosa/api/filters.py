@@ -211,6 +211,7 @@ class FiltersBase(FilterSchema):
         # The query we want is, for example Q: (AND: (OR: ('has_fbx', True), ('has_obj', True), ('has_gltf2', True)), (OR: ('has_blocks', False), ('has_tilt', False)))
         q = positive_q
         q &= negative_q
+        print(q)
         return q
 
     def filter_maxComplexity(self, value: FilterComplexity) -> Q:
