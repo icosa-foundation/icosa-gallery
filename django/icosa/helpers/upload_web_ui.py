@@ -1,9 +1,11 @@
 import io
 import os
+import secrets
 import subprocess
 import zipfile
+from collections import defaultdict
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from ninja import File
 from ninja.files import UploadedFile
@@ -19,12 +21,18 @@ from icosa.helpers.file import (
     get_content_type,
     validate_file,
 )
+from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.upload import TYPE_ROLE_MAP
 from icosa.models import (
     ASSET_STATE_COMPLETE,
+    ASSET_STATE_UPLOADING,
+    ASSET_STATE_FAILED,
     Asset,
+    AssetCollection,
+    AssetOwner,
     Format,
     Resource,
+    User,
 )
 
 CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
@@ -342,3 +350,151 @@ def upload(
     asset.save()
 
     return asset
+
+
+def analyze_zip_structure(zip_file: zipfile.ZipFile) -> Dict[str, List[str]]:
+    """
+    Analyze the zip file structure to determine if it contains:
+    - Files at root level (each file becomes an asset)
+    - Directories at root level (each directory becomes an asset)
+
+    Returns a dict mapping asset names to list of file paths:
+    - For root files: {"filename": ["filename.ext"]}
+    - For directories: {"dirname": ["dirname/file1.ext", "dirname/file2.ext"]}
+    """
+    structure = defaultdict(list)
+
+    for zip_info in zip_file.infolist():
+        # Skip directories themselves
+        if zip_info.is_dir():
+            continue
+
+        # Skip hidden files and __MACOSX folders
+        filename = zip_info.filename
+        if filename.startswith("__MACOSX/") or "/.DS_Store" in filename or filename.startswith("."):
+            continue
+
+        # Split the path to analyze structure
+        parts = filename.split("/")
+
+        if len(parts) == 1:
+            # File at root level - each file is its own asset
+            asset_name = os.path.splitext(parts[0])[0]
+            structure[asset_name].append(filename)
+        else:
+            # File in a directory - group by first directory
+            asset_name = parts[0]
+            structure[asset_name].append(filename)
+
+    return dict(structure)
+
+
+def upload_collection_from_zip(
+    user: User,
+    owner: AssetOwner,
+    zip_file: UploadedFile,
+    collection_name: Optional[str] = None,
+) -> AssetCollection:
+    """
+    Upload a collection of assets from a zip file.
+
+    The zip can contain either:
+    1. Single files at root level - each file becomes an asset named after the filename
+    2. Directories at root level - each directory becomes an asset named after the directory
+
+    Returns the created AssetCollection.
+    """
+    assets_created = []
+    unzip_start = timezone.now()
+    total_size_bytes = 0
+
+    try:
+        # Read the zip file
+        with zipfile.ZipFile(io.BytesIO(zip_file.read())) as zf:
+            # Analyze the structure
+            asset_structure = analyze_zip_structure(zf)
+
+            if not asset_structure:
+                raise ZipException("No valid assets found in zip file")
+
+            # Create each asset
+            for asset_name, file_paths in asset_structure.items():
+                # Check unzip limits
+                unzip_elapsed = timezone.now() - unzip_start
+                if unzip_elapsed.seconds > MAX_UNZIP_SECONDS:
+                    raise ZipException("Zip taking too long to extract, aborting.")
+
+                # Generate unique identifiers for this asset
+                job_snowflake = generate_snowflake()
+                asset_token = secrets.token_urlsafe(8)
+
+                # Create the Asset
+                asset = Asset.objects.create(
+                    id=job_snowflake,
+                    url=asset_token,
+                    owner=owner,
+                    name=asset_name,
+                    state=ASSET_STATE_UPLOADING,
+                )
+
+                # Extract and prepare files for this asset
+                uploaded_files = []
+                for file_path in file_paths:
+                    zip_info = zf.getinfo(file_path)
+
+                    # Check size limits
+                    total_size_bytes += zip_info.file_size
+                    if total_size_bytes > MAX_UNZIP_BYTES:
+                        raise ZipException(f"Uncompressed zip will be larger than {MAX_UNZIP_BYTES}")
+
+                    # Extract file content
+                    with zf.open(zip_info) as extracted_file:
+                        content = extracted_file.read()
+                        # Use just the filename (without directory path) for single files
+                        # For directory-based assets, preserve the relative path
+                        if "/" in file_path:
+                            # Remove the first directory component
+                            relative_name = "/".join(file_path.split("/")[1:])
+                        else:
+                            relative_name = file_path
+
+                        processed_file = UploadedFile(
+                            name=relative_name,
+                            file=io.BytesIO(content),
+                        )
+                        uploaded_files.append(processed_file)
+
+                # Upload the asset
+                try:
+                    upload(asset, uploaded_files)
+                    assets_created.append(asset)
+                except Exception as e:
+                    # Mark asset as failed and continue
+                    asset.state = ASSET_STATE_FAILED
+                    asset.save()
+                    # Continue processing other assets
+                    continue
+
+        # Create the collection
+        if not collection_name:
+            collection_name = f"Uploaded Collection {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+
+        collection_url = secrets.token_urlsafe(8)
+        collection = AssetCollection.objects.create(
+            user=user,
+            url=collection_url,
+            name=collection_name,
+        )
+
+        # Add all successfully created assets to the collection
+        for i, asset in enumerate(assets_created):
+            collection.assets.add(asset, through_defaults={"order": i})
+
+        return collection
+
+    except ZipException as e:
+        # Mark all created assets as failed
+        for asset in assets_created:
+            asset.state = ASSET_STATE_FAILED
+            asset.save()
+        raise e

@@ -10,10 +10,11 @@ from django.db import transaction
 from django.utils import timezone
 from icosa.api.schema import AssetMetaData
 from icosa.helpers.upload import upload_api_asset
-from icosa.helpers.upload_web_ui import upload
+from icosa.helpers.upload_web_ui import upload, upload_collection_from_zip
 from icosa.models import (
     ASSET_STATE_FAILED,
     Asset,
+    AssetOwner,
     BulkSaveLog,
     User,
 )
@@ -63,6 +64,21 @@ def queue_upload_api_asset(
         asset,
         data,
         files,
+    )
+
+
+@db_task()
+def queue_upload_collection_from_zip(
+    current_user: User,
+    owner: AssetOwner,
+    zip_file: UploadedFile = File(None),
+    collection_name: Optional[str] = None,
+):
+    upload_collection_from_zip(
+        current_user,
+        owner,
+        zip_file,
+        collection_name,
     )
 
 

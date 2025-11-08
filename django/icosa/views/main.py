@@ -40,6 +40,7 @@ from icosa.forms import (
     AssetPublishForm,
     AssetReportForm,
     AssetUploadForm,
+    CollectionZipUploadForm,
     UserSettingsForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
@@ -62,7 +63,7 @@ from icosa.models import (
     MastheadSection,
     UserLike,
 )
-from icosa.tasks import queue_upload_asset_web_ui
+from icosa.tasks import queue_upload_asset_web_ui, queue_upload_collection_from_zip
 
 User = get_user_model()
 
@@ -328,45 +329,85 @@ def uploads(request):
 
     user = request.user
     if request.method == "POST":
-        form = AssetUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            job_snowflake = generate_snowflake()
-            asset_token = secrets.token_urlsafe(8)
-            with transaction.atomic():
-                owner, _ = AssetOwner.objects.get_or_create(
-                    django_user=user,
-                    email=user.email,
-                    defaults={
-                        "url": secrets.token_urlsafe(8),
-                        "displayname": user.displayname,
-                    },
-                )
-                asset = Asset.objects.create(
-                    id=job_snowflake,
-                    url=asset_token,
-                    owner=owner,
-                    state=ASSET_STATE_UPLOADING,
-                )
-                try:
-                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                        queue_upload_asset_web_ui(
-                            current_user=user,
-                            asset=asset,
-                            files=[request.FILES["file"]],
-                        )
-                    else:
-                        upload(
-                            asset,
-                            [request.FILES["file"]],
-                        )
-                except Exception:
-                    asset.state = ASSET_STATE_FAILED
-                    asset.save()
+        # Check which form was submitted
+        if "collection_zip" in request.FILES:
+            # Handle collection upload
+            collection_form = CollectionZipUploadForm(request.POST, request.FILES)
+            if collection_form.is_valid():
+                with transaction.atomic():
+                    owner, _ = AssetOwner.objects.get_or_create(
+                        django_user=user,
+                        email=user.email,
+                        defaults={
+                            "url": secrets.token_urlsafe(8),
+                            "displayname": user.displayname,
+                        },
+                    )
+                    collection_name = collection_form.cleaned_data.get("collection_name")
+                    try:
+                        if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                            queue_upload_collection_from_zip(
+                                current_user=user,
+                                owner=owner,
+                                zip_file=request.FILES["collection_zip"],
+                                collection_name=collection_name,
+                            )
+                        else:
+                            from icosa.helpers.upload_web_ui import upload_collection_from_zip
+                            upload_collection_from_zip(
+                                user,
+                                owner,
+                                request.FILES["collection_zip"],
+                                collection_name,
+                            )
+                    except Exception as e:
+                        messages.add_message(request, messages.ERROR, f"Collection upload failed: {str(e)}")
+                        return HttpResponseRedirect(reverse("icosa:uploads"))
 
-            messages.add_message(request, messages.INFO, "Your upload has started.")
-            return HttpResponseRedirect(reverse("icosa:uploads"))
+                messages.add_message(request, messages.INFO, "Your collection upload has started.")
+                return HttpResponseRedirect(reverse("icosa:uploads"))
+        else:
+            # Handle single asset upload
+            form = AssetUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                job_snowflake = generate_snowflake()
+                asset_token = secrets.token_urlsafe(8)
+                with transaction.atomic():
+                    owner, _ = AssetOwner.objects.get_or_create(
+                        django_user=user,
+                        email=user.email,
+                        defaults={
+                            "url": secrets.token_urlsafe(8),
+                            "displayname": user.displayname,
+                        },
+                    )
+                    asset = Asset.objects.create(
+                        id=job_snowflake,
+                        url=asset_token,
+                        owner=owner,
+                        state=ASSET_STATE_UPLOADING,
+                    )
+                    try:
+                        if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                            queue_upload_asset_web_ui(
+                                current_user=user,
+                                asset=asset,
+                                files=[request.FILES["file"]],
+                            )
+                        else:
+                            upload(
+                                asset,
+                                [request.FILES["file"]],
+                            )
+                    except Exception:
+                        asset.state = ASSET_STATE_FAILED
+                        asset.save()
+
+                messages.add_message(request, messages.INFO, "Your upload has started.")
+                return HttpResponseRedirect(reverse("icosa:uploads"))
     elif request.method == "GET":
         form = AssetUploadForm()
+        collection_form = CollectionZipUploadForm()
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
@@ -378,6 +419,7 @@ def uploads(request):
     context = {
         "assets": assets,
         "form": form,
+        "collection_form": collection_form,
         "page_title": "My Uploads",
         "paginator": paginator,
     }

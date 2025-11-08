@@ -25,7 +25,7 @@
     </div>
     <div class="row">
         <div class="col-lg-6">
-            <h1>Upload New File</h1>
+            <h2>Upload Single Asset</h2>
         </div>
     </div>
     <div class="row">
@@ -75,6 +75,66 @@
             {% if config.BETA_MODE %}
                 <p><strong>This site is currently in Beta mode. While we will do our best to keep things stable, your data may be removed at any time. Please bear this in mind when uploading your work.</strong></p>
             {% endif %}
+        </div>
+    </div>
+    <hr style="margin: 2rem 0;">
+    <div class="row">
+        <div class="col-lg-6">
+            <h2>Upload Collection from Zip</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <form action="{% url 'icosa:uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                {% if collection_form.collection_zip.errors %}
+                    {{ collection_form.collection_zip.errors }}
+                {% endif %}
+                <div class="form-group">
+                    <label for="collection_name">Collection Name (optional)</label>
+                    <input type="text" class="form-control" id="collection_name" name="collection_name" placeholder="My Collection">
+                </div>
+                <div class="form-group">
+                    <label for="collection_zip">Zip File</label>
+                    <input type="file" class="form-control-file" id="collection_zip" name="collection_zip" accept=".zip" required>
+                </div>
+                <button type="submit" class="btn btn-success">Upload Collection</button>
+            </form>
+        </div>
+        <div class="col-lg-6">
+            <p>
+                Upload a zip file containing multiple assets to create a collection. The zip file can be structured in two ways:
+            </p>
+            <details>
+                <summary><strong>Option 1: Single files at root level</strong></summary>
+                <div class="details-content">
+                    <p>Each 3D file at the root becomes a separate asset named after the filename:</p>
+                    <pre>
+my-collection.zip
+├── model1.glb
+├── model2.glb
+└── model3.glb</pre>
+                    <p>This will create 3 assets: "model1", "model2", and "model3".</p>
+                </div>
+            </details>
+            <details>
+                <summary><strong>Option 2: Directories containing asset files</strong></summary>
+                <div class="details-content">
+                    <p>Each directory becomes an asset named after the directory, containing all files in that directory:</p>
+                    <pre>
+my-collection.zip
+├── asset1/
+│   ├── model.gltf
+│   ├── model.bin
+│   └── texture.png
+├── asset2/
+│   ├── model.glb
+│   └── thumbnail.png
+└── asset3/
+    └── model.glb</pre>
+                    <p>This will create 3 assets: "asset1", "asset2", and "asset3".</p>
+                </div>
+            </details>
         </div>
     </div>
 </div>

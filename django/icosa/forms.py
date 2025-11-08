@@ -81,6 +81,20 @@ class AssetUploadForm(forms.Form):
                 self.add_error("file", "File type is not supported.")
 
 
+class CollectionZipUploadForm(forms.Form):
+    collection_zip = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=["zip"])])
+    collection_name = forms.CharField(max_length=255, required=False, help_text="Optional name for the collection")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        uploaded_file = cleaned_data.get("collection_zip")
+        if uploaded_file:
+            magic_bytes = next(uploaded_file.chunks(chunk_size=2048))
+            uploaded_file.seek(0)
+            if not validate_mime(magic_bytes, ["application/zip"]):
+                self.add_error("collection_zip", "File must be a zip archive.")
+
+
 class AssetReportForm(forms.Form):
     asset_url = forms.CharField(widget=forms.widgets.HiddenInput())
     reason_for_reporting = forms.CharField(
