@@ -1,0 +1,19 @@
+{% load fontawesome_tags %}
+
+<article class="sketchbox">
+    <div class="sketchimage" style="background-image: url('{{ collection.get_thumbnail_url }}');"></div>
+    <div class="sketch-meta">
+        <h4>
+            <a href="{% url 'icosa:collection_edit' collection_url=collection.url %}">
+                {{ collection.name|default_if_none:"Untitled collection" }}
+            </a>
+        </h4>
+        <p class="sketch-byline">
+            {{ collection.create_time|date:"d/m/Y" }}
+        </p>
+        <p><small>
+            Visibility: {{ collection.get_visibility_display }}<br>
+            Assets: {{ collection.assets.count }}
+        </small></p>
+    </div>
+</article>

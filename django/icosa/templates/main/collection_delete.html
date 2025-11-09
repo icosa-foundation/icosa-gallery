@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load fontawesome_tags %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <h1>{{ page_title }}</h1>
+            <div class="alert alert-warning">
+                <p><strong>{% fa_icon "solid" "triangle-exclamation" %} Warning</strong></p>
+                <p>Are you sure you want to delete the collection "{{ collection.name }}"?</p>
+                <p>This action cannot be undone. The collection will be permanently deleted, but the assets within it will remain.</p>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Yes, delete this collection</button>
+                <a href="{% url 'icosa:collection_edit' collection_url=collection.url %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

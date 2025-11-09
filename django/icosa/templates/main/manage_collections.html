@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+{% load paginator_tags %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="canonical" href="{% clean_url %}">
+{% endblock extrahead %}
+
+{% block content %}
+<div class="container">
+    {% if messages %}
+    <ul class="messages" id="collectionmessages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="row">
+        <div class="col">
+            <h1>{{ page_title }}</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <h2>Create New Collection</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <form action="{% url 'icosa:my_collections' %}" method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_name">Name:</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="text-danger">{{ form.name.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="id_description">Description:</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="text-danger">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="id_visibility">Visibility:</label>
+                    {{ form.visibility }}
+                    {% if form.visibility.errors %}
+                        <div class="text-danger">{{ form.visibility.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="id_image">Thumbnail:</label>
+                    {{ form.image }}
+                    {% if form.image.errors %}
+                        <div class="text-danger">{{ form.image.errors }}</div>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary">Create Collection</button>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h2>Manage Collections</h2>
+        </div>
+    </div>
+    <div class="sketch-list">
+        {% if collections %}
+            {% for collection in collections %}
+                {% include "partials/collection_list_item_owner.html" %}
+            {% endfor %}
+        {% else %}
+            <p>You haven't created any collections yet.</p>
+        {% endif %}
+    </div>
+    {% if collections %}
+        {% include "partials/pagination.html" %}
+    {% endif %}
+</div>
+{% endblock content %}

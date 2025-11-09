@@ -94,6 +94,9 @@ urlpatterns = [
     path("other", main_views.home_other, name="home_other"),
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
+    path("collections", asset_collection_views.my_collections, name="my_collections"),
+    path("collection/<str:collection_url>/edit", asset_collection_views.collection_edit, name="collection_edit"),
+    path("collection/<str:collection_url>/delete", asset_collection_views.collection_delete, name="collection_delete"),
     path("user/<str:slug>", main_views.user_show, name="user_show"),
     path("user/<str:user_url>/collections", asset_collection_views.user_asset_collection_list, name="user_asset_collection_list"),
     path(

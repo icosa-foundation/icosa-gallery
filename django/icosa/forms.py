@@ -23,6 +23,7 @@ from icosa.models import (
     V4_CC_LICENSES,
     VALID_THUMBNAIL_MIME_TYPES,
     Asset,
+    AssetCollection,
     AssetOwner,
     User,
 )
@@ -401,3 +402,28 @@ class ArtistQueryForm(forms.Form):
         widget=forms.TextInput(),
         required=True,
     )
+
+
+class CollectionEditForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["name"].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        thumbnail = cleaned_data.get("image")
+        if thumbnail:
+            if not validate_mime(next(thumbnail.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
+                self.add_error("image", "Image is not a png or jpg.")
+
+    image = forms.FileField(required=False, widget=CustomImageInput, label="Thumbnail")
+
+    class Meta:
+        model = AssetCollection
+
+        fields = [
+            "name",
+            "description",
+            "visibility",
+            "image",
+        ]

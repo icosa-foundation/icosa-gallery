@@ -58,6 +58,7 @@ from icosa.models import (
     PUBLIC,
     UNLISTED,
     Asset,
+    AssetCollection,
     AssetOwner,
     MastheadSection,
     UserLike,
@@ -463,9 +464,18 @@ def user_show(request, slug):
     else:
         page_title = owner.get_displayname()
 
+    # Get public collections for this user
+    collections = []
+    if owner.django_user:
+        collections = AssetCollection.objects.filter(
+            user=owner.django_user,
+            visibility__in=[PUBLIC, UNLISTED]
+        ).order_by("-create_time")
+
     context = {
         "owner": owner,
         "assets": assets,
+        "collections": collections,
         "page_title": page_title,
         "paginator": paginator,
         "is_multi_owner": bool(owners.count()),

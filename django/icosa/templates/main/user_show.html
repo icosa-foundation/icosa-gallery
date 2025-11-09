@@ -27,6 +27,19 @@
                 </div>
             </div>
         </div>
+
+        {% if collections %}
+            <h2 class="mt1">Collections</h2>
+            <div class="sketch-list">
+                {% for collection in collections %}
+                    {% with asset=collection hide_byline=True hide_like_button=True %}
+                        {% include "partials/sketch_list_item.html" %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <h2 class="mt1">Assets</h2>
             {% if assets %}
                 {% for asset in assets %}
                     {% with asset.owner as asset_owner %}
@@ -34,7 +47,7 @@
                             {% if not forloop.first %}
                             </div>
                             {% endif %}
-                            <h1 class="mt1">{{ asset_owner.displayname }}</h1>
+                            <h3 class="mt1">{{ asset_owner.displayname }}</h3>
                             {% if asset_owner.description %}
                                 <p>{{ asset_owner.description|linebreaksbr }}</p>
                             {% endif %}

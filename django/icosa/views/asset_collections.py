@@ -1,9 +1,12 @@
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import HttpResponseBadRequest, HttpResponseNotAllowed
-from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponseNotAllowed, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.cache import never_cache
+from icosa.forms import CollectionEditForm
 from icosa.models import (
     PUBLIC,
     UNLISTED,
@@ -180,5 +183,82 @@ def user_asset_collection_view(request, user_url: str, collection_url: str):
         "page_title": collection.name or "Untitled collection",
         "collection": collection,
         "owner": owner,
+    }
+    return render(request, template, context)
+
+
+@login_required
+@never_cache
+def my_collections(request):
+    template = "main/manage_collections.html"
+
+    if request.method == "POST":
+        form = CollectionEditForm(request.POST, request.FILES)
+        if form.is_valid():
+            collection = form.save(commit=False)
+            collection.user = request.user
+            collection.save()
+            messages.success(request, "Collection created successfully!")
+            return redirect("icosa:my_collections")
+    else:
+        form = CollectionEditForm()
+
+    collections = AssetCollection.objects.filter(user=request.user).order_by("-create_time")
+    paginator = Paginator(collections, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    collections_page = paginator.get_page(page_number)
+
+    context = {
+        "collections": collections_page,
+        "page_title": "My Collections",
+        "form": form,
+        "paginator": paginator,
+    }
+    return render(request, template, context)
+
+
+@login_required
+@never_cache
+def collection_edit(request, collection_url: str):
+    template = "main/collection_edit.html"
+    collection = get_object_or_404(AssetCollection, url=collection_url)
+
+    if collection.user != request.user:
+        return HttpResponseForbidden()
+
+    if request.method == "POST":
+        form = CollectionEditForm(request.POST, request.FILES, instance=collection)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Collection updated successfully!")
+            return redirect("icosa:collection_edit", collection_url=collection.url)
+    else:
+        form = CollectionEditForm(instance=collection)
+
+    context = {
+        "collection": collection,
+        "form": form,
+        "page_title": f"Edit {collection.name}",
+    }
+    return render(request, template, context)
+
+
+@login_required
+@never_cache
+def collection_delete(request, collection_url: str):
+    collection = get_object_or_404(AssetCollection, url=collection_url)
+
+    if collection.user != request.user:
+        return HttpResponseForbidden()
+
+    if request.method == "POST":
+        collection.delete()
+        messages.success(request, "Collection deleted successfully!")
+        return redirect("icosa:my_collections")
+
+    template = "main/collection_delete.html"
+    context = {
+        "collection": collection,
+        "page_title": f"Delete {collection.name}",
     }
     return render(request, template, context)
