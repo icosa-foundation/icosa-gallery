@@ -1,9 +1,4 @@
-from typing import Any, List, NoReturn, Optional
-
-from ninja import Schema
-from ninja.errors import HttpError
-from ninja.pagination import PaginationBase
-from pydantic.json_schema import SkipJsonSchema
+from typing import Any, List, Optional
 
 from django.conf import settings
 from django.http import HttpRequest
@@ -12,6 +7,10 @@ from icosa.models import (
     PRIVATE,
     Asset,
 )
+from ninja import Schema
+from ninja.errors import HttpError
+from ninja.pagination import PaginationBase
+from pydantic.json_schema import SkipJsonSchema
 
 COMMON_ROUTER_SETTINGS = {
     "exclude_none": True,
@@ -31,7 +30,7 @@ DEFAULT_CACHE_SECONDS = 10
 NOT_FOUND = HttpError(404, "Asset not found.")
 
 
-def get_publish_url(request, asset: Asset, response_code=200) -> str:
+def get_publish_url(request, asset: Asset, response_code=200) -> tuple[int, dict[str, Any]]:
     url = request.build_absolute_uri(
         reverse(
             "icosa:asset_publish",
@@ -59,7 +58,7 @@ def user_owns_asset(
 def check_user_owns_asset(
     request: HttpRequest,
     asset: Asset,
-) -> NoReturn:
+) -> None:
     if not user_owns_asset(request, asset):
         raise
 
@@ -75,11 +74,11 @@ def user_can_view_asset(
 
 def get_asset_by_url(
     request: HttpRequest,
-    asset: str,
+    asset_url: str,
 ) -> Asset:
     # get_object_or_404 raises the wrong error text
     try:
-        asset = Asset.objects.get(url=asset)
+        asset = Asset.objects.get(url=asset_url)
     except Asset.DoesNotExist:
         raise NOT_FOUND
     if not user_can_view_asset(request, asset):
@@ -95,9 +94,9 @@ class AssetPagination(PaginationBase):
         # pageToken and pageSize should really be int, but need to be str so we can accept
         # stuff like ?pageSize=&pageToken=
         # See here: https://github.com/vitalik/django-ninja/issues/807
-        pageToken: str = None
+        pageToken: Optional[str] = None
         page_token: SkipJsonSchema[str] = None
-        pageSize: str = None
+        pageSize: Optional[str] = None
         page_size: SkipJsonSchema[str] = None
 
     class Output(Schema):

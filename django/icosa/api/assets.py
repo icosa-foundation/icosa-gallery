@@ -2,10 +2,6 @@ import re
 from typing import List
 
 from constance import config
-from ninja import Query, Router
-from ninja.decorators import decorate_view
-from ninja.pagination import paginate
-
 from django.db.models import Q
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
@@ -21,6 +17,9 @@ from icosa.models import (
     Asset,
 )
 from icosa.views.decorators import cache_per_user
+from ninja import Query, Router
+from ninja.decorators import decorate_view
+from ninja.pagination import paginate
 
 from .filters import (
     FiltersAsset,

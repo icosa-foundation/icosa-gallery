@@ -1,12 +1,6 @@
 import secrets
 from typing import List, Optional
 
-from ninja import File, Form, Query, Router
-from ninja.decorators import decorate_view
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-from ninja.pagination import paginate
-
 from django.db import transaction
 from django.db.models import Q
 from django.views.decorators.cache import never_cache
@@ -26,6 +20,11 @@ from icosa.models import (
     Asset,
     AssetOwner,
 )
+from ninja import File, Form, Query, Router
+from ninja.decorators import decorate_view
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+from ninja.pagination import paginate
 
 from .filters import (
     FiltersAsset,
