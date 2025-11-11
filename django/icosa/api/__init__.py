@@ -107,7 +107,6 @@ class AssetPagination(PaginationBase):
         self,
         queryset,
         pagination: Input,
-        request,
         **params,
     ):
         try:
