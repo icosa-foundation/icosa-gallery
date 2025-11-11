@@ -3,10 +3,7 @@ from typing import Any, List, Optional
 from django.conf import settings
 from django.http import HttpRequest
 from django.urls import reverse
-from icosa.models import (
-    PRIVATE,
-    Asset,
-)
+from icosa.models import PRIVATE, Asset
 from ninja import Schema
 from ninja.errors import HttpError
 from ninja.pagination import PaginationBase
