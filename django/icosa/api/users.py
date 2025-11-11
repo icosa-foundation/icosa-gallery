@@ -171,9 +171,9 @@ def new_asset(
 @decorate_view(never_cache)
 def get_asset(
     request,
-    asset: str,
+    asset_url: str,
 ):
-    asset = get_asset_by_url(request, asset)
+    asset = get_asset_by_url(request, asset_url)
     check_user_owns_asset(request, asset)
     return asset
 
@@ -185,9 +185,9 @@ def get_asset(
 )
 def delete_asset(
     request,
-    asset: str,
+    asset_url: str,
 ):
-    asset = get_asset_by_url(request, asset)
+    asset = get_asset_by_url(request, asset_url)
     check_user_owns_asset(request, asset)
     with transaction.atomic():
         asset.hide_media()
