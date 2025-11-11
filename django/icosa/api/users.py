@@ -13,13 +13,7 @@ from icosa.api import (
 )
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
-from icosa.models import (
-    PRIVATE,
-    PUBLIC,
-    UNLISTED,
-    Asset,
-    AssetOwner,
-)
+from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetOwner
 from ninja import File, Form, Query, Router
 from ninja.decorators import decorate_view
 from ninja.errors import HttpError
