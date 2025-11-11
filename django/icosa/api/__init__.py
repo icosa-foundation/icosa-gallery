@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 from django.conf import settings
 from django.http import HttpRequest
 from django.urls import reverse
-from icosa.models import PRIVATE, Asset
+from icosa.models import PRIVATE, Asset, AssetCollection
 from ninja import Schema
 from ninja.errors import HttpError
 from ninja.pagination import PaginationBase
@@ -86,15 +86,31 @@ def get_asset_by_url(
     return asset
 
 
+def user_owns_asset_collection(
+    request: HttpRequest,
+    asset_collection: AssetCollection,
+) -> bool:
+    user = request.user
+    return user is not None and user == asset_collection.user
+
+
+def check_user_owns_asset_collection(
+    request: HttpRequest,
+    asset_collection: AssetCollection,
+) -> None:
+    if not user_owns_asset_collection(request, asset_collection):
+        raise
+
+
 class AssetPagination(PaginationBase):
     class Input(Schema):
         # pageToken and pageSize should really be int, but need to be str so we can accept
         # stuff like ?pageSize=&pageToken=
         # See here: https://github.com/vitalik/django-ninja/issues/807
         pageToken: Optional[str] = None
-        page_token: SkipJsonSchema[str] = None
+        page_token: SkipJsonSchema[Optional[str]] = None
         pageSize: Optional[str] = None
-        page_size: SkipJsonSchema[str] = None
+        page_size: SkipJsonSchema[Optional[str]] = None
 
     class Output(Schema):
         assets: List[Any]

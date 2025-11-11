@@ -1,11 +1,11 @@
 from datetime import datetime
+from enum import Enum
 from typing import List, Literal, Optional
 
+from django.urls import reverse_lazy
+from icosa.models import Asset, AssetCollection
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
-
-from django.urls import reverse_lazy
-from icosa.models import Asset
 
 API_DOWNLOAD_COMPATIBLE_ROLES = [
     "ORIGINAL_OBJ_FORMAT",
@@ -284,3 +284,33 @@ class OembedOut(Schema):
     html: str
     width: int
     height: int
+
+
+class AssetCollectionSchema(ModelSchema):
+    class Config:
+        model = AssetCollection
+        model_fields = [
+            "create_time",
+            "update_time",
+            "user",
+            "assets",
+            "url",
+            "name",
+            "description",
+            "image",
+            "visibility",
+        ]
+
+
+class AssetVisibility(Enum):
+    # TODO(james): This should be accessible to others
+    PRIVATE = "PRIVATE"
+    PUBLIC = "PUBLIC"
+    UNLISTED = "UNLISTED"
+
+
+class AssetCollectionPostSchema(Schema):
+    name: str
+    description: str
+    visibility: Optional[AssetVisibility] = None
+    asset_url: Optional[List[str]] = None

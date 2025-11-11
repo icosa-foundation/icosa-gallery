@@ -3,17 +3,19 @@ from typing import List, Optional
 
 from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.views.decorators.cache import never_cache
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     AssetPagination,
     check_user_owns_asset,
+    check_user_owns_asset_collection,
     get_asset_by_url,
     get_publish_url,
 )
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
-from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetOwner
+from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetCollection, AssetOwner
 from ninja import File, Form, Query, Router
 from ninja.decorators import decorate_view
 from ninja.errors import HttpError
@@ -27,9 +29,12 @@ from .filters import (
     filter_and_sort_assets,
 )
 from .schema import (
+    AssetCollectionPostSchema,
+    AssetCollectionSchema,
     AssetMetaData,
     AssetSchema,
     AssetSchemaPrivate,
+    AssetVisibility,
     FullUserSchema,
     PatchUserSchema,
     UploadJobSchemaOut,
@@ -221,3 +226,62 @@ def get_likedassets(
         inc_q=inc_q,
     )
     return assets
+
+
+@router.get(
+    "/me/collections",
+    auth=JWTAuth(),
+    include_in_schema=False,
+    response=List[AssetCollectionSchema],
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+@paginate(AssetPagination)
+def get_collections(
+    request,
+):
+    user = request.user
+    collections = AssetCollection.objects.filter(user=user)
+    return collections
+
+
+@router.post(
+    "/me/collections",
+    auth=JWTAuth(),
+    include_in_schema=False,
+    response=AssetCollectionSchema | int,
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def post_collections(
+    request,
+    data: Form[AssetCollectionPostSchema],
+    image: Optional[File[UploadedFile]] = File(None),
+):
+    user = request.user
+    visibility = data.visibility if data.visibility is not None else AssetVisibility.PRIVATE
+
+    if image is not None:
+        print(image.file.name)
+    # collection = AssetCollection.objects.create(
+    #     name=data.name, description=data.description, visibility=visibility, user=user
+    # )
+    return AssetCollection.objects.first()
+    return collection
+
+
+@router.get(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    include_in_schema=False,
+    response=AssetCollectionSchema,
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def get_collection(
+    request,
+    asset_collection_url: str,
+):
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url)
+    check_user_owns_asset_collection(request, asset_collection)
+    return asset_collection
