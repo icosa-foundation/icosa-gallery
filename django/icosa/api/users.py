@@ -157,7 +157,7 @@ def new_asset(
 
 
 @router.get(
-    "/me/assets/{str:asset}",
+    "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
     response=AssetSchemaPrivate,
     **COMMON_ROUTER_SETTINGS,
@@ -173,7 +173,7 @@ def get_asset(
 
 
 @router.delete(
-    "/me/assets/{str:asset}",
+    "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
     response={204: int},
 )
