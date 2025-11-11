@@ -332,7 +332,7 @@ def uploads(request):
         # Check which form was submitted
         if "collection_zip" in request.FILES:
             # Handle collection upload
-            collection_form = CollectionZipUploadForm(request.POST, request.FILES)
+            collection_form = CollectionZipUploadForm(request.POST, request.FILES, user=user)
             if collection_form.is_valid():
                 with transaction.atomic():
                     owner, _ = AssetOwner.objects.get_or_create(
@@ -344,6 +344,10 @@ def uploads(request):
                         },
                     )
                     collection_name = collection_form.cleaned_data.get("collection_name")
+                    existing_collection = collection_form.cleaned_data.get("existing_collection")
+                    visibility = collection_form.cleaned_data.get("visibility")
+                    license = collection_form.cleaned_data.get("license")
+
                     try:
                         if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
                             queue_upload_collection_from_zip(
@@ -351,6 +355,9 @@ def uploads(request):
                                 owner=owner,
                                 zip_file=request.FILES["collection_zip"],
                                 collection_name=collection_name,
+                                existing_collection=existing_collection.id if existing_collection else None,
+                                visibility=visibility,
+                                license=license,
                             )
                         else:
                             from icosa.helpers.upload_web_ui import upload_collection_from_zip
@@ -359,6 +366,9 @@ def uploads(request):
                                 owner,
                                 request.FILES["collection_zip"],
                                 collection_name,
+                                existing_collection,
+                                visibility,
+                                license,
                             )
                     except Exception as e:
                         messages.add_message(request, messages.ERROR, f"Collection upload failed: {str(e)}")
@@ -407,7 +417,7 @@ def uploads(request):
                 return HttpResponseRedirect(reverse("icosa:uploads"))
     elif request.method == "GET":
         form = AssetUploadForm()
-        collection_form = CollectionZipUploadForm()
+        collection_form = CollectionZipUploadForm(user=user)
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 

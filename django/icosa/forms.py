@@ -15,6 +15,7 @@ from django.forms.widgets import (
 from django.utils.translation import gettext_lazy as _
 from icosa.helpers.file import validate_mime
 from icosa.models import (
+    ASSET_VISIBILITY_CHOICES,
     PRIVATE,
     RESERVED_LICENSE,
     V3_CC_LICENSE_MAP,
@@ -23,6 +24,7 @@ from icosa.models import (
     V4_CC_LICENSES,
     VALID_THUMBNAIL_MIME_TYPES,
     Asset,
+    AssetCollection,
     AssetOwner,
     User,
 )
@@ -84,6 +86,28 @@ class AssetUploadForm(forms.Form):
 class CollectionZipUploadForm(forms.Form):
     collection_zip = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=["zip"])])
     collection_name = forms.CharField(max_length=255, required=False, help_text="Optional name for the collection")
+    existing_collection = forms.ModelChoiceField(
+        queryset=AssetCollection.objects.none(),
+        required=False,
+        help_text="Add to an existing collection (leave blank to create new)",
+    )
+    visibility = forms.ChoiceField(
+        choices=ASSET_VISIBILITY_CHOICES,
+        initial=PRIVATE,
+        help_text="Visibility for all uploaded assets",
+    )
+    license = forms.ChoiceField(
+        choices=[("", "No license chosen")] + V4_CC_LICENSE_CHOICES + [RESERVED_LICENSE],
+        required=False,
+        help_text="License for all uploaded assets",
+    )
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user:
+            # Only show user's collections
+            self.fields["existing_collection"].queryset = AssetCollection.objects.filter(user=user).order_by("-create_time")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -93,6 +117,18 @@ class CollectionZipUploadForm(forms.Form):
             uploaded_file.seek(0)
             if not validate_mime(magic_bytes, ["application/zip"]):
                 self.add_error("collection_zip", "File must be a zip archive.")
+
+        # Validate that collection_name is provided if creating new collection
+        existing_collection = cleaned_data.get("existing_collection")
+        collection_name = cleaned_data.get("collection_name")
+        if not existing_collection and not collection_name:
+            self.add_error("collection_name", "Please provide a collection name or select an existing collection.")
+
+        # Validate license for public/unlisted assets
+        visibility = cleaned_data.get("visibility")
+        license = cleaned_data.get("license")
+        if visibility in ["PUBLIC", "UNLISTED"] and not license:
+            self.add_error("license", "Please add a license for public or unlisted assets.")
 
 
 class AssetReportForm(forms.Form):

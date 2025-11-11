@@ -87,12 +87,44 @@
         <div class="col-6">
             <form action="{% url 'icosa:uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                {% if collection_form.collection_zip.errors %}
-                    {{ collection_form.collection_zip.errors }}
+                {% if collection_form.errors %}
+                    <div class="alert alert-danger">
+                        {{ collection_form.errors }}
+                    </div>
                 {% endif %}
                 <div class="form-group">
-                    <label for="collection_name">Collection Name (optional)</label>
+                    <label for="existing_collection">Add to Existing Collection (optional)</label>
+                    <select class="form-control" id="existing_collection" name="existing_collection">
+                        <option value="">-- Create New Collection --</option>
+                        {% for collection in collection_form.existing_collection.field.queryset %}
+                            <option value="{{ collection.id }}">{{ collection.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Select an existing collection or leave blank to create a new one</small>
+                </div>
+                <div class="form-group">
+                    <label for="collection_name">Collection Name</label>
                     <input type="text" class="form-control" id="collection_name" name="collection_name" placeholder="My Collection">
+                    <small class="form-text text-muted">Required if creating a new collection</small>
+                </div>
+                <div class="form-group">
+                    <label for="visibility">Visibility</label>
+                    <select class="form-control" id="visibility" name="visibility" required>
+                        <option value="PRIVATE" selected>Private</option>
+                        <option value="UNLISTED">Unlisted</option>
+                        <option value="PUBLIC">Public</option>
+                    </select>
+                    <small class="form-text text-muted">Visibility for all uploaded assets</small>
+                </div>
+                <div class="form-group">
+                    <label for="license">License</label>
+                    <select class="form-control" id="license" name="license">
+                        <option value="">No license chosen</option>
+                        <option value="CREATIVE_COMMONS_BY_4_0">CC BY Attribution 4.0 International</option>
+                        <option value="CREATIVE_COMMONS_0">CC0 1.0 Universal</option>
+                        <option value="ALL_RIGHTS_RESERVED">All rights reserved</option>
+                    </select>
+                    <small class="form-text text-muted">Required for public or unlisted assets</small>
                 </div>
                 <div class="form-group">
                     <label for="collection_zip">Zip File</label>
@@ -103,7 +135,7 @@
         </div>
         <div class="col-lg-6">
             <p>
-                Upload a zip file containing multiple assets to create a collection. The zip file can be structured in two ways:
+                Upload a zip file containing multiple assets to create or add to a collection. The zip file can be structured in two ways:
             </p>
             <details>
                 <summary><strong>Option 1: Single files at root level</strong></summary>
@@ -112,9 +144,12 @@
                     <pre>
 my-collection.zip
 ├── model1.glb
+├── model1.png        ← Optional thumbnail for model1
 ├── model2.glb
+├── model2.jpg        ← Optional thumbnail for model2
 └── model3.glb</pre>
                     <p>This will create 3 assets: "model1", "model2", and "model3".</p>
+                    <p><strong>Thumbnails:</strong> Include a PNG or JPG with the same name as the 3D file.</p>
                 </div>
             </details>
             <details>
@@ -126,13 +161,15 @@ my-collection.zip
 ├── asset1/
 │   ├── model.gltf
 │   ├── model.bin
-│   └── texture.png
+│   ├── texture.png
+│   └── thumbnail.png  ← Optional thumbnail
 ├── asset2/
 │   ├── model.glb
-│   └── thumbnail.png
+│   └── thumbnail.jpg  ← Optional thumbnail
 └── asset3/
     └── model.glb</pre>
                     <p>This will create 3 assets: "asset1", "asset2", and "asset3".</p>
+                    <p><strong>Thumbnails:</strong> Include a file named <code>thumbnail.png</code> or <code>thumbnail.jpg</code> in each directory.</p>
                 </div>
             </details>
         </div>

@@ -73,12 +73,25 @@ def queue_upload_collection_from_zip(
     owner: AssetOwner,
     zip_file: UploadedFile = File(None),
     collection_name: Optional[str] = None,
+    existing_collection = None,
+    visibility: str = "PRIVATE",
+    license: Optional[str] = None,
 ):
+    from icosa.models import AssetCollection
+
+    # Convert existing_collection ID to object if provided
+    existing_collection_obj = None
+    if existing_collection:
+        existing_collection_obj = AssetCollection.objects.get(id=existing_collection)
+
     upload_collection_from_zip(
         current_user,
         owner,
         zip_file,
         collection_name,
+        existing_collection_obj,
+        visibility,
+        license,
     )
 
 
