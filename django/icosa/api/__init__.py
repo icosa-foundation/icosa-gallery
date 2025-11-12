@@ -102,7 +102,7 @@ def check_user_owns_asset_collection(
         raise
 
 
-class AssetPagination(PaginationBase):
+class IcosaPagination(PaginationBase):
     class Input(Schema):
         # pageToken and pageSize should really be int, but need to be str so we can accept
         # stuff like ?pageSize=&pageToken=
@@ -113,11 +113,11 @@ class AssetPagination(PaginationBase):
         page_size: SkipJsonSchema[Optional[str]] = None
 
     class Output(Schema):
-        assets: List[Any]
+        items: List[Any]
         totalSize: int
         nextPageToken: Optional[str] = None
 
-    items_attribute: str = "assets"
+    items_attribute: str = "items"
 
     def paginate_queryset(
         self,
@@ -145,7 +145,7 @@ class AssetPagination(PaginationBase):
         else:
             queryset_count = queryset.count()
         pagination_data = {
-            "assets": queryset[offset : offset + page_size],
+            self.items_attribute: queryset[offset : offset + page_size],
             "totalSize": queryset_count,
         }
         if offset + page_size < count:
@@ -155,3 +155,13 @@ class AssetPagination(PaginationBase):
                 }
             )
         return pagination_data
+
+
+class AssetPagination(IcosaPagination):
+    class Output(Schema):
+        assets: List[Any]
+        totalSize: int
+        nextPageToken: Optional[str] = None
+
+    items_attribute: str = "assets"
+
