@@ -322,3 +322,7 @@ class AssetCollectionPostSchema(Schema):
     description: str
     visibility: Optional[AssetVisibility] = None
     asset_url: Optional[List[str]] = None
+
+
+class Error(Schema):
+    message: str

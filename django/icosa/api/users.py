@@ -36,6 +36,7 @@ from .schema import (
     AssetSchema,
     AssetSchemaPrivate,
     AssetVisibility,
+    Error,
     FullUserSchema,
     PatchUserSchema,
     UploadJobSchemaOut,
@@ -250,7 +251,7 @@ def get_collections(
     "/me/collections",
     auth=JWTAuth(),
     include_in_schema=False,
-    response=AssetCollectionSchema | int,
+    response={201: AssetCollectionSchema, 400: Error},
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
@@ -262,13 +263,25 @@ def post_collections(
     user = request.user
     visibility = data.visibility if data.visibility is not None else AssetVisibility.PRIVATE
 
+    assets = Asset.objects.none()
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if not Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                return 400, {"message": f"Asset with url `{url}` does not exist or is not public."}
+            urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
+
+    collection = AssetCollection.objects.create(
+        name=data.name, description=data.description, visibility=visibility, user=user
+    )
+    for asset in assets:
+        collection.assets.add(asset)
+
     if image is not None:
         print(image.file.name)
-    # collection = AssetCollection.objects.create(
-    #     name=data.name, description=data.description, visibility=visibility, user=user
-    # )
-    return AssetCollection.objects.first()
-    return collection
+
+    return 201, collection
 
 
 @router.get(
