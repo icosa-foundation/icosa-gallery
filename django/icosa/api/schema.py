@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List, Literal, Optional
 
 from django.urls import reverse_lazy
-from icosa.models import Asset, AssetCollection
+from icosa.models import PUBLIC, Asset, AssetCollection
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
 
@@ -287,13 +287,21 @@ class OembedOut(Schema):
 
 
 class AssetCollectionSchema(ModelSchema):
+    assets: Optional[List[AssetSchema]] = Field(None)
+
+    @staticmethod
+    def resolve_assets(obj, context):
+        # NOTE: obj.assets are the raw assets without any of the collection's
+        # metadata (e.g. time added, order in the collection).
+        assets = obj.assets.filter(visibility__in=[PUBLIC])
+        return assets
+
     class Config:
         model = AssetCollection
         model_fields = [
             "create_time",
             "update_time",
             "user",
-            "assets",
             "url",
             "name",
             "description",
