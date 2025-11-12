@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.cache import never_cache
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
+    AssetCollectionPagination,
     AssetPagination,
     check_user_owns_asset,
     check_user_owns_asset_collection,
@@ -236,7 +237,7 @@ def get_likedassets(
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-@paginate(AssetPagination)
+@paginate(AssetCollectionPagination)
 def get_collections(
     request,
 ):

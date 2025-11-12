@@ -165,3 +165,11 @@ class AssetPagination(IcosaPagination):
 
     items_attribute: str = "assets"
 
+
+class AssetCollectionPagination(IcosaPagination):
+    class Output(Schema):
+        collections: List[Any]
+        totalSize: int
+        nextPageToken: Optional[str] = None
+
+    items_attribute: str = "collections"
