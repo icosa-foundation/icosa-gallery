@@ -310,6 +310,11 @@ class AssetCollectionSchema(ModelSchema):
         ]
 
 
+class AssetCollectionSchemaWithRejections(Schema):
+    collection: AssetCollectionSchema
+    rejectedAssetUrls: Optional[List[str]] = None
+
+
 class AssetVisibility(Enum):
     # TODO(james): This should be accessible to others
     PRIVATE = "PRIVATE"

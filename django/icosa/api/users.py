@@ -32,6 +32,7 @@ from .filters import (
 from .schema import (
     AssetCollectionPostSchema,
     AssetCollectionSchema,
+    AssetCollectionSchemaWithRejections,
     AssetMetaData,
     AssetSchema,
     AssetSchemaPrivate,
@@ -233,7 +234,6 @@ def get_likedassets(
 @router.get(
     "/me/collections",
     auth=JWTAuth(),
-    include_in_schema=False,
     response=List[AssetCollectionSchema],
     **COMMON_ROUTER_SETTINGS,
 )
@@ -250,26 +250,26 @@ def get_collections(
 @router.post(
     "/me/collections",
     auth=JWTAuth(),
-    include_in_schema=False,
-    response={201: AssetCollectionSchema, 400: Error},
+    response={201: AssetCollectionSchemaWithRejections, 400: Error},
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
 def post_collections(
     request,
-    data: Form[AssetCollectionPostSchema],
-    image: Optional[File[UploadedFile]] = File(None),
+    data: AssetCollectionPostSchema,
 ):
     user = request.user
     visibility = data.visibility if data.visibility is not None else AssetVisibility.PRIVATE
 
     assets = Asset.objects.none()
+    rejected_asset_urls = []
     if data.asset_url is not None:
         urls = []
         for url in data.asset_url:
-            if not Asset.objects.filter(url=url, visibility=PUBLIC).exists():
-                return 400, {"message": f"Asset with url `{url}` does not exist or is not public."}
-            urls.append(url)
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
         assets = Asset.objects.filter(url__in=urls)
 
     collection = AssetCollection.objects.create(
@@ -278,16 +278,12 @@ def post_collections(
     for asset in assets:
         collection.assets.add(asset)
 
-    if image is not None:
-        print(image.file.name)
-
-    return 201, collection
+    return 201, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
 
 
 @router.get(
     "/me/collections/{str:asset_collection_url}",
     auth=JWTAuth(),
-    include_in_schema=False,
     response=AssetCollectionSchema,
     **COMMON_ROUTER_SETTINGS,
 )
