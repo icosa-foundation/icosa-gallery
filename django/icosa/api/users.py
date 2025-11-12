@@ -292,6 +292,26 @@ def get_collection(
     request,
     asset_collection_url: str,
 ):
-    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url)
+    user = request.user
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
     check_user_owns_asset_collection(request, asset_collection)
     return asset_collection
+
+
+@router.post(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response={201: AssetCollectionSchema, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def post_collections_image(
+    request,
+    asset_collection_url: str,
+    image: File[UploadedFile],
+):
+    user = request.user
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    # TODO(james): validate the image is actually an image
+    asset_collection.image = image.file
+    asset_collection.save()
