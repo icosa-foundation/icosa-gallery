@@ -268,7 +268,7 @@ def post_collections(
     data: AssetCollectionPostSchema,
 ):
     user = request.user
-    visibility = data.visibility if data.visibility is not None else AssetVisibility.PRIVATE
+    visibility = data.visibility if data.visibility is not None else AssetVisibility.PRIVATE.value
 
     assets = Asset.objects.none()
     rejected_asset_urls = []
