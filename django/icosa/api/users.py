@@ -61,7 +61,7 @@ router = Router()
     response=FullUserSchema,
 )
 @decorate_view(never_cache)
-def get_users_me(request):
+def show_my_user(request):
     return request.user
 
 
@@ -71,7 +71,7 @@ def get_users_me(request):
     response=FullUserSchema,
 )
 @decorate_view(never_cache)
-def update_user(
+def update_my_user(
     request,
     patch_user: PatchUserSchema,
 ):
@@ -105,7 +105,7 @@ def update_user(
 )
 @decorate_view(never_cache)
 @paginate(AssetPagination)
-def get_assets(
+def list_my_assets(
     request,
     filters: FiltersUserAsset = Query(...),
     order: FiltersOrder = Query(...),
@@ -130,7 +130,7 @@ def get_assets(
     include_in_schema=False,
 )
 @decorate_view(never_cache)
-def new_asset(
+def create_a_new_asset(
     request,
     data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = None,
@@ -180,7 +180,7 @@ def new_asset(
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def get_asset(
+def show_an_asset(
     request,
     asset_url: str,
 ):
@@ -194,7 +194,7 @@ def get_asset(
     auth=JWTAuth(),
     response={204: int},
 )
-def delete_asset(
+def delete_an_asset(
     request,
     asset_url: str,
 ):
@@ -214,7 +214,7 @@ def delete_asset(
 )
 @decorate_view(never_cache)
 @paginate(AssetPagination)
-def get_likedassets(
+def list_my_likedassets(
     request,
     filters: FiltersAsset = Query(...),
     order: FiltersOrder = Query(...),
@@ -248,7 +248,7 @@ def get_likedassets(
 )
 @decorate_view(never_cache)
 @paginate(AssetCollectionPagination)
-def get_collections(
+def get_my_collections(
     request,
 ):
     user = request.user
@@ -263,7 +263,7 @@ def get_collections(
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def post_collections(
+def create_a_collection(
     request,
     data: AssetCollectionPostSchema,
 ):
@@ -297,7 +297,7 @@ def post_collections(
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def get_collection(
+def show_a_collection(
     request,
     asset_collection_url: str,
 ):
@@ -313,7 +313,7 @@ def get_collection(
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def collection_update(
+def update_a_collection(
     request,
     asset_collection_url: str,
     data: AssetCollectionPostSchema,
@@ -348,7 +348,7 @@ def collection_update(
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def delete_collection(
+def delete_a_collection(
     request,
     asset_collection_url: str,
 ):
@@ -365,7 +365,7 @@ def delete_collection(
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def post_collections_image(
+def set_an_image_for_a_collection(
     request,
     asset_collection_url: str,
     image: File[UploadedFile],
