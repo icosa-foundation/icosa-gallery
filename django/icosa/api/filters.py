@@ -154,6 +154,11 @@ class FiltersBase(FilterSchema):
     triangleCountMax: Optional[int] = None
     maxComplexity: Optional[FilterComplexity] = Field(default=None)
     zipArchiveUrl: Optional[str] = Field(default=None, q="format__zip_archive_url__icontains")
+    inCollection: Optional[bool] = None
+
+    def filter_inCollection(self, value: bool) -> Q:
+        q = Q(assetcollection__isnull=not value)
+        return q
 
     def filter_category(self, value: FilterCategory) -> Q:
         POLY_CATEGORY_MAP = {
