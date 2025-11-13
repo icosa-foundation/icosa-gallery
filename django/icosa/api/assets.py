@@ -87,8 +87,8 @@ def asset_upload_state(
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def get_assets(
     request,
-    order: FiltersOrder = Query(...),
-    filters: FiltersAsset = Query(...),
+    order: FiltersOrder = Query[...],
+    filters: FiltersAsset = Query[...],
 ):
     exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
     if config.HIDE_REPORTED_ASSETS:

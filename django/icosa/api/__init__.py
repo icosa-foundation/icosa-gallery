@@ -9,7 +9,7 @@ from ninja.errors import HttpError
 from ninja.pagination import PaginationBase
 from pydantic.json_schema import SkipJsonSchema
 
-COMMON_ROUTER_SETTINGS = {
+COMMON_ROUTER_SETTINGS: dict[str, Any] = {
     "exclude_none": True,
     "exclude_defaults": True,
 }

@@ -31,7 +31,7 @@ class FullUserSchema(Schema):
     id: int
     username: str
     email: EmailStr
-    displayName: str = Field(None, alias="displayname")
+    displayName: Optional[str] = Field(None, alias="displayname")
     description: Optional[str] = None
     url: str
 
@@ -51,7 +51,7 @@ class PatchUserSchema(Schema):
     # via the api.
     # email: Optional[EmailStr] = None
     url: Optional[str] = None
-    displayName: str = Field(None, alias="displayname")
+    displayName: Optional[str] = Field(None, alias="displayname")
     description: Optional[str] = None
 
 
@@ -101,7 +101,7 @@ class AssetFormat(Schema):
         alias="resource_set",
     )
     formatComplexity: FormatComplexity
-    formatType: str = Field(None, alias="format_type")
+    formatType: Optional[str] = Field(None, alias="format_type")
     zip_archive_url: Optional[str] = None
     role: Optional[str] = Field(
         default=None,
@@ -120,7 +120,7 @@ class AssetFormat(Schema):
 
 
 class AssetSchema(ModelSchema):
-    authorId: str = Field(None, alias=("owner.url"))
+    authorId: Optional[str] = Field(None, alias=("owner.url"))
     authorName: str
     # authorUrl: str # TODO create API endpoints for user
     name: str
@@ -140,7 +140,7 @@ class AssetSchema(ModelSchema):
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
     formats: List[AssetFormat]
 
-    class Config:
+    class Config(Schema.Config):
         model = Asset
         model_fields = ["url", "license"]
 
@@ -234,7 +234,7 @@ class AssetSchemaPrivate(AssetSchema):
 
 
 class AssetStateSchema(ModelSchema):
-    class Config:
+    class Config(Schema.Config):
         model = Asset
         model_fields = ["state"]
 
@@ -313,7 +313,7 @@ class AssetCollectionSchema(ModelSchema):
             return None
         return obj.image
 
-    class Config:
+    class Config(Schema.Config):
         model = AssetCollection
         model_fields = [
             "url",

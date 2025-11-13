@@ -26,7 +26,7 @@ from icosa.models import (
     Format,
     Resource,
 )
-from ninja import File, Form
+from ninja import Form
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 
@@ -125,7 +125,7 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
 def upload_api_asset(
     asset: Asset,
     data: Form[AssetMetaData],
-    files: Optional[List[UploadedFile]] = File(None),
+    files: Optional[List[UploadedFile]] = None,
 ):
     total_start = time.time()  # Logging
 
@@ -309,6 +309,7 @@ def get_role(
     tilt_or_blocks: Optional[str] = None,
 ) -> str:
     filetype = mainfile.filetype
+    role = ""
     if filetype in ["GLTF1", "GLTF2"]:
         if tilt_or_blocks == "tilt":
             role = "TILT_NATIVE_GLTF"
@@ -321,6 +322,6 @@ def get_role(
         if name == "model":
             role = "ORIGINAL_OBJ_FORMAT"
     else:
-        role = TYPE_ROLE_MAP.get(filetype, None)
+        role = TYPE_ROLE_MAP.get(filetype, "")
 
     return role
