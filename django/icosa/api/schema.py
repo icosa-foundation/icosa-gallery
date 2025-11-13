@@ -293,7 +293,7 @@ class AssetCollectionSchema(ModelSchema):
     createTime: datetime = Field(..., alias=("create_time"))
     updateTime: Optional[datetime] = Field(..., alias=("update_time"))
     visibility: str
-    imageUrl: Optional[str] = None
+    imageUrl: Optional[str] = Field(None)
     assets: Optional[List[AssetSchema]] = Field(None)
 
     @staticmethod
@@ -305,7 +305,7 @@ class AssetCollectionSchema(ModelSchema):
 
     @staticmethod
     def resolve_imageUrl(obj, context):
-        if obj.image is None:
+        if not bool(obj.image):
             return None
         return obj.image.url
 
