@@ -292,7 +292,7 @@ class OembedOut(Schema):
 
 class AssetCollectionSchema(ModelSchema):
     name: str
-    description: str
+    description: Optional[str] = Field(None)
     url: str
     createTime: datetime = Field(..., alias=("create_time"))
     updateTime: Optional[datetime] = Field(..., alias=("update_time"))
