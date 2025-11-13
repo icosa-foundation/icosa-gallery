@@ -306,6 +306,41 @@ def get_collection(
     return asset_collection
 
 
+@router.patch(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response={200: AssetCollectionSchemaWithRejections, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def collection_update(
+    request,
+    asset_collection_url: str,
+    data: AssetCollectionPostSchema,
+):
+    user = request.user
+    collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    filtered_data = data.dict(exclude_unset=True)
+    for attr, value in filtered_data.items():
+        setattr(collection, attr, value)
+    collection.save()
+
+    assets = Asset.objects.none()
+    rejected_asset_urls = []
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
+    for asset in assets:
+        collection.assets.add(asset)
+
+    return 200, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
+
+
 @router.delete(
     "/me/collections/{str:asset_collection_url}",
     auth=JWTAuth(),
