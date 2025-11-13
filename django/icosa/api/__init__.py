@@ -86,22 +86,6 @@ def get_asset_by_url(
     return asset
 
 
-def user_owns_asset_collection(
-    request: HttpRequest,
-    asset_collection: AssetCollection,
-) -> bool:
-    user = request.user
-    return user is not None and user == asset_collection.user
-
-
-def check_user_owns_asset_collection(
-    request: HttpRequest,
-    asset_collection: AssetCollection,
-) -> None:
-    if not user_owns_asset_collection(request, asset_collection):
-        raise
-
-
 class IcosaPagination(PaginationBase):
     class Input(Schema):
         # pageToken and pageSize should really be int, but need to be str so we can accept

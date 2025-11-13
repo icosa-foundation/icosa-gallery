@@ -10,7 +10,6 @@ from icosa.api import (
     AssetCollectionPagination,
     AssetPagination,
     check_user_owns_asset,
-    check_user_owns_asset_collection,
     get_asset_by_url,
     get_publish_url,
 )
@@ -304,7 +303,6 @@ def get_collection(
 ):
     user = request.user
     asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
-    check_user_owns_asset_collection(request, asset_collection)
     return asset_collection
 
 
