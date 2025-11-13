@@ -33,9 +33,9 @@ class FilterCategory(Enum):
     NONE = ""
 
     @classmethod
-    def _missing_(cls, name):
+    def _missing_(cls, value):
         for member in cls:
-            if member.name.lower() == name.lower():
+            if member.name.lower() == str(value).lower():
                 return member
 
 
