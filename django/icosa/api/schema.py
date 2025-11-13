@@ -287,6 +287,13 @@ class OembedOut(Schema):
 
 
 class AssetCollectionSchema(ModelSchema):
+    name: str
+    description: str
+    url: str
+    createTime: datetime = Field(..., alias=("create_time"))
+    updateTime: Optional[datetime] = Field(..., alias=("update_time"))
+    visibility: str
+    imageUrl: Optional[str] = None
     assets: Optional[List[AssetSchema]] = Field(None)
 
     @staticmethod
@@ -296,15 +303,20 @@ class AssetCollectionSchema(ModelSchema):
         assets = obj.assets.filter(visibility__in=[PUBLIC])
         return assets
 
+    @staticmethod
+    def resolve_imageUrl(obj, context):
+        if obj.image is None:
+            return None
+        return obj.image.url
+
     class Config:
         model = AssetCollection
         model_fields = [
-            "create_time",
-            "update_time",
-            "user",
             "url",
             "name",
             "description",
+            "create_time",
+            "update_time",
             "image",
             "visibility",
         ]
