@@ -308,6 +308,23 @@ def get_collection(
     return asset_collection
 
 
+@router.delete(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response={204: int},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def delete_collection(
+    request,
+    asset_collection_url: str,
+):
+    user = request.user
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    asset_collection.delete()
+    return 204
+
+
 @router.post(
     "/me/collections/{str:asset_collection_url}/set_thumbnail",
     auth=JWTAuth(),
