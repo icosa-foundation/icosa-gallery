@@ -48,6 +48,7 @@ from .schema import (
     AssetVisibility,
     Error,
     FullUserSchema,
+    ImageSchema,
     PatchUserSchema,
     UploadJobSchemaOut,
 )
@@ -310,7 +311,7 @@ def get_collection(
 @router.post(
     "/me/collections/{str:asset_collection_url}/set_thumbnail",
     auth=JWTAuth(),
-    response={201: AssetCollectionSchema, 400: Error},
+    response={201: ImageSchema, 400: Error},
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
@@ -327,3 +328,4 @@ def post_collections_image(
         return 400, {"message", "Thumbnail must be png or jpg."}
     asset_collection.image = image
     asset_collection.save()
+    return 201, {"url": asset_collection.image}

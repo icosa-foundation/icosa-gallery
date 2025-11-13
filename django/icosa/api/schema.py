@@ -87,6 +87,10 @@ class FormatComplexity(Schema):
     lodHint: Optional[int] = None
 
 
+class ImageSchema(Schema):
+    url: Optional[str] = None
+
+
 class AssetFormat(Schema):
     root: Optional[AssetResource] = Field(
         None,
@@ -307,7 +311,7 @@ class AssetCollectionSchema(ModelSchema):
     def resolve_imageUrl(obj, context):
         if not bool(obj.image):
             return None
-        return obj.image.url
+        return obj.image
 
     class Config:
         model = AssetCollection
