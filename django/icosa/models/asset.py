@@ -482,6 +482,7 @@ class Asset(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
+        # Foreign keys (including m2m) are indexed by default
         indexes = [
             models.Index(fields=["is_viewer_compatible", "visibility"]),
             models.Index(

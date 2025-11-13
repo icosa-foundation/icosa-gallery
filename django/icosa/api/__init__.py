@@ -9,7 +9,7 @@ from ninja.errors import HttpError
 from ninja.pagination import PaginationBase
 from pydantic.json_schema import SkipJsonSchema
 
-COMMON_ROUTER_SETTINGS = {
+COMMON_ROUTER_SETTINGS: dict[str, Any] = {
     "exclude_none": True,
     "exclude_defaults": True,
 }
@@ -86,22 +86,22 @@ def get_asset_by_url(
     return asset
 
 
-class AssetPagination(PaginationBase):
+class IcosaPagination(PaginationBase):
     class Input(Schema):
         # pageToken and pageSize should really be int, but need to be str so we can accept
         # stuff like ?pageSize=&pageToken=
         # See here: https://github.com/vitalik/django-ninja/issues/807
         pageToken: Optional[str] = None
-        page_token: SkipJsonSchema[str] = None
+        page_token: SkipJsonSchema[Optional[str]] = None
         pageSize: Optional[str] = None
-        page_size: SkipJsonSchema[str] = None
+        page_size: SkipJsonSchema[Optional[str]] = None
 
     class Output(Schema):
-        assets: List[Any]
+        items: List[Any]
         totalSize: int
         nextPageToken: Optional[str] = None
 
-    items_attribute: str = "assets"
+    items_attribute: str = "items"
 
     def paginate_queryset(
         self,
@@ -129,7 +129,7 @@ class AssetPagination(PaginationBase):
         else:
             queryset_count = queryset.count()
         pagination_data = {
-            "assets": queryset[offset : offset + page_size],
+            self.items_attribute: queryset[offset : offset + page_size],
             "totalSize": queryset_count,
         }
         if offset + page_size < count:
@@ -139,3 +139,21 @@ class AssetPagination(PaginationBase):
                 }
             )
         return pagination_data
+
+
+class AssetPagination(IcosaPagination):
+    class Output(Schema):
+        assets: List[Any]
+        totalSize: int
+        nextPageToken: Optional[str] = None
+
+    items_attribute: str = "assets"
+
+
+class AssetCollectionPagination(IcosaPagination):
+    class Output(Schema):
+        collections: List[Any]
+        totalSize: int
+        nextPageToken: Optional[str] = None
+
+    items_attribute: str = "collections"

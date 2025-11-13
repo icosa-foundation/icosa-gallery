@@ -1,9 +1,7 @@
-from ninja import NinjaAPI
-from ninja.throttling import AnonRateThrottle, AuthRateThrottle
-
 from django.conf import settings
 from django.urls import path
 from django.views.generic import RedirectView
+from icosa.api.asset_collections import router as asset_collections_router
 from icosa.api.assets import router as assets_router
 from icosa.api.login import router as login_router
 from icosa.api.oembed import router as oembed_router
@@ -13,6 +11,8 @@ from icosa.views import asset_collections as asset_collection_views
 from icosa.views import auth as auth_views
 from icosa.views import autocomplete as autocomplete_views
 from icosa.views import main as main_views
+from ninja import NinjaAPI
+from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 app_name = "icosa"
 
@@ -48,6 +48,7 @@ else:
     )
 
 api.add_router("assets", assets_router, tags=["Assets"])
+api.add_router("asset_collections", asset_collections_router, tags=["AssetCollections"])
 api.add_router("login", login_router, tags=["Login"])
 api.add_router("oembed", oembed_router, tags=["Oembed"])
 api.add_router("users", users_router, tags=["Users"])
@@ -95,7 +96,11 @@ urlpatterns = [
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
     path("user/<str:slug>", main_views.user_show, name="user_show"),
-    path("user/<str:user_url>/collections", asset_collection_views.user_asset_collection_list, name="user_asset_collection_list"),
+    path(
+        "user/<str:user_url>/collections",
+        asset_collection_views.user_asset_collection_list,
+        name="user_asset_collection_list",
+    ),
     path(
         "user/<str:user_url>/collections/<str:collection_url>",
         asset_collection_views.user_asset_collection_view,

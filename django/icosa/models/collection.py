@@ -79,11 +79,6 @@ class AssetCollectionAsset(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     order = models.PositiveIntegerField(default=0)
 
-    # @transaction.atomic
-    # def save(self, *args, **kwargs):
-    #     other_assets = self.collection.collected_assets.all()
-    #     print(other_assets)
-
     def __str__(self):
         return f"{self.order}: {self.asset.name}"
 
