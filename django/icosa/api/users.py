@@ -14,9 +14,18 @@ from icosa.api import (
     get_asset_by_url,
     get_publish_url,
 )
+from icosa.helpers.file import validate_mime
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
-from icosa.models import PRIVATE, PUBLIC, UNLISTED, Asset, AssetCollection, AssetOwner
+from icosa.models import (
+    PRIVATE,
+    PUBLIC,
+    UNLISTED,
+    VALID_THUMBNAIL_MIME_TYPES,
+    Asset,
+    AssetCollection,
+    AssetOwner,
+)
 from ninja import File, Form, Query, Router
 from ninja.decorators import decorate_view
 from ninja.errors import HttpError
@@ -312,6 +321,9 @@ def post_collections_image(
 ):
     user = request.user
     asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
-    # TODO(james): validate the image is actually an image
-    asset_collection.image = image.file
+    magic_bytes = next(image.chunks(chunk_size=2048))
+    image.seek(0)
+    if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
+        return 400, {"message", "Thumbnail must be png or jpg."}
+    asset_collection.image = image
     asset_collection.save()
