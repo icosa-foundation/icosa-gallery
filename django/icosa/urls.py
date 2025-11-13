@@ -48,7 +48,7 @@ else:
     )
 
 api.add_router("assets", assets_router, tags=["Assets"])
-api.add_router("asset_collections", asset_collections_router, tags=["AssetCollections"])
+api.add_router("collections", asset_collections_router, tags=["Collections"])
 api.add_router("login", login_router, tags=["Login"])
 api.add_router("oembed", oembed_router, tags=["Oembed"])
 api.add_router("users", users_router, tags=["Users"])
