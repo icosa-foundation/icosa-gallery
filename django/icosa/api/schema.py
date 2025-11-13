@@ -315,9 +315,6 @@ class AssetCollectionSchema(ModelSchema):
             "url",
             "name",
             "description",
-            "create_time",
-            "update_time",
-            "image",
             "visibility",
         ]
 
