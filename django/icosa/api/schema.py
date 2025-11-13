@@ -343,7 +343,7 @@ class AssetVisibility(Enum):
 
 class AssetCollectionPostSchema(Schema):
     name: str
-    description: str
+    description: Optional[str] = None
     visibility: Optional[AssetVisibility] = None
     asset_url: Optional[List[str]] = None
 
