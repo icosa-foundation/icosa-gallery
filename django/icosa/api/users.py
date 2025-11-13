@@ -39,6 +39,7 @@ from .filters import (
 )
 from .schema import (
     AssetCollectionPostSchema,
+    AssetCollectionPutSchema,
     AssetCollectionSchema,
     AssetCollectionSchemaWithRejections,
     AssetMetaData,
@@ -338,6 +339,40 @@ def update_a_collection(
     for asset in assets:
         collection.assets.add(asset)
 
+    return 200, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
+
+
+@router.put(
+    "/me/collections/{str:asset_collection_url}/set_assets",
+    auth=JWTAuth(),
+    response={200: AssetCollectionSchemaWithRejections, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def overwrite_assets_for_a_collection(
+    request,
+    asset_collection_url: str,
+    data: AssetCollectionPutSchema,
+):
+    user = request.user
+    collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    for asset in collection.assets.all():
+        collection.assets.remove(asset)
+
+    assets = Asset.objects.none()
+    rejected_asset_urls = []
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
+    for asset in assets:
+        collection.assets.add(asset)
+
+    collection.save()
     return 200, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
 
 

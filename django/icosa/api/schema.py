@@ -348,5 +348,9 @@ class AssetCollectionPostSchema(Schema):
     asset_url: Optional[List[str]] = None
 
 
+class AssetCollectionPutSchema(Schema):
+    asset_url: Optional[List[str]] = None
+
+
 class Error(Schema):
     message: str
