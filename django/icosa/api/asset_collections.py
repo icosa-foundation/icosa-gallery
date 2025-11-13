@@ -25,12 +25,14 @@ router = Router()
     "",
     response=List[AssetCollectionSchema],
     **COMMON_ROUTER_SETTINGS,
+    url_name="asset_collection_list",
 )
 @router.get(
     "/",
     include_in_schema=False,
     response=List[AssetCollectionSchema],
     **COMMON_ROUTER_SETTINGS,
+    url_name="asset_collection_list",
 )
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 @paginate(AssetCollectionPagination)

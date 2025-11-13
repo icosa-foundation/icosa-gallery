@@ -313,6 +313,12 @@ class AssetCollectionSchema(ModelSchema):
             return None
         return obj.image
 
+    @staticmethod
+    def resolve_url(obj, context):
+        request = context["request"]
+        root_url = request.build_absolute_uri("/").rstrip("/")
+        return f"{root_url}{reverse_lazy('icosa:api:asset_collection_list')}/{obj.url}"
+
     class Config(Schema.Config):
         model = AssetCollection
         model_fields = [
