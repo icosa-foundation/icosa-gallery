@@ -308,7 +308,7 @@ def get_collection(
 
 
 @router.post(
-    "/me/collections/{str:asset_collection_url}",
+    "/me/collections/{str:asset_collection_url}/set_thumbnail",
     auth=JWTAuth(),
     response={201: AssetCollectionSchema, 400: Error},
     **COMMON_ROUTER_SETTINGS,
