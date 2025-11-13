@@ -107,8 +107,8 @@ def update_user(
 @paginate(AssetPagination)
 def get_assets(
     request,
-    filters: FiltersUserAsset = Query[...],
-    order: FiltersOrder = Query[...],
+    filters: FiltersUserAsset = Query(...),
+    order: FiltersOrder = Query(...),
 ):
     user = request.user
     inc_q = Q(
@@ -216,8 +216,8 @@ def delete_asset(
 @paginate(AssetPagination)
 def get_likedassets(
     request,
-    filters: FiltersAsset = Query[...],
-    order: FiltersOrder = Query[...],
+    filters: FiltersAsset = Query(...),
+    order: FiltersOrder = Query(...),
 ):
     user = request.user
     assets = Asset.objects.filter(
