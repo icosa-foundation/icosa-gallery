@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.urls import path
 from django.views.generic import RedirectView
+from icosa.api.admin_thumbnails import router as admin_thumbnails_router
 from icosa.api.asset_collections import router as asset_collections_router
 from icosa.api.assets import router as assets_router
 from icosa.api.login import router as login_router
@@ -47,6 +48,7 @@ else:
         title="Icosa Gallery API",
     )
 
+api.add_router("admin", admin_thumbnails_router, tags=["Admin"])
 api.add_router("assets", assets_router, tags=["Assets"])
 api.add_router("collections", asset_collections_router, tags=["Collections"])
 api.add_router("login", login_router, tags=["Login"])

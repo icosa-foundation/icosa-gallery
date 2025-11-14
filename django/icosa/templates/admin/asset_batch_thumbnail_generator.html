@@ -1,0 +1,583 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<style>
+    .batch-generator-container {
+        padding: 20px;
+        max-width: 1400px;
+    }
+
+    .controls-panel {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .control-group {
+        display: inline-block;
+        margin-right: 20px;
+        margin-bottom: 10px;
+    }
+
+    .control-group label {
+        display: inline-block;
+        margin-right: 8px;
+        font-weight: 600;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+        background-color: #417690;
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background-color: #2e5266;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background-color: #5a6268;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .stats-panel {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #417690;
+    }
+
+    .viewer-container {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    #icosa-viewer {
+        width: 100%;
+        height: 600px;
+        background: #000;
+        border-radius: 8px;
+        position: relative;
+    }
+
+    .asset-info-panel {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .asset-info-panel h3 {
+        margin-top: 0;
+        font-size: 16px;
+        color: #417690;
+    }
+
+    .asset-info-item {
+        margin-bottom: 12px;
+    }
+
+    .asset-info-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .asset-info-value {
+        word-break: break-word;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 30px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #417690, #5fa3c4);
+        transition: width 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .log-panel {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .log-entry {
+        padding: 8px;
+        margin-bottom: 4px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+    }
+
+    .log-entry.success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .log-entry.error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .log-entry.info {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 3px solid rgba(255,255,255,.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 8px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="batch-generator-container">
+    <h1>Batch Thumbnail Generator</h1>
+    <p>Generate thumbnails for assets that are missing them. This tool renders each 3D model in your browser and captures a screenshot.</p>
+
+    <div class="controls-panel">
+        <div class="control-group">
+            <label for="batch-size">Batch Size:</label>
+            <input type="number" id="batch-size" value="50" min="1" max="100">
+        </div>
+
+        <div class="control-group">
+            <label for="viewer-compatible-only">
+                <input type="checkbox" id="viewer-compatible-only" checked>
+                Viewer Compatible Only
+            </label>
+        </div>
+
+        <div class="control-group">
+            <button id="start-btn" class="btn btn-primary">Start Generation</button>
+            <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+            <button id="skip-btn" class="btn btn-secondary" disabled>Skip Current</button>
+        </div>
+    </div>
+
+    <div class="stats-panel">
+        <div class="stat-card">
+            <div class="stat-label">Total Assets</div>
+            <div class="stat-value" id="total-count">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value" id="completed-count">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Failed</div>
+            <div class="stat-value" id="failed-count" style="color: #dc3545;">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Success Rate</div>
+            <div class="stat-value" id="success-rate">0%</div>
+        </div>
+    </div>
+
+    <div class="progress-bar" style="margin-bottom: 20px;">
+        <div class="progress-fill" id="progress-fill" style="width: 0%;">
+            <span id="progress-text">0 / 0</span>
+        </div>
+    </div>
+
+    <div class="viewer-container">
+        <div id="icosa-viewer"></div>
+
+        <div class="asset-info-panel">
+            <h3>Current Asset</h3>
+            <div id="asset-info">
+                <p style="color: #6c757d; font-style: italic;">No asset loaded</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-panel">
+        <h3 style="margin-top: 0;">Generation Log</h3>
+        <div id="log-container"></div>
+    </div>
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
+        "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/",
+        "three-icosa": "{% static 'js/three-icosa.module.js' %}",
+        "three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
+        "@sparkjsdev/spark": "https://cdn.jsdelivr.net/gh/sparkjsdev/spark@b60e9d9acbe621e67eda5d98417fcfdea5af6291/dist/spark.module.js"
+    }
+}
+</script>
+
+<script type="module">
+    import { Viewer } from "{% static 'js/icosa-viewer.module.js' %}";
+
+    // State management
+    const state = {
+        assets: [],
+        currentIndex: 0,
+        completed: 0,
+        failed: 0,
+        isRunning: false,
+        isPaused: false,
+        viewer: null,
+        jwtToken: localStorage.getItem('icosa_jwt_token') || '',
+    };
+
+    // DOM elements
+    const startBtn = document.getElementById('start-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const skipBtn = document.getElementById('skip-btn');
+    const batchSizeInput = document.getElementById('batch-size');
+    const viewerCompatibleOnlyCheckbox = document.getElementById('viewer-compatible-only');
+
+    // Initialize viewer
+    state.viewer = new Viewer("{% static 'brushes/' %}");
+    window.viewer = state.viewer; // For debugging
+
+    // Utility functions
+    function log(message, type = 'info') {
+        const logContainer = document.getElementById('log-container');
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${type}`;
+        const timestamp = new Date().toLocaleTimeString();
+        entry.textContent = `[${timestamp}] ${message}`;
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function updateStats() {
+        document.getElementById('total-count').textContent = state.assets.length;
+        document.getElementById('completed-count').textContent = state.completed;
+        document.getElementById('failed-count').textContent = state.failed;
+
+        const total = state.completed + state.failed;
+        const successRate = total > 0 ? Math.round((state.completed / total) * 100) : 0;
+        document.getElementById('success-rate').textContent = `${successRate}%`;
+
+        const progress = state.assets.length > 0
+            ? Math.round((total / state.assets.length) * 100)
+            : 0;
+        document.getElementById('progress-fill').style.width = `${progress}%`;
+        document.getElementById('progress-text').textContent = `${total} / ${state.assets.length}`;
+    }
+
+    function updateAssetInfo(asset) {
+        const assetInfo = document.getElementById('asset-info');
+        if (!asset) {
+            assetInfo.innerHTML = '<p style="color: #6c757d; font-style: italic;">No asset loaded</p>';
+            return;
+        }
+
+        assetInfo.innerHTML = `
+            <div class="asset-info-item">
+                <div class="asset-info-label">Asset ID</div>
+                <div class="asset-info-value">${asset.id}</div>
+            </div>
+            <div class="asset-info-item">
+                <div class="asset-info-label">Name</div>
+                <div class="asset-info-value">${asset.name}</div>
+            </div>
+            <div class="asset-info-item">
+                <div class="asset-info-label">URL</div>
+                <div class="asset-info-value"><a href="/view/${asset.url}" target="_blank">${asset.url}</a></div>
+            </div>
+            <div class="asset-info-item">
+                <div class="asset-info-label">Owner</div>
+                <div class="asset-info-value">${asset.owner_displayname || 'N/A'}</div>
+            </div>
+            <div class="asset-info-item">
+                <div class="asset-info-label">Formats</div>
+                <div class="asset-info-value">${asset.formats.map(f => f.format_type).join(', ')}</div>
+            </div>
+        `;
+    }
+
+    async function fetchAssets() {
+        if (!state.jwtToken) {
+            log('JWT token required. Please log in via the API first.', 'error');
+            return false;
+        }
+
+        try {
+            const batchSize = parseInt(batchSizeInput.value);
+            const viewerCompatibleOnly = viewerCompatibleOnlyCheckbox.checked;
+
+            const response = await fetch(
+                `/api/v1/admin/assets/missing-thumbnails?limit=${batchSize}&viewer_compatible_only=${viewerCompatibleOnly}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${state.jwtToken}`
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            state.assets = data.assets;
+            state.currentIndex = 0;
+            state.completed = 0;
+            state.failed = 0;
+
+            log(`Loaded ${state.assets.length} assets needing thumbnails`, 'info');
+            updateStats();
+
+            return true;
+        } catch (error) {
+            log(`Error fetching assets: ${error.message}`, 'error');
+            return false;
+        }
+    }
+
+    async function captureScreenshot() {
+        // Frame the scene before capturing
+        state.viewer.frameScene();
+
+        // Wait a moment for the render
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Capture screenshot
+        const canvas = document.querySelector('#icosa-viewer canvas');
+        if (!canvas) {
+            throw new Error('Canvas not found');
+        }
+
+        return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    async function uploadThumbnail(assetId, base64Image) {
+        // Remove the data URL prefix
+        const base64Data = base64Image.split(',')[1];
+
+        const response = await fetch(
+            `/api/v1/admin/assets/${assetId}/thumbnail`,
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${state.jwtToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    thumbnail_base64: base64Data
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `Upload failed: ${response.status}`);
+        }
+
+        return await response.json();
+    }
+
+    async function loadAsset(asset) {
+        updateAssetInfo(asset);
+
+        // Find a suitable format to load
+        const preferredFormat = asset.formats.find(f => f.is_preferred) || asset.formats[0];
+
+        if (!preferredFormat || !preferredFormat.root_url) {
+            throw new Error('No suitable format found');
+        }
+
+        const formatType = preferredFormat.format_type.toLowerCase();
+        const url = preferredFormat.root_url;
+
+        log(`Loading ${asset.name} (${formatType})...`, 'info');
+
+        // Load based on format type
+        if (formatType === 'gltf2' || formatType === 'glb') {
+            try {
+                await state.viewer.loadGltf(url, true);
+                if (state.viewer.loadingError) {
+                    throw new Error("GLTF2 loading error");
+                }
+            } catch (error) {
+                await state.viewer.loadGltf1(url, true);
+            }
+        } else if (formatType === 'gltf1') {
+            await state.viewer.loadGltf1(url, true);
+        } else if (formatType === 'fbx') {
+            await state.viewer.loadFbx(url);
+        } else if (formatType === 'obj') {
+            await state.viewer.loadObj(url);
+        } else if (formatType === 'stl') {
+            await state.viewer.loadStl(url);
+        } else if (formatType === 'usdz') {
+            await state.viewer.loadUsdz(url);
+        } else if (formatType === 'vox') {
+            await state.viewer.loadVox(url);
+        } else if (['ply', 'sog', 'spz', 'splat', 'ksplat'].includes(formatType)) {
+            await state.viewer.loadSplat(url);
+        } else {
+            throw new Error(`Unsupported format: ${formatType}`);
+        }
+    }
+
+    async function processAsset(asset) {
+        try {
+            // Load the asset
+            await loadAsset(asset);
+
+            // Capture screenshot
+            const screenshot = await captureScreenshot();
+
+            // Upload thumbnail
+            await uploadThumbnail(asset.id, screenshot);
+
+            log(`✓ Successfully generated thumbnail for ${asset.name}`, 'success');
+            state.completed++;
+
+        } catch (error) {
+            log(`✗ Failed to process ${asset.name}: ${error.message}`, 'error');
+            state.failed++;
+        }
+
+        updateStats();
+    }
+
+    async function runBatch() {
+        state.isRunning = true;
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        skipBtn.disabled = false;
+
+        while (state.currentIndex < state.assets.length && state.isRunning) {
+            if (state.isPaused) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                continue;
+            }
+
+            const asset = state.assets[state.currentIndex];
+            await processAsset(asset);
+
+            state.currentIndex++;
+        }
+
+        state.isRunning = false;
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        skipBtn.disabled = true;
+
+        if (state.currentIndex >= state.assets.length) {
+            log('Batch generation complete!', 'success');
+        }
+    }
+
+    // Event listeners
+    startBtn.addEventListener('click', async () => {
+        if (state.assets.length === 0 || state.currentIndex >= state.assets.length) {
+            const success = await fetchAssets();
+            if (!success) return;
+        }
+
+        if (state.isPaused) {
+            state.isPaused = false;
+            pauseBtn.textContent = 'Pause';
+            log('Resuming...', 'info');
+        } else {
+            runBatch();
+        }
+    });
+
+    pauseBtn.addEventListener('click', () => {
+        state.isPaused = !state.isPaused;
+        pauseBtn.textContent = state.isPaused ? 'Resume' : 'Pause';
+        log(state.isPaused ? 'Paused' : 'Resumed', 'info');
+    });
+
+    skipBtn.addEventListener('click', () => {
+        if (state.isRunning) {
+            log(`Skipping ${state.assets[state.currentIndex]?.name}`, 'info');
+            state.currentIndex++;
+            state.failed++;
+            updateStats();
+        }
+    });
+
+    // Check for JWT token on load
+    if (!state.jwtToken) {
+        log('Please set your JWT token: localStorage.setItem("icosa_jwt_token", "YOUR_TOKEN")', 'info');
+    }
+
+    log('Batch Thumbnail Generator ready', 'info');
+</script>
+{% endblock %}

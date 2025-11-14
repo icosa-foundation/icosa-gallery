@@ -4,7 +4,8 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.db.models import Count
-from django.urls import reverse
+from django.shortcuts import render
+from django.urls import path, reverse
 from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
@@ -111,6 +112,8 @@ class FormatRoleLabelAdmin(admin.ModelAdmin):
 
 @admin.register(Asset)
 class AssetAdmin(ExportMixin, admin.ModelAdmin):
+    actions = ["generate_thumbnails_for_selected"]
+
     list_display = (
         "name",
         "display_thumbnail",
@@ -202,6 +205,47 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "owner",
         "preferred_viewer_format_override",
     ]
+
+    def get_urls(self):
+        """Add custom admin URLs for batch thumbnail generation."""
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "batch-thumbnail-generator/",
+                self.admin_site.admin_view(self.batch_thumbnail_generator_view),
+                name="icosa_asset_batch_thumbnail_generator",
+            ),
+        ]
+        return custom_urls + urls
+
+    def batch_thumbnail_generator_view(self, request):
+        """Custom admin view for batch thumbnail generation."""
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Batch Thumbnail Generator",
+            "opts": self.model._meta,
+        }
+        return render(request, "admin/asset_batch_thumbnail_generator.html", context)
+
+    @admin.action(description="Generate thumbnails (opens batch generator)")
+    def generate_thumbnails_for_selected(self, request, queryset):
+        """Admin action to generate thumbnails for selected assets."""
+        # Store selected asset IDs in session
+        asset_ids = list(queryset.values_list("id", flat=True))
+        request.session["thumbnail_gen_asset_ids"] = asset_ids
+
+        # Redirect to batch thumbnail generator
+        from django.shortcuts import redirect
+
+        return redirect("admin:icosa_asset_batch_thumbnail_generator")
+
+    def changelist_view(self, request, extra_context=None):
+        """Override to add custom context to the changelist view."""
+        extra_context = extra_context or {}
+        extra_context["batch_thumbnail_generator_url"] = reverse(
+            "admin:icosa_asset_batch_thumbnail_generator"
+        )
+        return super().changelist_view(request, extra_context=extra_context)
 
 
 class AssetCollectionAssetInline(admin.TabularInline):
