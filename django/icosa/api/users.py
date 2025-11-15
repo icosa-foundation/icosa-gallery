@@ -127,8 +127,7 @@ def list_my_assets(
 @router.post(
     "/me/assets",
     response={201: UploadJobSchemaOut},
-    auth=JWTAuth(),
-    include_in_schema=False,
+    auth=JWTAuth()
 )
 @decorate_view(never_cache)
 def create_a_new_asset(
