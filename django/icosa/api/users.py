@@ -127,14 +127,13 @@ def list_my_assets(
 @router.post(
     "/me/assets",
     response={201: UploadJobSchemaOut},
-    auth=JWTAuth(),
-    include_in_schema=False,
+    auth=JWTAuth()
 )
 @decorate_view(never_cache)
 def create_a_new_asset(
     request,
     data: Form[AssetMetaData],
-    files: Optional[List[UploadedFile]] = None,
+    files: Optional[List[UploadedFile]] = File(None),
 ):
     user = request.user
     owner, _ = AssetOwner.objects.get_or_create(
