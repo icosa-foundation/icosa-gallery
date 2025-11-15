@@ -208,6 +208,12 @@
     <h1>Batch Thumbnail Generator</h1>
     <p>Generate thumbnails for assets that are missing them. This tool renders each 3D model in your browser and captures a screenshot.</p>
 
+    {% if selected_asset_ids %}
+    <div style="background: #d1ecf1; color: #0c5460; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #17a2b8;">
+        <strong>Processing {{ selected_asset_ids|length }} pre-selected assets</strong> from the admin changelist.
+    </div>
+    {% endif %}
+
     <div class="controls-panel">
         <div class="control-group">
             <label for="batch-size">Batch Size:</label>
@@ -286,6 +292,9 @@
 <script type="module">
     import { Viewer } from "{% static 'js/icosa-viewer.module.js' %}";
 
+    // Pre-selected asset IDs from Django context (if coming from admin action)
+    const selectedAssetIds = {{ selected_asset_ids|default:"null"|safe }};
+
     // State management
     const state = {
         assets: [],
@@ -296,6 +305,7 @@
         isPaused: false,
         viewer: null,
         jwtToken: localStorage.getItem('icosa_jwt_token') || '',
+        selectedAssetIds: selectedAssetIds,
     };
 
     // DOM elements
@@ -377,14 +387,21 @@
             const batchSize = parseInt(batchSizeInput.value);
             const viewerCompatibleOnly = viewerCompatibleOnlyCheckbox.checked;
 
-            const response = await fetch(
-                `/api/v1/admin/assets/missing-thumbnails?limit=${batchSize}&viewer_compatible_only=${viewerCompatibleOnly}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${state.jwtToken}`
-                    }
+            // Build URL with parameters
+            let url = `/api/v1/admin/assets/missing-thumbnails?limit=${batchSize}&viewer_compatible_only=${viewerCompatibleOnly}`;
+
+            // If we have pre-selected asset IDs, use those instead
+            if (state.selectedAssetIds && state.selectedAssetIds.length > 0) {
+                const assetIdsParam = state.selectedAssetIds.join(',');
+                url = `/api/v1/admin/assets/missing-thumbnails?asset_ids=${assetIdsParam}&limit=${batchSize}`;
+                log(`Processing ${state.selectedAssetIds.length} pre-selected assets`, 'info');
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${state.jwtToken}`
                 }
-            );
+            });
 
             if (!response.ok) {
                 throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -396,7 +413,11 @@
             state.completed = 0;
             state.failed = 0;
 
-            log(`Loaded ${state.assets.length} assets needing thumbnails`, 'info');
+            if (state.selectedAssetIds && state.selectedAssetIds.length > 0) {
+                log(`Loaded ${state.assets.length} selected assets`, 'info');
+            } else {
+                log(`Loaded ${state.assets.length} assets needing thumbnails`, 'info');
+            }
             updateStats();
 
             return true;
@@ -578,6 +599,15 @@
         log('Please set your JWT token: localStorage.setItem("icosa_jwt_token", "YOUR_TOKEN")', 'info');
     }
 
-    log('Batch Thumbnail Generator ready', 'info');
+    // Auto-load pre-selected assets if they exist
+    if (state.selectedAssetIds && state.selectedAssetIds.length > 0) {
+        log(`Ready to process ${state.selectedAssetIds.length} pre-selected assets`, 'info');
+        // Automatically fetch them when the page loads
+        if (state.jwtToken) {
+            fetchAssets();
+        }
+    } else {
+        log('Batch Thumbnail Generator ready', 'info');
+    }
 </script>
 {% endblock %}

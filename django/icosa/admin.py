@@ -220,10 +220,14 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
 
     def batch_thumbnail_generator_view(self, request):
         """Custom admin view for batch thumbnail generation."""
+        # Get pre-selected asset IDs from session (if coming from admin action)
+        selected_asset_ids = request.session.pop("thumbnail_gen_asset_ids", None)
+
         context = {
             **self.admin_site.each_context(request),
             "title": "Batch Thumbnail Generator",
             "opts": self.model._meta,
+            "selected_asset_ids": selected_asset_ids,
         }
         return render(request, "admin/asset_batch_thumbnail_generator.html", context)
 

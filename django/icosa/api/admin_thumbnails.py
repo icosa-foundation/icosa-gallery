@@ -49,6 +49,7 @@ def list_assets_missing_thumbnails(
     limit: int = 50,
     offset: int = 0,
     viewer_compatible_only: bool = True,
+    asset_ids: str = None,
 ):
     """
     Get a list of assets that are missing thumbnails.
@@ -59,6 +60,7 @@ def list_assets_missing_thumbnails(
         limit: Number of assets to return (max 100)
         offset: Starting offset for pagination
         viewer_compatible_only: Only return assets that can be rendered in the viewer
+        asset_ids: Optional comma-separated list of specific asset IDs to fetch
     """
     # Check if user is staff
     if not request.auth.is_staff:
@@ -67,14 +69,20 @@ def list_assets_missing_thumbnails(
     # Limit the max batch size
     limit = min(limit, 100)
 
-    # Build query for assets without thumbnails
-    query = Q(thumbnail="") | Q(thumbnail__isnull=True)
+    # Build query
+    if asset_ids:
+        # Fetch specific assets by ID
+        id_list = [int(id.strip()) for id in asset_ids.split(",") if id.strip()]
+        query = Q(id__in=id_list)
+    else:
+        # Build query for assets without thumbnails
+        query = Q(thumbnail="") | Q(thumbnail__isnull=True)
 
-    if viewer_compatible_only:
-        query &= Q(is_viewer_compatible=True)
+        if viewer_compatible_only:
+            query &= Q(is_viewer_compatible=True)
 
-    # Also filter out assets in certain states
-    query &= Q(state__in=["ACTIVE", ""])
+        # Also filter out assets in certain states
+        query &= Q(state__in=["ACTIVE", ""])
 
     # Get assets
     assets_queryset = (
