@@ -134,7 +134,7 @@ def list_my_assets(
 def create_a_new_asset(
     request,
     data: Form[AssetMetaData],
-    files: Optional[List[UploadedFile]] = None,
+    files: Optional[List[UploadedFile]] = File(None),
 ):
     user = request.user
     owner, _ = AssetOwner.objects.get_or_create(
