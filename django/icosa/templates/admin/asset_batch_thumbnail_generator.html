@@ -316,7 +316,7 @@
     const viewerCompatibleOnlyCheckbox = document.getElementById('viewer-compatible-only');
 
     // Initialize viewer
-    state.viewer = new Viewer("{% static 'brushes/' %}");
+    state.viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}/");
     window.viewer = state.viewer; // For debugging
 
     // Utility functions
