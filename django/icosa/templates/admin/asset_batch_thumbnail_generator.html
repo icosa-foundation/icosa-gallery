@@ -488,30 +488,38 @@
 
         log(`Loading ${asset.name} (${formatType})...`, 'info');
 
+        // Use same overrides as the normal viewer for consistency
+        const overrides = {
+            'defaultBackgroundColor': "#000000",
+            'camera': {},
+            'geometryData': {},
+            'colorSpace': "LINEAR",
+        };
+
         // Load based on format type
         if (formatType === 'gltf2' || formatType === 'glb') {
             try {
-                await state.viewer.loadGltf(url, true);
+                await state.viewer.loadGltf(url, true, overrides);
                 if (state.viewer.loadingError) {
                     throw new Error("GLTF2 loading error");
                 }
             } catch (error) {
-                await state.viewer.loadGltf1(url, true);
+                await state.viewer.loadGltf1(url, true, overrides);
             }
         } else if (formatType === 'gltf1') {
-            await state.viewer.loadGltf1(url, true);
+            await state.viewer.loadGltf1(url, true, overrides);
         } else if (formatType === 'fbx') {
-            await state.viewer.loadFbx(url);
+            await state.viewer.loadFbx(url, overrides);
         } else if (formatType === 'obj') {
-            await state.viewer.loadObj(url);
+            await state.viewer.loadObj(url, overrides);
         } else if (formatType === 'stl') {
-            await state.viewer.loadStl(url);
+            await state.viewer.loadStl(url, overrides);
         } else if (formatType === 'usdz') {
-            await state.viewer.loadUsdz(url);
+            await state.viewer.loadUsdz(url, overrides);
         } else if (formatType === 'vox') {
-            await state.viewer.loadVox(url);
+            await state.viewer.loadVox(url, overrides);
         } else if (['ply', 'sog', 'spz', 'splat', 'ksplat'].includes(formatType)) {
-            await state.viewer.loadSplat(url);
+            await state.viewer.loadSplat(url, overrides);
         } else {
             throw new Error(`Unsupported format: ${formatType}`);
         }
