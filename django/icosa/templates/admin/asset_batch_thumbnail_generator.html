@@ -292,24 +292,21 @@
 <script type="module">
     import { Viewer } from "{% static 'js/icosa-viewer.module.js' %}";
 
-    // Pre-selected asset IDs from Django context (if coming from admin action)
-    const selectedAssetIds = {{ selected_asset_ids|default:"null"|safe }};
+    // Assets loaded from Django context
+    const assetsFromDjango = {{ assets_json|safe }};
 
-    // JWT token from Django (auto-generated for logged-in admin user)
-    const djangoJwtToken = {% if jwt_token %}"{{ jwt_token }}"{% else %}null{% endif %};
+    // CSRF token for POST requests
+    const csrfToken = "{{ csrf_token }}";
 
     // State management
     const state = {
-        assets: [],
+        assets: assetsFromDjango,
         currentIndex: 0,
         completed: 0,
         failed: 0,
         isRunning: false,
         isPaused: false,
         viewer: null,
-        // Prefer Django-provided token, fallback to localStorage
-        jwtToken: djangoJwtToken || localStorage.getItem('icosa_jwt_token') || '',
-        selectedAssetIds: selectedAssetIds,
     };
 
     // DOM elements

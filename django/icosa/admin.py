@@ -3,10 +3,14 @@ from import_export.admin import ExportMixin
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
+from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import path, reverse
 from django.utils.safestring import mark_safe
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from icosa.models import (
     Asset,
     AssetCollection,
@@ -215,6 +219,11 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
                 self.admin_site.admin_view(self.batch_thumbnail_generator_view),
                 name="icosa_asset_batch_thumbnail_generator",
             ),
+            path(
+                "upload-thumbnail/<int:asset_id>/",
+                self.admin_site.admin_view(self.upload_thumbnail_view),
+                name="icosa_asset_upload_thumbnail",
+            ),
         ]
         return custom_urls + urls
 
@@ -223,19 +232,119 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         # Get pre-selected asset IDs from session (if coming from admin action)
         selected_asset_ids = request.session.pop("thumbnail_gen_asset_ids", None)
 
-        # Generate JWT token for the current user
-        jwt_token = None
-        if request.user and request.user.is_authenticated:
-            jwt_token = request.user.generate_access_token()
+        # Fetch assets
+        from django.db.models import Q
+
+        if selected_asset_ids:
+            # Fetch specific selected assets
+            assets_queryset = Asset.objects.filter(id__in=selected_asset_ids)
+        else:
+            # Fetch all assets missing thumbnails
+            query = Q(thumbnail="") | Q(thumbnail__isnull=True)
+            query &= Q(is_viewer_compatible=True)
+            query &= Q(state__in=["ACTIVE", ""])
+            assets_queryset = Asset.objects.filter(query)
+
+        # Get assets with related data
+        assets = (
+            assets_queryset.select_related("owner")
+            .prefetch_related("format_set__resource_set")
+            .order_by("-create_time")[:100]  # Limit to 100 for safety
+        )
+
+        # Format assets for JSON
+        assets_data = []
+        for asset in assets:
+            formats = []
+            for fmt in asset.format_set.all():
+                root_url = None
+                if fmt.root_resource:
+                    root_url = fmt.root_resource.get_url()
+                elif fmt.zip_archive_url:
+                    root_url = fmt.zip_archive_url
+
+                formats.append({
+                    "format_type": fmt.format_type,
+                    "root_url": root_url,
+                    "is_preferred": fmt.is_preferred_for_gallery_viewer,
+                })
+
+            assets_data.append({
+                "id": asset.id,
+                "url": asset.url,
+                "name": asset.name or "Untitled",
+                "owner_displayname": asset.owner.displayname if asset.owner else None,
+                "formats": formats,
+            })
 
         context = {
             **self.admin_site.each_context(request),
             "title": "Batch Thumbnail Generator",
             "opts": self.model._meta,
             "selected_asset_ids": selected_asset_ids,
-            "jwt_token": jwt_token,
+            "assets_json": assets_data,
         }
         return render(request, "admin/asset_batch_thumbnail_generator.html", context)
+
+    def upload_thumbnail_view(self, request, asset_id):
+        """Handle thumbnail upload for an asset."""
+        if request.method != "POST":
+            return JsonResponse({"error": "POST required"}, status=405)
+
+        try:
+            asset = Asset.objects.get(id=asset_id)
+        except Asset.DoesNotExist:
+            return JsonResponse({"error": "Asset not found"}, status=404)
+
+        # Get the base64 thumbnail from POST data
+        import json
+
+        try:
+            data = json.loads(request.body)
+            thumbnail_base64 = data.get("thumbnail_base64")
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+        if not thumbnail_base64:
+            return JsonResponse({"error": "No thumbnail data provided"}, status=400)
+
+        # Convert base64 to image and save
+        from icosa.helpers.file import b64_to_img, validate_mime
+        from icosa.models.common import VALID_THUMBNAIL_MIME_TYPES
+
+        try:
+            thumbnail_file = b64_to_img(thumbnail_base64)
+
+            # Validate MIME type
+            thumbnail_file.seek(0)
+            mime_type = validate_mime(thumbnail_file.read())
+            thumbnail_file.seek(0)
+
+            if mime_type not in VALID_THUMBNAIL_MIME_TYPES:
+                return JsonResponse(
+                    {"error": f"Invalid image type: {mime_type}"}, status=400
+                )
+
+            # Save to both thumbnail and preview_image
+            asset.thumbnail.save(
+                f"thumbnail_{asset.url}.jpg", thumbnail_file, save=False
+            )
+            asset.preview_image.save(
+                f"preview_{asset.url}.jpg", thumbnail_file, save=False
+            )
+            asset.thumbnail_contenttype = mime_type
+            asset.save()
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "thumbnail_url": asset.thumbnail.url,
+                    "asset_url": asset.url,
+                }
+            )
+
+        except Exception as e:
+            return JsonResponse({"error": f"Failed to save thumbnail: {str(e)}"}, status=500)
 
     @admin.action(description="Generate thumbnails (opens batch generator)")
     def generate_thumbnails_for_selected(self, request, queryset):
