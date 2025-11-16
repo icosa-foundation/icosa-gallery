@@ -223,11 +223,17 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         # Get pre-selected asset IDs from session (if coming from admin action)
         selected_asset_ids = request.session.pop("thumbnail_gen_asset_ids", None)
 
+        # Generate JWT token for the current user
+        jwt_token = None
+        if request.user and request.user.is_authenticated:
+            jwt_token = request.user.generate_access_token()
+
         context = {
             **self.admin_site.each_context(request),
             "title": "Batch Thumbnail Generator",
             "opts": self.model._meta,
             "selected_asset_ids": selected_asset_ids,
+            "jwt_token": jwt_token,
         }
         return render(request, "admin/asset_batch_thumbnail_generator.html", context)
 

@@ -35,35 +35,11 @@ The Batch Thumbnail Generator is an admin tool for generating thumbnails for ass
 
 ## Setup
 
-### 1. Get a JWT Token
+### Prerequisites
 
-The batch generator requires authentication via JWT. To get your token:
+You must be logged in to the Django admin as a **staff user**. Authentication is automatic - the system will generate a JWT token for you when you access the batch thumbnail generator.
 
-**Option A: Via API Login**
-```bash
-curl -X POST https://gallery.icosa.io/api/v1/login/jwt \
-  -H "Content-Type: application/json" \
-  -d '{"username": "your-admin-username", "password": "your-password"}'
-```
-
-**Option B: Via Django Shell**
-```python
-from icosa.models import User
-
-user = User.objects.get(username='your-admin-username')
-token = user.generate_jwt_token()
-print(token)
-```
-
-### 2. Set Token in Browser
-
-Open the batch thumbnail generator page and run this in the browser console:
-
-```javascript
-localStorage.setItem('icosa_jwt_token', 'YOUR_TOKEN_HERE')
-```
-
-Then refresh the page.
+No manual token setup is required!
 
 ## Usage
 
@@ -197,16 +173,17 @@ Upload a generated thumbnail for an asset.
 
 ## Troubleshooting
 
-### "JWT token required" Error
+### "Authentication error" or "Admin access required"
 
-- You haven't set the JWT token in localStorage
-- Run: `localStorage.setItem('icosa_jwt_token', 'YOUR_TOKEN')`
-- Refresh the page
+- Ensure you're logged in to the Django admin
+- Your user account must have staff permissions (`is_staff=True`)
+- Try logging out and logging back in
+- Contact a superuser if you need staff permissions
 
-### "Admin access required" Error
+### Token Already Expired
 
-- Your user account doesn't have staff permissions
-- Contact a superuser to grant you staff status
+- JWT tokens expire after a configured time (default varies)
+- Simply refresh the page to get a new token automatically
 
 ### Assets Not Loading
 

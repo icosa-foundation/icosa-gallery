@@ -295,6 +295,9 @@
     // Pre-selected asset IDs from Django context (if coming from admin action)
     const selectedAssetIds = {{ selected_asset_ids|default:"null"|safe }};
 
+    // JWT token from Django (auto-generated for logged-in admin user)
+    const djangoJwtToken = {% if jwt_token %}"{{ jwt_token }}"{% else %}null{% endif %};
+
     // State management
     const state = {
         assets: [],
@@ -304,7 +307,8 @@
         isRunning: false,
         isPaused: false,
         viewer: null,
-        jwtToken: localStorage.getItem('icosa_jwt_token') || '',
+        // Prefer Django-provided token, fallback to localStorage
+        jwtToken: djangoJwtToken || localStorage.getItem('icosa_jwt_token') || '',
         selectedAssetIds: selectedAssetIds,
     };
 
@@ -379,7 +383,7 @@
 
     async function fetchAssets() {
         if (!state.jwtToken) {
-            log('JWT token required. Please log in via the API first.', 'error');
+            log('Authentication error. Please refresh the page and try again.', 'error');
             return false;
         }
 
@@ -596,7 +600,9 @@
 
     // Check for JWT token on load
     if (!state.jwtToken) {
-        log('Please set your JWT token: localStorage.setItem("icosa_jwt_token", "YOUR_TOKEN")', 'info');
+        log('Error: No authentication token available. Please contact your administrator.', 'error');
+    } else if (djangoJwtToken) {
+        log('Authenticated as Django admin user', 'success');
     }
 
     // Auto-load pre-selected assets if they exist
