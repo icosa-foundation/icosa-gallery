@@ -245,11 +245,11 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
             query &= Q(state__in=["ACTIVE", ""])
             assets_queryset = Asset.objects.filter(query)
 
-        # Get assets with related data
+        # Get assets with related data (limit to 20 for memory/rate limit safety)
         assets = (
             assets_queryset.select_related("owner")
             .prefetch_related("format_set__resource_set")
-            .order_by("-create_time")[:100]  # Limit to 100 for safety
+            .order_by("-create_time")[:20]
         )
 
         # Format assets for JSON

@@ -216,15 +216,8 @@
 
     <div class="controls-panel">
         <div class="control-group">
-            <label for="batch-size">Batch Size:</label>
-            <input type="number" id="batch-size" value="50" min="1" max="100">
-        </div>
-
-        <div class="control-group">
-            <label for="viewer-compatible-only">
-                <input type="checkbox" id="viewer-compatible-only" checked>
-                Viewer Compatible Only
-            </label>
+            <label for="delay-slider">Delay between assets: <span id="delay-value">5</span> seconds</label>
+            <input type="range" id="delay-slider" min="1" max="30" value="5" style="width: 200px;">
         </div>
 
         <div class="control-group">
@@ -313,12 +306,17 @@
     const startBtn = document.getElementById('start-btn');
     const pauseBtn = document.getElementById('pause-btn');
     const skipBtn = document.getElementById('skip-btn');
-    const batchSizeInput = document.getElementById('batch-size');
-    const viewerCompatibleOnlyCheckbox = document.getElementById('viewer-compatible-only');
+    const delaySlider = document.getElementById('delay-slider');
+    const delayValue = document.getElementById('delay-value');
 
     // Initialize viewer
     state.viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}/");
     window.viewer = state.viewer; // For debugging
+
+    // Update delay value display
+    delaySlider.addEventListener('input', (e) => {
+        delayValue.textContent = e.target.value;
+    });
 
     // Utility functions
     function log(message, type = 'info') {
@@ -378,56 +376,6 @@
         `;
     }
 
-    async function fetchAssets() {
-        if (!state.jwtToken) {
-            log('Authentication error. Please refresh the page and try again.', 'error');
-            return false;
-        }
-
-        try {
-            const batchSize = parseInt(batchSizeInput.value);
-            const viewerCompatibleOnly = viewerCompatibleOnlyCheckbox.checked;
-
-            // Build URL with parameters
-            let url = `/api/v1/admin/assets/missing-thumbnails?limit=${batchSize}&viewer_compatible_only=${viewerCompatibleOnly}`;
-
-            // If we have pre-selected asset IDs, use those instead
-            if (state.selectedAssetIds && state.selectedAssetIds.length > 0) {
-                const assetIdsParam = state.selectedAssetIds.join(',');
-                url = `/api/v1/admin/assets/missing-thumbnails?asset_ids=${assetIdsParam}&limit=${batchSize}`;
-                log(`Processing ${state.selectedAssetIds.length} pre-selected assets`, 'info');
-            }
-
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${state.jwtToken}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            state.assets = data.assets;
-            state.currentIndex = 0;
-            state.completed = 0;
-            state.failed = 0;
-
-            if (state.selectedAssetIds && state.selectedAssetIds.length > 0) {
-                log(`Loaded ${state.assets.length} selected assets`, 'info');
-            } else {
-                log(`Loaded ${state.assets.length} assets needing thumbnails`, 'info');
-            }
-            updateStats();
-
-            return true;
-        } catch (error) {
-            log(`Error fetching assets: ${error.message}`, 'error');
-            return false;
-        }
-    }
-
     async function captureScreenshot() {
         // Frame the scene before capturing
         state.viewer.frameScene();
@@ -449,12 +397,12 @@
         const base64Data = base64Image.split(',')[1];
 
         const response = await fetch(
-            `/api/v1/admin/assets/${assetId}/thumbnail`,
+            `/admin/icosa/asset/upload-thumbnail/${assetId}/`,
             {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${state.jwtToken}`,
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
                 },
                 body: JSON.stringify({
                     thumbnail_base64: base64Data
@@ -464,7 +412,7 @@
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.detail || `Upload failed: ${response.status}`);
+            throw new Error(error.error || `Upload failed: ${response.status}`);
         }
 
         return await response.json();
@@ -560,6 +508,13 @@
             await processAsset(asset);
 
             state.currentIndex++;
+
+            // Add delay before next asset (except on last one)
+            if (state.currentIndex < state.assets.length && state.isRunning) {
+                const delaySeconds = parseInt(delaySlider.value);
+                log(`Waiting ${delaySeconds} seconds before next asset...`, 'info');
+                await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+            }
         }
 
         state.isRunning = false;
@@ -574,9 +529,9 @@
 
     // Event listeners
     startBtn.addEventListener('click', async () => {
-        if (state.assets.length === 0 || state.currentIndex >= state.assets.length) {
-            const success = await fetchAssets();
-            if (!success) return;
+        if (state.assets.length === 0) {
+            log('No assets to process', 'error');
+            return;
         }
 
         if (state.isPaused) {
@@ -603,22 +558,12 @@
         }
     });
 
-    // Check for JWT token on load
-    if (!state.jwtToken) {
-        log('Error: No authentication token available. Please contact your administrator.', 'error');
-    } else if (djangoJwtToken) {
-        log('Authenticated as Django admin user', 'success');
-    }
-
-    // Auto-load pre-selected assets if they exist
-    if (state.selectedAssetIds && state.selectedAssetIds.length > 0) {
-        log(`Ready to process ${state.selectedAssetIds.length} pre-selected assets`, 'info');
-        // Automatically fetch them when the page loads
-        if (state.jwtToken) {
-            fetchAssets();
-        }
+    // Initialize
+    if (state.assets.length > 0) {
+        log(`Ready to process ${state.assets.length} assets`, 'info');
+        updateStats();
     } else {
-        log('Batch Thumbnail Generator ready', 'info');
+        log('No assets found needing thumbnails', 'info');
     }
 </script>
 {% endblock %}
