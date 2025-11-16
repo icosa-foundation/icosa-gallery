@@ -259,7 +259,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
             for fmt in asset.format_set.all():
                 root_url = None
                 if fmt.root_resource:
-                    root_url = fmt.root_resource.get_url()
+                    root_url = fmt.root_resource.url
                 elif fmt.zip_archive_url:
                     root_url = fmt.zip_archive_url
 
