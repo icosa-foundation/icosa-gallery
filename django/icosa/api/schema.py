@@ -247,8 +247,7 @@ class AssetPatchData(Schema):
 
 
 class AssetMetaData(Schema):
-    objPolyCount: Optional[int] = None
-    triangulatedObjPolyCount: Optional[int] = None
+    triangleCount: Optional[int] = None
     remixIds: Optional[List[str]] = None
     formatOverride: Optional[List[str]] = None
 

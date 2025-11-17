@@ -5,7 +5,7 @@ from typing import Optional
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
@@ -316,32 +316,8 @@ class Asset(models.Model):
         self.has_obj = self.format_set.filter(format_type="OBJ").exists()
         self.has_vox = self.format_set.filter(format_type="VOX").exists()
 
-    def get_triangle_count(self):
-        formats = {}
-        for format in self.format_set.filter(triangle_count__gt=0):
-            formats.setdefault(format.role, format.triangle_count)
-        if "POLYGONE_GLTF_FORMAT" in formats.keys():
-            return formats["POLYGONE_GLTF_FORMAT"]
-        if "ORIGINAL_TRIANGULATED_OBJ_FORMAT" in formats.keys():
-            return formats["ORIGINAL_OBJ_FORMAT"]
-        if "UPDATED_GLTF_FORMAT" in formats.keys():
-            return formats["UPDATED_GLTF_FORMAT"]
-        if "ORIGINAL_GLTF_FORMAT" in formats.keys():
-            return formats["ORIGINAL_GLTF_FORMAT"]
-        if "POLYGONE_OBJ_FORMAT" in formats.keys():
-            return formats["POLYGONE_OBJ_FORMAT"]
-        if "POLYGONE_GLB_FORMAT" in formats.keys():
-            return formats["POLYGONE_GLB_FORMAT"]
-        if "GLB_FORMAT" in formats.keys():
-            return formats["GLB_FORMAT"]
-        if "POLYGONE_FBX_FORMAT" in formats.keys():
-            return formats["POLYGONE_FBX_FORMAT"]
-        if "ORIGINAL_FBX_FORMAT" in formats.keys():
-            return formats["ORIGINAL_FBX_FORMAT"]
-        return 0
-
     def denorm_triangle_count(self):
-        self.triangle_count = self.get_triangle_count()
+        self.triangle_count = self.format_set.aggregate(Max("triangle_count"))["triangle_count__max"]
 
     def denorm_liked_time(self):
         last_liked = self.userlike_set.order_by("-date_liked").first()

@@ -207,16 +207,11 @@ def upload_api_asset(
 
     asset.save()  # Denorm asset so far and save formats
 
-    # Apply triangle counts to all formats and resources.
-    non_triangulated_formats = asset.format_set.exclude(format_type="OBJ_NGON")
-    for format in non_triangulated_formats:
-        format.triangle_count = data.objPolyCount
-        format.save()
-
-    triangulated_formats = asset.format_set.filter(format_type="OBJ_NGON")
-    for format in triangulated_formats:
-        format.triangle_count = data.triangulatedObjPolyCount
-        format.save()
+    # Apply the one triangle count to all formats and resources.
+    formats = asset.format_set.all()
+    for fmt in formats:
+        fmt.triangle_count = data.triangleCount
+        fmt.save()
 
     asset.remix_ids = getattr(data, "remixIds", None)
 
