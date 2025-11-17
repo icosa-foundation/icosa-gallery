@@ -21,7 +21,7 @@ handler404 = main_views.handler404
 handler500 = main_views.handler500
 
 throttle_rules = [
-    AnonRateThrottle("60/h"),
+    AnonRateThrottle("600/h"),
     AuthRateThrottle("1000/h"),
 ]
 
