@@ -291,6 +291,7 @@ class OembedOut(Schema):
 
 
 class AssetCollectionSchema(ModelSchema):
+    collectionId: str
     name: str
     description: Optional[str] = Field(None)
     url: str
@@ -299,6 +300,10 @@ class AssetCollectionSchema(ModelSchema):
     visibility: str
     imageUrl: Optional[str] = Field(None)
     assets: Optional[List[AssetSchema]] = Field(None)
+
+    @staticmethod
+    def resolve_collectionId(obj, context):
+        return obj.url
 
     @staticmethod
     def resolve_assets(obj, context):
