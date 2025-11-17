@@ -348,6 +348,13 @@ class AssetCollectionPostSchema(Schema):
     asset_url: Optional[List[str]] = None
 
 
+class AssetCollectionPatchSchema(Schema):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    visibility: Optional[AssetVisibility] = None
+    asset_url: Optional[List[str]] = None
+
+
 class AssetCollectionPutSchema(Schema):
     asset_url: Optional[List[str]] = None
 

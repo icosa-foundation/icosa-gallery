@@ -38,6 +38,7 @@ from .filters import (
     filter_and_sort_assets,
 )
 from .schema import (
+    AssetCollectionPatchSchema,
     AssetCollectionPostSchema,
     AssetCollectionPutSchema,
     AssetCollectionSchema,
@@ -316,7 +317,7 @@ def show_a_collection(
 def update_a_collection(
     request,
     asset_collection_url: str,
-    data: AssetCollectionPostSchema,
+    data: AssetCollectionPatchSchema,
 ):
     user = request.user
     collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
