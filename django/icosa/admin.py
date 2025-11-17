@@ -163,6 +163,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "has_vox",
         "last_reported_by",
         "last_reported_time",
+        "triangle_count",
     )
 
     def display_thumbnail(self, obj):
