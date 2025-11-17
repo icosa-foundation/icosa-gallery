@@ -317,7 +317,8 @@ class Asset(models.Model):
         self.has_vox = self.format_set.filter(format_type="VOX").exists()
 
     def denorm_triangle_count(self):
-        self.triangle_count = self.format_set.aggregate(Max("triangle_count"))["triangle_count__max"]
+        max_triangle_count = self.format_set.aggregate(Max("triangle_count"))["triangle_count__max"]
+        self.triangle_count = max_triangle_count if max_triangle_count is not None else 0
 
     def denorm_liked_time(self):
         last_liked = self.userlike_set.order_by("-date_liked").first()
