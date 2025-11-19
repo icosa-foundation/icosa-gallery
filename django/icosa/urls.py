@@ -83,6 +83,7 @@ urlpatterns = [
         name="password_reset_confirm",
     ),
     path("device", auth_views.devicecode, name="devicecode"),
+    path("device/<str:appid>/<str:secret>", auth_views.devicecode, name="devicecode"),
     path("device-login-success", auth_views.device_login_success, name="device_login_success"),
     # Other views
     path("", main_views.home, name="home"),
