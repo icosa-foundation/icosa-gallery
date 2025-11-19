@@ -44,6 +44,8 @@ User = get_user_model()
 
 
 def dummy_key(group, request):
+    _ = group
+    _ = request
     # Return the same key every time. This essentially bypasses the key
     # entirely and rate limits the route regardless of who is accessing it.
     return "number9"
