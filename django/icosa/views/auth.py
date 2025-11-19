@@ -99,12 +99,7 @@ def debug_password_reset_email(request):
 def debug_registration_email(request):
     user = request.user
     owner = AssetOwner.objects.get(django_user=user)
-    send_registration_email(
-        request,
-        user,
-        owner,
-        settings.ADMIN_EMAIL,
-    )
+    send_registration_email(request, user, owner)
 
     return HttpResponse("ok")
 
