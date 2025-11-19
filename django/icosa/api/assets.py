@@ -12,6 +12,7 @@ from icosa.api import (
 )
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
+    PRIVATE,
     PUBLIC,
     UNLISTED,
     Asset,
@@ -47,7 +48,7 @@ def get_asset(
     asset_url: str,
 ):
     try:
-        asset = Asset.objects.exclude(visibility__in=[PUBLIC, UNLISTED]).get(url=asset_url)
+        asset = Asset.objects.exclude(visibility__in=[PRIVATE, UNLISTED]).get(url=asset_url)
     except Asset.DoesNotExist:
         raise NOT_FOUND
     return asset
