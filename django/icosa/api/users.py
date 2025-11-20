@@ -189,7 +189,7 @@ def show_an_asset(
 @router.delete(
     "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
-    response={204: int},
+    response={204: int, 400: Error},
 )
 def delete_an_asset(
     request,
@@ -197,6 +197,8 @@ def delete_an_asset(
 ):
     asset = get_asset_by_url(request, asset_url)
     check_user_owns_asset(request, asset)
+    if asset.is_published:
+        return 400, {"message": "Cannot delete published assets."}
     with transaction.atomic():
         asset.hide_media()
         asset.delete()
