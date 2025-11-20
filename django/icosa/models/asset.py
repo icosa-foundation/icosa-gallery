@@ -15,7 +15,6 @@ from icosa.helpers.storage import get_b2_bucket
 
 from .common import (
     ALL_RIGHTS_RESERVED,
-    ARCHIVE_PREFIX,
     ASSET_STATE_CHOICES,
     ASSET_VISIBILITY_CHOICES,
     CATEGORY_CHOICES,
@@ -372,7 +371,7 @@ class Asset(models.Model):
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
             if format.zip_archive_url:
-                resource_data = {"zip_archive_url": f"{ARCHIVE_PREFIX}{format.zip_archive_url}"}
+                resource_data = {"zip_archive_url": format.zip_archive_url}
             else:
                 # Query all resources which have either an external url or a
                 # file. Ignoring resources which have neither.

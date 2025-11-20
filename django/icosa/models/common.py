@@ -98,7 +98,6 @@ LICENSE_CHOICES = (
     + [RESERVED_LICENSE]
 )
 
-ARCHIVE_PREFIX = "https://web.archive.org/web/"
 STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
 
 
