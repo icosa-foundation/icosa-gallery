@@ -408,7 +408,7 @@ def set_an_image_for_a_collection(
     magic_bytes = next(image.chunks(chunk_size=2048))
     image.seek(0)
     if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
-        return 400, {"message", "Thumbnail must be png or jpg."}
+        return 400, {"message": "Thumbnail must be png or jpg."}
     asset_collection.image = image
     asset_collection.save()
     return 201, {"url": asset_collection.image}
