@@ -43,6 +43,7 @@ class AssetOwner(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+        related_name="merged_owners",
     )
     disable_profile = models.BooleanField(default=False)
 
