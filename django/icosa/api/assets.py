@@ -12,6 +12,7 @@ from icosa.api import (
 )
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
+    ARCHIVED,
     PRIVATE,
     PUBLIC,
     UNLISTED,
@@ -48,9 +49,14 @@ def get_asset(
     asset_url: str,
 ):
     try:
-        asset = Asset.objects.exclude(visibility__in=[PRIVATE, UNLISTED]).get(url=asset_url)
+        asset = Asset.objects.exclude(visibility=ARCHIVED).get(url=asset_url)
     except Asset.DoesNotExist:
         raise NOT_FOUND
+    if asset.visibility == PRIVATE:
+        # TODO `check_user_owns_asset` is not appropriate here. Perhaps
+        # refactor it to be more useful.
+        if asset.owner.django_user != request.user:
+            raise NOT_FOUND
     return asset
 
 
