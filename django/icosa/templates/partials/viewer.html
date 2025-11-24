@@ -163,7 +163,7 @@
         console.log("Trying to load obj");
         {% with mtl_resource=asset.preferred_viewer_format.resource_set.first %}
             {% if mtl_resource %}
-                let mtlUrl = "{{ mtl_resource.url }}";
+                let mtlUrl = "{{ mtl_resource.url|default_if_none:'' }}";
                 await viewer.loadObjWithMtl(url, mtlUrl, overrides);
             {% else %}
                 await viewer.loadObj(url, overrides);

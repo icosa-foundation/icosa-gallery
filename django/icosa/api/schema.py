@@ -247,8 +247,7 @@ class AssetPatchData(Schema):
 
 
 class AssetMetaData(Schema):
-    objPolyCount: Optional[int] = None
-    triangulatedObjPolyCount: Optional[int] = None
+    triangleCount: Optional[int] = None
     remixIds: Optional[List[str]] = None
     formatOverride: Optional[List[str]] = None
 
@@ -291,6 +290,7 @@ class OembedOut(Schema):
 
 
 class AssetCollectionSchema(ModelSchema):
+    collectionId: str
     name: str
     description: Optional[str] = Field(None)
     url: str
@@ -299,6 +299,10 @@ class AssetCollectionSchema(ModelSchema):
     visibility: str
     imageUrl: Optional[str] = Field(None)
     assets: Optional[List[AssetSchema]] = Field(None)
+
+    @staticmethod
+    def resolve_collectionId(obj, context):
+        return obj.url
 
     @staticmethod
     def resolve_assets(obj, context):
@@ -343,6 +347,13 @@ class AssetVisibility(Enum):
 
 class AssetCollectionPostSchema(Schema):
     name: str
+    description: Optional[str] = None
+    visibility: Optional[AssetVisibility] = None
+    asset_url: Optional[List[str]] = None
+
+
+class AssetCollectionPatchSchema(Schema):
+    name: Optional[str] = None
     description: Optional[str] = None
     visibility: Optional[AssetVisibility] = None
     asset_url: Optional[List[str]] = None

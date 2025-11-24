@@ -38,6 +38,7 @@ from .filters import (
     filter_and_sort_assets,
 )
 from .schema import (
+    AssetCollectionPatchSchema,
     AssetCollectionPostSchema,
     AssetCollectionPutSchema,
     AssetCollectionSchema,
@@ -124,11 +125,7 @@ def list_my_assets(
     return assets
 
 
-@router.post(
-    "/me/assets",
-    response={201: UploadJobSchemaOut},
-    auth=JWTAuth()
-)
+@router.post("/me/assets", response={201: UploadJobSchemaOut}, auth=JWTAuth())
 @decorate_view(never_cache)
 def create_a_new_asset(
     request,
@@ -192,7 +189,7 @@ def show_an_asset(
 @router.delete(
     "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
-    response={204: int},
+    response={204: int, 400: Error},
 )
 def delete_an_asset(
     request,
@@ -200,6 +197,8 @@ def delete_an_asset(
 ):
     asset = get_asset_by_url(request, asset_url)
     check_user_owns_asset(request, asset)
+    if asset.is_published:
+        return 400, {"message": "Cannot delete published assets."}
     with transaction.atomic():
         asset.hide_media()
         asset.delete()
@@ -316,7 +315,7 @@ def show_a_collection(
 def update_a_collection(
     request,
     asset_collection_url: str,
-    data: AssetCollectionPostSchema,
+    data: AssetCollectionPatchSchema,
 ):
     user = request.user
     collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
@@ -409,7 +408,7 @@ def set_an_image_for_a_collection(
     magic_bytes = next(image.chunks(chunk_size=2048))
     image.seek(0)
     if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
-        return 400, {"message", "Thumbnail must be png or jpg."}
+        return 400, {"message": "Thumbnail must be png or jpg."}
     asset_collection.image = image
     asset_collection.save()
     return 201, {"url": asset_collection.image}

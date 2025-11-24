@@ -1,5 +1,3 @@
-from import_export.admin import ExportMixin
-
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
@@ -29,6 +27,8 @@ from icosa.models import (
     Tag,
     UserLike,
 )
+
+from import_export.admin import ExportMixin
 
 User = get_user_model()
 
@@ -170,6 +170,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "has_vox",
         "last_reported_by",
         "last_reported_time",
+        "triangle_count",
     )
 
     def display_thumbnail(self, obj):
