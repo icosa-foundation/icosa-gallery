@@ -13,7 +13,7 @@ from icosa.api import (
     get_asset_by_url,
     get_publish_url,
 )
-from icosa.helpers.file import validate_mime
+from icosa.helpers.file import get_content_type, validate_mime
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
 from icosa.models import (
@@ -203,6 +203,30 @@ def delete_an_asset(
         asset.hide_media()
         asset.delete()
     return 204
+
+
+@router.post(
+    "/me/assets/{str:asset_url}/set_thumbnail",
+    auth=JWTAuth(),
+    response={201: ImageSchema, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def set_an_image_for_an_asset(
+    request,
+    asset_url: str,
+    image: File[UploadedFile],
+):
+    asset = get_asset_by_url(request, asset_url)
+    check_user_owns_asset(request, asset)
+    magic_bytes = next(image.chunks(chunk_size=2048))
+    image.seek(0)
+    if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
+        return 400, {"message": "Thumbnail must be png or jpg."}
+    asset.thumbnail = image
+    asset.thumbnail_contenttype = get_content_type(image.name)
+    asset.save()
+    return 201, {"url": asset.thumbnail}
 
 
 @router.get(
