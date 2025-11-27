@@ -173,7 +173,12 @@ def landing_page(
     template = "main/home.html"
 
     # TODO(james): filter out assets with no formats
-    assets = assets.exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).select_related("owner")
+    assets = (
+        assets.exclude(license__isnull=True)
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .select_related("owner")
+        .prefetch_related("resource_set", "format_set")
+    )
 
     try:
         page_number = int(request.GET.get("page", 1))
