@@ -510,7 +510,7 @@ def asset_view(request, asset_url):
     template = "main/asset_view.html"
     user = request.user
 
-    asset = get_object_or_404(Asset, url=asset_url)
+    asset = get_object_or_404(Asset.objects.prefetch_related("resource_set", "format_set"), url=asset_url)
     check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()
     format_override = request.GET.get("forceformat", "")

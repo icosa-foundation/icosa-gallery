@@ -340,7 +340,7 @@ class Asset(models.Model):
     def inc_views_and_rank(self):
         self.views += 1
         self.rank = self.get_updated_rank()
-        self.save()
+        self.save(bypass_custom_logic=True)
 
     def get_all_file_names(self):
         file_list = []
