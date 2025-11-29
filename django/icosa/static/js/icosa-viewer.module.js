@@ -5603,7 +5603,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     async _loadGltf(url, loadEnvironment, overrides, isV1) {
         let sceneGltf;
         this.overrides = overrides;
-        if (isV1) {
+        this.isV1 = isV1;
+        if (this.isV1) {
             sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
             await this.replaceGltf1Materials(sceneGltf.scene, this.brushPath.toString());
         } else sceneGltf = await this.gltfLoader.loadAsync(url);
@@ -5654,9 +5655,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             sceneGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(poseRotation.x), $hBQxr$three.MathUtils.degToRad(poseRotation.y), $hBQxr$three.MathUtils.degToRad(poseRotation.z)));
             sceneGltf.scene.scale.multiplyScalar(poseScale);
         }
-        console.log(`scene Position: ${sceneGltf.scene.position.x}, ${sceneGltf.scene.position.y}, ${sceneGltf.scene.position.z}`);
-        console.log(`scene Rotation: ${sceneGltf.scene.rotation.x}, ${sceneGltf.scene.rotation.y}, ${sceneGltf.scene.rotation.z}`);
-        console.log(`scene Scale: ${sceneGltf.scene.scale.x}`);
     }
     async loadTilt(url, overrides) {
         try {
@@ -5886,7 +5884,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 // Use the standard GLTFLoader for environments
                 const standardLoader = new (0, $hBQxr$GLTFLoader)();
                 const envGltf = await standardLoader.loadAsync(envUrl.toString());
-                if (this.isNewTiltExporter(sceneGltf)) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
+                if (this.isNewTiltExporter(sceneGltf) || this.isV1) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
                 envGltf.scene.scale.set(.1, .1, .1);
                 scene.attach(envGltf.scene);
                 this.environmentObject = envGltf.scene;
@@ -5968,8 +5966,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             0
         ]; // Could be euler angles or quaternion
         if (this.isNewTiltExporter(this.sceneGltf)) {
-            // the scene scale is modified elsewhere but here we correct the camera to match
-            //cameraPos = [cameraPos[0] * 0.1, cameraPos[1] * 0.1, cameraPos[2] * 0.1];
+            // Scene scale is modified elsewhere but here we correct the camera to match
             cameraPos[1] -= 1;
             cameraRot[1] += 180;
         }
