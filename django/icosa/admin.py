@@ -1,15 +1,18 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
-from django.contrib.auth.models import User
 from django.db.models import Count
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from icosa.models import (
     Asset,
+    AssetCollection,
+    AssetCollectionAsset,
     AssetOwner,
     BulkSaveLog,
     DeviceCode,
     Format,
+    FormatRoleLabel,
     HiddenMediaFileLog,
     MastheadSection,
     Oauth2Client,
@@ -17,38 +20,12 @@ from icosa.models import (
     Oauth2Token,
     Resource,
     Tag,
+    UserLike,
 )
+
 from import_export.admin import ExportMixin
 
-FORMAT_ROLE_CHOICES = {
-    1: "Original OBJ File",
-    2: "Tilt File",
-    4: "Unknown GLTF File A",
-    6: "Original FBX File",
-    7: "Blocks File",
-    8: "USD File",
-    11: "HTML File",
-    12: "Original glTF File",
-    13: "TOUR CREATOR EXPERIENCE",
-    15: "JSON File",
-    16: "lullmodel File",
-    17: "SAND File A",
-    18: "GLB File",
-    19: "SAND File B",
-    20: "SANDC File",
-    21: "PB File",
-    22: "Unknown GLTF File B",
-    24: "Original Triangulated OBJ File",
-    25: "JPG BUGGY",
-    26: "USDZ File",
-    30: "Updated glTF File",
-    32: "Editor settings pb file",
-    35: "Unknown GLTF File C",
-    36: "Unknown GLB File A",
-    38: "Unknown GLB File B",
-    39: "TILT NATIVE glTF",
-    40: "USER SUPPLIED glTF",
-}
+User = get_user_model()
 
 
 @admin.register(Tag)
@@ -78,11 +55,14 @@ class FormatInline(admin.TabularInline):
     extra = 0
     model = Format
     show_change_link = True
+    readonly_fields = ("is_preferred_for_gallery_viewer",)
 
     fields = (
         "format_type",
         "zip_archive_url",
         "role",
+        "is_preferred_for_gallery_viewer",
+        "is_preferred_for_download",
     )
 
 
@@ -107,11 +87,26 @@ class FormatAdmin(ExportMixin, admin.ModelAdmin):
     list_filter = (
         "role",
         "format_type",
+        "is_preferred_for_gallery_viewer",
+        "is_preferred_for_download",
     )
     raw_id_fields = [
         "asset",
         "root_resource",
     ]
+
+
+@admin.register(FormatRoleLabel)
+class FormatRoleLabelAdmin(admin.ModelAdmin):
+    list_display = (
+        "role_text",
+        "label",
+    )
+
+    list_filter = (
+        "role_text",
+        "label",
+    )
 
 
 @admin.register(Asset)
@@ -147,6 +142,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "has_gltf_any",
         "has_obj",
         "has_fbx",
+        "has_vox",
         ("thumbnail", admin.EmptyFieldListFilter),
         "license",
         "category",
@@ -164,28 +160,11 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "has_gltf_any",
         "has_obj",
         "has_fbx",
+        "has_vox",
         "last_reported_by",
         "last_reported_time",
-        "display_preferred_viewer_format",
+        "triangle_count",
     )
-
-    def display_preferred_viewer_format(self, obj):
-        if obj.preferred_viewer_format:  # and obj.preferred_viewer_format.format:
-            try:
-                change_url = reverse(
-                    "admin:icosa_format_change",
-                    args=(obj.preferred_viewer_format["format"].id,),
-                )
-                role_text = FORMAT_ROLE_CHOICES[obj.preferred_viewer_format["format"].role]
-                html = f"<a href='{change_url}'>{role_text}</a>"
-            except Exception as e:
-                html = f"{e.message}"
-        else:
-            html = "-"
-        return mark_safe(html)
-
-    display_preferred_viewer_format.short_description = "Preferred viewer format"
-    display_preferred_viewer_format.allow_tags = True
 
     def display_thumbnail(self, obj):
         html = f"{obj.url}"
@@ -226,6 +205,50 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
     ]
 
 
+class AssetCollectionAssetInline(admin.TabularInline):
+    extra = 0
+    model = AssetCollectionAsset
+
+    raw_id_fields = [
+        "asset",
+    ]
+
+    fields = (
+        "asset",
+        "order",
+    )
+
+
+@admin.register(AssetCollection)
+class AssetCollectionAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "user",
+        "create_time",
+        "display_asset_count",
+        "visibility",
+    )
+
+    search_fields = (
+        "name",
+        "url",
+        "user__displayname",
+    )
+
+    inlines = (AssetCollectionAssetInline,)
+
+    list_filter = ("visibility",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(asset_count=Count("assets"))
+
+    def display_asset_count(self, obj):
+        return obj.assets.count()
+
+    display_asset_count.short_description = "Assets"
+    display_asset_count.admin_order_field = "asset_count"
+
+
 @admin.register(DeviceCode)
 class DeviceCodeAdmin(ExportMixin, admin.ModelAdmin):
     list_display = (
@@ -237,12 +260,6 @@ class DeviceCodeAdmin(ExportMixin, admin.ModelAdmin):
     raw_id_fields = ["user"]
 
     date_hierarchy = "expiry"
-
-
-class UserAssetLikeInline(admin.TabularInline):
-    extra = 0
-    model = AssetOwner.likes.through
-    raw_id_fields = ["asset"]
 
 
 @admin.register(AssetOwner)
@@ -266,8 +283,8 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         ("email", admin.EmptyFieldListFilter),
         ("django_user", admin.EmptyFieldListFilter),
         "is_claimed",
+        "disable_profile",
     )
-    inlines = (UserAssetLikeInline,)
     raw_id_fields = [
         "django_user",
         "merged_with",
@@ -286,8 +303,12 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
     def display_django_user(self, obj):
         html = "-"
         if obj.django_user:
-            change_url = reverse("admin:auth_user_change", args=(obj.django_user.id,))
+            change_url = reverse(
+                "admin:icosa_user_change",
+                args=(obj.django_user.id,),
+            )
             html = f"<a href='{change_url}'>{obj.django_user}</a>"
+
         return mark_safe(html)
 
     display_django_user.short_description = "Django User"
@@ -365,15 +386,69 @@ class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
     pass
 
 
+class UserLikeInline(admin.TabularInline):
+    extra = 0
+    model = UserLike
+    raw_id_fields = ["asset"]
+
+
 class UserAdmin(OriginalUserAdmin):
+    model = User
     actions = [
         "make_not_staff",
     ]
+
+    list_display = (
+        "username",
+        "display_owners",
+        "email",
+        "date_joined",
+        "last_login",
+        "is_staff",
+    )
+
+    search_fields = (
+        "displayname",
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "is_staff",
+        "id",
+    )
+
+    list_filter = (
+        "is_staff",
+        "is_superuser",
+        "is_active",
+        "date_joined",
+        "last_login",
+    )
+
+    fieldsets = OriginalUserAdmin.fieldsets + ((None, {"fields": ("displayname",)}),)
+
+    inlines = (UserLikeInline,)
+
+    def display_owners(self, obj):
+        if obj.assetowner_set.exists():
+            if obj.assetowner_set.count() > 1:
+                url = f"{reverse('admin:icosa_assetowner_changelist')}?django_user__id__exact={obj.id}"
+                link_str = ", ".join([x.displayname for x in obj.assetowner_set.all()])
+            else:
+                owner = obj.assetowner_set.first()
+                url = f"{reverse('admin:icosa_assetowner_change', args=[owner.pk])}"
+                link_str = owner.displayname
+            link_html = f"<a href='{url}'>{link_str}</a>"
+        else:
+            link_html = ""
+        return mark_safe(link_html)
+
+    display_owners.short_description = "Asset Owners"
+    display_owners.admin_order_field = "assetowner__displayname"
 
     @admin.action(description="Mark selected users as not staff")
     def make_not_staff(modeladmin, request, queryset):
         queryset.update(is_staff=False)
 
 
-admin.site.unregister(User)
 admin.site.register(User, UserAdmin)

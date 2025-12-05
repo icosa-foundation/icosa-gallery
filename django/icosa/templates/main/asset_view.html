@@ -9,10 +9,28 @@
     {% include "partials/oembed_head.html" %}
 {% endblock extrahead %}
 
+{% block meta_opengraph %}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{{ asset.name }} by {{ asset.owner.displayname }} on Icosa Gallery">
+    <meta name="twitter:image" content="{{ asset.get_thumbnail_url }}">
+    <meta property="twitter:description" content='Check out "{{ asset.name }}" {% if asset.owner.displayname %}and more work by {{ asset.owner.displayname }}{% endif %} on Icosa Gallery'>
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Icosa Gallery">
+    <meta property="og:title" content="{{ asset.name }} by {{ asset.owner.displayname }} on Icosa Gallery">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta name="og:image" content="{{ asset.get_thumbnail_url }}">
+    <meta name="og:image:alt" content="{{ asset.name }}{% if asset.owner.displayname %} by {{ asset.owner.displayname }}{% endif %}">
+    <meta name="og:image:width" content="1280">
+    <meta name="og:image:height" content="720">
+    <meta property="og:description" content='Check out "{{ asset.name }}" {% if asset.owner.displayname %}and more work by {{ asset.owner.displayname }}{% endif %} on Icosa Gallery'>
+{% endblock meta_opengraph %}
+
 {% block banner %}
 {% if not asset.owner.is_claimed %}
 {% include "partials/artist_info_banner.html" %}
 {% endif %}
+{% include "partials/js_version_banner.html" %}
+{% admin_peek_banner request asset %}
 {% endblock banner %}
 
 {% block content %}
@@ -29,12 +47,12 @@
             {% endif %}
             <div class="sketch-info-details">
                 <h2>
-                    {{ asset.name }}{% if asset.owner == request_owner %}{% if asset.visibility == "PRIVATE" %} <span class="pill pill--danger">private</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span class="pill pill--warning">unlisted</span>{% endif %}{% endif %}
+                    {{ asset.name }}{% if user_owns_asset %}{% if asset.visibility == "PRIVATE" %} <span class="pill pill--danger">private</span>{% endif %}{% if asset.visibility == "UNLISTED" %} <span class="pill pill--warning">unlisted</span>{% endif %}{% endif %}
                     {% like_button request asset %}
                 </h2>
                 {% if asset.owner %}
                     <p class="sketch-byline">
-                        <a href="/user/{{ asset.owner.url }}">{{ asset.owner.displayname }}</a> &bull; {{ asset.timestamp|date:"d/m/Y" }}
+                        <a href="{% url 'icosa:user_show'  slug=asset.owner.url %}">{{ asset.owner.displayname }}</a> &bull; {{ asset.create_time|date:"d/m/Y" }}
                     </p>
                 {% endif %}
                 {% if asset.description %}
@@ -44,14 +62,26 @@
                     {{ asset.get_license_icons }} {{ asset.get_license_display|default_if_none:" All rights reserved" }}
                 </p>
                 <p></p>
-                {% if asset.owner == request_owner or request.user.is_superuser %}
-                    <a class="btn btn-primary btn-sm" href="{% url 'asset_edit' asset_url=asset.url %}">
-                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser and asset.owner != request_owner %} (as superuser){% endif %}
+                {% if user_owns_asset or request.user.is_superuser %}
+                    <a class="btn btn-primary btn-sm" href="{% url 'icosa:asset_edit' asset_url=asset.url %}">
+                        {% fa_icon "solid" "gear" %} Edit settings{% if request.user.is_superuser and not user_owns_asset %} as a superuser{% endif %}
+                    </a>
+                {% endif %}
+                {% if request.user.is_superuser %}
+                    <a class="btn btn-primary btn-sm" href="{% url 'icosa:asset_admin_change' asset_url=asset.url %}">
+                        {% fa_icon "solid" "gear" %} Edit in admin as a superuser
                     </a>
                 {% endif %}
                 <p>
+                    {% if request.user.is_authenticated %}
+                    {% if request.user.is_superuser %}
+                    <a id="collection-btn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#collections-modal">
+                        {% fa_icon "solid" "plus" %} Add to collection
+                    </a>
+                    {% endif %}
+                    {% endif %}
                     {% if downloadable_formats %}
-                        <a href="{% url 'asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
+                        <a href="{% url 'icosa:asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
                             {% fa_icon "solid" "download" %} Downloads
                         </a>
                     {% endif %}
@@ -65,8 +95,8 @@
                 </div>
                 <p class="text-right actions">
                     <small>
-                        <a href="{% url 'artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a>
-                        <a href="{% url "report_asset" asset_url=asset.url %}">
+                        <a href="{% url 'icosa:artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a>
+                        <a href="{% url "icosa:report_asset" asset_url=asset.url %}">
                             {% fa_icon "solid" "flag" %} Report
                         </a>
                     </small>
@@ -78,6 +108,7 @@
         </div>
     </div>
 </div>
+{% include "modals/user_asset_collection_modal.html" %}
 {% if asset.is_viewer_compatible %}
     {% include "partials/viewer.html" %}
 {% endif %}

@@ -167,3 +167,12 @@ django/*.jsonl
 django/gltf2.json
 uploads.sh
 
+
+django/static
+django/media
+.direnv
+.python-version
+pyproject.toml
+shell.nix
+uv.lock
+.envrc

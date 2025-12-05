@@ -95,7 +95,7 @@
         event.preventDefault();
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const request = new Request(
-            "{% url 'asset_log_download' asset_url=asset.url %}",
+            "{% url 'icosa:asset_log_download' asset_url=asset.url %}",
             {
                 method: 'POST',
                 headers: {'X-CSRFToken': csrftoken},

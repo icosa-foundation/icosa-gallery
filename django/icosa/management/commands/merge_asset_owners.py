@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.urls import reverse
 from icosa.helpers import YES
-from icosa.models import Asset, AssetOwner, DeviceCode, OwnerAssetLike
+from icosa.models import Asset, AssetOwner, DeviceCode, UserLike
 
 
 def print_actions(
@@ -106,9 +106,17 @@ Usage:
                 return
 
         assets = Asset.objects.filter(owner=source_owner)
-        likes = OwnerAssetLike.objects.filter(user=source_owner)
-        reports = Asset.objects.filter(last_reported_by=source_owner)
-        device_codes = DeviceCode.objects.filter(user=source_owner)
+        if source_owner.django_user:
+            likes = UserLike.objects.filter(user=source_owner.django_user)
+            reports = Asset.objects.filter(last_reported_by=source_owner.django_user)
+            device_codes = DeviceCode.objects.filter(user=source_owner.django_user)
+        else:
+            likes = UserLike.objects.none()
+            reports = Asset.objects.none()
+            device_codes = DeviceCode.objects.none()
+            print(
+                f"{source_repr} does not have an associated django user, so will not move any likes, reports or device codes."
+            )
 
         action = None
 
@@ -128,7 +136,6 @@ Usage:
         action = input(
             f"""Will move:
 \n{assets.count()} Assets
-{likes.count()} Likes
 {reports.count()} "Last reported" attributions on Assets
 from {source_repr} to {destination_repr}
 {overwrite_prompt}
@@ -173,7 +180,6 @@ from {source_repr} to {destination_repr}
         )
 
         assets.update(owner=destination_owner)
-        likes.update(user=destination_owner)
         reports.update(last_reported_by=destination_owner)
         device_codes.delete()
 

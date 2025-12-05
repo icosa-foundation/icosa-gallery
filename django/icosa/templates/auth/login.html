@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load timedelta_filter %}
 {% block content %}
     <div class="loginuser container">
         <div class="row">
@@ -6,50 +7,52 @@
                 <h2>Log In</h2>
             </div>
         </div>
-        {% if config.SIGNUP_OPEN %}
         <div class="row">
             <div class="text-center col">
                 <div class="login-container container">
                     <div class="login-form row">
                         <div class="col-md-8 col-12 offset-md-2">
-                            {% if error %}
-                                <div role="alert" class="fade alert alert-danger show">{{ error }}</div>
+                            {% if cooloff_timedelta %}
+                                <div role="alert" class="fade alert alert-danger show">Account locked. Too many failed login attempts. Please try again in {{ cooloff_timedelta|timedelta:"{minutes}" }} minutes.</div>
+                            {% else %}
+                                {% if error %}
+                                    <div role="alert" class="fade alert alert-danger show">{{ error }}</div>
+                                {% endif %}
+                                <form class="form-inline" action="{% url 'icosa:login' %}{% if redirect_to %}?{{ redirect_to_field_name }}={{ redirect_to }}{% endif %}" method="post">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <label class="form-label sr-only" for="email">Email:</label>
+                                        <input
+                                            placeholder="Email"
+                                            autocomplete="email"
+                                            type="text"
+                                            id="email"
+                                            name="email"
+                                            class="form-control"
+                                        >
+                                    </div>
+                                    <br>
+                                    <div class="form-group">
+                                        <label class="form-label sr-only" for="password">Password:</label>
+                                        <input
+                                            placeholder="Password"
+                                            autocomplete="current-password"
+                                            type="password"
+                                            id="password"
+                                            name="password"
+                                            class="form-control"
+                                        >
+                                    </div>
+                                    <br>
+                                    <button type="submit" class="btn btn-primary">Log in</button>
+                                </form>
+                                <a href="{% url 'icosa:password_reset' %}">Forgot Password?</a>
                             {% endif %}
-                            <form class="form-inline" action="{% url 'login' %}" method="post">
-                                {% csrf_token %}
-                                <div class="form-group">
-                                    <label class="form-label sr-only" for="username">Username:</label>
-                                    <input
-                                        placeholder="E-mail"
-                                        autocomplete="username"
-                                        type="text"
-                                        id="username"
-                                        name="username"
-                                        class="form-control"
-                                    >
-                                </div>
-                                <br>
-                                <div class="form-group">
-                                    <label class="form-label sr-only" for="password">Password:</label>
-                                    <input
-                                        placeholder="Password"
-                                        autocomplete="current-password"
-                                        type="password"
-                                        id="password"
-                                        name="password"
-                                        class="form-control"
-                                    >
-                                </div>
-                                <br>
-                                <button type="submit" class="btn btn-primary">Log in</button>
-                            </form>
-                            <a href="{% url 'password_reset' %}">Forgot Password?</a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        {% endif %}
         <div class="row">
             <div class="text-center col-lg-6 offset-lg-3">
                 <br>

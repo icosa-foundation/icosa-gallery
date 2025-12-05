@@ -4,13 +4,19 @@
 
 {% block extrahead %}
     {{ block.super }}
-    <link rel="canonical" href="{% clean_url %}">
+    {% if is_multi_owner %}
+        <link rel="canonical" href="{{ settings.DEPLOYMENT_SCHEME }}{{ settings.DEPLOYMENT_HOST_WEB }}{{ owner.get_absolute_url }}">
+    {% else %}
+        <link rel="canonical" href="{% clean_url %}">
+    {% endif %}
 {% endblock extrahead %}
 
 {% block banner %}
-{% if not user.is_claimed %}
-{% include "partials/artist_info_banner.html" %}
-{% endif %}
+    {% if owner.disable_profile and request.user.is_superuser %}
+        {% include "partials/owner_disabled_banner.html" %}
+    {% elif not owner.is_claimed %}
+        {% include "partials/artist_info_banner.html" %}
+    {% endif %}
 {% endblock banner %}
 
 {% block content %}
@@ -18,27 +24,29 @@
         <div class="row">
             <div class="col">
                 <div>
-                    <h1>{{ page_title }}</h1>
-                    {% if user.description %}
-                        <p>{{ user.description|linebreaksbr }}</p>
-                    {% endif %}
-                    {% if not user.django_user %}
-                        <div class="well">
-                            <p>{% fa_icon "solid" "triangle-exclamation" %} This profile was migrated from Google Poly or another web source and doesn't have an active user associated with it. If this is you and want to claim the account please contact
-                            <a href="mailto:contact@icosa.gallery">contact@icosa.gallery</a> or
-                            <a href="{% url 'artist_info' %}">read more about where the works here originated</a>.</p>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
-        <div class="sketch-list">
             {% if assets %}
                 {% for asset in assets %}
-                    {% include "partials/sketch_list_item.html" %}
+                    {% with asset.owner as asset_owner %}
+                        {% ifchanged asset_owner.displayname %}
+                            {% if not forloop.first %}
+                            </div>
+                            {% endif %}
+                            <h1 class="mt1">{{ asset_owner.displayname }}</h1>
+                            {% if asset_owner.description %}
+                                <p>{{ asset_owner.description|linebreaksbr }}</p>
+                            {% endif %}
+                            <div class="sketch-list">
+                        {% endifchanged %}
+                        {% with hide_byline=True %}
+                            {% include "partials/sketch_list_item.html" %}
+                        {% endwith %}
+                    {% endwith %}
                 {% endfor %}
             {% else %}
-                <p>{{ user.displayname }} hasn't created anything yet.</p>
+                <p>{{ owner.displayname }} hasn't created anything yet.</p>
             {% endif %}
         </div>
         {% include "partials/pagination.html" %}

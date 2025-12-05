@@ -1,7 +1,11 @@
 from constance import config
 from dal import autocomplete
+from simplemathcaptcha.fields import MathCaptchaField
+
 from django import forms
-from django.contrib.auth.models import User as DjangoUser
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator, validate_slug
 from django.forms.widgets import (
     ClearableFileInput,
     EmailInput,
@@ -9,16 +13,18 @@ from django.forms.widgets import (
     PasswordInput,
 )
 from django.utils.translation import gettext_lazy as _
+from icosa.helpers.file import validate_mime
 from icosa.models import (
     PRIVATE,
+    RESERVED_LICENSE,
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
-    V3_TO_V4_UPGRADE_MAP,
     V4_CC_LICENSE_CHOICES,
-    V4_CC_LICENSE_MAP,
     V4_CC_LICENSES,
+    VALID_THUMBNAIL_MIME_TYPES,
     Asset,
     AssetOwner,
+    User,
 )
 
 ARTIST_QUERY_SUBJECT_CHOICES = [
@@ -26,6 +32,19 @@ ARTIST_QUERY_SUBJECT_CHOICES = [
     ("EXISTING_ACCOUNT", "I want to tie my work to an existing account"),
     ("NEW_ACCOUNT", "I want to create an account based on my work"),
     ("CREDITED_TO_SOMEONE_ELSE", "My work is credited to someone else"),
+]
+
+ALLOWED_UPLOAD_EXTENSIONS = [
+    "zip",
+    "glb",
+    "ksplat",
+    "ply",
+    "stl",
+    "sog",
+    "spz",
+    "splat",
+    "usdz",
+    "vox",
 ]
 
 
@@ -42,7 +61,24 @@ class CameraButton(HiddenInput):
 
 
 class AssetUploadForm(forms.Form):
-    file = forms.FileField()
+    file = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS)])
+
+    def clean(self):
+        cleaned_data = super().clean()
+        uploaded_file = cleaned_data.get("file")
+        if uploaded_file:
+            magic_bytes = next(uploaded_file.chunks(chunk_size=2048))
+            uploaded_file.seek(0)
+            if not validate_mime(
+                magic_bytes,
+                [
+                    "application/zip",
+                    "application/gzip",  # spz
+                    "model/gltf-binary",
+                    "application/octet-stream",
+                ],
+            ):  # TODO: "application/octet-stream" essentially makes this check redundant, but is required for many file types.
+                self.add_error("file", "File type is not supported.")
 
 
 class AssetReportForm(forms.Form):
@@ -58,12 +94,43 @@ class AssetReportForm(forms.Form):
     )
 
 
+class AssetPublishForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        #  CC licenses are non-revokable, but are upgradeable. If the license
+        # is cc but not in our current menu of options, they can upgrade and so
+        # should be able to choose a different one.
+        self.fields["license"].disabled = self.instance.license in V4_CC_LICENSES and self.instance.visibility in [
+            "PUBLIC",
+            "UNLISTED",
+        ]
+
+        self.fields["license"].choices = (
+            [
+                ("", "No license chosen"),
+            ]
+            + V4_CC_LICENSE_CHOICES
+            + [RESERVED_LICENSE]
+        )
+
+    editable_fields = [
+        "name",
+    ]
+
+    class Meta:
+        model = Asset
+
+        fields = [
+            "name",
+            "license",
+        ]
+
+
 class AssetEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance.model_is_editable:
-            del self.fields["visibility"]
-        else:
+        if not self.instance.model_is_editable:
             del self.fields["zip_file"]
         self.fields["name"].required = True
         license_value = self["license"].value()
@@ -79,11 +146,10 @@ class AssetEditForm(forms.ModelForm):
         ]
 
         if self.instance.license in V3_CC_LICENSES and license_value not in V4_CC_LICENSES:
-            upgrade_option = V3_TO_V4_UPGRADE_MAP[license_value]
             self.fields["license"].choices = [
-                (upgrade_option, V4_CC_LICENSE_MAP[upgrade_option]),
-            ] + [
+                ("CREATIVE_COMMONS_BY_4_0", "CC BY Attribution 4.0 International"),
                 (license_value, V3_CC_LICENSE_MAP[license_value]),
+                ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
             ]
         else:
             self.fields["license"].choices = (
@@ -91,23 +157,15 @@ class AssetEditForm(forms.ModelForm):
                     ("", "No license chosen"),
                 ]
                 + V4_CC_LICENSE_CHOICES
-                + [
-                    ("ALL_RIGHTS_RESERVED", "All rights reserved"),
-                ]
-            )
-        if not self.instance.model_is_editable:
-            self.fields["visibility"].choices = (
-                ("PUBLIC", "Public"),
-                ("UNLISTED", "Unlisted"),
+                + [RESERVED_LICENSE]
             )
 
     def clean(self):
         cleaned_data = super().clean()
         license = cleaned_data.get("license")
-        visibility = cleaned_data.get("visibility")
-        if visibility in ["PUBLIC", "UNLISTED"] and not license:
+        if self.instance.visibility in ["PUBLIC", "UNLISTED"] and not license:
             self.add_error("license", "Please add a CC License.")
-        if not self.instance.model_is_editable and visibility == PRIVATE:
+        if not self.instance.model_is_editable and self.instance.visibility == PRIVATE:
             self.add_error(
                 "visibility",
                 "You cannot make this model private because you have published this work under a CC license.",
@@ -119,9 +177,19 @@ class AssetEditForm(forms.ModelForm):
                     field,
                     "You cannot modify this field because this work is not private and has a CC license.",
                 )
+        thumbnail = cleaned_data.get("thumbnail")
+        if thumbnail:
+            if not validate_mime(next(thumbnail.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
+                self.add_error("thumbnail", "Image is not a png or jpg.")
+        zip_file = cleaned_data.get("zip_file")
+        if zip_file:
+            if not validate_mime(next(zip_file.chunks(chunk_size=2048)), ["application/zip"]):
+                self.add_error("zip_file", "File is not a zip archive.")
 
-    thumbnail = forms.FileField(required=False, widget=CustomImageInput)
-    zip_file = forms.FileField(required=False)
+    thumbnail = forms.FileField(
+        required=False, widget=CustomImageInput
+    )  # No validator needed here; it's on the model field definition.
+    zip_file = forms.FileField(required=False, validators=[FileExtensionValidator(allowed_extensions=["zip"])])
 
     editable_fields = [
         "name",
@@ -131,7 +199,6 @@ class AssetEditForm(forms.ModelForm):
         "thumbnail_override_data",
         "camera",
         "category",
-        "visibility",
         "tags",
     ]
 
@@ -147,11 +214,10 @@ class AssetEditForm(forms.ModelForm):
             "tags",
             "camera",
             "zip_file",
-            "visibility",
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(
-                url="tag-autocomplete",
+                url="icosa:tag-autocomplete",
             ),
             "camera": CameraButton(),
         }
@@ -159,24 +225,31 @@ class AssetEditForm(forms.ModelForm):
 
 class UserSettingsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
         self.fields["email_confirm"] = forms.CharField(required=False, widget=EmailInput)
+        if self.instance.has_single_owner:
+            owner = self.instance.assetowner_set.first()
+            self.fields["description"] = forms.CharField(required=False, widget=forms.Textarea)
+            self.fields["description"].initial = owner.description
+            self.fields["url"] = forms.CharField(required=False)
+            self.fields["url"].initial = owner.url
         self.fields["password_current"] = forms.CharField(required=False, widget=PasswordInput)
-        self.fields["password_new"] = forms.CharField(required=False, widget=PasswordInput)
+        self.fields["password_new"] = forms.CharField(
+            required=False, widget=PasswordInput, validators=[validate_password]
+        )
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
 
     def clean(self):
         cleaned_data = super().clean()
-        user = self.user
 
         password_current = cleaned_data.get("password_current")
         password_new = cleaned_data.get("password_new")
         password_confirm = cleaned_data.get("password_confirm")
         email = cleaned_data.get("email")
         email_confirm = cleaned_data.get("email_confirm")
+        url = cleaned_data.get("url")
 
-        if not user.check_password(password_current):
+        if not self.instance.check_password(password_current):
             self.add_error("password_current", "You must enter your password to make changes")
 
         if (password_new or password_confirm) and password_new != password_confirm:
@@ -191,32 +264,42 @@ class UserSettingsForm(forms.ModelForm):
         if password_new and password_confirm and password_current:
             msg = "Your current password is incorrect"
             try:
-                if not user.check_password(password_current):
+                if not self.instance.check_password(password_current):
                     self.add_error("password_current", msg)
             except AttributeError:
                 self.add_error("password_current", msg)
 
-        if email and email != user.email:
+        if email and email != self.instance.email:
             if email != email_confirm:
                 msg = "Email addresses must match"
                 self.add_error("email", msg)
                 self.add_error("email_confirm", msg)
             else:
-                if (
-                    DjangoUser.objects.filter(email=email_confirm).exists()
-                    or AssetOwner.objects.filter(email=email_confirm).exists()
-                ):
+                if User.objects.filter(email=email_confirm).exists():
                     msg = "Cannot use this email address, please try another"
                     self.add_error("email", msg)
                     self.add_error("email_confirm", msg)
+        if self.instance.has_single_owner:
+            owner = self.instance.assetowner_set.first()
+            if url:
+                try:
+                    validate_slug(url)
+                except ValidationError:
+                    msg = "Enter a valid url consisting of letters, numbers, underscores or hyphens."
+                    self.add_error("url", msg)
+                # TODO(performance) This is to simulate saving the asset owner
+                # and returning errors from the db to the form. There must be a
+                # better way.
+                is_not_unique = AssetOwner.objects.filter(url=url).exclude(pk=owner.pk).exists()
+                if is_not_unique:
+                    msg = "That url is already taken. Please choose another."
+                    self.add_error("url", msg)
 
     class Meta:
-        model = AssetOwner
+        model = User
 
         fields = [
-            "url",
             "displayname",
-            "description",
             "email",
         ]
 
@@ -224,8 +307,26 @@ class UserSettingsForm(forms.ModelForm):
 class NewUserForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["password_new"] = forms.CharField(required=True, widget=PasswordInput)
+        self.fields["password_new"] = forms.CharField(
+            required=True, widget=PasswordInput, validators=[validate_password]
+        )
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
+        self.fields["captcha"] = MathCaptchaField()
+
+    def validate_unique(self):
+        exclude = self._get_validation_exclusions()
+        try:
+            self.instance.validate_unique(exclude=exclude)
+        except forms.ValidationError as e:
+            try:
+                # If email or username unique validation occurs it will be omitted and form.is_valid() method pass
+                # This is so we can re-register users who never completed registration
+                del e.error_dict["email"]
+                del e.error_dict["username"]
+            except Exception:
+                # If there are other errors in the form those will be returned to views and is_valid() method will fail.
+                pass
+            self._update_errors(e)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -246,27 +347,28 @@ class NewUserForm(forms.ModelForm):
             self.add_error("password_confirm", msg)
 
     class Meta:
-        model = AssetOwner
+        model = User
 
         fields = [
             "email",
             "displayname",
+            "username",
         ]
 
 
-class PasswordResetForm(forms.ModelForm):
-    class Meta:
-        model = AssetOwner
-
-        fields = [
-            "email",
-        ]
+class PasswordResetForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.TextInput(),
+        required=True,
+    )
 
 
 class PasswordResetConfirmForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["password_new"] = forms.CharField(required=True, widget=PasswordInput)
+        self.fields["password_new"] = forms.CharField(
+            required=True, widget=PasswordInput, validators=[validate_password]
+        )
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
 
     def clean(self):
@@ -281,7 +383,7 @@ class PasswordResetConfirmForm(forms.ModelForm):
             self.add_error("password_confirm", msg)
 
     class Meta:
-        model = AssetOwner
+        model = User
         fields = []
 
 

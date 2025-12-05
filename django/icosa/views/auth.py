@@ -1,18 +1,26 @@
 import random
-import secrets
 import time
+from datetime import timedelta
 from typing import Optional
 
-import bcrypt
 from constance import config
 from django.conf import settings
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import (
+    REDIRECT_FIELD_NAME,
+    authenticate,
+    get_user_model,
+    login,
+    logout,
+)
 from django.contrib.auth.decorators import user_passes_test
-from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
-from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.db import IntegrityError, transaction
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseRedirect,
+)
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -20,27 +28,31 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.cache import never_cache
+from django_ratelimit.decorators import ratelimit
+from honeypot.decorators import check_honeypot
 from icosa.forms import (
     NewUserForm,
     PasswordResetConfirmForm,
     PasswordResetForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
-from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import AssetOwner, DeviceCode
-from passlib.context import CryptContext
 
 INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
+
+User = get_user_model()
+
+
+def dummy_key(group, request):
+    _ = group
+    _ = request
+    # Return the same key every time. This essentially bypasses the key
+    # entirely and rate limits the route regardless of who is accessing it.
+    return "number9"
 
 
 def send_password_reset_email(request, user, to_email):
     site = get_current_site(request)
-    owner = None
-    try:
-        owner = AssetOwner.objects.get(django_user=user)
-    except AssetOwner.DoesNotExist:
-        # TODO(james): We should probably error out here
-        pass
 
     mail_subject = f"Reset your {site.name} account password."
     message = render_to_string(
@@ -48,7 +60,6 @@ def send_password_reset_email(request, user, to_email):
         {
             "request": request,
             "user": user,
-            "owner": owner,
             "domain": site.domain,
             "uid": urlsafe_base64_encode(force_bytes(user.pk)),
             "token": default_token_generator.make_token(user),
@@ -57,7 +68,7 @@ def send_password_reset_email(request, user, to_email):
     spawn_send_html_mail(mail_subject, message, [to_email])
 
 
-def send_registration_email(request, user, owner, to_email=None):
+def send_registration_email(request, user, to_email=None):
     current_site = get_current_site(request)
     mail_subject = f"Activate your {current_site.name} account."
     message = render_to_string(
@@ -65,31 +76,12 @@ def send_registration_email(request, user, owner, to_email=None):
         {
             "request": request,
             "user": user,
-            "owner": owner,
             "domain": current_site.domain,
             "uid": urlsafe_base64_encode(force_bytes(user.pk)),
             "token": default_token_generator.make_token(user),
         },
     )
     spawn_send_html_mail(mail_subject, message, [to_email])
-
-
-def authenticate_icosa_user(
-    username: str,
-    password: str,
-) -> Optional[AssetOwner]:
-    username = username.lower()
-    try:
-        user = AssetOwner.objects.get(email=username)  # This code used to check either url or username. Seems odd.
-
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        if not pwd_context.verify(password, bytes(user.password)):
-            return None
-
-        return user
-
-    except AssetOwner.DoesNotExist:
-        return None
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -107,119 +99,137 @@ def debug_password_reset_email(request):
 def debug_registration_email(request):
     user = request.user
     owner = AssetOwner.objects.get(django_user=user)
-    send_registration_email(
-        request,
-        user,
-        owner,
-        settings.ADMIN_EMAIL,
-    )
+    send_registration_email(request, user, owner)
 
     return HttpResponse("ok")
 
 
-def custom_login(request):
-    if not request.user.is_anonymous:
-        return HttpResponseRedirect(reverse("home"))
+def render_login_error(request, error: Optional[str] = None):
+    return render(
+        request,
+        "auth/login.html",
+        {"error": error},
+    )
 
-    if request.method == "POST" and config.SIGNUP_OPEN:
-        username = request.POST.get("username", None)
+
+def custom_login(request):
+    redirect_to = request.GET.get(REDIRECT_FIELD_NAME, None)
+
+    if not request.user.is_anonymous:
+        if redirect_to is not None:
+            return HttpResponseRedirect(redirect_to)
+        return redirect("icosa:home")
+
+    if not config.LOGIN_OPEN:
+        raise Http404()
+
+    if request.method == "POST":
+        email = request.POST.get("email", None)
         password = request.POST.get("password", None)
         # Creating the error response up front is slower for the happy path,
         # but makes the code perhaps more readable.
-        error_response = render(
+
+        try:
+            username = User.objects.get(email=email).username
+        except (
+            User.DoesNotExist,
+            User.MultipleObjectsReturned,
+            ValueError,
+        ):
+            username = None
+        user = authenticate(request, username=username, password=password)
+        if user is None or not user.is_active:
+            # Icosa user auth failed, so we return early.
+            return render_login_error(request, "Please enter a valid email or password")
+        login(request, user)
+
+        # Claim any assets that were created before the user logged in
+        # TODO: Improve and make it configurable (dedicated view, rules for claiming, etc.)
+
+        with transaction.atomic():
+            asset_owners = AssetOwner.objects.get_unclaimed_for_user(user)
+
+            for owner in asset_owners:
+                owner.django_user = user
+                owner.is_claimed = True
+                owner.save()
+
+        if redirect_to is not None:
+            return HttpResponseRedirect(redirect_to)
+        return redirect("icosa:home")
+    else:
+        return render(
             request,
             "auth/login.html",
-            {"error": "Please enter a valid username or password"},
+            {
+                "redirect_to": redirect_to,
+                "redirect_to_field_name": REDIRECT_FIELD_NAME,
+            },
         )
-
-        icosa_user = authenticate_icosa_user(username, password)
-        # TODO(james): if icosa_user has been merged with another, we probably
-        #  don't want to allow them to log in. We need a nice error here that's
-        #  not confusing and perhaps different from failing login under normal
-        #  circumstances.
-        if icosa_user is None:
-            # Icosa user auth failed, so we return early.
-            return error_response
-        else:
-            icosa_user.update_access_token()
-
-        user, created = User.objects.get_or_create(
-            username=username,
-            defaults={"password": password},
-        )
-        user = authenticate(request, username=username, password=password)
-        if user is None:
-            # This is really for type safety/data integrity, the django
-            # user should pass this test.
-            return error_response
-        if created:
-            icosa_user.migrated = True
-            icosa_user.save()
-        else:
-            if user.is_active is False:
-                # This is the case for when a user has registered, but not
-                # yet confirmed their email address. We could provide a more
-                # helpful error message here, but that would leak the existence
-                # of an incomplete registration.
-                return error_response
-
-        login(request, user)
-        return redirect("home")
-    else:
-        return render(request, "auth/login.html")
 
 
 def custom_logout(request):
     if request.method == "POST":
         logout(request)
-        return redirect("home")
+        return redirect("icosa:home")
     else:
         return render(request, "auth/logout.html")
 
 
+@ratelimit(key="ip", rate="10/m", method="POST")
+@ratelimit(key="ip", rate="40/d", method="POST")
+@ratelimit(key="icosa.views.auth.dummy_key", rate="200/d", method="POST")
+@check_honeypot()
+@never_cache
 def register(request):
+    if not config.SIGNUP_OPEN:
+        raise Http404()
+
     success = False
     if request.method == "POST":
         form = NewUserForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data["email"]
+            email_addr = form.cleaned_data["email"]
             password = form.cleaned_data["password_new"]
+            username = form.cleaned_data["username"]
             displayname = form.cleaned_data["displayname"]
 
-            # We want to do the work of accessing the database, creating the
-            # password etc in all cases, even if the username is already taken
-            # to mitigatie timing attacks.
-            salt = bcrypt.gensalt(10)
-            hashedpw = bcrypt.hashpw(password.encode(), salt)
-            snowflake = generate_snowflake()
-            assettoken = secrets.token_urlsafe(8)
-
+            should_send_email = False
             try:
-                owner = AssetOwner.objects.create(
-                    id=snowflake,
-                    url=assettoken,
-                    email=email,
-                    password=hashedpw,
-                    displayname=displayname,
-                )
-            except IntegrityError:
-                pass
+                user = User.objects.get(email=email_addr)
+            except User.DoesNotExist:
+                user = None
+            if user is not None:
+                # We should re-register an existing user who has never logged in and has never activated.
+                # Users who are is_active==False and have logged in are to be considered banned.
+                # TODO: We could have a policy of periodically deleting users who never completed registration.
+                if user.is_active is False and user.last_login is None:
+                    with transaction.atomic():
+                        user.set_password(password)
+                        user.username = username
+                        user.displayname = displayname
+                        user.save()
+                        should_send_email = True
+            else:
+                # This is a normal, new user registration
+                try:
+                    with transaction.atomic():
+                        user = User.objects.create_user(
+                            username=username,
+                            displayname=displayname,
+                            email=email_addr,
+                            password=password,
+                        )
+                        user.is_active = False
+                        user.save()
+                        should_send_email = True
 
-            try:
-                user = User.objects.create_user(
-                    username=email,
-                    email=email,
-                    password=password,
-                )
-                user.is_active = False
-                user.save()
-                owner.django_user = user
-                owner.save()
-                send_registration_email(request, user, owner, to_email=form.cleaned_data.get("email"))
-            except IntegrityError:
-                pass
-            # Always succeed. The user should never know that an account is
-            # already registered.
+                except IntegrityError:
+                    pass
+
+            if should_send_email:
+                send_registration_email(request, user, to_email=email_addr)
+
             success = True
             # Sleep a random amount of time to throw off timing attacks a bit more.
             time.sleep(random.randrange(0, 200) / 100)
@@ -235,6 +245,7 @@ def register(request):
     )
 
 
+@never_cache
 def activate_registration(request, uidb64, token):
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
@@ -256,31 +267,31 @@ def activate_registration(request, uidb64, token):
     )
 
 
+@never_cache
+@ratelimit(key="user_or_ip", rate="5/m", method="POST")
 def password_reset(request):
     if request.method == "POST":
         form = PasswordResetForm(request.POST)
         if form.is_valid():
+            email_addr = form.cleaned_data.get("email")
             try:
-                user = User.objects.get(email=form.cleaned_data["email"])
-                send_password_reset_email(
-                    request,
-                    user,
-                    to_email=form.cleaned_data.get("email"),
-                )
+                user = User.objects.get(email=email_addr, is_active=True, last_login__isnull=False)
+                send_password_reset_email(request, user, to_email=email_addr)
             except User.DoesNotExist:
                 pass
-            return redirect(reverse("password_reset_done"))
+            return redirect(reverse("icosa:password_reset_done"))
     else:
         form = PasswordResetForm()
-        return render(
-            request,
-            "auth/password_reset.html",
-            {
-                "form": form,
-            },
-        )
+    return render(
+        request,
+        "auth/password_reset.html",
+        {
+            "form": form,
+        },
+    )
 
 
+@never_cache
 def password_reset_done(request):
     return render(
         request,
@@ -289,6 +300,7 @@ def password_reset_done(request):
     )
 
 
+@never_cache
 def password_reset_confirm(request, uidb64, token):
     valid_link = False
     redirected_url_token = "set-password"
@@ -296,7 +308,7 @@ def password_reset_confirm(request, uidb64, token):
     form = PasswordResetConfirmForm()
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
+        user = User.objects.get(pk=uid, is_active=True, last_login__isnull=False)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
     if user is not None:
@@ -314,10 +326,8 @@ def password_reset_confirm(request, uidb64, token):
                         user.set_password(password)
                         user.save()
                         logout(request)
-                        icosa_user = AssetOwner.from_django_user(user)
-                        icosa_user.set_password(password)
                         return HttpResponseRedirect(
-                            reverse("password_reset_complete"),
+                            reverse("icosa:password_reset_complete"),
                         )
         else:
             if default_token_generator.check_token(user, token):
@@ -341,6 +351,7 @@ def password_reset_confirm(request, uidb64, token):
     )
 
 
+@never_cache
 def password_reset_complete(request):
     return render(
         request,
@@ -349,29 +360,83 @@ def password_reset_complete(request):
     )
 
 
+def get_device_redirect_url(query_dict) -> Optional[str]:
+    query_dict = {k.lower(): v for k, v in query_dict.items()}
+    secret = query_dict.get("secret", None)
+    appid = query_dict.get("appid", None)
+    if secret is None or appid is None:
+        return None
+    return reverse("icosa:devicecode", kwargs={"appid": appid, "secret": secret})
+
+
+CLIENT_CONFIG = {
+    "openblocks": ("Open Blocks", "http://localhost:40084/api/v1/device_login"),
+    "openbrush": ("Open Brush", "http://localhost:40074/device_login/v1"),
+}
+
+
 @never_cache
-def devicecode(request):
+def devicecode(request, appid=None, secret=None):
+    # This function generates device codes for authenticated users which are
+    # exchanged for application keys at api/v1/device_login.
+    #
+    # If the url path is populated, we instead present a form which posts to
+    # the user's local machine with the client ID and secret code derived from
+    # path segments. The local server should accept these data and post to
+    # api/v1/device_login.
+    #
+    # This is a workaround for having a terrible keyboard experience on some
+    # headsets running Open Brush.
+
     template = "auth/device.html"
     user = request.user
     context = {}
-    if user.is_authenticated:
-        owner = AssetOwner.from_django_request(request)
-        if owner:
-            code = AssetOwner.generate_device_code()
-            expiry_time = timezone.now() + timezone.timedelta(minutes=1)
 
+    # If we see query parameters and app_id and secret are both None, we
+    # will redirect, converting the query params to path segments. This is to
+    # preserve the data in the "next" query param during a login redirect if
+    # the user is not currently authenticated.
+    if appid is None and secret is None:
+        if len(request.GET.keys()) > 0:
+            redirect_url = get_device_redirect_url(request.GET)
+            if redirect_url is None:
+                raise Http404()
+            return HttpResponseRedirect(redirect_url)
+
+    if user.is_authenticated and request.method == "GET":
+        client_name, form_action = CLIENT_CONFIG.get(str(appid), (None, None))
+        code = User.generate_device_code()
+        expiry_time = timezone.now() + timedelta(minutes=1)
+
+        with transaction.atomic():
             # Delete all codes for this user
-            DeviceCode.objects.filter(user=owner).delete()
+            DeviceCode.objects.filter(user=user).delete()
             # Delete all expired codes for any user
             DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
-
             DeviceCode.objects.create(
-                user=owner,
+                user=user,
                 devicecode=code,
                 expiry=expiry_time,
             )
 
-            context = {
-                "device_code": code.upper(),
-            }
+        context = {
+            "device_code": code.upper(),
+            "client_secret": secret,
+            "client_name": client_name,
+            "form_action": form_action,
+        }
+
     return render(request, template, context)
+
+
+def device_login_success(request):
+    template = "auth/device_login_success.html"
+    context = {
+        "page_title": "Login successful",
+    }
+
+    return render(
+        request,
+        template,
+        context,
+    )

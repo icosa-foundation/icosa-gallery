@@ -2,47 +2,50 @@ import base64
 import io
 import os
 import re
-import subprocess
-import zipfile
+import time
+from collections.abc import Buffer
 from dataclasses import dataclass
-from pathlib import Path
 from typing import List, Optional
 
 import ijson
-from django.conf import settings
-from django.core.files.storage import get_storage_class
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from icosa.helpers.format_roles import (
-    BLOCKS_FORMAT,
-    ORIGINAL_FBX_FORMAT,
-    ORIGINAL_GLTF_FORMAT,
-    ORIGINAL_OBJ_FORMAT,
-    ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    TILT_FORMAT,
-)
-from icosa.models import ASSET_STATE_UPLOADING, Asset, AssetOwner, Format, Resource
+import magic
 from ninja import File
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
 from PIL import Image
 
-default_storage = get_storage_class()()
-
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from icosa.helpers.logger import icosa_log
+from icosa.models import (
+    ASSET_STATE_UPLOADING,
+    VALID_THUMBNAIL_MIME_TYPES,
+    Asset,
+    Format,
+    Resource,
+)
 
 ASSET_NOT_FOUND = HttpError(404, "Asset not found.")
 
 IMAGE_REGEX = re.compile("(jpe?g|tiff?|png|webp|bmp)")
 
 VALID_FORMAT_TYPES = [
-    "tilt",
+    "bin",
+    "blocks",
+    "fbm",
+    "fbx",
     "glb",
     "gltf",
-    "bin",
-    "obj",
+    "ksplat",
     "mtl",
-    "fbx",
-    "fbm",
-    "blocks",
+    "obj",
+    "ply",
+    "tilt",
+    "stl",
+    "usdz",
+    "vox",
+    "sog",
+    "spz",
+    "splat",
 ]
 
 CONTENT_TYPE_MAP = {
@@ -58,7 +61,20 @@ CONTENT_TYPE_MAP = {
     "fbx": "application/octet-stream",
     "fbm": "application/octet-stream",
     "blocks": "application/octet-stream",
+    "stl": "application/octet-stream",
+    "usdz": "application/octet-stream",
+    "vox": "application/octet-stream",
+    "ply": "application/octet-stream",  # TODO: Technically, there are ascii ply files too.
+    "sog": "application/octet-stream",
+    "spz": "application/octet-stream",
+    "splat": "application/octet-stream",
+    "ksplat": "application/octet-stream",
 }
+
+
+MAX_UNZIP_BYTES = 524288000  # 500MB
+
+MAX_UNZIP_SECONDS = 120
 
 
 def get_content_type(filename):
@@ -102,12 +118,19 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
     filetype = None
     mainfile = False
 
-    if extension == "tilt":
-        filetype = "TILT"
-        mainfile = True
-
-    if extension == "blocks":
-        filetype = "BLOCKS"
+    if extension in [
+        "blocks",
+        "ksplat",
+        "ply",
+        "stl",
+        "sog",
+        "spz",
+        "splat",
+        "tilt",
+        "usdz",
+        "vox",
+    ]:
+        filetype = extension.upper()
         mainfile = True
 
     # GLTF/GLB/BIN
@@ -118,7 +141,7 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
         if is_gltf2(file.file):
             filetype = "GLTF2"
         else:
-            filetype = "GLTF"
+            filetype = "GLTF1"
         mainfile = True
     if extension == "bin":
         filetype = "BIN"
@@ -158,7 +181,7 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
     # if this is a gltf1 and we have a converted file on disk, swap out the
     # uploaded file with the one we have on disk and change the format_type
     # to gltf2.
-    if format_type == "GLTF" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
+    if format_type == "GLTF1" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
         format_type = "GLB"
         name = f"{os.path.splitext(name)[0]}.glb"
         with open(gltf_to_convert, "rb") as f:
@@ -214,19 +237,20 @@ def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
     # will probably be triangulated OBJ.
     if filetype == "OBJ":
         if name == "model-triangulated":
-            return ORIGINAL_TRIANGULATED_OBJ_FORMAT
+            return "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
         if name == "model":
-            return ORIGINAL_OBJ_FORMAT
+            return "ORIGINAL_OBJ_FORMAT"
+        return "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
     # For tilt, have a new role, TILT_NATIVE_GLTF, which behaves like
     # UPDATED_GLTF currently.
-    if filetype in ["GLTF", "GLTF2"]:
-        return ORIGINAL_GLTF_FORMAT
+    if filetype in ["GLTF1", "GLTF2"]:
+        return "ORIGINAL_GLTF_FORMAT"
     if filetype == "FBX":
-        return ORIGINAL_FBX_FORMAT
+        return "ORIGINAL_FBX_FORMAT"
     if filetype == "TILT":
-        return TILT_FORMAT
+        return "TILT_FORMAT"
     if filetype == "BLOCKS":
-        return BLOCKS_FORMAT
+        return "BLOCKS_FORMAT"
     return None
 
 
@@ -242,8 +266,8 @@ def get_obj_non_triangulated(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role=ORIGINAL_OBJ_FORMAT,
-    ).first()
+        role="OBJ_NGON",
+    ).last()
     if format:
         resource = format.root_resource
     return resource
@@ -253,8 +277,8 @@ def get_obj_triangulated(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
-    ).first()
+        format_type="OBJ",
+    ).last()
     if format:
         resource = format.root_resource
     return resource
@@ -264,8 +288,8 @@ def get_gltf(asset: Asset) -> Optional[Resource]:
     resource = None
     format = asset.format_set.filter(
         root_resource__isnull=False,
-        role=ORIGINAL_GLTF_FORMAT,
-    ).first()
+        format_type__in=["GLTF1", "GLTF2"],
+    ).last()
     if format:
         resource = format.root_resource
     return resource
@@ -315,17 +339,18 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     resource_data = {
         "file": None,
         "asset": asset,
-        "format": format,
         "contenttype": "text/plain",
     }
     if obj_non_triangulated is None:
         format_non_triangulated = Format.objects.create(
             **format_data,
-            role=ORIGINAL_OBJ_FORMAT,
+            role="ORIGINAL_OBJ_FORMAT",
         )
         obj_non_triangulated = Resource.objects.create(**resource_data)
-        format.add_root_resource(obj_non_triangulated)
-        format.save()
+        obj_non_triangulated.format = format_non_triangulated
+        obj_non_triangulated.save()
+        format_non_triangulated.add_root_resource(obj_non_triangulated)
+        format_non_triangulated.save()
     else:
         format_non_triangulated = Format.objects.filter(
             root_resource=obj_non_triangulated,
@@ -334,11 +359,13 @@ def process_mtl(asset: Asset, f: UploadedFormat):
     if obj_triangulated is None:
         format_triangulated = Format.objects.create(
             **format_data,
-            role=ORIGINAL_TRIANGULATED_OBJ_FORMAT,
+            role="ORIGINAL_TRIANGULATED_OBJ_FORMAT",
         )
         obj_triangulated = Resource.objects.create(**resource_data)
-        format.add_root_resource(obj_triangulated)
-        format.save()
+        obj_triangulated.format = format_triangulated
+        obj_triangulated.save()
+        format_triangulated.add_root_resource(obj_triangulated)
+        format_triangulated.save()
     else:
         format_triangulated = Format.objects.filter(
             root_resource=obj_triangulated,
@@ -355,22 +382,22 @@ def process_mtl(asset: Asset, f: UploadedFormat):
 
 
 def process_bin(asset: Asset, f: UploadedFormat):
-    # Get or create a GLTF root resource that correspond to this BIN along with
-    # the parent format.
+    # Get or create a GLTF root resource that corresponds to this BIN along
+    # with the parent format.
     gltf = get_gltf(asset)
 
     if gltf is None:
         if is_gltf2(f.file):
             format_type = "GLTF2"
         else:
-            format_type = "GLTF"
+            format_type = "GLTF1"
         format_data = {
             "format_type": format_type,
             "asset": asset,
         }
         format = Format.objects.create(
             **format_data,
-            role=ORIGINAL_GLTF_FORMAT,
+            role="ORIGINAL_GLTF_FORMAT",  # TODO, I don't think we need to assign this any more.
         )
         resource_data = {
             "file": None,
@@ -410,7 +437,6 @@ def process_root(asset: Asset, f: UploadedFormat):
 
 
 def upload_blocks_format(
-    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
@@ -431,6 +457,8 @@ def upload_blocks_format(
         format__role=get_blocks_role_id(f), file__endswith=f.file.name
     ).first()
 
+    start = time.time()  # Logging
+
     if existing_resource is not None:
         existing_resource.file = f.file
         existing_resource.save()
@@ -438,16 +466,24 @@ def upload_blocks_format(
         process_mtl(asset, f)
     elif filetype == "BIN":
         process_bin(asset, f)
-    elif filetype in ["OBJ", "GLTF2", "GLTF"]:
+    elif filetype in ["OBJ", "GLTF2", "GLTF1"]:
         process_root(asset, f)
     elif filetype == "IMAGE" and f.file.name == "thumbnail.png":
-        asset.thumbnail = f.file
-        asset.thumbnail_contenttype = get_content_type(f.file.name)
-        # We save outside of this function too. Saving here is more explicit,
-        # but might reduce perf.
-        asset.save()
+        magic_bytes = next(f.file.chunks(chunk_size=2048))
+        f.file.seek(0)
+        if validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
+            asset.thumbnail = f.file
+            asset.thumbnail_contenttype = get_content_type(f.file.name)
+            # We save outside of this function too. Saving here is more explicit,
+            # but might reduce perf.
+            asset.save()
+        else:
+            raise HttpError(400, "Thumbnail must be png or jpg.")
     else:
         process_normally(asset, f)
+
+    end = time.time()  # Logging
+    icosa_log(f"Finished uploading {file} for asset {asset.url} in {end - start} seconds")  # Logging
 
     return asset
 
@@ -472,3 +508,8 @@ def b64_to_img(b64_image: str) -> InMemoryUploadedFile:
         image_bytes_out.getbuffer().nbytes,
         None,
     )
+
+
+def validate_mime(buffer: Buffer, valid_types: List[str]):
+    mime_type = magic.from_buffer(buffer, mime=True)
+    return mime_type in valid_types

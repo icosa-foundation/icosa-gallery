@@ -5,25 +5,27 @@ import zipfile
 from pathlib import Path
 from typing import List, Optional
 
+from ninja import File
+from ninja.files import UploadedFile
+
 from django.conf import settings
+from django.utils import timezone
+from icosa.api.exceptions import ZipException
 from icosa.helpers.file import (
-    IMAGE_REGEX,
+    MAX_UNZIP_BYTES,
+    MAX_UNZIP_SECONDS,
     UploadedFormat,
     add_thumbnail_to_asset,
     get_content_type,
     validate_file,
 )
-from icosa.helpers.format_roles import USER_SUPPLIED_GLTF
 from icosa.helpers.upload import TYPE_ROLE_MAP
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     Asset,
-    AssetOwner,
     Format,
     Resource,
 )
-from ninja import File
-from ninja.files import UploadedFile
 
 CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
 
@@ -43,13 +45,22 @@ VALID_WEB_FORMAT_TYPES = [
     "png",
     "webp",
     "bmp",
+    # new formats:
+    "ksplat",
+    "ply",
+    "stl",
+    "usdz",
+    "vox",
+    "sog",
+    "spz",
+    "splat",
 ]
 
 
 def get_role(mainfile: UploadedFormat) -> str:
     type = mainfile.filetype
-    if type.startswith("GLTF"):
-        role = USER_SUPPLIED_GLTF
+    if type in ["GLTF1", "GLTF2"]:
+        role = "USER_SUPPLIED_GLTF"
     else:
         role = TYPE_ROLE_MAP.get(type, None)
     return role
@@ -132,19 +143,34 @@ def clean_up_conversion(gltf_file, bin_file, gltf_path, asset_dir):
 def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
     unzipped_files = []
     for file in files:
+        # Note, the mime type should be checked in the form. This function
+        # assumes the correct mime type for zip or glb TODO: or binary file.
         if not file.name.endswith(".zip"):
-            # No further processing needed, though really we are not expecting
-            # extra files outside of a zip.
             unzipped_files.append(file)
             continue
 
+        unzip_start = timezone.now()
+        total_size_bytes = 0
         # Read the file as a ZIP file
         with zipfile.ZipFile(io.BytesIO(file.read())) as zip_file:
             # Iterate over each file in the ZIP
-            for zip_info in zip_file.infolist():
+            for i, zip_info in enumerate(zip_file.infolist()):
+                unzip_elapsed = timezone.now() - unzip_start
+                if unzip_elapsed.seconds > MAX_UNZIP_SECONDS:
+                    raise ZipException("Zip taking too long to extract, aborting.")
+                # only allow 1000 "things" inside the zip. This includes
+                # directories, even though we are skipping them. This is for
+                # decompression safety.
+                if i >= 999:
+                    raise ZipException("Too many files")
                 # Skip directories
+                # TODO(james): skipping directories is great for preventing zip
+                # bombs, but isn't flexible.
                 if zip_info.is_dir():
                     continue
+                total_size_bytes += zip_info.file_size
+                if total_size_bytes > MAX_UNZIP_BYTES:
+                    raise ZipException(f"Uncompressed zip will be larger than {MAX_UNZIP_BYTES}")
                 # Read the file contents
                 with zip_file.open(zip_info) as extracted_file:
                     # Create a new UploadedFile object
@@ -154,10 +180,8 @@ def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
                         name=filename,
                         file=io.BytesIO(content),
                     )
-                    # Add the file to the list of unzipped files to process. Do
-                    # not include the  manifest.
+                    # Add the file to the list of unzipped files to process.
                     unzipped_files.append(processed_file)
-
     return unzipped_files
 
 
@@ -166,7 +190,7 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
     format_type = mainfile.filetype
     name = mainfile.file.name
     file = mainfile.file
-    if format_type == "GLTF" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
+    if format_type == "GLTF1" and gltf_to_convert is not None and os.path.exists(gltf_to_convert):
         format_type = "GLB"
         name = f"{os.path.splitext(name)[0]}.glb"
         with open(gltf_to_convert, "rb") as f:
@@ -204,12 +228,11 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
 
 
 def upload(
-    current_user: AssetOwner,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
     main_files = []
-    # We need to see one of: glb or gltf, preferring glb. We are ignoring
+    # We need to see one of: glb or gltf, preferring glb.
     sub_files = {
         "GLB": [],  # All non-thumbnail images.
         "GLTF": [],  # All GLB's files plus BIN files.
@@ -218,7 +241,10 @@ def upload(
 
     if files is None:
         files = []
-    unzipped_files = process_files(files)
+    try:
+        unzipped_files = process_files(files)
+    except ZipException as err:
+        raise err
 
     thumbnail = None
     gltf_to_convert = bin_to_convert = None
@@ -239,16 +265,18 @@ def upload(
         # TODO(james): This code will break in mysterious ways if we receive
         # more than one set of gltf/bin files and don't process the right bin
         # with the right gltf.
-        if valid_file.filetype == "BIN" and bin_to_convert is None:
-            bin_to_convert = write_files_to_convert(
-                valid_file,
-                asset_dir,
-            )
-        if valid_file.filetype == "GLTF" and gltf_to_convert is None:
-            gltf_to_convert = write_files_to_convert(
-                valid_file,
-                asset_dir,
-            )
+        # We will enable this once the upload process is stable.
+        if False:
+            if valid_file.filetype == "BIN" and bin_to_convert is None:
+                bin_to_convert = write_files_to_convert(
+                    valid_file,
+                    asset_dir,
+                )
+            if valid_file.filetype == "GLTF1" and gltf_to_convert is None:
+                gltf_to_convert = write_files_to_convert(
+                    valid_file,
+                    asset_dir,
+                )
 
         if valid_file.mainfile is True:
             main_files.append(valid_file)
@@ -262,6 +290,8 @@ def upload(
             if splitext[0].lower() == "thumbnail" and valid_file.filetype == "IMAGE":
                 thumbnail = valid_file.file
 
+    # Currently a no-op, will return None. See where we assign gltf_to_convert
+    # and bin_to_convert.
     converted_gltf_path = convert_gltf(
         gltf_to_convert,
         bin_to_convert,
@@ -274,7 +304,7 @@ def upload(
 
     for mainfile in main_files:
         type = mainfile.filetype
-        if type.startswith("GLTF"):
+        if type.startswith("GLTF1"):
             sub_files_list = sub_files["GLTF"] + sub_files["GLB"]
         else:
             try:
@@ -291,6 +321,8 @@ def upload(
             role,
         )
 
+    # Currently a no-op. # See where we assign gltf_to_convert and
+    # bin_to_convert.
     clean_up_conversion(
         gltf_to_convert,
         bin_to_convert,
@@ -301,6 +333,12 @@ def upload(
     if thumbnail is not None:
         add_thumbnail_to_asset(thumbnail, asset)
 
+    # Save here so all formats and resources are associated with the asset.
+    # After this, we can mark each format as preferred.
+    asset.save()
+
+    asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
+
     return asset

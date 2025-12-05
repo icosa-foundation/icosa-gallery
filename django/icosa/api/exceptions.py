@@ -4,3 +4,7 @@ class FilterException(Exception):
 
 class RootResourceException(Exception):
     pass
+
+
+class ZipException(Exception):
+    pass

@@ -5,10 +5,10 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
-from django.core.management.base import BaseCommand
 from django_project import settings
+
+from django.core.management.base import BaseCommand
 from icosa.helpers.file import get_content_type, is_gltf2
-from icosa.helpers.format_roles import EXTENSION_ROLE_MAP
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.storage import get_b2_bucket
 from icosa.models import (
@@ -41,37 +41,14 @@ POLY_GLTF_JSON_PATH = "gltf2.json"
 POLY_MEGAJSON_PATH = "all_data.jsonl"
 ASSETS_JSON_DIR = "polygone_data/assets"
 
-FORMAT_ROLE_CHOICES = {
-    1: "Original OBJ File",
-    2: "Tilt File",
-    4: "Unknown GLTF File A",
-    6: "Original FBX File",
-    7: "Blocks File",
-    8: "USD File",
-    11: "HTML File",
-    12: "Original glTF File",
-    13: "TOUR CREATOR EXPERIENCE",
-    15: "JSON File",
-    16: "lullmodel File",
-    17: "SAND File A",
-    18: "GLB File",
-    19: "SAND File B",
-    20: "SANDC File",
-    21: "PB File",
-    22: "Unknown GLTF File B",
-    24: "Original Triangulated OBJ File",
-    25: "JPG BUGGY",
-    26: "USDZ File",
-    30: "Updated glTF File",
-    32: "Editor settings pb file",
-    35: "Unknown GLTF File C",
-    36: "Unknown GLB File A",
-    38: "Unknown GLB File B",
-    39: "TILT NATIVE glTF",
-    40: "USER SUPPLIED glTF",
+EXTENSION_ROLE_MAP = {
+    ".tilt": "POLYGONE_TILT_FORMAT",
+    ".blocks": "POLYGONE_BLOCKS_FORMAT",
+    ".glb": "POLYGONE_GLB_FORMAT",
+    ".gltf": "POLYGONE_GLTF_FORMAT",
+    ".obj": "POLYGONE_OBJ_FORMAT",
+    ".fbx": "POLYGONE_FBX_FORMAT",
 }
-
-FORMAT_ROLE_MAP = {x[1]: x[0] for x in FORMAT_ROLE_CHOICES.items()}
 
 VALID_TYPES = [x.replace(".", "").upper() for x in EXTENSION_ROLE_MAP.keys()]
 
@@ -219,7 +196,7 @@ def create_formats_from_scraped_data(directory, gltf2_data, formats_json, asset)
                 if is_gltf2(root_resource.file.file):
                     format.format_type = "GLTF2"
                 else:
-                    format.format_type = "GLTF"
+                    format.format_type = "GLTF1"
                 format.save()
 
         if format_json.get("resources", None) is not None:
@@ -275,7 +252,7 @@ def create_formats_from_archive_data(formats_json, asset):
 
         root_resource = Resource.objects.create(**root_resource_data)
 
-        role = FORMAT_ROLE_MAP[root_resource_json["role"]]
+        role = root_resource_json["role"]
         format.add_root_resource(root_resource)
         format.role = role
         format.save()

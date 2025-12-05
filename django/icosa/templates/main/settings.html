@@ -5,9 +5,9 @@
             <div class="col col-md-8 offset-md-2 col-lg-6 offset-lg-3">
                 <h1>My Settings</h1>
                 {% if need_login %}
-                    <p>You have changed your password, please <a href="{% url 'login' %}">log in</a> again.</p>
+                    <p>You have changed your password, please <a href="{% url 'icosa:login' %}">log in</a> again.</p>
                 {% else %}
-                    <form action="{% url 'settings' %}" method="post" novalidate>
+                    <form action="{% url 'icosa:settings' %}" method="post" novalidate>
                         {% csrf_token %}
                         {{ form.as_p }}
                         <button class="btn btn-primary" type="submit">Update</button>

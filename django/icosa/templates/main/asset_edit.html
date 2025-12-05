@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 
+{% load asset_tags %}
 {% load fontawesome_tags %}
 {% load static %}
 
 {% block extrahead %}
 {% endblock extrahead %}
+
+{% block banner %}
+{% include "partials/js_version_banner.html" %}
+{% admin_peek_banner request asset %}
+{% endblock banner %}
 
 {% block content %}
 <div class="sketchedit">
@@ -34,22 +40,20 @@
                         </div>
                     {% endif %}
                 {% endfor %}
-                {% if is_editable %}
                     <div class="field-group">
                         <p>Please note, once you have made your work public or unlisted, if you have chosen a CC license, you cannot make the work private or make changes to the model files.</p>
                         <div class="dropdown">
                             <a class="btn btn-primary dropdown-toggle" href="#" role="button" id="savebtngroup" data-bs-toggle="dropdown" aria-expanded="false">Save</a>
-                            <ul class="dropdown-menu" aria-labelledby="savebtngroup">
-                                <li><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>
-                                <li><button type="submit" name="_save_public" class="dropdown-item">Publish</button></li>
-                                <li><button type="submit" name="_save_unlisted" class="dropdown-item">Publish (as unlisted)</button></li>
-                            </ul>
+                                <ul class="dropdown-menu" aria-labelledby="savebtngroup">
+                                    {% if is_editable %}
+                                        <li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>
+                                    {% endif %}
+                                    <li id="publish-mode"><button type="submit" name="_save_public" class="dropdown-item">Publish</button></li>
+                                    <li><button type="submit" name="_save_unlisted" class="dropdown-item">Publish (as unlisted)</button></li>
+                                </ul>
                         </div>
                     </div>
-                {% else %}
-                    <button type="submit" class="btn btn-primary">Save</button>
-                {% endif %}
-                <a href="{% url 'uploads' %}" class="btn btn-secondary">Cancel</a>
+                <a href="{% url 'icosa:uploads' %}" class="btn btn-secondary">Cancel</a>
             </form>
             {% if is_editable %}
                 <p>
@@ -104,8 +108,35 @@
         }
         return false;
     }
-    thumbnailOverrideTrigger.addEventListener('input', handleThumbnail, false);
-    thumbnailOverrideRefresh.addEventListener('click', updateThumbnail, false);
+    if ( thumbnailOverrideTrigger ) {
+        thumbnailOverrideTrigger.addEventListener('input', handleThumbnail, false);
+        thumbnailOverrideRefresh.addEventListener('click', updateThumbnail, false);
+    }
+
+    function handlePublishChoices(event) {
+        let el = event.target;
+        license = el.value;
+        let wrap = document.createElement('div');
+        wrap.innerHTML = '<li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>';
+        let draftMode = wrap.firstChild;
+        let publishMode = document.querySelector("#publish-mode");
+        let assetVisibility = "{{ asset.visibility }}";
+
+        if ( license === "" || license === "ALL_RIGHTS_RESERVED" || assetVisibility === "PRIVATE") {
+            if (!document.querySelector("#draft-mode")) {
+                publishMode.parentNode.insertBefore(draftMode, publishMode);
+            }
+        } else {
+            if (document.querySelector("#draft-mode")) {
+                document.querySelector("#draft-mode").remove();
+            }
+        }
+    }
+
+    let licenseInput = document.querySelector("select[name='license']");
+    if ( licenseInput ) {
+        licenseInput.addEventListener('input', handlePublishChoices, false);
+    }
 </script>
 {{ form.media }}
 {% include "partials/viewer.html" %}

@@ -1,23 +1,22 @@
 import time
 from typing import List, Optional
 
-from django.utils import timezone
 from huey import signals
-from huey.contrib.djhuey import db_task, on_commit_task, signal
-from icosa.api.schema import AssetFinalizeData
-from icosa.helpers.file import upload_blocks_format
+from huey.contrib.djhuey import db_task, signal
+from ninja import File, Form
+from ninja.files import UploadedFile
+
+from django.db import transaction
+from django.utils import timezone
+from icosa.api.schema import AssetMetaData
 from icosa.helpers.upload import upload_api_asset
 from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
-    ASSET_STATE_COMPLETE,
     ASSET_STATE_FAILED,
     Asset,
-    AssetOwner,
     BulkSaveLog,
-    Format,
+    User,
 )
-from ninja import File
-from ninja.files import UploadedFile
 
 
 @signal(signals.SIGNAL_ERROR)
@@ -43,12 +42,11 @@ def handle_upload_error(task, exc):
 
 @db_task()
 def queue_upload_asset_web_ui(
-    current_user: AssetOwner,
+    current_user: User,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
     upload(
-        current_user,
         asset,
         files,
     )
@@ -56,58 +54,16 @@ def queue_upload_asset_web_ui(
 
 @db_task()
 def queue_upload_api_asset(
-    current_user: AssetOwner,
+    current_user: User,
     asset: Asset,
+    data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
     upload_api_asset(
-        current_user,
         asset,
+        data,
         files,
     )
-
-
-@on_commit_task()
-def queue_blocks_upload_format(
-    current_user: AssetOwner,
-    asset: Asset,
-    files: Optional[List[UploadedFile]] = File(None),
-):
-    upload_blocks_format(
-        current_user,
-        asset,
-        files,
-    )
-
-
-@on_commit_task()
-def queue_finalize_asset(asset_url: str, data: AssetFinalizeData):
-    asset = Asset.objects.get(url=asset_url)
-
-    # Clean up formats with no root resource.
-    # TODO(james): This can probably be done in one query
-    resources = asset.resource_set.filter(file="")
-    format_pks = list(set([x.format.pk for x in resources]))
-    formats = Format.objects.filter(pk__in=format_pks)
-    formats.delete()
-
-    # Apply triangle counts to all formats and resources.
-
-    non_tri_roles = [1, 7]  # Original OBJ, BLOCKS
-
-    non_triangulated_formats = asset.format_set.filter(role__in=non_tri_roles)
-    for format in non_triangulated_formats:
-        format.triangle_count = data.objPolyCount
-        format.save()
-
-    triangulated_formats = asset.format_set.exclude(role__in=non_tri_roles)
-    for format in triangulated_formats:
-        format.triangle_count = data.triangulatedObjPolyCount
-        format.save()
-
-    asset.state = ASSET_STATE_COMPLETE
-    asset.remix_ids = getattr(data, "remixIds", None)
-    asset.save()
 
 
 def save_all_assets(
@@ -146,11 +102,12 @@ def save_all_assets(
                 print(f"Process killed. Last updated: {save_log.last_id}")
             return
         try:
-            asset.save()
-            if verbose:
-                print(f"Saved Asset {asset.id}\t", end="\r")
-            save_log.last_id = asset.id
-            save_log.save(update_fields=["update_time", "last_id"])
+            with transaction.atomic():
+                asset.save()
+                if verbose:
+                    print(f"Saved Asset {asset.id}\t", end="\r")
+                save_log.last_id = asset.id
+                save_log.save(update_fields=["update_time", "last_id"])
             time.sleep(0.05)
         except Exception:
             save_log.finish_status = BulkSaveLog.FAILED

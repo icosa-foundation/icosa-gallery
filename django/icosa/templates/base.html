@@ -8,12 +8,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="icosa">
+    {% block meta_opengraph %}{% endblock meta_opengraph %}
     {% compress css %}
         <link rel="stylesheet" type="text/x-scss" href="{% static "scss/screen.scss" %}" />
     {% endcompress %}
     <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}?v=2" type="image/x-icon">
     <title>{% if page_title %}{{ page_title }} | {% endif %}Icosa Gallery</title>
-    <script src="/static/js/htmx.min.js"></script>
+    <script src="{% static  'js/htmx.min.js' %}"></script>
     {% block extrahead %}{% endblock extrahead %}
 </head>
 

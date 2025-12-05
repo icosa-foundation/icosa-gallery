@@ -23,6 +23,10 @@ body {
   }
 }
 
+.uppercase {
+  text-transform: uppercase;
+}
+
 .app {
   display: flex;
   min-height: 100%;
@@ -57,12 +61,16 @@ body {
   }
 }
 
-a {
+a, summary {
   color: var(--color-primary);
 
   &:hover {
     color: var(--color-primary-dim);
   }
+}
+
+details .details-content {
+  margin-block: 1em;
 }
 
 code {
@@ -414,3 +422,7 @@ img {
   font-family: monospace;
   font-size: 80%;
 }
+.mt1 {
+  margin-top: 1em;
+}
+

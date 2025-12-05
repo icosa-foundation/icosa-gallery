@@ -11,7 +11,7 @@
                     <ul>
                         <li class="pro-menu-item active">
                             <div class="pro-inner-item" tabindex="0" role="button">
-                                <a href="/">
+                                <a href="{% url 'icosa:home' %}">
                                     <span class="pro-icon-wrapper">
                                         <span class="pro-icon">
                                             {% fa_icon "solid" "house-chimney" %}
@@ -27,22 +27,24 @@
                     <ul>
                         <h3 class="hide-when-collapsed">Me</h3>
                         <div>
-                            {% if owner is not None %}
-                                <li class="pro-menu-item">
-                                    <div class="pro-inner-item" tabindex="0" role="button">
-                                        <a href="/user/{{ owner.url }}">
-                                            <span class="pro-icon-wrapper">
-                                                <span class="pro-icon">
-                                                    {% fa_icon "solid" "user" %}
+                            {% if user is not None and not user.is_anonymous %}
+                                {% if user.get_absolute_url %}
+                                    <li class="pro-menu-item">
+                                        <div class="pro-inner-item" tabindex="0" role="button">
+                                            <a href="{{ user.get_absolute_url }}">
+                                                <span class="pro-icon-wrapper">
+                                                    <span class="pro-icon">
+                                                        {% fa_icon "solid" "user" %}
+                                                    </span>
                                                 </span>
-                                            </span>
-                                            <span class="pro-item-content">My Profile</span>
-                                        </a>
-                                    </div>
-                                </li>
+                                                <span class="pro-item-content">My Profile</span>
+                                            </a>
+                                        </div>
+                                    </li>
+                                {% endif %}
                                 <li class="pro-menu-item">
                                     <div class="pro-inner-item" tabindex="0" role="button">
-                                        <a href="/uploads">
+                                        <a href="{% url 'icosa:uploads' %}">
                                             <span class="pro-icon-wrapper">
                                                 <span class="pro-icon">
                                                     {% fa_icon "solid" "list" %}
@@ -54,7 +56,7 @@
                                 </li>
                                 <li class="pro-menu-item">
                                     <div class="pro-inner-item" tabindex="0" role="button">
-                                        <a href="/likes/">
+                                        <a href="{% url 'icosa:my_likes' %}/">
                                             <span class="pro-icon-wrapper">
                                                 <span class="pro-icon">
                                                     {% fa_icon "solid" "heart" %}
@@ -66,7 +68,7 @@
                                 </li>
                                 <li class="pro-menu-item">
                                     <div class="pro-inner-item" tabindex="0" role="button">
-                                        <a href="/settings">
+                                        <a href="{% url 'icosa:settings' %}">
                                             <span class="pro-icon-wrapper">
                                                 <span class="pro-icon">
                                                     {% fa_icon "solid" "gear" %}
@@ -78,7 +80,7 @@
                                 </li>
                                 <li class="pro-menu-item hide-when-collapsed">
                                     <div class="pro-inner-item" tabindex="0" role="button">
-                                        <a href="{% url 'logout' %}">
+                                        <a href="{% url 'icosa:logout' %}">
                                             <span class="pro-icon-wrapper">
                                                 <span class="pro-icon">
                                                     {% fa_icon "solid" "right-from-bracket" %}
@@ -91,7 +93,7 @@
                             {% else %}
                                 <li class="pro-menu-item hide-when-collapsed">
                                     <div class="pro-inner-item" tabindex="0" role="button">
-                                        <a href="{% url 'login' %}">
+                                        <a href="{% url 'icosa:login' %}">
                                             <span class="pro-icon-wrapper">
                                                 <span class="pro-icon">
                                                     {% fa_icon "solid" "right-to-bracket" %}
@@ -111,7 +113,7 @@
                         <div>
                             <li class="pro-menu-item">
                                 <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'explore_category' category="animals" %}">
+                                    <a href="{% url 'icosa:explore_category' category="animals" %}">
                                         <span class="pro-icon-wrapper">
                                             <span class="pro-icon">
                                                 {% fa_icon "solid" "paw" %}
@@ -123,7 +125,7 @@
                             </li>
                             <li class="pro-menu-item">
                                 <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'explore_category' category="architecture" %}">
+                                    <a href="{% url 'icosa:explore_category' category="architecture" %}">
                                         <span class="pro-icon-wrapper">
                                             <span class="pro-icon">
                                                 {% fa_icon "solid" "building" %}
@@ -135,7 +137,7 @@
                             </li>
                             <li class="pro-menu-item">
                                 <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'explore_category' category="food" %}">
+                                    <a href="{% url 'icosa:explore_category' category="food" %}">
                                         <span class="pro-icon-wrapper">
                                             <span class="pro-icon">
                                                 {% fa_icon "solid" "utensils" %}
@@ -147,7 +149,7 @@
                             </li>
                             <li class="pro-menu-item">
                                 <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'explore_category' category="nature" %}">
+                                    <a href="{% url 'icosa:explore_category' category="nature" %}">
                                         <span class="pro-icon-wrapper">
                                             <span class="pro-icon">
                                                 {% fa_icon "solid" "leaf" %}
@@ -159,7 +161,7 @@
                             </li>
                             <li class="pro-menu-item">
                                 <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'explore_category' category="people" %}">
+                                    <a href="{% url 'icosa:explore_category' category="people" %}">
                                         <span class="pro-icon-wrapper">
                                             <span class="pro-icon">
                                                 {% fa_icon "solid" "people-group" %}
@@ -171,7 +173,7 @@
                             </li>
                             <li class="pro-menu-item">
                                 <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'explore_category' category="science" %}">
+                                    <a href="{% url 'icosa:explore_category' category="science" %}">
                                         <span class="pro-icon-wrapper">
                                             <span class="pro-icon">
                                                 {% fa_icon "solid" "flask" %}
@@ -183,7 +185,7 @@
                             </li>
                             <li class="pro-menu-item">
                                 <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'explore_category' category="tech" %}">
+                                    <a href="{% url 'icosa:explore_category' category="tech" %}">
                                         <span class="pro-icon-wrapper">
                                             <span class="pro-icon">
                                                 {% fa_icon "solid" "microchip" %}
@@ -214,12 +216,12 @@
                     </div>
                     <div class="support text-center hide-when-collapsed row">
                         <div class="col-lg-6 col-sm-12">
-                            <a href="{% url 'home_openbrush' %}" rel="noreferrer" alt="OpenBrush">
+                            <a href="{% url 'icosa:home_openbrush' %}" rel="noreferrer" alt="OpenBrush">
                                 <img src="{% static "images/openbrushlogo_1200.png" %}" alt="Open Brush Logo">
                             </a>
                         </div>
                         <div class="col-lg-6 col-sm-12">
-                            <a href="{% url 'home_blocks' %}" rel="noreferrer" alt="OpenBrush">
+                            <a href="{% url 'icosa:home_blocks' %}" rel="noreferrer" alt="OpenBrush">
                                 <img src="{% static "images/openblockslogo_1200.png" %}" alt="Open Brush Logo">
                             </a>
                         </div>

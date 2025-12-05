@@ -1,5 +1,7 @@
 import threading
 
+from email_logger.models import log_emails
+
 from django.core.mail import EmailMessage
 
 
@@ -12,6 +14,7 @@ class EmailThread(threading.Thread):
 
     def run(self):
         msg = EmailMessage(self.subject, self.message, to=self.recipient_list)
+        log_emails("to real", [msg])
         msg.content_subtype = "html"
         msg.send()
 

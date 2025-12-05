@@ -1,13 +1,13 @@
 from typing import Optional
 
+from ninja import Router
+from ninja.errors import HttpError
+
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseNotFound
 from django.template.loader import render_to_string
 from django.urls import resolve
 from icosa.api.schema import OembedOut
 from icosa.models import Asset
-from ninja import Router
-from ninja.errors import HttpError
 
 router = Router()
 
@@ -65,7 +65,10 @@ def oembed(
     match = resolve(url)
     if match.url_name != "asset_oembed":
         raise HttpError(404, "Not found.")
-    asset = asset = Asset.objects.get(url=match.kwargs["asset_url"])
+    try:
+        asset = Asset.objects.get(url=match.kwargs["asset_url"])
+    except Asset.DoesNotExist:
+        raise HttpError(404, "Not found.")
 
     frame_width, frame_height = calc_dimensions(maxwidth, maxheight)
 
@@ -85,7 +88,7 @@ def oembed(
         "version": "1.0",
         "title": asset.name,
         "author_name": asset.owner.displayname,
-        "author_url": f"{host}{asset.owner.get_absolute_url()}",
+        "author_url": f"{host}{asset.owner.django_user.get_absolute_url()}" if asset.owner.django_user else "",
         "provider_name": "Icosa",  # TODO make configurable
         "provider_url": host,
         "thumbnail_url": asset.thumbnail,  # TODO resize to maxwidth / maxheight

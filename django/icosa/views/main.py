@@ -5,17 +5,19 @@ import secrets
 from constance import config
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import get_user_model, logout
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.models import User as DjangoUser
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q
 from django.http import (
     Http404,
     HttpResponse,
     HttpResponseBadRequest,
+    HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseRedirect,
 )
@@ -26,11 +28,14 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
 from honeypot.decorators import check_honeypot
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
     AssetEditForm,
+    AssetPublishForm,
     AssetReportForm,
     AssetUploadForm,
     UserSettingsForm,
@@ -41,7 +46,9 @@ from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
+    ARCHIVED,
     ASSET_STATE_BARE,
+    ASSET_STATE_FAILED,
     ASSET_STATE_UPLOADING,
     CATEGORY_LABEL_MAP,
     CATEGORY_LABELS,
@@ -51,9 +58,12 @@ from icosa.models import (
     Asset,
     AssetOwner,
     MastheadSection,
+    UserLike,
 )
 from icosa.tasks import queue_upload_asset_web_ui
 from silk.profiling.profiler import silk_profile
+
+User = get_user_model()
 
 POLY_USER_URL = "4aEd8rQgKu2"
 
@@ -62,6 +72,17 @@ POLY_USER_URL = "4aEd8rQgKu2"
 MASTHEAD_TOP_RANK = 10000
 MASTHEAD_CACHE_SECONDS = 10
 MASTHEAD_CACHE_PREFIX = "mastheads"
+
+
+def set_viewer_js_version(request):
+    viewer_js_version = request.GET.get("viewerjs", None)
+    if viewer_js_version is not None:
+        viewer_js_version = viewer_js_version.lower()
+        if viewer_js_version in ["experimental", "previous"]:
+            request.session["viewer_js_version"] = viewer_js_version
+        else:
+            if request.session.get("viewer_js_version", None) is not None:
+                del request.session["viewer_js_version"]
 
 
 def get_default_q():
@@ -88,16 +109,20 @@ def get_default_q():
 
 
 def user_can_view_asset(
-    user: DjangoUser,
+    user: AbstractBaseUser,
     asset: Asset,
 ) -> bool:
-    if asset.visibility == PRIVATE:
+    # Superusers should be able to view any asset. Preferably while showing a
+    # banner and with the option to check the real access.
+    if user.is_staff or user.is_superuser:
+        return True
+    if asset.visibility in [PRIVATE, ARCHIVED]:
         return user.is_authenticated and asset.owner.django_user == user
     return True
 
 
 def check_user_can_view_asset(
-    user: DjangoUser,
+    user: AbstractBaseUser,
     asset: Asset,
 ):
     if not user_can_view_asset(user, asset):
@@ -110,6 +135,12 @@ def handler404(request, exception):
 
 def handler500(request):
     return render(request, "main/500.html", status=500)
+
+
+def handler403(request, exception=None):
+    if isinstance(exception, Ratelimited):
+        return render(request, "main/429.html", status=429)
+    return HttpResponseForbidden("Forbidden")
 
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -142,7 +173,12 @@ def landing_page(
     template = "main/home.html"
 
     # TODO(james): filter out assets with no formats
-    assets = assets.exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).select_related("owner")
+    assets = (
+        assets.exclude(license__isnull=True)
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .select_related("owner")
+        .prefetch_related("resource_set", "format_set")
+    )
 
     try:
         page_number = int(request.GET.get("page", 1))
@@ -270,6 +306,7 @@ def home_other(request):
     )
 
 
+@never_cache
 def category(request, category):
     category_label = category.upper()
     if category_label not in CATEGORY_LABELS:
@@ -288,27 +325,94 @@ def category(request, category):
     )
 
 
+@login_required
 @never_cache
-def user_show(request, user_url):
-    template = "main/user_show.html"
+def uploads(request):
+    template = "main/manage_uploads.html"
 
-    owner = get_object_or_404(
-        AssetOwner.objects.select_related(
-            "django_user",
-            "merged_with",
-        ),
-        url=user_url,
+    user = request.user
+    if request.method == "POST":
+        form = AssetUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            job_snowflake = generate_snowflake()
+            asset_token = secrets.token_urlsafe(8)
+            with transaction.atomic():
+                owner, _ = AssetOwner.objects.get_or_create(
+                    django_user=user,
+                    email=user.email,
+                    defaults={
+                        "url": secrets.token_urlsafe(8),
+                        "displayname": user.displayname,
+                    },
+                )
+                asset = Asset.objects.create(
+                    id=job_snowflake,
+                    url=asset_token,
+                    owner=owner,
+                    state=ASSET_STATE_UPLOADING,
+                )
+                try:
+                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                        queue_upload_asset_web_ui(
+                            current_user=user,
+                            asset=asset,
+                            files=[request.FILES["file"]],
+                        )
+                    else:
+                        upload(
+                            asset,
+                            [request.FILES["file"]],
+                        )
+                except Exception:
+                    asset.state = ASSET_STATE_FAILED
+                    asset.save()
+
+            messages.add_message(request, messages.INFO, "Your upload has started.")
+            return HttpResponseRedirect(reverse("icosa:uploads"))
+    elif request.method == "GET":
+        form = AssetUploadForm()
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+
+    asset_objs = Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
+
+    context = {
+        "assets": assets,
+        "form": form,
+        "page_title": "My Uploads",
+        "paginator": paginator,
+    }
+    return render(
+        request,
+        template,
+        context,
     )
 
-    asset_objs = Asset.objects.filter(
-        owner=owner,
+
+@never_cache
+def owner_show(request, slug):
+    template = "main/user_show.html"
+    owner = get_object_or_404(
+        AssetOwner,
+        url=slug,
+    )
+
+    if owner.disable_profile and not request.user.is_superuser:
+        raise Http404
+
+    asset_objs = owner.asset_set.filter(
         visibility=PUBLIC,
     ).order_by("-id")
+
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
-        "user": owner,
+        "user": request.user,
+        "owner": owner,
         "assets": assets,
         "page_title": owner.displayname,
         "paginator": paginator,
@@ -320,21 +424,80 @@ def user_show(request, user_url):
     )
 
 
+@never_cache
+def user_show(request, slug):
+    template = "main/user_show.html"
+
+    # A django User is always accessible via one of their AssetOwner instances
+    # and never directly.
+
+    # If a django User has no AssetOwner instances, we have no content to show
+    # anyway, so there is no need to provide a direct link.
+
+    # This view shows all assets for all Asset Owner instances associated with
+    # a django User.
+
+    owner = get_object_or_404(
+        AssetOwner,
+        url=slug,
+    )
+
+    if owner.disable_profile and not request.user.is_superuser:
+        raise Http404
+
+    if owner.django_user is None:
+        owners = AssetOwner.objects.filter(pk=owner.pk)
+    else:
+        owners = owner.django_user.assetowner_set.all()
+
+    asset_objs = Asset.objects.filter(
+        owner__in=owners,
+        visibility=PUBLIC,
+    ).order_by("-id")
+
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page_number = request.GET.get("page")
+    assets = paginator.get_page(page_number)
+
+    if owners.count() > 1:
+        if owner.django_user:
+            page_title = f"{owner.django_user.displayname} and others"
+        else:
+            page_title = owner.displayname
+    else:
+        page_title = owner.get_displayname()
+
+    context = {
+        "owner": owner,
+        "assets": assets,
+        "page_title": page_title,
+        "paginator": paginator,
+        "is_multi_owner": bool(owners.count()),
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@never_cache
 @login_required
 def my_likes(request):
     template = "main/likes.html"
 
-    owner = AssetOwner.from_django_request(request)
-    q = Q(visibility__in=[PUBLIC, UNLISTED])
-    q |= Q(visibility__in=[PRIVATE, UNLISTED], owner=owner)
+    user = request.user
+    q = Q(asset__visibility__in=[PUBLIC, UNLISTED])
+    q |= Q(asset__visibility__in=[PRIVATE, UNLISTED], asset__owner__django_user=user)
 
-    asset_objs = owner.likes.filter(q)
+    liked_assets = UserLike.objects.filter(user=user).filter(q)
+    asset_objs = [ul.asset for ul in liked_assets]
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
 
     context = {
-        "user": owner,
+        "user": user,
         "assets": assets,
         "page_title": "My likes",
         "paginator": paginator,
@@ -349,12 +512,14 @@ def my_likes(request):
 @never_cache
 def asset_view(request, asset_url):
     template = "main/asset_view.html"
+    user = request.user
 
-    asset = get_object_or_404(Asset, url=asset_url)
-    check_user_can_view_asset(request.user, asset)
+    asset = get_object_or_404(Asset.objects.prefetch_related("resource_set", "format_set"), url=asset_url)
+    check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()
-    override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
+
+    set_viewer_js_version(request)
 
     embed_code = render_to_string(
         "partials/oembed_code.html",
@@ -366,12 +531,15 @@ def asset_view(request, asset_url):
         },
     )
 
+    if user.is_anonymous:
+        user_owns_asset = False
+    else:
+        user_owns_asset = asset.owner in user.assetowner_set.all()
     context = {
-        "request_owner": AssetOwner.from_django_user(request.user),
+        "user_owns_asset": user_owns_asset,
         "asset": asset,
-        "override_suffix": override_suffix,
         "format_override": format_override,
-        "downloadable_formats": bool(asset.get_all_downloadable_formats()),
+        "downloadable_formats": bool(asset.get_all_downloadable_formats(user)),
         "page_title": asset.name,
         "embed_code": embed_code.strip(),
     }
@@ -382,23 +550,40 @@ def asset_view(request, asset_url):
     )
 
 
+@never_cache
+@user_passes_test(lambda u: u.is_superuser)
+def asset_forward_to_admin_change(request, asset_url):
+    # NOTE(safety) This view exists solely so as to not expose asset IDs on the
+    # front end. At time of writing, only superusers can see this, but I don't
+    # want putting links with IDs on the front end to become a practice.
+
+    asset = get_object_or_404(Asset, url=asset_url)
+
+    return HttpResponseRedirect(
+        reverse(
+            "admin:icosa_asset_change",
+            kwargs={"object_id": asset.id},
+        )
+    )
+
+
 @xframe_options_exempt
 @never_cache
 def asset_oembed(request, asset_url):
     template = "main/asset_embed.html"
 
+    user = request.user
     asset = get_object_or_404(Asset, url=asset_url)
-    check_user_can_view_asset(request.user, asset)
+    check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()  # TODO: do we count embedded views separately or at all?
-    override_suffix = request.GET.get("nosuffix", "")
     format_override = request.GET.get("forceformat", "")
 
+    set_viewer_js_version(request)
+
     context = {
-        "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
-        "override_suffix": override_suffix,
         "format_override": format_override,
-        "downloadable_formats": bool(asset.get_all_downloadable_formats()),
+        "downloadable_formats": bool(asset.get_all_downloadable_formats(user)),
         "page_title": f"embed {asset.name}",
     }
     return render(
@@ -413,14 +598,14 @@ def asset_downloads(request, asset_url):
     asset = get_object_or_404(Asset, url=asset_url)
     if asset.license == ALL_RIGHTS_RESERVED:
         raise Http404()
+    user = request.user
 
     template = "main/asset_downloads.html"
-    check_user_can_view_asset(request.user, asset)
+    check_user_can_view_asset(user, asset)
 
     context = {
-        "request_owner": AssetOwner.from_django_user(request.user),
         "asset": asset,
-        "downloadable_formats": asset.get_all_downloadable_formats(),
+        "downloadable_formats": asset.get_all_downloadable_formats(user),
         "page_title": f"Download {asset.name}",
     }
     return render(
@@ -446,8 +631,7 @@ def asset_log_download(request, asset_url):
 @never_cache
 def asset_status(request, asset_url):
     template = "partials/asset_status.html"
-    owner = AssetOwner.from_django_user(request.user)
-    asset = get_object_or_404(Asset, url=asset_url, owner=owner)
+    asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
     context = {
         "asset": asset,
         "is_polling": True,
@@ -461,68 +645,13 @@ def asset_status(request, asset_url):
 
 @login_required
 @never_cache
-def uploads(request):
-    template = "main/manage_uploads.html"
-
-    user = AssetOwner.from_django_request(request)
-    if request.method == "POST":
-        form = AssetUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            job_snowflake = generate_snowflake()
-            asset_token = secrets.token_urlsafe(8)
-            asset = Asset.objects.create(
-                id=job_snowflake,
-                url=asset_token,
-                owner=user,
-                state=ASSET_STATE_UPLOADING,
-            )
-            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                queue_upload_asset_web_ui(
-                    current_user=user,
-                    asset=asset,
-                    files=[request.FILES["file"]],
-                )
-            else:
-                upload(
-                    user,
-                    asset,
-                    [request.FILES["file"]],
-                )
-            messages.add_message(request, messages.INFO, "Your upload has started.")
-            return HttpResponseRedirect(reverse("uploads"))
-    elif request.method == "GET":
-        form = AssetUploadForm()
-    else:
-        return HttpResponseNotAllowed(["GET", "POST"])
-
-    asset_objs = Asset.objects.filter(owner=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
-    assets = paginator.get_page(page_number)
-
-    context = {
-        "assets": assets,
-        "form": form,
-        "page_title": "My Uploads",
-        "paginator": paginator,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
-
-
-@login_required
-@never_cache
 def asset_edit(request, asset_url):
     template = "main/asset_edit.html"
-    owner = AssetOwner.from_django_user(request.user)
     is_superuser = request.user.is_superuser
     if is_superuser:
         asset = get_object_or_404(Asset, url=asset_url)
     else:
-        asset = get_object_or_404(Asset, owner=owner, url=asset_url)
+        asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
     # We need to disconnect the editable state from the form during validation.
     # Without this, if the form contains errors, some fields that need
     # correction cannot be edited.
@@ -533,47 +662,48 @@ def asset_edit(request, asset_url):
     elif request.method == "POST":
         form = AssetEditForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
-            asset = form.save(commit=False)
-            override_thumbnail = request.POST.get("thumbnail_override", False)
-            thumbnail_override_image = request.POST.get("thumbnail_override_image", None)
-            if override_thumbnail and thumbnail_override_image:
-                image_file = b64_to_img(thumbnail_override_image)
-                asset.thumbnail = image_file
-            form.save_m2m()
-            if is_editable:
-                if "_save_private" in request.POST:
+            with transaction.atomic():
+                asset = form.save(commit=False)
+                override_thumbnail = request.POST.get("thumbnail_override", False)
+                thumbnail_override_image = request.POST.get("thumbnail_override_image", None)
+                if override_thumbnail and thumbnail_override_image:
+                    image_file = b64_to_img(thumbnail_override_image)
+                    asset.thumbnail = image_file
+                form.save_m2m()
+                if is_editable and "_save_private" in request.POST:
                     asset.visibility = PRIVATE
                 if "_save_public" in request.POST:
                     asset.visibility = PUBLIC
                 if "_save_unlisted" in request.POST:
                     asset.visibility = UNLISTED
-            asset.save(update_timestamps=True)
-
-            if request.FILES.get("zip_file"):
-                asset.state = ASSET_STATE_UPLOADING
                 asset.save(update_timestamps=True)
 
-                if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                    queue_upload_asset_web_ui(
-                        current_user=owner,
-                        asset=asset,
-                        files=[request.FILES["zip_file"]],
-                    )
-                else:
-                    upload(
-                        owner,
-                        asset,
-                        [request.FILES["zip_file"]],
-                    )
+                if request.FILES.get("zip_file"):
+                    asset.state = ASSET_STATE_UPLOADING
+                    asset.save(update_timestamps=True)
+
+                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                        queue_upload_asset_web_ui(
+                            current_user=request.user,
+                            asset=asset,
+                            files=[request.FILES["zip_file"]],
+                        )
+                    else:
+                        upload(
+                            asset,
+                            [request.FILES["zip_file"]],
+                        )
             if is_superuser:
-                return HttpResponseRedirect(reverse("asset_view", kwargs={"asset_url": asset.url}))
+                return HttpResponseRedirect(reverse("icosa:asset_view", kwargs={"asset_url": asset.url}))
             else:
-                return HttpResponseRedirect(reverse("uploads"))
+                return HttpResponseRedirect(reverse("icosa:uploads"))
         else:
             if settings.DEBUG:
                 print(form.errors)
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
+
+    set_viewer_js_version(request)
 
     context = {
         "asset": asset,
@@ -589,43 +719,38 @@ def asset_edit(request, asset_url):
 
 
 @login_required
-def delete_asset(request, asset_url):
-    if request.method == "POST":
-        owner = AssetOwner.from_django_user(request.user)
-        asset = get_object_or_404(Asset, owner=owner, url=asset_url)
-        if asset.name:
-            asset_name = asset.name
-        else:
-            asset_name = "Unnamed asset"
-
-        asset.hide_media()
-        asset.delete()
-        messages.add_message(
-            request,
-            messages.INFO,
-            f"Deleted '{asset_name}'.",
-        )
-        return HttpResponseRedirect(reverse("uploads"))
-    else:
-        return HttpResponseNotAllowed(["POST"])
-
-
-@login_required
+@never_cache
 def asset_publish(request, asset_url):
+    # TODO(james): This view is very similar to asset_edit
     template = "main/asset_edit.html"
     asset = get_object_or_404(Asset, url=asset_url)
+    # We need to disconnect the editable state from the form during validation.
+    # Without this, if the form contains errors, some fields that need
+    # correction cannot be edited.
+    is_editable = asset.model_is_editable
+
     if request.user != asset.owner.django_user:
         raise Http404()
+
     if request.method == "GET":
-        form = AssetEditForm(instance=asset)
+        form = AssetPublishForm(instance=asset)
     elif request.method == "POST":
-        form = AssetEditForm(request.POST, request.FILES, instance=asset)
+        form = AssetPublishForm(request.POST, request.FILES, instance=asset)
         if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(reverse("uploads"))
+            with transaction.atomic():
+                asset = form.save()
+                if is_editable and "_save_private" in request.POST:
+                    asset.visibility = PRIVATE
+                if "_save_public" in request.POST:
+                    asset.visibility = PUBLIC
+                if "_save_unlisted" in request.POST:
+                    asset.visibility = UNLISTED
+                asset.save(update_timestamps=True)
+            return HttpResponseRedirect(reverse("icosa:uploads"))
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
+        "is_editable": asset.model_is_editable,
         "asset": asset,
         "form": form,
         "page_title": f"Publish {asset.name}",
@@ -637,7 +762,32 @@ def asset_publish(request, asset_url):
     )
 
 
+@never_cache
+@login_required
+def asset_delete(request, asset_url):
+    if request.method == "POST":
+        with transaction.atomic():
+            asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
+            if asset.name:
+                asset_name = asset.name
+            else:
+                asset_name = "Unnamed asset"
+
+            asset.hide_media()
+            asset.delete()
+        messages.add_message(
+            request,
+            messages.INFO,
+            f"Deleted '{asset_name}'.",
+        )
+        return HttpResponseRedirect(reverse("icosa:uploads"))
+    else:
+        return HttpResponseNotAllowed(["POST"])
+
+
+@ratelimit(key="user_or_ip", rate="5/m", method="POST")
 @check_honeypot
+@never_cache
 def report_asset(request, asset_url):
     template = "main/report_asset.html"
     asset = get_object_or_404(Asset, url=asset_url)
@@ -651,7 +801,6 @@ def report_asset(request, asset_url):
             if reporter is None:
                 reporter_email = None
             else:
-                reporter = AssetOwner.from_django_user(reporter)
                 reporter_email = reporter.email
                 asset.last_reported_by = reporter
             asset.save()
@@ -670,7 +819,7 @@ def report_asset(request, asset_url):
                     },
                 )
                 spawn_send_html_mail(mail_subject, message, [to_email])
-            return HttpResponseRedirect(reverse("report_success"))
+            return HttpResponseRedirect(reverse("icosa:report_success"))
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
@@ -685,6 +834,7 @@ def report_asset(request, asset_url):
     )
 
 
+@never_cache
 def report_success(request):
     return template_view(
         request,
@@ -693,36 +843,47 @@ def report_success(request):
     )
 
 
+@never_cache
 @login_required
 def user_settings(request):
     need_login = False
     template = "main/settings.html"
     user = request.user
-    icosa_user = AssetOwner.from_django_user(user)
     if request.method == "POST":
-        form = UserSettingsForm(request.POST, instance=icosa_user, user=user)
+        form = UserSettingsForm(request.POST, instance=user)
         if form.is_valid():
-            form.save()
-            password_new = request.POST.get("password_new")
-            if password_new:
-                user.set_password(password_new)
-                icosa_user.set_password(password_new)
-                need_login = True
-            email = request.POST.get("email")
-            if email:
-                user.email = email
-                user.username = email
-            user.save()
+            with transaction.atomic():
+                form.save()
+                password_new = request.POST.get("password_new")
+                if password_new:
+                    user.set_password(password_new)
+                    need_login = True
+                email = request.POST.get("email")
+                if email:
+                    user.email = email
+                user.save()
+
+                if user.has_single_owner:
+                    description = form.cleaned_data.get("description", None)
+                    url = form.cleaned_data.get("url", None)
+                    if settings.DEBUG:
+                        print(description, url)
+                    owner = user.assetowner_set.first()
+                    if description is not None:
+                        owner.description = description
+                    if url is not None:
+                        owner.url = url
+                    owner.save()
+
             if need_login:
-                icosa_user.update_access_token()
                 logout(request)
 
     else:
-        form = UserSettingsForm(instance=icosa_user, user=user)
+        form = UserSettingsForm(instance=user)
     context = {
         "form": form,
         "need_login": need_login,
-        "page_title": f"{icosa_user.displayname} User settings",
+        "page_title": f"{user.username} User settings",
     }
     return render(request, template, context)
 
@@ -814,6 +975,7 @@ def about(request):
     )
 
 
+@never_cache
 def search(request):
     query = request.GET.get("s")
     template = "main/search.html"
@@ -854,11 +1016,12 @@ def search(request):
     )
 
 
+@never_cache
 def toggle_like(request):
     error_return = HttpResponse(status=422)
 
-    owner = AssetOwner.from_django_request(request)
-    if owner is None:
+    user = request.user
+    if user is None or user.is_anonymous:
         return error_return
 
     asset_url = request.POST.get("assetId", None)
@@ -870,11 +1033,12 @@ def toggle_like(request):
     except Asset.DoesNotExist:
         return error_return
 
-    is_liked = asset.id in owner.likes.values_list("id", flat=True)
-    if is_liked:
-        owner.likes.remove(asset)
-    else:
-        owner.likes.add(asset)
+    is_liked = asset.id in UserLike.objects.filter(user=user).values_list("asset__id", flat=True)
+    with transaction.atomic():
+        if is_liked:
+            UserLike.objects.filter(user=user, asset=asset).delete()
+        else:
+            UserLike.objects.create(user=user, asset=asset)
         # Triggers denorming of asset liked time, but not update_time.
         asset.save()
     template = "main/tags/like_button.html"
@@ -922,11 +1086,12 @@ def make_asset_masthead_image(request, asset_url):
         create = {
             "asset": asset,
         }
-        masthead = MastheadSection.objects.create(**create)
-        # We need an instance ID to populate the image path in storage.
-        # So we need to save it separately after the create.
-        masthead.image = image_file
-        masthead.save()
+        with transaction.atomic():
+            masthead = MastheadSection.objects.create(**create)
+            # We need an instance ID to populate the image path in storage.
+            # So we need to save it separately after the create.
+            masthead.image = image_file
+            masthead.save()
         body = f"<p>Image saved</p><p><a href='{asset.get_absolute_url()}'>Back to asset</a></p><p><a href='/'>Back to home</a></p>"
 
         return HttpResponse(mark_safe(body))

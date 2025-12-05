@@ -4,9 +4,27 @@
 {% endif %}
 {% if field.name == "license" %}
     {% if not field.field.disabled %}
-        <p>Please choose a permissive, Creative Commons (CC) license before publishing your work. If you choose "All Rights Reserved", your work will only be shown on your profile page and via direct links. Work with a CC license will also appear in public lists and search results.</p>
-        <p>Please note, CC licenses are non-revokable once your work is published.</p>
-        <p><a href="#">Find out why permissive licenses are important</a></p>
+        {% if asset.license == "CREATIVE_COMMONS_BY_ND_3_0" %}
+        <details>
+            <summary>
+            NOTE: When you chose a non-remixable license for this work, were you aware of how restrictive it is?
+            </summary>
+             <p><strong>This license is effectively as restrictive as the common "All Rights Reserved" copyright, which is perhaps not what you intended for this work.</strong></p>
+            <p><strong>If that is the case, consider choosing a more permissive license.</strong></p>
+            <p>A <a href="https://pitt.libguides.com/openlicensing/cc-noderivatives" rel="noreferrer" target="_blank">write up of the potential failings of the "No Derivatives" license</a>, explains in more detail.</p>
+            <hr>
+        </details>
+        {% endif %}
+        <p>We encourage users to share their work under a Creative Commons license to encourage remixing and reuse but you can also choose "All Rights Reserved". Only Creative Commons works will appear in the main site and searches. If you choose "All Rights Reserved then the work will only appear if users view your profile or have a direct link to that page.</p>
+        <p>
+        <details>
+            <summary>
+                Please note that you can't change the license to a more restrictive one after the work is published.
+            </summary>
+            <div class="details-content">
+                The reason that CC licenses are irrevocable is to protect people that have used your work. Once someone has used material under a CC license, they will always have the right to use it under thee same license terms, even if the licensor changes his or her mind and stops distributing under the CC license terms. People will often choose to respect the licensor’s wishes and stop using the work if requested, but allowing creators to revoke or change licences whenever they wished would create so much uncertainty and legal risk that it would negate nearly all the benefits of Creative Commons licensing.
+            </div>
+        </details>
     {% endif %}
 {% endif %}
 {% if field.name == "zip_file" %}

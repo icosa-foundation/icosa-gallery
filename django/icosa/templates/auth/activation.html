@@ -5,7 +5,7 @@
             <div class="col col-lg-6 offset-lg-3">
                 <h1>Register</h1>
                 {% if success %}
-                    <p>Registration was successful, you can now <a href="{% url 'login' %}">login</a>.</p>
+                    <p>Registration was successful, you can now <a href="{% url 'icosa:login' %}">login</a>.</p>
                 {% else %}
                     <p>Activation link is invalid.</p>
                 {% endif %}

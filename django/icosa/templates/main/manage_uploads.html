@@ -30,27 +30,48 @@
     </div>
     <div class="row">
         <div class="col-6">
-            <form action="{% url 'uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
+            <form action="{% url 'icosa:uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
+                {% if form.file.errors %}
+                    {{ form.file.errors }}
+                {% endif %}
                 <input multiple type="file" class="form-control-file" name="file" required>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
         </div>
         <div class="col-lg-6">
+                <details>
+                    <summary>
+                        Note: We support the following formats:
+                    </summary>
+                    <div class="details-content">
+                        <ul>
+                            <li>gltf (+bin)</li>
+                            <li>glb</li>
+                            <li>tilt</li>
+                            <li>blocks</li>
+                            <li>fbx (+fbm)</li>
+                            <li>obj (+mtl)</li>
+                            <li>stl</li>
+                            <li>usdz</li>
+                            <li>vox</li>
+                            <li>ply</li>
+                            <li>sog</li>
+                            <li>spz</li>
+                            <li>splat</li>
+                            <li>ksplat</li>
+                        </ul>
+                    </div>
+                </details>
             <p>
-                Note: We only support GLTF (+bin) and GLB files at the moment.
-                <br>
-                .tilt file support will be added with our upcoming Open Brush
-                integration.
-            </p>
-            <p>
-                Currently you <strong>must</strong> upload a zip file containing all relevant files.
+                Currently you can upload a zip file containing all relevant files.
                 <br>
                 (For example, if uploading <code>sketch.gltf</code>, make sure <code>sketch.bin</code> is
                 also included in the zip file.)
                 <br>
+                <strong>or</strong> you can upload a glb file.
             </p>
-            <p>Include an image file named <code>thumbnail.png</code> in the root of your zip file to use this as your asset's thumbnail for display on this site.</p>
+            <p>Include an image file named <code>thumbnail.png</code> in the root of your zip file to use this as your asset's thumbnail for display on this site. If uploading a glb or zip without a thumbnail, you can upload one later by editing your work's settings.</p>
             {% if config.BETA_MODE %}
                 <p><strong>This site is currently in Beta mode. While we will do our best to keep things stable, your data may be removed at any time. Please bear this in mind when uploading your work.</strong></p>
             {% endif %}
@@ -65,15 +86,15 @@
     </div>
     <div class="sketch-list">
         {% if assets %}
-            {% with can_edit_asset=True owner_details=True %}
-                {% for asset in assets %}
-                    {% include "partials/sketch_list_item.html" %}
-                {% endfor %}
-            {% endwith %}
+            {% for asset in assets %}
+                {% include "partials/sketch_list_item_owner.html" %}
+            {% endfor %}
         {% else %}
             <p>You haven't uploaded anything yet.</p>
         {% endif %}
     </div>
-    {% include "partials/pagination.html" %}
+    {% if assets %}
+        {% include "partials/pagination.html" %}
+    {% endif %}
 </div>
 {% endblock content %}
