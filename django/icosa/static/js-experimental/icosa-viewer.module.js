@@ -2601,47 +2601,60 @@ function $7f098f70bc341b4e$export$fc22e28a11679cb8(cameraControls) {
         ARROW_RIGHT: 39,
         ARROW_DOWN: 40
     };
-    const wKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.W, 1);
-    const aKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.A, 1);
-    const sKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.S, 1);
-    const dKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.D, 1);
-    const qKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.Q, 1);
-    const eKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.E, 1);
+    let baseTranslationSpeed = 0.0001;
+    let rotSpeed = 1;
+    let holdInterval = 0.1;
+    let maxSpeedMultiplier = 50;
+    let accelerationTime = 1500;
+    const getSpeedMultiplier = (elapsedTime)=>{
+        const t = Math.min(elapsedTime / accelerationTime, 1);
+        return 1 + (maxSpeedMultiplier - 1) * t;
+    };
+    const wKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.W, holdInterval);
+    const aKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.A, holdInterval);
+    const sKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.S, holdInterval);
+    const dKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.D, holdInterval);
+    const qKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.Q, holdInterval);
+    const eKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.E, holdInterval);
     aKey.addEventListener('holding', function(event) {
-        cameraControls.truck(-0.01 * event?.deltaTime, 0, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.truck(-speed, 0, true);
     });
     dKey.addEventListener('holding', function(event) {
-        cameraControls.truck(0.01 * event?.deltaTime, 0, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.truck(speed, 0, true);
     });
     wKey.addEventListener('holding', function(event) {
-        cameraControls.forward(0.01 * event?.deltaTime, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.forward(speed, true);
     });
     sKey.addEventListener('holding', function(event) {
-        cameraControls.forward(-0.01 * event?.deltaTime, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.forward(-speed, true);
     });
     qKey.addEventListener('holding', function(event) {
-        cameraControls.truck(0, 0.01 * event?.deltaTime, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.truck(0, speed, true);
     });
     eKey.addEventListener('holding', function(event) {
-        cameraControls.truck(0, -0.01 * event?.deltaTime, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.truck(0, -speed, true);
     });
-    // Leaving this here because I hope I can use it later somehow.
-    // cameraControls.mouseButtons.wheel = CameraControls.ACTION.ZOOM;
-    const leftKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_LEFT, 1);
-    const rightKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_RIGHT, 1);
-    const upKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_UP, 1);
-    const downKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_DOWN, 1);
+    const leftKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_LEFT, holdInterval);
+    const rightKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_RIGHT, holdInterval);
+    const upKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_UP, holdInterval);
+    const downKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_DOWN, holdInterval);
     leftKey.addEventListener('holding', function(event) {
-        cameraControls.rotate(0.1 * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, 0, true);
+        cameraControls.rotate(rotSpeed * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, 0, true);
     });
     rightKey.addEventListener('holding', function(event) {
-        cameraControls.rotate(-0.1 * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, 0, true);
+        cameraControls.rotate(-rotSpeed * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, 0, true);
     });
     upKey.addEventListener('holding', function(event) {
-        cameraControls.rotate(0, -0.05 * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, true);
+        cameraControls.rotate(0, -rotSpeed * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, true);
     });
     downKey.addEventListener('holding', function(event) {
-        cameraControls.rotate(0, 0.05 * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, true);
+        cameraControls.rotate(0, rotSpeed * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, true);
     });
 }
 
@@ -3797,14 +3810,29 @@ class $677737c8a5cbea2f$var$SketchMetadata {
         }
         let light0rot = sceneLights.length >= 1 ? radToDeg3(sceneLights[0].rotation) : null;
         let light1rot = sceneLights.length >= 2 ? radToDeg3(sceneLights[1].rotation) : null;
-        this.SceneLight0Rotation = userData['TB_SceneLight0Rotation'] ?? light0rot ?? this.EnvironmentPreset.SceneLight0Rotation;
-        this.SceneLight1Rotation = userData['TB_SceneLight1Rotation'] ?? light1rot ?? this.EnvironmentPreset.SceneLight1Rotation;
-        let light0col = userData['TB_SceneLight0Color'] ?? this.EnvironmentPreset.SceneLight0Color;
-        let light1col = userData['TB_SceneLight1Color'] ?? this.EnvironmentPreset.SceneLight1Color;
-        this.SceneLight0Color = new $hBQxr$three.Color(light0col.r, light0col.g, light0col.b);
-        this.SceneLight1Color = new $hBQxr$three.Color(light1col.r, light1col.g, light1col.b);
+        // Light 0 Rotation
+        if (userData['TB_SceneLight0Rotation']) this.SceneLight0Rotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']);
+        else if (light0rot) this.SceneLight0Rotation = new $hBQxr$three.Vector3(light0rot.x, light0rot.y, light0rot.z);
+        else this.SceneLight0Rotation = this.EnvironmentPreset.SceneLight0Rotation;
+        // Light 1 Rotation
+        if (userData['TB_SceneLight1Rotation']) this.SceneLight1Rotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']);
+        else if (light1rot) this.SceneLight1Rotation = new $hBQxr$three.Vector3(light1rot.x, light1rot.y, light1rot.z);
+        else this.SceneLight1Rotation = this.EnvironmentPreset.SceneLight1Rotation;
+        // Light 0 Color
+        if (userData['TB_SceneLight0Color']) this.SceneLight0Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_SceneLight0Color'], this.EnvironmentPreset.SceneLight0Color);
+        else this.SceneLight0Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(null, this.EnvironmentPreset.SceneLight0Color);
+        // Light 1 Color
+        if (userData['TB_SceneLight1Color']) this.SceneLight1Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_SceneLight1Color'], this.EnvironmentPreset.SceneLight1Color);
+        else this.SceneLight1Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(null, this.EnvironmentPreset.SceneLight1Color);
+        // Remove original GLTF lights since we'll create new ones from metadata
+        sceneLights.forEach((light)=>{
+            light.parent?.remove(light);
+        });
         this.CameraTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_CameraTranslation'], null);
         this.CameraRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_CameraRotation'], null);
+        const parsed = parseFloat(userData['TB_CameraTargetDistance']);
+        this.CameraTargetDistance = Number.isFinite(parsed) ? parsed : null;
+        this.FlyMode = userData['TB_FlyMode'] ? JSON.parse(userData['TB_FlyMode'].toLowerCase()) : false;
     }
 }
 class $677737c8a5cbea2f$var$EnvironmentPreset {
@@ -4032,6 +4060,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
                 if (viewer1?.trackballControls) viewer1.trackballControls.update();
             }
+            // SparkRenderer stochastic setup is now handled by GUI toggle
             if (viewer1?.activeCamera) this.renderer.render(viewer1.scene, viewer1.activeCamera);
         };
         this.dataURLtoBlob = (dataURL)=>{
@@ -5590,7 +5619,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     async _loadGltf(url, loadEnvironment, overrides, isV1) {
         let sceneGltf;
         this.overrides = overrides;
-        if (isV1) {
+        this.isV1 = isV1;
+        if (this.isV1) {
             sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
             await this.replaceGltf1Materials(sceneGltf.scene, this.brushPath.toString());
         } else sceneGltf = await this.gltfLoader.loadAsync(url);
@@ -5641,9 +5671,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             sceneGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(poseRotation.x), $hBQxr$three.MathUtils.degToRad(poseRotation.y), $hBQxr$three.MathUtils.degToRad(poseRotation.z)));
             sceneGltf.scene.scale.multiplyScalar(poseScale);
         }
-        console.log(`scene Position: ${sceneGltf.scene.position.x}, ${sceneGltf.scene.position.y}, ${sceneGltf.scene.position.z}`);
-        console.log(`scene Rotation: ${sceneGltf.scene.rotation.x}, ${sceneGltf.scene.rotation.y}, ${sceneGltf.scene.rotation.z}`);
-        console.log(`scene Scale: ${sceneGltf.scene.scale.x}`);
     }
     async loadTilt(url, overrides) {
         try {
@@ -5789,7 +5816,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             for(let i = 0; i < chunks.length; i++){
                 const chunk = chunks[i];
                 const mesh = new (0, $hBQxr$VOXMesh)(chunk);
-                mesh.scale.setScalar(0.0015);
+                mesh.scale.setScalar(0.15);
                 voxModel.add(mesh);
             }
             this.loadedModel = voxModel;
@@ -5808,7 +5835,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             const moduleName = "@sparkjsdev/spark";
             const sparkModule = await import(/* webpackIgnore: true */ moduleName);
             if (!sparkModule.SplatMesh) throw new Error("SplatMesh not found in Spark module exports");
-            return sparkModule.SplatMesh;
+            return sparkModule;
         } catch (error) {
             throw new Error(`Spark (@sparkjsdev/spark) is not available: ${error.message}`);
         }
@@ -5834,16 +5861,16 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 };
             }
             // Dynamic import for optional Spark dependency
-            let SplatMesh;
+            let SparkModule;
             try {
-                SplatMesh = await this.loadSparkModule();
+                SparkModule = await this.loadSparkModule();
             } catch (importError) {
                 console.error(importError.message);
                 this.showErrorIcon();
                 this.loadingError = true;
                 return;
             }
-            const splatModel = new SplatMesh({
+            const splatModel = new SparkModule.SplatMesh({
                 url: url
             });
             await splatModel.initialized;
@@ -5873,7 +5900,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 // Use the standard GLTFLoader for environments
                 const standardLoader = new (0, $hBQxr$GLTFLoader)();
                 const envGltf = await standardLoader.loadAsync(envUrl.toString());
-                if (this.isNewTiltExporter(sceneGltf)) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
+                if (this.isNewTiltExporter(sceneGltf) || this.isV1) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
                 envGltf.scene.scale.set(.1, .1, .1);
                 scene.attach(envGltf.scene);
                 this.environmentObject = envGltf.scene;
@@ -5938,7 +5965,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         let sketchCam = this.sketchMetadata?.CameraTranslation?.toArray();
         if (sketchCam) {
             let poseScale = this.isAnyTiltExporter(this.sceneGltf) ? 0.1 : 1;
-            console.log("posescale", poseScale);
             sketchCam = [
                 sketchCam[0] * poseScale,
                 sketchCam[1] * poseScale,
@@ -5955,12 +5981,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             0,
             0
         ]; // Could be euler angles or quaternion
-        if (this.isNewTiltExporter(this.sceneGltf)) {
-            // the scene scale is modified elsewhere but here we correct the camera to match
-            //cameraPos = [cameraPos[0] * 0.1, cameraPos[1] * 0.1, cameraPos[2] * 0.1];
-            cameraPos[1] -= 1;
-            cameraRot[1] += 180;
-        }
+        this.isNewTiltExporter(this.sceneGltf);
         // Fix handedness between Unity and gltf/three.js
         // Should we fix this on export?
         if (cameraRot.length == 3) {
@@ -5981,6 +6002,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         if (cameraRot.length == 3) this.flatCamera.rotation.setFromVector3(new $hBQxr$three.Vector3(cameraRot[0], cameraRot[1], cameraRot[2]));
         else this.flatCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
         this.flatCamera.updateProjectionMatrix();
+        this.flatCamera.updateMatrixWorld();
         this.xrCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
         this.cameraRig = new $hBQxr$three.Group();
         this.scene.add(this.cameraRig);
@@ -5989,35 +6011,63 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.cameraRig.add(this.xrCamera);
         this.xrCamera.updateProjectionMatrix();
         this.activeCamera = this.flatCamera;
-        let cameraTarget;
-        let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
-        if (pivot) cameraTarget = new $hBQxr$three.Vector3(pivot[0], pivot[1], pivot[2]);
-        else {
-            let vp = this.overrides?.geometryData?.visualCenterPoint;
-            if (!vp) {
-                const box = this.modelBoundingBox;
-                if (box != undefined) {
-                    const boxCenter = box.getCenter(new $hBQxr$three.Vector3());
-                    vp = [
-                        boxCenter.x,
-                        boxCenter.y,
-                        boxCenter.z
-                    ];
+        if (this.sketchMetadata.FlyMode) {
+            // Simulate fly mode by setting target point in front of camera
+            let cameraTarget;
+            const forward = new $hBQxr$three.Vector3();
+            this.flatCamera.getWorldDirection(forward);
+            cameraTarget = this.flatCamera.position.clone().add(forward.multiplyScalar(0.05));
+            (0, $e1f901905a002d12$export$2e2bcd8739ae039).install({
+                THREE: $hBQxr$three
+            });
+            this.cameraControls = new (0, $e1f901905a002d12$export$2e2bcd8739ae039)(this.flatCamera, viewer.canvas);
+            this.cameraControls.smoothTime = 0.1;
+            this.cameraControls.draggingSmoothTime = 0.1;
+            this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 1.0;
+            this.cameraControls.setPosition(cameraPos[0], cameraPos[1], cameraPos[2], false);
+            this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
+            (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
+        } else {
+            let cameraTarget;
+            let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
+            if (pivot) // TODO this pivot should be recalculated to take into account
+            //  any camera rotation adjustment applied above
+            cameraTarget = new $hBQxr$three.Vector3(pivot[0], pivot[1], pivot[2]);
+            else if (this.sketchMetadata.CameraTargetDistance) {
+                // We do have a distance so can calculate target point
+                // Capture camera direction BEFORE CameraControls modifies anything
+                const forward = new $hBQxr$three.Vector3();
+                this.flatCamera.getWorldDirection(forward);
+                let cameraTargetDistance = this.sketchMetadata.CameraTargetDistance;
+                cameraTarget = this.flatCamera.position.clone().add(forward.multiplyScalar(cameraTargetDistance));
+            } else {
+                let vp = this.overrides?.geometryData?.visualCenterPoint;
+                if (!vp) {
+                    const box = this.modelBoundingBox;
+                    if (box != undefined) {
+                        const boxCenter = box.getCenter(new $hBQxr$three.Vector3());
+                        vp = [
+                            boxCenter.x,
+                            boxCenter.y,
+                            boxCenter.z
+                        ];
+                    }
                 }
+                let visualCenterPoint = new $hBQxr$three.Vector3(vp[0], vp[1], vp[2]);
+                cameraTarget = this.calculatePivot(this.flatCamera, visualCenterPoint);
+                cameraTarget = visualCenterPoint;
             }
-            let visualCenterPoint = new $hBQxr$three.Vector3(vp[0], vp[1], vp[2]);
-            cameraTarget = this.calculatePivot(this.flatCamera, visualCenterPoint);
-            cameraTarget = cameraTarget || visualCenterPoint;
+            (0, $e1f901905a002d12$export$2e2bcd8739ae039).install({
+                THREE: $hBQxr$three
+            });
+            this.cameraControls = new (0, $e1f901905a002d12$export$2e2bcd8739ae039)(this.flatCamera, viewer.canvas);
+            this.cameraControls.smoothTime = 0.1;
+            this.cameraControls.draggingSmoothTime = 0.1;
+            this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 1.0;
+            this.cameraControls.setPosition(cameraPos[0], cameraPos[1], cameraPos[2], false);
+            this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
+            (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         }
-        (0, $e1f901905a002d12$export$2e2bcd8739ae039).install({
-            THREE: $hBQxr$three
-        });
-        this.cameraControls = new (0, $e1f901905a002d12$export$2e2bcd8739ae039)(this.flatCamera, viewer.canvas);
-        this.cameraControls.smoothTime = 1;
-        this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 0.5;
-        this.cameraControls.setPosition(cameraPos[0], cameraPos[1], cameraPos[2], false);
-        this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
-        (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
     // this.trackballControls = new TrackballControls(this.activeCamera, this.canvas);
     // this.trackballControls.target = cameraTarget;
     // this.trackballControls.rotateSpeed = 1.0;
@@ -6053,7 +6103,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // 4. Does the GLTF have an environment preset guid? If so use the light transform and colors from that
         // 5. If there's neither custom metadata, an environment guid or explicit GLTF lights - create some default lighting.
         function convertTBEuler(rot) {
-            const deg2rad = Math.PI / 180;
             return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z));
         }
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
@@ -6064,15 +6113,17 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
         let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color, 1.0);
         let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
-        // Convert rotation to position for directional lights
-        const light0Euler = convertTBEuler(this.sketchMetadata.SceneLight0Rotation);
+        let light0Euler = convertTBEuler(this.sketchMetadata.SceneLight0Rotation);
+        let light1Euler = convertTBEuler(this.sketchMetadata.SceneLight1Rotation);
+        // Same rotation adjustment we apply to scene and environment
+        if (this.isNewTiltExporter(this.sceneGltf) || this.isV1) {
+            light0Euler.y += Math.PI;
+            light1Euler.y += Math.PI;
+        }
         const light0Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light0Euler);
         l0.position.copy(light0Direction.multiplyScalar(10));
-        l0.lookAt(0, 0, 0);
-        const light1Euler = convertTBEuler(this.sketchMetadata.SceneLight1Rotation);
         const light1Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light1Euler);
         l1.position.copy(light1Direction.multiplyScalar(10));
-        l1.lookAt(0, 0, 0);
         l0.castShadow = true;
         l1.castShadow = false;
         this.loadedModel?.add(l0);
