@@ -362,7 +362,7 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
 
         return TemplateResponse(request, "admin/create_django_user_results.html", context)
 
-    create_related_django_user.short_description = "Create a Django user from this Asset Owner."
+    create_related_django_user.short_description = "Create a Django user from this Asset Owner"
 
 
 @admin.register(MastheadSection)
