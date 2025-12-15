@@ -1,7 +1,10 @@
+import secrets
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.db.models import Count
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from icosa.models import (
@@ -290,6 +293,10 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         "merged_with",
     ]
 
+    actions = [
+        "create_related_django_user",
+    ]
+
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(asset_count=Count("asset"))
 
@@ -312,6 +319,50 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         return mark_safe(html)
 
     display_django_user.short_description = "Django User"
+
+    def create_related_django_user(self, request, queryset):
+        opts = self.model._meta
+        app_label = opts.app_label
+        created_objs = []
+        existing_objs = []
+
+        for asset_owner in queryset:
+            email = asset_owner.email
+            try:
+                django_user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                django_user = None
+
+            if django_user is not None:
+                existing_objs.append(django_user)
+                continue
+
+            password = secrets.token_urlsafe(12)
+
+            django_user = User.objects.create_user(
+                username=asset_owner.displayname or email,
+                email=email,
+                password=password,
+            )
+
+            django_user.save()
+
+            created_objs.append({"obj": django_user, "password": password})
+
+            asset_owner.migrated = True
+            asset_owner.is_claimed = True
+            asset_owner.django_user = django_user
+            asset_owner.save()
+
+        context = {
+            "created_objs": created_objs,
+            "existing_objs": existing_objs,
+            "return_url": f"{reverse('admin:icosa_assetowner_changelist')}",
+        }
+
+        return TemplateResponse(request, "admin/create_django_user_results.html", context)
+
+    create_related_django_user.short_description = "Create a Django user from this Asset Owner."
 
 
 @admin.register(MastheadSection)
