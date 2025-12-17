@@ -1,3 +1,5 @@
+from typing import List
+
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -49,7 +51,7 @@ class Format(models.Model):
             resources = resources.union(root_resource)
         return resources
 
-    def get_resource_data(self, resources):
+    def get_resource_data(self, resources: List[Resource]):
         if all([x.is_cors_allowed and x.remote_host for x in resources]):
             external_files = [x.external_url for x in resources if x.external_url]
             local_files = [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file]
