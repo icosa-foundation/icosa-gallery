@@ -65,6 +65,13 @@ class Resource(models.Model):
             return None
 
     @property
+    def external_file_name(self):
+        if self.external_url:
+            return self.external_url.split("/")[-1]
+        else:
+            return None
+
+    @property
     def extension(self):
         if self.external_url:
             return self.external_url.split(".")[-1]
