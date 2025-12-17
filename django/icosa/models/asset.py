@@ -356,14 +356,13 @@ class Asset(models.Model):
         if self.is_owned_by_django_user(user):
             return self.format_set.all()
 
-        # We do not provide any downloads for assets with restrictive licenses.
-        if self.license == ALL_RIGHTS_RESERVED:
-            return self.format_set.none()
-        else:
-            dl_formats = self.format_set.filter(is_preferred_for_download=True)
-            if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
-                # We don't allow downoad of source files for ND-licensed work.
-                dl_formats = dl_formats.exclude(format_type__in=NON_REMIXABLE_FORMAT_TYPES)
+        # We used to not provide any downloads for assets with restrictive
+        # licenses. This was inconsistent with the API, which must return all
+        # available formats because it can't tell the difference between a
+        # 'view' and a 'download'. In short, we are here to host people's art,
+        # not enforce copyright restrictions. Show all formats that are good
+        # for download.
+        dl_formats = self.format_set.filter(is_preferred_for_download=True)
 
         formats = {}
 
