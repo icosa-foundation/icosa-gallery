@@ -1,15 +1,14 @@
 from enum import Enum, auto
 from typing import List, Optional
 
-from ninja import Field, FilterSchema, Schema
-from ninja.errors import HttpError
-from pydantic import model_validator
-from pydantic.json_schema import SkipJsonSchema
-
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from icosa.api.exceptions import FilterException
 from icosa.models import Asset
+from ninja import Field, FilterSchema, Schema
+from ninja.errors import HttpError
+from pydantic import model_validator
+from pydantic.json_schema import SkipJsonSchema
 
 
 class FilterCategory(Enum):
@@ -34,9 +33,9 @@ class FilterCategory(Enum):
     NONE = ""
 
     @classmethod
-    def _missing_(cls, name):
+    def _missing_(cls, value):
         for member in cls:
-            if member.name.lower() == name.lower():
+            if member.name.lower() == str(value).lower():
                 return member
 
 
@@ -99,9 +98,9 @@ class FilterOrder(Enum):
     AUTHOR_NAME_DESC = "-AUTHOR_NAME"
 
     @classmethod
-    def _missing_(cls, name):
+    def _missing_(cls, value):
         for member in cls:
-            if member.name.lower() == name.lower():
+            if member.name.lower() == str(value).lower():
                 return member
 
 
@@ -154,6 +153,11 @@ class FiltersBase(FilterSchema):
     triangleCountMax: Optional[int] = None
     maxComplexity: Optional[FilterComplexity] = Field(default=None)
     zipArchiveUrl: Optional[str] = Field(default=None, q="format__zip_archive_url__icontains")
+    inCollection: Optional[bool] = None
+
+    def filter_inCollection(self, value: bool) -> Q:
+        q = Q(assetcollection__isnull=not value)
+        return q
 
     def filter_category(self, value: FilterCategory) -> Q:
         POLY_CATEGORY_MAP = {

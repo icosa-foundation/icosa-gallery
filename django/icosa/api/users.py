@@ -1,31 +1,35 @@
 import secrets
 from typing import List, Optional
 
-from ninja import File, Form, Query, Router
-from ninja.decorators import decorate_view
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-from ninja.pagination import paginate
-
 from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.views.decorators.cache import never_cache
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
+    AssetCollectionPagination,
     AssetPagination,
     check_user_owns_asset,
     get_asset_by_url,
     get_publish_url,
 )
+from icosa.helpers.file import get_content_type, validate_mime
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
 from icosa.models import (
     PRIVATE,
     PUBLIC,
     UNLISTED,
+    VALID_THUMBNAIL_MIME_TYPES,
     Asset,
+    AssetCollection,
     AssetOwner,
 )
+from ninja import File, Form, Query, Router
+from ninja.decorators import decorate_view
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+from ninja.pagination import paginate
 
 from .filters import (
     FiltersAsset,
@@ -34,10 +38,18 @@ from .filters import (
     filter_and_sort_assets,
 )
 from .schema import (
+    AssetCollectionPatchSchema,
+    AssetCollectionPostSchema,
+    AssetCollectionPutSchema,
+    AssetCollectionSchema,
+    AssetCollectionSchemaWithRejections,
     AssetMetaData,
     AssetSchema,
     AssetSchemaPrivate,
+    AssetVisibility,
+    Error,
     FullUserSchema,
+    ImageSchema,
     PatchUserSchema,
     UploadJobSchemaOut,
 )
@@ -51,7 +63,7 @@ router = Router()
     response=FullUserSchema,
 )
 @decorate_view(never_cache)
-def get_users_me(request):
+def show_my_user(request):
     return request.user
 
 
@@ -61,7 +73,7 @@ def get_users_me(request):
     response=FullUserSchema,
 )
 @decorate_view(never_cache)
-def update_user(
+def update_my_user(
     request,
     patch_user: PatchUserSchema,
 ):
@@ -95,7 +107,7 @@ def update_user(
 )
 @decorate_view(never_cache)
 @paginate(AssetPagination)
-def get_assets(
+def list_my_assets(
     request,
     filters: FiltersUserAsset = Query(...),
     order: FiltersOrder = Query(...),
@@ -113,14 +125,9 @@ def get_assets(
     return assets
 
 
-@router.post(
-    "/me/assets",
-    response={201: UploadJobSchemaOut},
-    auth=JWTAuth(),
-    include_in_schema=False,
-)
+@router.post("/me/assets", response={201: UploadJobSchemaOut}, auth=JWTAuth())
 @decorate_view(never_cache)
-def new_asset(
+def create_a_new_asset(
     request,
     data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
@@ -164,36 +171,62 @@ def new_asset(
 
 
 @router.get(
-    "/me/assets/{str:asset}",
+    "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
     response=AssetSchemaPrivate,
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def get_asset(
+def show_an_asset(
     request,
-    asset: str,
+    asset_url: str,
 ):
-    asset = get_asset_by_url(request, asset)
+    asset = get_asset_by_url(request, asset_url)
     check_user_owns_asset(request, asset)
     return asset
 
 
 @router.delete(
-    "/me/assets/{str:asset}",
+    "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
-    response={204: int},
+    response={204: int, 400: Error},
 )
-def delete_asset(
+def delete_an_asset(
     request,
-    asset: str,
+    asset_url: str,
 ):
-    asset = get_asset_by_url(request, asset)
+    asset = get_asset_by_url(request, asset_url)
     check_user_owns_asset(request, asset)
+    if asset.is_published:
+        return 400, {"message": "Cannot delete published assets."}
     with transaction.atomic():
         asset.hide_media()
         asset.delete()
     return 204
+
+
+@router.post(
+    "/me/assets/{str:asset_url}/set_thumbnail",
+    auth=JWTAuth(),
+    response={201: ImageSchema, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def set_an_image_for_an_asset(
+    request,
+    asset_url: str,
+    image: File[UploadedFile],
+):
+    asset = get_asset_by_url(request, asset_url)
+    check_user_owns_asset(request, asset)
+    magic_bytes = next(image.chunks(chunk_size=2048))
+    image.seek(0)
+    if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
+        return 400, {"message": "Thumbnail must be png or jpg."}
+    asset.thumbnail = image
+    asset.thumbnail_contenttype = get_content_type(image.name)
+    asset.save()
+    return 201, {"url": asset.thumbnail}
 
 
 @router.get(
@@ -204,7 +237,7 @@ def delete_asset(
 )
 @decorate_view(never_cache)
 @paginate(AssetPagination)
-def get_likedassets(
+def list_my_likedassets(
     request,
     filters: FiltersAsset = Query(...),
     order: FiltersOrder = Query(...),
@@ -228,3 +261,178 @@ def get_likedassets(
         inc_q=inc_q,
     )
     return assets
+
+
+@router.get(
+    "/me/collections",
+    auth=JWTAuth(),
+    response=List[AssetCollectionSchema],
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+@paginate(AssetCollectionPagination)
+def get_my_collections(
+    request,
+):
+    user = request.user
+    collections = AssetCollection.objects.filter(user=user)
+    return collections
+
+
+@router.post(
+    "/me/collections",
+    auth=JWTAuth(),
+    response={201: AssetCollectionSchemaWithRejections, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def create_a_collection(
+    request,
+    data: AssetCollectionPostSchema,
+):
+    user = request.user
+    visibility = data.visibility if data.visibility is not None else AssetVisibility.PRIVATE.value
+
+    assets = Asset.objects.none()
+    rejected_asset_urls = []
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
+
+    collection = AssetCollection.objects.create(
+        name=data.name, description=data.description, visibility=visibility, user=user
+    )
+    for asset in assets:
+        collection.assets.add(asset)
+
+    return 201, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
+
+
+@router.get(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response=AssetCollectionSchema,
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def show_a_collection(
+    request,
+    asset_collection_url: str,
+):
+    user = request.user
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    return asset_collection
+
+
+@router.patch(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response={200: AssetCollectionSchemaWithRejections, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def update_a_collection(
+    request,
+    asset_collection_url: str,
+    data: AssetCollectionPatchSchema,
+):
+    user = request.user
+    collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    filtered_data = data.dict(exclude_unset=True)
+    for attr, value in filtered_data.items():
+        setattr(collection, attr, value)
+    collection.save()
+
+    assets = Asset.objects.none()
+    rejected_asset_urls = []
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
+    for asset in assets:
+        collection.assets.add(asset)
+
+    return 200, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
+
+
+@router.put(
+    "/me/collections/{str:asset_collection_url}/set_assets",
+    auth=JWTAuth(),
+    response={200: AssetCollectionSchemaWithRejections, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def overwrite_assets_for_a_collection(
+    request,
+    asset_collection_url: str,
+    data: AssetCollectionPutSchema,
+):
+    user = request.user
+    collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    for asset in collection.assets.all():
+        collection.assets.remove(asset)
+
+    assets = Asset.objects.none()
+    rejected_asset_urls = []
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
+    for asset in assets:
+        collection.assets.add(asset)
+
+    collection.save()
+    return 200, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
+
+
+@router.delete(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response={204: int},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def delete_a_collection(
+    request,
+    asset_collection_url: str,
+):
+    user = request.user
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    asset_collection.delete()
+    return 204
+
+
+@router.post(
+    "/me/collections/{str:asset_collection_url}/set_thumbnail",
+    auth=JWTAuth(),
+    response={201: ImageSchema, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def set_an_image_for_a_collection(
+    request,
+    asset_collection_url: str,
+    image: File[UploadedFile],
+):
+    user = request.user
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    magic_bytes = next(image.chunks(chunk_size=2048))
+    image.seek(0)
+    if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
+        return 400, {"message": "Thumbnail must be png or jpg."}
+    asset_collection.image = image
+    asset_collection.save()
+    return 201, {"url": asset_collection.image}

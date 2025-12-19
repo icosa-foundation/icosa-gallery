@@ -5,7 +5,7 @@ from typing import Optional
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
@@ -16,7 +16,6 @@ from icosa.helpers.storage import get_b2_bucket
 
 from .common import (
     ALL_RIGHTS_RESERVED,
-    ARCHIVE_PREFIX,
     ASSET_STATE_CHOICES,
     ASSET_VISIBILITY_CHOICES,
     CATEGORY_CHOICES,
@@ -384,32 +383,9 @@ class Asset(models.Model):
         self.has_obj = self.format_set.filter(format_type="OBJ").exists()
         self.has_vox = self.format_set.filter(format_type="VOX").exists()
 
-    def get_triangle_count(self):
-        formats = {}
-        for format in self.format_set.filter(triangle_count__gt=0):
-            formats.setdefault(format.role, format.triangle_count)
-        if "POLYGONE_GLTF_FORMAT" in formats.keys():
-            return formats["POLYGONE_GLTF_FORMAT"]
-        if "ORIGINAL_TRIANGULATED_OBJ_FORMAT" in formats.keys():
-            return formats["ORIGINAL_OBJ_FORMAT"]
-        if "UPDATED_GLTF_FORMAT" in formats.keys():
-            return formats["UPDATED_GLTF_FORMAT"]
-        if "ORIGINAL_GLTF_FORMAT" in formats.keys():
-            return formats["ORIGINAL_GLTF_FORMAT"]
-        if "POLYGONE_OBJ_FORMAT" in formats.keys():
-            return formats["POLYGONE_OBJ_FORMAT"]
-        if "POLYGONE_GLB_FORMAT" in formats.keys():
-            return formats["POLYGONE_GLB_FORMAT"]
-        if "GLB_FORMAT" in formats.keys():
-            return formats["GLB_FORMAT"]
-        if "POLYGONE_FBX_FORMAT" in formats.keys():
-            return formats["POLYGONE_FBX_FORMAT"]
-        if "ORIGINAL_FBX_FORMAT" in formats.keys():
-            return formats["ORIGINAL_FBX_FORMAT"]
-        return 0
-
     def denorm_triangle_count(self):
-        self.triangle_count = self.get_triangle_count()
+        max_triangle_count = self.format_set.aggregate(Max("triangle_count"))["triangle_count__max"]
+        self.triangle_count = max_triangle_count if max_triangle_count is not None else 0
 
     def denorm_liked_time(self):
         last_liked = self.userlike_set.order_by("-date_liked").first()
@@ -432,7 +408,7 @@ class Asset(models.Model):
     def inc_views_and_rank(self):
         self.views += 1
         self.rank = self.get_updated_rank()
-        self.save()
+        self.save(bypass_custom_logic=True)
 
     def get_all_file_names(self):
         file_list = []
@@ -446,16 +422,15 @@ class Asset(models.Model):
     def get_all_downloadable_formats(self, user=None):
         # The user owns this asset so can view all files.
         if self.is_owned_by_django_user(user):
-            return self.format_set.all()
-
-        # We do not provide any downloads for assets with restrictive licenses.
-        if self.license == ALL_RIGHTS_RESERVED:
-            return self.format_set.none()
+            dl_formats = self.format_set.all()
         else:
+            # We used to not provide any downloads for assets with restrictive
+            # licenses. This was inconsistent with the API, which must return all
+            # available formats because it can't tell the difference between a
+            # 'view' and a 'download'. In short, we are here to host people's art,
+            # not enforce copyright restrictions. Show all formats that are good
+            # for download.
             dl_formats = self.format_set.filter(is_preferred_for_download=True)
-            if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
-                # We don't allow downoad of source files for ND-licensed work.
-                dl_formats = dl_formats.exclude(format_type__in=NON_REMIXABLE_FORMAT_TYPES)
 
         formats = {}
 
@@ -463,7 +438,7 @@ class Asset(models.Model):
             # If the format in its entirety is on a remote host, just provide
             # the link to that.
             if format.zip_archive_url:
-                resource_data = {"zip_archive_url": f"{ARCHIVE_PREFIX}{format.zip_archive_url}"}
+                resource_data = {"zip_archive_url": format.zip_archive_url}
             else:
                 # Query all resources which have either an external url or a
                 # file. Ignoring resources which have neither.
@@ -481,6 +456,13 @@ class Asset(models.Model):
                 # in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
                 if len(resources) > 1:
                     resource_data = format.get_resource_data(resources)
+                    # If there are exactly 2 resources, and we can't make a
+                    # zip, owing to cors restrictions, let's instead offer
+                    # direct links to the individual files.
+                    if resource_data == {} and format.format_type in ["OBJ", "OBJ_NGON", "GLTF1", "GLTF2"]:
+                        non_image_resources = format.get_non_image_resources(query)
+                        if len(non_image_resources) == 2:
+                            resource_data = {"individual_files": list(resources)}
                 # If there is only one resource, there is no need to create
                 # a zip file; we can offer our local file, or a link to the
                 # external host.
@@ -552,6 +534,7 @@ class Asset(models.Model):
     class Meta:
         verbose_name = _("Asset")
         verbose_name_plural = _("Assets")
+        # Foreign keys (including m2m) are indexed by default
         indexes = [
             models.Index(fields=["is_viewer_compatible", "visibility"]),
             models.Index(

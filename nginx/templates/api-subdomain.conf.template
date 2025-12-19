@@ -11,6 +11,7 @@ server {
     client_max_body_size 500M;
 
     location /static/ {
+        add_header Access-Control-Allow-Origin *;
         autoindex off;
         alias /static/;
     }

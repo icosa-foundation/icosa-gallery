@@ -59,6 +59,7 @@ class AssetOwner(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         help_text=_("Another asset owner this account was merged with"),
+        related_name="merged_owners",
     )
     disable_profile = models.BooleanField(_("Disable Profile"), default=False, help_text=_("Whether the profile page is disabled"))
 

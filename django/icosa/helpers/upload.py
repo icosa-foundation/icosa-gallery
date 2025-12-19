@@ -5,10 +5,6 @@ import zipfile
 from dataclasses import dataclass
 from typing import List, Optional
 
-from ninja import File, Form
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-
 from django.utils import timezone
 from icosa.api.exceptions import ZipException
 from icosa.api.schema import AssetMetaData
@@ -30,6 +26,9 @@ from icosa.models import (
     Format,
     Resource,
 )
+from ninja import Form
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
 
 SUB_FILE_MAP = {
     "IMAGE": "GLB",
@@ -126,7 +125,7 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
 def upload_api_asset(
     asset: Asset,
     data: Form[AssetMetaData],
-    files: Optional[List[UploadedFile]] = File(None),
+    files: Optional[List[UploadedFile]] = None,
 ):
     total_start = time.time()  # Logging
 
@@ -208,16 +207,11 @@ def upload_api_asset(
 
     asset.save()  # Denorm asset so far and save formats
 
-    # Apply triangle counts to all formats and resources.
-    non_triangulated_formats = asset.format_set.exclude(format_type="OBJ_NGON")
-    for format in non_triangulated_formats:
-        format.triangle_count = data.objPolyCount
-        format.save()
-
-    triangulated_formats = asset.format_set.filter(format_type="OBJ_NGON")
-    for format in triangulated_formats:
-        format.triangle_count = data.triangulatedObjPolyCount
-        format.save()
+    # Apply the one triangle count to all formats and resources.
+    formats = asset.format_set.all()
+    for fmt in formats:
+        fmt.triangle_count = data.triangleCount
+        fmt.save()
 
     asset.remix_ids = getattr(data, "remixIds", None)
 
@@ -310,6 +304,7 @@ def get_role(
     tilt_or_blocks: Optional[str] = None,
 ) -> str:
     filetype = mainfile.filetype
+    role = ""
     if filetype in ["GLTF1", "GLTF2"]:
         if tilt_or_blocks == "tilt":
             role = "TILT_NATIVE_GLTF"
@@ -322,6 +317,6 @@ def get_role(
         if name == "model":
             role = "ORIGINAL_OBJ_FORMAT"
     else:
-        role = TYPE_ROLE_MAP.get(filetype, None)
+        role = TYPE_ROLE_MAP.get(filetype, "")
 
     return role
