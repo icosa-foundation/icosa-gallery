@@ -3,11 +3,6 @@ import random
 import secrets
 
 from constance import config
-from django_ratelimit.decorators import ratelimit
-from django_ratelimit.exceptions import Ratelimited
-from honeypot.decorators import check_honeypot
-from silk.profiling.profiler import silk_profile
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
@@ -33,6 +28,9 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
+from honeypot.decorators import check_honeypot
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
@@ -63,6 +61,7 @@ from icosa.models import (
     UserLike,
 )
 from icosa.tasks import queue_upload_asset_web_ui
+from silk.profiling.profiler import silk_profile
 
 User = get_user_model()
 
@@ -174,7 +173,12 @@ def landing_page(
     template = "main/home.html"
 
     # TODO(james): filter out assets with no formats
-    assets = assets.exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).select_related("owner")
+    assets = (
+        assets.exclude(license__isnull=True)
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .select_related("owner")
+        .prefetch_related("resource_set", "format_set")
+    )
 
     try:
         page_number = int(request.GET.get("page", 1))
@@ -510,7 +514,7 @@ def asset_view(request, asset_url):
     template = "main/asset_view.html"
     user = request.user
 
-    asset = get_object_or_404(Asset, url=asset_url)
+    asset = get_object_or_404(Asset.objects.prefetch_related("resource_set", "format_set"), url=asset_url)
     check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()
     format_override = request.GET.get("forceformat", "")
