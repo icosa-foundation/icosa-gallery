@@ -172,12 +172,7 @@ class AssetSchema(ModelSchema):
 
     @staticmethod
     def resolve_formats(obj, context):
-        return [
-            f
-            for f in obj.format_set.filter(
-                role__in=API_DOWNLOAD_COMPATIBLE_ROLES,
-            )
-        ]
+        return [f for f in obj.format_set.all()]
 
     @staticmethod
     def resolve_tags(obj):

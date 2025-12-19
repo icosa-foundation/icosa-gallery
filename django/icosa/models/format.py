@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -40,8 +42,10 @@ class Format(models.Model):
         resource.save()
         self.save()
 
-    def get_all_resources(self, query: Q = Q()):
+    def get_resources(self, query: Q = Q(), exclude_q: Optional[Q] = None):
         resources = self.resource_set.filter(query)
+        if exclude_q is not None:
+            resources = resources.exclude(exclude_q)
         if self.root_resource:
             # We can only union on another queryset, even though we just want one
             # instance.
@@ -49,7 +53,16 @@ class Format(models.Model):
             resources = resources.union(root_resource)
         return resources
 
-    def get_resource_data(self, resources):
+    def get_all_resources(self, query: Q = Q()):
+        return self.get_resources(query)
+
+    def get_non_image_resources(self, query: Q = Q()):
+        exclude_q = Q()
+        for ext in [".png", ".jpg", ".jpeg"]:
+            exclude_q |= Q(file__endswith=ext)
+        return self.get_resources(query, exclude_q)
+
+    def get_resource_data(self, resources: List[Resource]):
         if all([x.is_cors_allowed and x.remote_host for x in resources]):
             external_files = [x.external_url for x in resources if x.external_url]
             local_files = [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file]

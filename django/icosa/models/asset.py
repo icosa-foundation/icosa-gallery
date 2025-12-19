@@ -340,7 +340,7 @@ class Asset(models.Model):
     def inc_views_and_rank(self):
         self.views += 1
         self.rank = self.get_updated_rank()
-        self.save()
+        self.save(bypass_custom_logic=True)
 
     def get_all_file_names(self):
         file_list = []
@@ -354,16 +354,15 @@ class Asset(models.Model):
     def get_all_downloadable_formats(self, user=None):
         # The user owns this asset so can view all files.
         if self.is_owned_by_django_user(user):
-            return self.format_set.all()
-
-        # We do not provide any downloads for assets with restrictive licenses.
-        if self.license == ALL_RIGHTS_RESERVED:
-            return self.format_set.none()
+            dl_formats = self.format_set.all()
         else:
+            # We used to not provide any downloads for assets with restrictive
+            # licenses. This was inconsistent with the API, which must return all
+            # available formats because it can't tell the difference between a
+            # 'view' and a 'download'. In short, we are here to host people's art,
+            # not enforce copyright restrictions. Show all formats that are good
+            # for download.
             dl_formats = self.format_set.filter(is_preferred_for_download=True)
-            if self.license in ["CREATIVE_COMMONS_BY_ND_3_0", "CREATIVE_COMMONS_BY_ND_4_0"]:
-                # We don't allow downoad of source files for ND-licensed work.
-                dl_formats = dl_formats.exclude(format_type__in=NON_REMIXABLE_FORMAT_TYPES)
 
         formats = {}
 
@@ -389,6 +388,13 @@ class Asset(models.Model):
                 # in the EXTERNAL_MEDIA_CORS_ALLOW_LIST setting in constance.
                 if len(resources) > 1:
                     resource_data = format.get_resource_data(resources)
+                    # If there are exactly 2 resources, and we can't make a
+                    # zip, owing to cors restrictions, let's instead offer
+                    # direct links to the individual files.
+                    if resource_data == {} and format.format_type in ["OBJ", "OBJ_NGON", "GLTF1", "GLTF2"]:
+                        non_image_resources = format.get_non_image_resources(query)
+                        if len(non_image_resources) == 2:
+                            resource_data = {"individual_files": list(resources)}
                 # If there is only one resource, there is no need to create
                 # a zip file; we can offer our local file, or a link to the
                 # external host.

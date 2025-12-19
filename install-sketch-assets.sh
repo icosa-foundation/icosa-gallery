@@ -17,9 +17,9 @@ fi
 cd "$DIR"
 git checkout main && \
 git pull && \
-docker cp brushes ig-web:/opt/static/icosa-sketch-assets/brushes && \
-docker cp textures ig-web:/opt/static/icosa-sketch-assets/textures && \
-docker cp environments ig-web:/opt/static/icosa-sketch-assets/environments && \
+docker cp brushes/. ig-web:/opt/static/icosa-sketch-assets/brushes/ && \
+docker cp textures/. ig-web:/opt/static/icosa-sketch-assets/textures/ && \
+docker cp environments/. ig-web:/opt/static/icosa-sketch-assets/environments/ && \
 git checkout versions/previous && \
 git pull && \
 docker cp brushes/. ig-web:/opt/static/icosa-sketch-assets-previous/brushes/ && \

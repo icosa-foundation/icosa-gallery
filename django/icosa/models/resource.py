@@ -65,6 +65,20 @@ class Resource(models.Model):
             return None
 
     @property
+    def external_file_name(self):
+        if self.external_url:
+            return self.external_url.split("/")[-1]
+        else:
+            return None
+
+    @property
+    def extension(self):
+        if self.external_url:
+            return self.external_url.split(".")[-1]
+        else:
+            return self.file.name.split(".")[-1]
+
+    @property
     def is_cors_allowed(self):
         remote_host = self.remote_host
         if remote_host is None:
