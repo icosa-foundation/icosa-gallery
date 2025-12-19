@@ -51,6 +51,31 @@
                             </a><span class="download-spinner" style="display:none;margin-inline-start:1em;">{% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Processing files</span>
                         </p>
                         {% endif %}
+                        {% if resources.individual_files %}
+                            <div class="well">
+                                <p>{% fa_icon "solid" "download" %} {{ format }}</p>
+                                <p class="small">
+                                We're unable to provide a zip archive of the
+                                files for this format, but you can download the
+                                individual files below.
+                                <br>
+                                <strong>Make sure all the files are kept
+                                together and that they retain the same filename
+                                as listed here.</strong>
+                                <br>
+                                <br>
+                                </p>
+                                <ul>
+                                    {% for resource in resources.individual_files %}
+                                    <li>
+                                        <a href="{{ resource.external_url }}" target="_blank">
+                                            {{ resource.external_file_name }}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                     {% endif %}
                     {% if resources.supporting_text %}
                         <p>{{ resources.supporting_text }}</p>
