@@ -78,6 +78,9 @@ DJANGO_STORAGE_SECRET_KEY = os.environ.get("DJANGO_STORAGE_SECRET_KEY")
 DJANGO_STORAGE_CUSTOM_DOMAIN = os.environ.get("DJANGO_STORAGE_CUSTOM_DOMAIN")
 DJANGO_STORAGE_MEDIA_ROOT = os.environ.get("DJANGO_STORAGE_MEDIA_ROOT")
 
+
+LOCAL_MEDIA_STORAGE = True
+
 if (
     DJANGO_STORAGE_URL
     and DJANGO_STORAGE_BUCKET_NAME
@@ -119,9 +122,9 @@ if (
         AWS_S3_TRANSFER_CONFIG = BotoTransferConfig(
             multipart_threshold=5368709120,  # 5GiB in bytes
         )
-        MEDIA_ROOT = None
-        MEDIA_URL = "/"  # unused with django-storages
-        LOCAL_MEDIA_STORAGE = False
+    MEDIA_ROOT = None
+    MEDIA_URL = "/"  # unused with django-storages
+    LOCAL_MEDIA_STORAGE = False
 else:
     STORAGES = {
         "default": {
