@@ -65,6 +65,9 @@ class AssetUploadForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        if cleaned_data is None:
+            return cleaned_data
+
         uploaded_file = cleaned_data.get("file")
         if uploaded_file:
             magic_bytes = next(uploaded_file.chunks(chunk_size=2048))
@@ -162,6 +165,9 @@ class AssetEditForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if cleaned_data is None:
+            return cleaned_data
+
         license = cleaned_data.get("license")
         if self.instance.visibility in ["PUBLIC", "UNLISTED"] and not license:
             self.add_error("license", "Please add a CC License.")
@@ -241,6 +247,8 @@ class UserSettingsForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if cleaned_data is None:
+            return cleaned_data
 
         password_current = cleaned_data.get("password_current")
         password_new = cleaned_data.get("password_new")
@@ -330,6 +338,8 @@ class NewUserForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if cleaned_data is None:
+            return cleaned_data
 
         email = self.cleaned_data.get("email")
         if config.REGISTRATION_ALLOW_LIST and email not in [
@@ -373,6 +383,8 @@ class PasswordResetConfirmForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if cleaned_data is None:
+            return cleaned_data
 
         password_new = cleaned_data.get("password_new")
         password_confirm = cleaned_data.get("password_confirm")
