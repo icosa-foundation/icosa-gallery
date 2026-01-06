@@ -55,6 +55,7 @@ api.add_router("users", users_router, tags=["Users"])
 
 
 urlpatterns = [
+    path("s3_form", main_views.TestView.as_view(), name="s3_form"),
     path("div_by_zero", main_views.div_by_zero, name="div_by_zero"),
     path("health", main_views.health, name="health"),
     # Auth views

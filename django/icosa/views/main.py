@@ -28,6 +28,7 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.generic import FormView
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from honeypot.decorators import check_honeypot
@@ -38,6 +39,7 @@ from icosa.forms import (
     AssetPublishForm,
     AssetReportForm,
     AssetUploadForm,
+    S3UploadForm,
     UserSettingsForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
@@ -1114,3 +1116,8 @@ def waitlist(request):
         template,
         context,
     )
+
+
+class TestView(FormView):
+    template_name = "s3_form.html"
+    form_class = S3UploadForm
