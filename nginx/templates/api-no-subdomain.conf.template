@@ -4,7 +4,7 @@ upstream web {
 }
 
 server {
-    client_max_body_size 5000M;
+    client_max_body_size 50000M;
 
     location /static/ {
         add_header Access-Control-Allow-Origin *;
