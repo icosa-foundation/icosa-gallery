@@ -42,7 +42,7 @@ server {
     if ( $host != "${DEPLOYMENT_HOST_API}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
     }
-    client_max_body_size 500M;
+    client_max_body_size 5000M;
 
     location /static/ {
         autoindex off;
