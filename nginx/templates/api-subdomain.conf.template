@@ -8,7 +8,7 @@ server {
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
     }
 
-    client_max_body_size 50000M;
+    client_max_body_size 500M;
 
     location /static/ {
         add_header Access-Control-Allow-Origin *;
@@ -42,7 +42,7 @@ server {
     if ( $host != "${DEPLOYMENT_HOST_API}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
     }
-    client_max_body_size 50000M;
+    client_max_body_size 500M;
 
     location /static/ {
         autoindex off;
