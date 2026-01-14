@@ -25,6 +25,7 @@ django-silk==5.3.2
 django-simple-math-captcha==2.0.1
 django-storages==1.14.4
 Django==5.1.14
+gevent
 gunicorn==22.0.0
 huey==2.5.1
 ijson==3.3.0

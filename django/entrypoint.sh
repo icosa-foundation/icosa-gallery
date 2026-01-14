@@ -21,7 +21,7 @@ echo "Running in $DEPLOYMENT_ENV mode"
 if [[ $DEPLOYMENT_ENV == 'production' ]];
 then
     python manage.py run_huey &
-    gunicorn django_project.wsgi:application --bind 0.0.0.0:8000 --timeout 900
+    gunicorn -c gunicorn/config.py django_project.wsgi:application
 else
     python manage.py run_huey &
     python manage.py runserver 0.0.0.0:8000
