@@ -18,11 +18,5 @@ fi
 
 
 echo "Running in $DEPLOYMENT_ENV mode"
-if [[ $DEPLOYMENT_ENV == 'production' ]];
-then
-    python manage.py run_huey &
-    gunicorn -c gunicorn/config.py django_project.wsgi:application
-else
-    python manage.py run_huey &
-    python manage.py runserver 0.0.0.0:8000
-fi
+python manage.py run_huey &
+gunicorn -c gunicorn_config/config.py django_project.asgi:application
