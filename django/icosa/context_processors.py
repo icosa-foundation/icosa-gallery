@@ -1,4 +1,5 @@
 import constance
+from asgiref.sync import sync_to_async
 from django.conf import settings
 
 
@@ -23,7 +24,8 @@ def user_asset_likes_processor(request):
     }
 
 
-async def async_constance_config(request):
+@sync_to_async
+def async_constance_config(request):
     """
     Simple context processor that puts the config into every
     RequestContext. Just make sure you have a setting like this:

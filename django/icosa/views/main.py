@@ -11,7 +11,6 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
-from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.http import (
@@ -29,6 +28,7 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django_async_extensions.core.paginator import AsyncPaginator
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from honeypot.decorators import check_honeypot
@@ -324,6 +324,11 @@ def category(request, category):
     )
 
 
+@sync_to_async
+def get_assets_for_pagination(user):
+    return list(Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time"))
+
+
 @login_required
 @never_cache
 async def uploads(request):
@@ -372,10 +377,14 @@ async def uploads(request):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    asset_objs = Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
-    paginator = await sync_to_async(Paginator)(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
-    assets = await sync_to_async(paginator.get_page)(page_number)
+    asset_objs = await get_assets_for_pagination(user)
+    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
+    page = await paginator.apage(page_number)
+    assets = page.object_list
 
     context = {
         "assets": assets,

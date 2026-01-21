@@ -20,7 +20,7 @@
     {% endif %}
     <div class="row">
         <div class="col">
-            <h1>{{ page_title }}</h1>
+            <h1><a href="/uploads">{{ page_title }}</a></h1>
         </div>
     </div>
     <div class="row">
@@ -87,7 +87,9 @@
     <div class="sketch-list">
         {% if assets %}
             {% for asset in assets %}
+                {% comment %}
                 {% include "partials/sketch_list_item_owner.html" %}
+                {% endcomment %}
             {% endfor %}
         {% else %}
             <p>You haven't uploaded anything yet.</p>
