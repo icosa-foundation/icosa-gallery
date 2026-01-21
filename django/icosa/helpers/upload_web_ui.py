@@ -5,9 +5,6 @@ import zipfile
 from pathlib import Path
 from typing import List, Optional
 
-from ninja import File
-from ninja.files import UploadedFile
-
 from django.conf import settings
 from django.utils import timezone
 from icosa.api.exceptions import ZipException
@@ -26,6 +23,8 @@ from icosa.models import (
     Format,
     Resource,
 )
+from ninja import File
+from ninja.files import UploadedFile
 
 CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
 
@@ -227,7 +226,7 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
         Resource.objects.create(**sub_resource_data)
 
 
-def upload(
+async def upload(
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):

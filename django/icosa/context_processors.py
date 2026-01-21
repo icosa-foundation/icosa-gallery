@@ -1,5 +1,5 @@
+import constance
 from django.conf import settings
-from icosa.models import UserLike
 
 
 def settings_processor(request):
@@ -21,3 +21,17 @@ def user_asset_likes_processor(request):
     return {
         "user_liked_asset_ids": liked_asset_ids,
     }
+
+
+def async_constance_config(request):
+    """
+    Simple context processor that puts the config into every
+    RequestContext. Just make sure you have a setting like this:
+
+        TEMPLATE_CONTEXT_PROCESSORS = (
+            # ...
+            'constance.context_processors.config',
+        )
+
+    """
+    return {"config": constance.config}

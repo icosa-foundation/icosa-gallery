@@ -1,13 +1,10 @@
 import time
 from typing import List, Optional
 
-from huey import signals
-from huey.contrib.djhuey import db_task, signal
-from ninja import File, Form
-from ninja.files import UploadedFile
-
 from django.db import transaction
 from django.utils import timezone
+from huey import signals
+from huey.contrib.djhuey import db_task, signal
 from icosa.api.schema import AssetMetaData
 from icosa.helpers.upload import upload_api_asset
 from icosa.helpers.upload_web_ui import upload
@@ -17,6 +14,8 @@ from icosa.models import (
     BulkSaveLog,
     User,
 )
+from ninja import File, Form
+from ninja.files import UploadedFile
 
 
 @signal(signals.SIGNAL_ERROR)
@@ -41,12 +40,12 @@ def handle_upload_error(task, exc):
 
 
 @db_task()
-def queue_upload_asset_web_ui(
+async def queue_upload_asset_web_ui(
     current_user: User,
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
-    upload(
+    await upload(
         asset,
         files,
     )

@@ -1,10 +1,9 @@
-from icosa import urls as icosa_urls
-
 from django.conf import settings
 from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
+from icosa import urls as icosa_urls
 
 handler403 = icosa_urls.handler403
 handler404 = icosa_urls.handler404

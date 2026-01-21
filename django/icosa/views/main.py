@@ -2,6 +2,7 @@ import inspect
 import random
 import secrets
 
+from asgiref.sync import sync_to_async
 from constance import config
 from django.conf import settings
 from django.contrib import messages
@@ -325,7 +326,7 @@ def category(request, category):
 
 @login_required
 @never_cache
-def uploads(request):
+async def uploads(request):
     template = "main/manage_uploads.html"
 
     user = request.user
@@ -334,36 +335,35 @@ def uploads(request):
         if form.is_valid():
             job_snowflake = generate_snowflake()
             asset_token = secrets.token_urlsafe(8)
-            with transaction.atomic():
-                owner, _ = AssetOwner.objects.get_or_create(
-                    django_user=user,
-                    email=user.email,
-                    defaults={
-                        "url": secrets.token_urlsafe(8),
-                        "displayname": user.displayname,
-                    },
-                )
-                asset = Asset.objects.create(
-                    id=job_snowflake,
-                    url=asset_token,
-                    owner=owner,
-                    state=ASSET_STATE_UPLOADING,
-                )
-                try:
-                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                        queue_upload_asset_web_ui(
-                            current_user=user,
-                            asset=asset,
-                            files=[request.FILES["file"]],
-                        )
-                    else:
-                        upload(
-                            asset,
-                            [request.FILES["file"]],
-                        )
-                except Exception:
-                    asset.state = ASSET_STATE_FAILED
-                    asset.save()
+            owner, _ = await AssetOwner.objects.aget_or_create(
+                django_user=user,
+                email=user.email,
+                defaults={
+                    "url": secrets.token_urlsafe(8),
+                    "displayname": user.displayname,
+                },
+            )
+            asset = await Asset.objects.acreate(
+                id=job_snowflake,
+                url=asset_token,
+                owner=owner,
+                state=ASSET_STATE_UPLOADING,
+            )
+            try:
+                if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                    await queue_upload_asset_web_ui(
+                        current_user=user,
+                        asset=asset,
+                        files=[request.FILES["file"]],
+                    )
+                else:
+                    await upload(
+                        asset,
+                        [request.FILES["file"]],
+                    )
+            except Exception:
+                asset.state = ASSET_STATE_FAILED
+                await asset.asave()
 
             messages.add_message(request, messages.INFO, "Your upload has started.")
             return HttpResponseRedirect(reverse("icosa:uploads"))
@@ -373,9 +373,9 @@ def uploads(request):
         return HttpResponseNotAllowed(["GET", "POST"])
 
     asset_objs = Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    paginator = await sync_to_async(Paginator)(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
-    assets = paginator.get_page(page_number)
+    assets = await sync_to_async(paginator.get_page)(page_number)
 
     context = {
         "assets": assets,
