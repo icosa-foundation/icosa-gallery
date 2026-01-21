@@ -19,4 +19,4 @@ fi
 
 echo "Running in $DEPLOYMENT_ENV mode"
 python manage.py run_huey &
-gunicorn -c gunicorn_config/config.py django_project.asgi:application
+uvicorn --host=0.0.0.0 --port=8000 django_project.asgi:application

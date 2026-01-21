@@ -24,7 +24,6 @@ django-ninja==1.4.3
 django-simple-math-captcha==2.0.1
 django-storages==1.14.4
 Django==5.2.10
-gunicorn==22.0.0
 huey==2.5.1
 ijson==3.3.0
 passlib==1.7.4
@@ -36,8 +35,7 @@ python-magic==0.4.27
 requests==2.32.3
 s3transfer==0.11.4
 sentry-sdk[django]==2.22.0
-uvicorn
-uvicorn-worker
+uvicorn==0.40.0
 
 
 # The above requirements are intentionally pinned to the following.
