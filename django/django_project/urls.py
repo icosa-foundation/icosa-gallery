@@ -21,5 +21,3 @@ if (getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)) and "debug_toolbar" in se
     urlpatterns += [
         path("__debug__/", include("debug_toolbar.urls")),
     ]
-if settings.SILKY_PYTHON_PROFILER:
-    urlpatterns += [path("silk", include("silk.urls", namespace="silk"))]

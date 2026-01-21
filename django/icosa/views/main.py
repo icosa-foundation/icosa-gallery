@@ -61,7 +61,6 @@ from icosa.models import (
     UserLike,
 )
 from icosa.tasks import queue_upload_asset_web_ui
-from silk.profiling.profiler import silk_profile
 
 User = get_user_model()
 
@@ -232,7 +231,6 @@ def landing_page(
     )
 
 
-@silk_profile(name="Home page")
 @never_cache
 def home(request):
     return landing_page(request)
