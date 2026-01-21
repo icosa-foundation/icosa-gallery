@@ -167,7 +167,6 @@ INSTALLED_APPS = [
     "huey.contrib.djhuey",
     "import_export",
     "maintenance_mode",
-    "silk",
     "simplemathcaptcha",
 ]
 
@@ -182,7 +181,6 @@ AUTHENTICATION_BACKENDS = [
 
 MIDDLEWARE = [
     "django.middleware.gzip.GZipMiddleware",
-    "silk.middleware.SilkyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -483,38 +481,6 @@ MAINTENANCE_MODE_IGNORE_URLS = [
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
-
-# Silk settings
-
-
-def silky_perms(user):
-    return user.is_superuser
-
-
-def get_profile_intercept():
-    percent = 0
-    if os.environ.get("DJANGO_ENABLE_PROFILING", False):
-        if DEBUG:
-            percent = 100
-        percent = 1
-        try:
-            percent = int(
-                os.environ.get(
-                    "DJANGO_PROFILING_INTERCEPT_PERCENT",
-                    percent,
-                )
-            )
-        except ValueError:
-            pass
-    return percent
-
-
-SILKY_PYTHON_PROFILER = os.environ.get("DJANGO_ENABLE_PROFILING", False)
-SILKY_INTERCEPT_PERCENT = get_profile_intercept()
-SILKY_AUTHENTICATION = True  # User must login
-SILKY_AUTHORISATION = True  # User must have permissions
-SILKY_PERMISSIONS = silky_perms
-
 
 # Sentry settings
 SENTRY_DSN = os.environ.get("DJANGO_SENTRY_DSN", None)
