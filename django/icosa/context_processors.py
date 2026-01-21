@@ -23,7 +23,7 @@ def user_asset_likes_processor(request):
     }
 
 
-def async_constance_config(request):
+async def async_constance_config(request):
     """
     Simple context processor that puts the config into every
     RequestContext. Just make sure you have a setting like this:
