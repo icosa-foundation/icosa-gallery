@@ -73,7 +73,7 @@ LEGACY_ROLES = {
 
 The zip archive must not:
 
-- be larger than 500MB uncompressed
+- be larger than 1024MB uncompressed
 - take us longer than 2 minutes to uncompress
 
 Any files in sub directories are currently ignored (this matches the behaviour of Icosa Gallery beta mk1).
