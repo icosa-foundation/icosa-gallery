@@ -44,6 +44,7 @@ from icosa.forms import (
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img
 from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.sync import aconfig
 from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
@@ -239,14 +240,14 @@ async def home(request):
 
 
 @never_cache
-def home_openbrush(request):
+async def home_openbrush(request):
     assets = Asset.objects.filter(
         visibility=PUBLIC,
         has_tilt=True,
         curated=True,
     )
 
-    return landing_page(
+    return await landing_page(
         request,
         assets,
         heading="Open Brush",
@@ -257,14 +258,14 @@ def home_openbrush(request):
 
 
 @never_cache
-def home_blocks(request):
+async def home_blocks(request):
     poly_by_google_q = Q(visibility=PUBLIC, owner__url=POLY_USER_URL)
     blocks_q = Q(visibility=PUBLIC, has_blocks=True, curated=True)
     q = poly_by_google_q | blocks_q
 
     assets = Asset.objects.filter(q)
 
-    return landing_page(
+    return await landing_page(
         request,
         assets,
         heading="Open Blocks",
@@ -276,8 +277,8 @@ def home_blocks(request):
 
 @user_passes_test(lambda u: u.is_superuser)
 @never_cache
-def home_other(request):
-    if config.HIDE_REPORTED_ASSETS:
+async def home_other(request):
+    if await aconfig("HIDE_REPORTED_ASSETS"):
         home_q = Q(
             is_viewer_compatible=True,
             curated=True,
@@ -298,7 +299,7 @@ def home_other(request):
     exclude_q = home_q | blocks_q | tilt_q
     assets = Asset.objects.filter(visibility=PUBLIC).exclude(exclude_q)
 
-    return landing_page(
+    return await landing_page(
         request,
         assets,
         show_masthead=True,
@@ -307,7 +308,7 @@ def home_other(request):
 
 
 @never_cache
-def category(request, category):
+async def category(request, category):
     category_label = category.upper()
     if category_label not in CATEGORY_LABELS:
         raise Http404()
@@ -317,7 +318,7 @@ def category(request, category):
         curated=True,
     )
     category_name = CATEGORY_LABEL_MAP.get(category)
-    return landing_page(
+    return await landing_page(
         request,
         assets,
         show_masthead=False,
