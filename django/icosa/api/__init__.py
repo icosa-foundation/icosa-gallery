@@ -1,12 +1,13 @@
 from typing import Any, List, Optional
 
 from django.conf import settings
+from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
 from icosa.models import PRIVATE, Asset
 from ninja import Schema
 from ninja.errors import HttpError
-from ninja.pagination import PaginationBase
+from ninja.pagination import AsyncPaginationBase
 from pydantic.json_schema import SkipJsonSchema
 
 COMMON_ROUTER_SETTINGS: dict[str, Any] = {
@@ -86,7 +87,7 @@ def get_asset_by_url(
     return asset
 
 
-class IcosaPagination(PaginationBase):
+class IcosaPagination(AsyncPaginationBase):
     class Input(Schema):
         # pageToken and pageSize should really be int, but need to be str so we can accept
         # stuff like ?pageSize=&pageToken=
@@ -109,6 +110,7 @@ class IcosaPagination(PaginationBase):
         pagination: Input,
         **params,
     ):
+        # TODO somewhat duplicate of the async variant below
         try:
             page_size = int(pagination.pageSize) or int(pagination.page_size) or DEFAULT_PAGE_SIZE
         except (ValueError, TypeError):
@@ -131,6 +133,45 @@ class IcosaPagination(PaginationBase):
         pagination_data = {
             self.items_attribute: queryset[offset : offset + page_size],
             "totalSize": queryset_count,
+        }
+        if offset + page_size < count:
+            pagination_data.update(
+                {
+                    "nextPageToken": str(page_token + 1),
+                }
+            )
+        return pagination_data
+
+    async def apaginate_queryset(
+        self,
+        queryset,
+        pagination: Input,
+        **params,
+    ):
+        try:
+            page_size = int(pagination.pageSize) or int(pagination.page_size) or DEFAULT_PAGE_SIZE
+        except (ValueError, TypeError):
+            # pageSize could still be defined, but empty: `?pageSize=`).
+            page_size = DEFAULT_PAGE_SIZE
+        page_size = min(page_size, MAX_PAGE_SIZE)
+
+        try:
+            page_token = int(pagination.pageToken) or int(pagination.page_token) or DEFAULT_PAGE_TOKEN
+        except (ValueError, TypeError):
+            # pageToken could still be defined, but empty: `?pageToken=`).
+            page_token = DEFAULT_PAGE_TOKEN
+
+        offset = (page_token - 1) * page_size
+        count = await self._aitems_count(queryset)
+
+        if isinstance(queryset, QuerySet):
+            items = [obj async for obj in queryset[offset : offset + page_size]]
+        else:
+            items = queryset[offset : offset + page_size]
+
+        pagination_data = {
+            self.items_attribute: items,
+            "totalSize": count,
         }
         if offset + page_size < count:
             pagination_data.update(
