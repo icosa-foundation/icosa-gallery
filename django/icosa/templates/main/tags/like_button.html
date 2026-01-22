@@ -1,5 +1,5 @@
 {% load fontawesome_tags %}
-{% if request.user.is_authenticated %}
+{% if request.auser.is_authenticated %}
 <form class="like-widget" hx-post="{% url 'icosa:toggle_like' %}" hx-target="this" hx-swap="outerHTML">
     {% csrf_token %}
     <input type="hidden" name="assetId" value="{{ asset_url }}">

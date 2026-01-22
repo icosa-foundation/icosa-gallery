@@ -154,7 +154,7 @@ def health(request):
     return HttpResponse("ok")
 
 
-def landing_page(
+async def landing_page(
     request,
     assets=Asset.objects.filter(get_default_q()).select_related("owner"),
     show_masthead=True,
@@ -183,11 +183,11 @@ def landing_page(
     try:
         page_number = int(request.GET.get("page", 1))
     except ValueError:
-        page_number = 0
+        page_number = 1
 
     # Only show the masthead if we're on page 1 of a lister.
     # If show_masthead is false, keep it that way.
-    if show_masthead is True and (page_number is None or page_number < 2):
+    if show_masthead is True and (page_number == 1):
         # The mastheads query is slow, but we still want a rotating list on
         # every page load. Cache a list of mastheads and choose one at random
         # each time.
@@ -195,7 +195,7 @@ def landing_page(
         if cache.get(cache_key):
             mastheads = cache.get(cache_key)
         else:
-            mastheads = list(MastheadSection.objects.all())
+            mastheads = [m async for m in MastheadSection.objects.all()]
 
             cache.set(
                 f"{MASTHEAD_CACHE_PREFIX}-{landing_page_fn_name}",
@@ -210,11 +210,12 @@ def landing_page(
     # This query is still quicker than filtering all possible mastheads
     # by visibility and should only result in a missing masthead on rare
     # occasions.
-    if masthead is not None and not masthead.visibility == PUBLIC:
+    if masthead is not None and not masthead.avisibility() == PUBLIC:
         masthead = None
 
-    paginator = Paginator(assets.order_by("-rank"), settings.PAGINATION_PER_PAGE)
-    assets = paginator.get_page(page_number)
+    paginator = AsyncPaginator(assets.order_by("-rank"), settings.PAGINATION_PER_PAGE)
+    page = await paginator.apage(page_number)
+    assets = [x async for x in page.object_list]
     page_title = f"Exploring {heading}" if is_explore_heading else heading
     context = {
         "assets": assets,
@@ -233,8 +234,8 @@ def landing_page(
 
 
 @never_cache
-def home(request):
-    return landing_page(request)
+async def home(request):
+    return await landing_page(request)
 
 
 @never_cache
