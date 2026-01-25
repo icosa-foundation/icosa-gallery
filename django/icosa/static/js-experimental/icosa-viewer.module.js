@@ -6039,13 +6039,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.xrCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
         this.cameraRig = new $hBQxr$three.Group();
         this.scene.add(this.cameraRig);
-        this.cameraRig.rotation.y = this.flatCamera.rotation.y;
         this.cameraRig.add(this.xrCamera);
-        this.xrCamera.updateProjectionMatrix();
         this.activeCamera = this.flatCamera;
+        let cameraTarget;
         if (this.sketchMetadata.FlyMode) {
             // Simulate fly mode by setting target point in front of camera
-            let cameraTarget;
             const forward = new $hBQxr$three.Vector3();
             this.flatCamera.getWorldDirection(forward);
             cameraTarget = this.flatCamera.position.clone().add(forward.multiplyScalar(0.05));
@@ -6060,7 +6058,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
             (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         } else {
-            let cameraTarget;
             let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
             if (pivot) // TODO this pivot should be recalculated to take into account
             //  any camera rotation adjustment applied above
@@ -6100,6 +6097,24 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
             (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         }
+        // Position and orient the cameraRig to match flatCamera AFTER camera controls are set up
+        // The flatCamera is independent of scene scale, but cameraRig is a child of the scene.
+        // For new Tilt exporters, the scene will be scaled to 0.1, so we need to compensate.
+        // We scale the cameraRig itself to make VR head tracking feel natural (1m real = 1m in scene).
+        const sceneScaleFactor = this.isNewTiltExporter(this.sceneGltf) ? 10 : 1;
+        this.cameraRig.position.copy(this.flatCamera.position);
+        this.cameraRig.scale.set(sceneScaleFactor, sceneScaleFactor, sceneScaleFactor);
+        // VR cameras should never be tilted - only copy Y-axis rotation (yaw)
+        // Calculate Y rotation from camera position to target (ignoring vertical component)
+        const flatCameraWorldDir = new $hBQxr$three.Vector3();
+        this.flatCamera.getWorldDirection(flatCameraWorldDir);
+        const directionToTarget = new $hBQxr$three.Vector3().subVectors(cameraTarget, this.flatCamera.position);
+        directionToTarget.y = 0; // Project onto XZ plane
+        directionToTarget.normalize();
+        const yaw = Math.atan2(directionToTarget.x, directionToTarget.z);
+        // Add 180 degrees because camera's default forward is -Z, not +Z
+        this.cameraRig.rotation.y = yaw + Math.PI;
+        this.xrCamera.updateProjectionMatrix();
     }
     calculatePivot(camera, centroid) {
         // 1. Get the camera's forward vector
