@@ -1,5 +1,5 @@
 from django import template
-from icosa.models import ARCHIVED, PRIVATE, UNLISTED
+from icosa.models import ARCHIVED, PRIVATE
 
 register = template.Library()
 
