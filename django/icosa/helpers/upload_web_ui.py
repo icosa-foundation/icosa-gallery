@@ -7,6 +7,9 @@ from typing import List, Optional
 
 from django.conf import settings
 from django.utils import timezone
+from ninja import File
+from ninja.files import UploadedFile
+
 from icosa.api.exceptions import ZipException
 from icosa.helpers.file import (
     MAX_UNZIP_BYTES,
@@ -23,8 +26,6 @@ from icosa.models import (
     Format,
     Resource,
 )
-from ninja import File
-from ninja.files import UploadedFile
 
 CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
 
