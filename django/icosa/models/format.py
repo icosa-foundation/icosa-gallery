@@ -42,6 +42,16 @@ class Format(models.Model):
         resource.save()
         self.save()
 
+    async def aadd_root_resource(self, resource):
+        if not resource.format:
+            from icosa.api.exceptions import RootResourceException
+
+            raise RootResourceException("Resource must have a format associated with it.")
+        self.root_resource = resource
+        resource.format = None
+        await resource.asave()
+        await self.asave()
+
     def get_resources(self, query: Q = Q(), exclude_q: Optional[Q] = None):
         resources = self.resource_set.filter(query)
         if exclude_q is not None:

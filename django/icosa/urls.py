@@ -96,6 +96,7 @@ urlpatterns = [
     path("other", main_views.home_other, name="home_other"),
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
+    path("upload_asset", main_views.upload_asset, name="upload_asset"),
     path("user/<str:slug>", main_views.user_show, name="user_show"),
     path(
         "user/<str:user_url>/collections",

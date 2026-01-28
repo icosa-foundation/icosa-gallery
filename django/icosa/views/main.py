@@ -20,6 +20,7 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseRedirect,
+    JsonResponse,
 )
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
@@ -330,51 +331,12 @@ def category(request, category):
 @login_required
 @never_cache
 def uploads(request):
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+
     template = "main/manage_uploads.html"
-
     user = request.user
-    if request.method == "POST":
-        form = AssetUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            job_snowflake = generate_snowflake()
-            asset_token = secrets.token_urlsafe(8)
-            owner, _ = AssetOwner.objects.get_or_create(
-                django_user=user,
-                email=user.email,
-                defaults={
-                    "url": secrets.token_urlsafe(8),
-                    "displayname": user.displayname,
-                },
-            )
-            asset = Asset.objects.create(
-                id=job_snowflake,
-                url=asset_token,
-                owner=owner,
-                state=ASSET_STATE_UPLOADING,
-            )
-            try:
-                if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                    queue_upload_asset_web_ui(
-                        current_user=user,
-                        asset=asset,
-                        files=[request.FILES["file"]],
-                    )
-                else:
-                    upload(
-                        asset,
-                        [request.FILES["file"]],
-                    )
-            except Exception:
-                asset.state = ASSET_STATE_FAILED
-                asset.asave()
-
-            messages.add_message(request, messages.INFO, "Your upload has started.")
-            return HttpResponseRedirect(reverse("icosa:uploads"))
-    elif request.method == "GET":
-        form = AssetUploadForm()
-    else:
-        return HttpResponseNotAllowed(["GET", "POST"])
-
+    form = AssetUploadForm()
     asset_objs = list(
         Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
     )
@@ -396,6 +358,53 @@ def uploads(request):
         template,
         context,
     )
+
+
+@login_required
+@never_cache
+async def upload_asset(request):
+    user = request.user
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    form = AssetUploadForm(request.POST, request.FILES)
+    if form.is_valid():
+        job_snowflake = generate_snowflake()
+        asset_token = secrets.token_urlsafe(8)
+        owner, _ = await AssetOwner.objects.aget_or_create(
+            django_user=user,
+            email=user.email,
+            defaults={
+                "url": secrets.token_urlsafe(8),
+                "displayname": user.displayname,
+            },
+        )
+        asset = await Asset.objects.acreate(
+            id=job_snowflake,
+            url=asset_token,
+            owner=owner,
+            state=ASSET_STATE_UPLOADING,
+        )
+        # try:
+        if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+            await queue_upload_asset_web_ui(
+                current_user=user,
+                asset=asset,
+                files=[request.FILES["file"]],
+            )
+        else:
+            await upload(
+                asset,
+                [request.FILES["file"]],
+            )
+        return JsonResponse({"success": True, "messages": [{"tags": "info", "message": "Your upload has started"}]})
+        # except Exception as e:
+        #     asset.state = ASSET_STATE_FAILED
+        #     await asset.asave()
+        #     return JsonResponse({"success": False, "messages": [{"tags": "error", "message": f"{e}"}]})
+
+    else:
+        return JsonResponse({"success": False, "errors": form.errors})
 
 
 @never_cache

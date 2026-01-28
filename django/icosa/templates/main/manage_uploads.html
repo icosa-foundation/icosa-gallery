@@ -30,7 +30,7 @@
     </div>
     <div class="row">
         <div class="col-6">
-            <form action="{% url 'icosa:uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
+            <form id="uploadform" action="{% url 'icosa:upload_asset' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 {% if form.file.errors %}
                     {{ form.file.errors }}
@@ -38,6 +38,27 @@
                 <input multiple type="file" class="form-control-file" name="file" required>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
+            <script>
+                const form = uploadform;
+                async function handleUploadForm() {
+                    const data = new FormData(form);
+                    file = data.get("file");
+                    filesize = file.size; // Use this later to handle uploads which are too large. 
+                    try {
+                        const response = await fetch(form.action, {
+                            method: "POST",
+                            body: data,
+                        });
+                        console.log(await response.json());
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                form.addEventListener("submit", (event) =>{
+                    event.preventDefault();
+                    handleUploadForm();
+                })
+            </script>
         </div>
         <div class="col-lg-6">
                 <details>
@@ -87,9 +108,7 @@
     <div class="sketch-list">
         {% if assets %}
             {% for asset in assets %}
-                {% comment %}
                 {% include "partials/sketch_list_item_owner.html" %}
-                {% endcomment %}
             {% endfor %}
         {% else %}
             <p>You haven't uploaded anything yet.</p>
