@@ -2,7 +2,6 @@ import inspect
 import random
 import secrets
 
-from asgiref.sync import sync_to_async
 from constance import config
 from django.conf import settings
 from django.contrib import messages
@@ -11,6 +10,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.http import (
@@ -28,7 +28,6 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views.decorators.cache import never_cache
 from django.views.decorators.clickjacking import xframe_options_exempt
-from django_async_extensions.core.paginator import AsyncPaginator
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from honeypot.decorators import check_honeypot
@@ -156,7 +155,7 @@ def health(request):
     return HttpResponse("ok")
 
 
-async def landing_page(
+def landing_page(
     request,
     assets=Asset.objects.filter(get_default_q()).select_related("owner"),
     show_masthead=True,
@@ -198,7 +197,7 @@ async def landing_page(
         if cache.get(cache_key):
             mastheads = cache.get(cache_key)
         else:
-            mastheads = [m async for m in MastheadSection.objects.all()]
+            mastheads = list(MastheadSection.objects.all())
 
             cache.set(
                 f"{MASTHEAD_CACHE_PREFIX}-{landing_page_fn_name}",
@@ -216,9 +215,8 @@ async def landing_page(
     if masthead is not None and not masthead.avisibility() == PUBLIC:
         masthead = None
 
-    paginator = AsyncPaginator(assets.order_by("-rank"), settings.PAGINATION_PER_PAGE)
-    page = await paginator.apage(page_number)
-    assets = [x async for x in page.object_list]
+    paginator = Paginator(assets.order_by("-rank"), settings.PAGINATION_PER_PAGE)
+    assets = paginator.get_page(page_number)
     page_title = f"Exploring {heading}" if is_explore_heading else heading
     context = {
         "assets": assets,
@@ -229,6 +227,7 @@ async def landing_page(
         "page_title": page_title,
         "paginator": paginator,
     }
+
     return render(
         request,
         template,
@@ -237,19 +236,19 @@ async def landing_page(
 
 
 @never_cache
-async def home(request):
-    return await landing_page(request)
+def home(request):
+    return landing_page(request)
 
 
 @never_cache
-async def home_openbrush(request):
+def home_openbrush(request):
     assets = Asset.objects.filter(
         visibility=PUBLIC,
         has_tilt=True,
         curated=True,
     )
 
-    return await landing_page(
+    return landing_page(
         request,
         assets,
         heading="Open Brush",
@@ -260,14 +259,14 @@ async def home_openbrush(request):
 
 
 @never_cache
-async def home_blocks(request):
+def home_blocks(request):
     poly_by_google_q = Q(visibility=PUBLIC, owner__url=POLY_USER_URL)
     blocks_q = Q(visibility=PUBLIC, has_blocks=True, curated=True)
     q = poly_by_google_q | blocks_q
 
     assets = Asset.objects.filter(q)
 
-    return await landing_page(
+    return landing_page(
         request,
         assets,
         heading="Open Blocks",
@@ -279,8 +278,8 @@ async def home_blocks(request):
 
 @user_passes_test(lambda u: u.is_superuser)
 @never_cache
-async def home_other(request):
-    if await aconfig("HIDE_REPORTED_ASSETS"):
+def home_other(request):
+    if config.HIDE_REPORTED_ASSETS:
         home_q = Q(
             is_viewer_compatible=True,
             curated=True,
@@ -301,7 +300,7 @@ async def home_other(request):
     exclude_q = home_q | blocks_q | tilt_q
     assets = Asset.objects.filter(visibility=PUBLIC).exclude(exclude_q)
 
-    return await landing_page(
+    return landing_page(
         request,
         assets,
         show_masthead=True,
@@ -310,7 +309,7 @@ async def home_other(request):
 
 
 @never_cache
-async def category(request, category):
+def category(request, category):
     category_label = category.upper()
     if category_label not in CATEGORY_LABELS:
         raise Http404()
@@ -320,7 +319,7 @@ async def category(request, category):
         curated=True,
     )
     category_name = CATEGORY_LABEL_MAP.get(category)
-    return await landing_page(
+    return landing_page(
         request,
         assets,
         show_masthead=False,
@@ -328,14 +327,9 @@ async def category(request, category):
     )
 
 
-@sync_to_async
-def get_assets_for_pagination(user):
-    return list(Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time"))
-
-
 @login_required
 @never_cache
-async def uploads(request):
+def uploads(request):
     template = "main/manage_uploads.html"
 
     user = request.user
@@ -344,7 +338,7 @@ async def uploads(request):
         if form.is_valid():
             job_snowflake = generate_snowflake()
             asset_token = secrets.token_urlsafe(8)
-            owner, _ = await AssetOwner.objects.aget_or_create(
+            owner, _ = AssetOwner.objects.get_or_create(
                 django_user=user,
                 email=user.email,
                 defaults={
@@ -352,7 +346,7 @@ async def uploads(request):
                     "displayname": user.displayname,
                 },
             )
-            asset = await Asset.objects.acreate(
+            asset = Asset.objects.create(
                 id=job_snowflake,
                 url=asset_token,
                 owner=owner,
@@ -360,19 +354,19 @@ async def uploads(request):
             )
             try:
                 if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                    await queue_upload_asset_web_ui(
+                    queue_upload_asset_web_ui(
                         current_user=user,
                         asset=asset,
                         files=[request.FILES["file"]],
                     )
                 else:
-                    await upload(
+                    upload(
                         asset,
                         [request.FILES["file"]],
                     )
             except Exception:
                 asset.state = ASSET_STATE_FAILED
-                await asset.asave()
+                asset.asave()
 
             messages.add_message(request, messages.INFO, "Your upload has started.")
             return HttpResponseRedirect(reverse("icosa:uploads"))
@@ -381,14 +375,15 @@ async def uploads(request):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
 
-    asset_objs = await get_assets_for_pagination(user)
-    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    asset_objs = list(
+        Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+    )
     try:
         page_number = int(request.GET.get("page", 1))
     except ValueError:
         page_number = 1
-    page = await paginator.apage(page_number)
-    assets = page.object_list
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    assets = paginator.get_page(page_number)
 
     context = {
         "assets": assets,
@@ -404,7 +399,7 @@ async def uploads(request):
 
 
 @never_cache
-async def owner_show(request, slug):
+def owner_show(request, slug):
     template = "main/user_show.html"
     owner = get_object_or_404(
         AssetOwner,
@@ -422,10 +417,7 @@ async def owner_show(request, slug):
         page_number = int(request.GET.get("page", 1))
     except ValueError:
         page_number = 1
-    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page = await paginator.apage(page_number)
-    assets = [x async for x in page.object_list]
-
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     assets = paginator.get_page(page_number)
     context = {
         "user": request.user,
@@ -442,7 +434,7 @@ async def owner_show(request, slug):
 
 
 @never_cache
-async def user_show(request, slug):
+def user_show(request, slug):
     template = "main/user_show.html"
 
     # A django User is always accessible via one of their AssetOwner instances
@@ -476,9 +468,8 @@ async def user_show(request, slug):
         page_number = int(request.GET.get("page", 1))
     except ValueError:
         page_number = 1
-    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page = await paginator.apage(page_number)
-    assets = [x async for x in page.object_list]
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    assets = paginator.get_page(page_number)
 
     if owners.count() > 1:
         if owner.django_user:
@@ -504,7 +495,7 @@ async def user_show(request, slug):
 
 @never_cache
 @login_required
-async def my_likes(request):
+def my_likes(request):
     template = "main/likes.html"
 
     user = request.user
@@ -518,9 +509,8 @@ async def my_likes(request):
         page_number = int(request.GET.get("page", 1))
     except ValueError:
         page_number = 1
-    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page = await paginator.apage(page_number)
-    assets = [x async for x in page.object_list]
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    assets = paginator.get_page(page_number)
 
     context = {
         "user": user,
@@ -1002,7 +992,7 @@ def about(request):
 
 
 @never_cache
-async def search(request):
+def search(request):
     query = request.GET.get("s")
     template = "main/search.html"
 
@@ -1029,9 +1019,8 @@ async def search(request):
         page_number = int(request.GET.get("page", 1))
     except ValueError:
         page_number = 1
-    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page = await paginator.apage(page_number)
-    assets = [x async for x in page.object_list]
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    assets = paginator.get_page(page_number)
     context = {
         "assets": assets,
         "page_number": page_number,

@@ -233,9 +233,9 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                # "icosa.context_processors.settings_processor",
-                # "icosa.context_processors.async_constance_config",
-                # "icosa.context_processors.user_asset_likes_processor",
+                "constance.context_processors.config",
+                "icosa.context_processors.settings_processor",
+                "icosa.context_processors.user_asset_likes_processor",
             ],
             "loaders": [
                 "django.template.loaders.app_directories.Loader",
@@ -384,7 +384,7 @@ CONSTANCE_CONFIG = {
 
 # Debug Toolbar settings
 
-DEBUG_TOOLBAR_ENABLED = False
+DEBUG_TOOLBAR_ENABLED = True
 
 DEBUG_TOOLBAR_URL_EXCLUDE: tuple[str] = ()
 
