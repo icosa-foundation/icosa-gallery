@@ -404,7 +404,7 @@ async def uploads(request):
 
 
 @never_cache
-def owner_show(request, slug):
+async def owner_show(request, slug):
     template = "main/user_show.html"
     owner = get_object_or_404(
         AssetOwner,
@@ -418,8 +418,14 @@ def owner_show(request, slug):
         visibility=PUBLIC,
     ).order_by("-id")
 
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
+    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page = await paginator.apage(page_number)
+    assets = [x async for x in page.object_list]
+
     assets = paginator.get_page(page_number)
     context = {
         "user": request.user,
@@ -436,7 +442,7 @@ def owner_show(request, slug):
 
 
 @never_cache
-def user_show(request, slug):
+async def user_show(request, slug):
     template = "main/user_show.html"
 
     # A django User is always accessible via one of their AssetOwner instances
@@ -466,9 +472,13 @@ def user_show(request, slug):
         visibility=PUBLIC,
     ).order_by("-id")
 
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
-    assets = paginator.get_page(page_number)
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
+    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page = await paginator.apage(page_number)
+    assets = [x async for x in page.object_list]
 
     if owners.count() > 1:
         if owner.django_user:
@@ -494,7 +504,7 @@ def user_show(request, slug):
 
 @never_cache
 @login_required
-def my_likes(request):
+async def my_likes(request):
     template = "main/likes.html"
 
     user = request.user
@@ -503,9 +513,14 @@ def my_likes(request):
 
     liked_assets = UserLike.objects.filter(user=user).filter(q)
     asset_objs = [ul.asset for ul in liked_assets]
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
-    assets = paginator.get_page(page_number)
+
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
+    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page = await paginator.apage(page_number)
+    assets = [x async for x in page.object_list]
 
     context = {
         "user": user,
@@ -987,7 +1002,7 @@ def about(request):
 
 
 @never_cache
-def search(request):
+async def search(request):
     query = request.GET.get("s")
     template = "main/search.html"
 
@@ -1009,9 +1024,14 @@ def search(request):
     asset_objs = (
         Asset.objects.filter(q).exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).order_by("-rank")
     )
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
-    assets = paginator.get_page(page_number)
+
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
+    paginator = AsyncPaginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    page = await paginator.apage(page_number)
+    assets = [x async for x in page.object_list]
     context = {
         "assets": assets,
         "page_number": page_number,
