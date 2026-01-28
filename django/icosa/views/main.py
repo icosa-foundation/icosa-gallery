@@ -32,6 +32,7 @@ from django_async_extensions.core.paginator import AsyncPaginator
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from honeypot.decorators import check_honeypot
+
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
@@ -175,7 +176,8 @@ async def landing_page(
 
     # TODO(james): filter out assets with no formats
     assets = (
-        assets.exclude(license__isnull=True)
+        assets
+        .exclude(license__isnull=True)
         .exclude(license=ALL_RIGHTS_RESERVED)
         .select_related("owner")
         .prefetch_related("resource_set", "format_set")
