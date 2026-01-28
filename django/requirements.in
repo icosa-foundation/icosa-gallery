@@ -30,7 +30,7 @@ ijson==3.3.0
 passlib==1.7.4
 pillow==11.2.1
 psycopg2==2.9.10
-pydantic[email]==2.10.6
+pydantic[email]==2.12.5
 PyJWT==2.10.1
 python-magic==0.4.27
 requests==2.32.3
