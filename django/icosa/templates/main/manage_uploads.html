@@ -12,7 +12,7 @@
 </div>
 <div class="container">
     <div id="messagecontainer">
-    <ul class="messages" id="uploadsuccessmessages" hidden>
+    <ul class="messages" id="id_upload_success_messages" hidden>
         <li class="info"></li>
     </ul>
     {% if messages %}
@@ -35,14 +35,14 @@
     </div>
     <div class="row">
         <div class="col-6">
-            <form id="uploadform" action="{% url 'icosa:upload_asset' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
+            <form id="id_upload_form" action="{% url 'icosa:upload_asset' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
                 <ul class="errorlist" id="id_file_error" hidden></ul>
                 <input multiple type="file" class="form-control-file" name="file" id="uploadfile" required>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
             <script>
-                const form = uploadform;
+                const form = id_upload_form;
                 async function handleUploadForm() {
                     const data = new FormData(form);
                     file = data.get("file");
@@ -54,8 +54,9 @@
                         });
                         const resData = await response.json();
                         if (resData.success === true) {
-                            uploadsuccessmessages.removeAttribute("hidden");
-                            uploadsuccessmessages.querySelector("li").textContent = resData.message;
+                            id_upload_success_messages.removeAttribute("hidden");
+                            id_upload_success_messages.querySelector("li").textContent = resData.message;
+                            htmx.ajax("GET", "{% url 'icosa:upload_list_partial' %}", "#id_uploads_container");
                         } else {
                             const errors = resData.errors;
                             if (errors.hasOwnProperty("file")) {
@@ -124,6 +125,8 @@
             <h2>Manage Uploads</h2>
         </div>
     </div>
-    {% include "partials/asset_upload_list.html" %}
+    <div id="id_uploads_container">
+        {% include "partials/asset_upload_list.html" %}
+    </div>
 </div>
 {% endblock content %}
