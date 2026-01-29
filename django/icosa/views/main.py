@@ -46,7 +46,6 @@ from icosa.forms import (
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.sync import aconfig
 from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
