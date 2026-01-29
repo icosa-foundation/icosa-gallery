@@ -1,10 +1,24 @@
 import secrets
-from typing import List, Optional
+from typing import (
+    List,
+    Optional,
+)
 
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.views.decorators.cache import never_cache
+from ninja import (
+    File,
+    Form,
+    Query,
+    Router,
+)
+from ninja.decorators import decorate_view
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+from ninja.pagination import paginate
+
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     AssetCollectionPagination,
@@ -13,7 +27,10 @@ from icosa.api import (
     get_asset_by_url,
     get_publish_url,
 )
-from icosa.helpers.file import get_content_type, validate_mime
+from icosa.helpers.file import (
+    get_content_type,
+    validate_mime,
+)
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.jwt.authentication import JWTAuth
 from icosa.models import (
@@ -25,11 +42,6 @@ from icosa.models import (
     AssetCollection,
     AssetOwner,
 )
-from ninja import File, Form, Query, Router
-from ninja.decorators import decorate_view
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-from ninja.pagination import paginate
 
 from .filters import (
     FiltersAsset,
