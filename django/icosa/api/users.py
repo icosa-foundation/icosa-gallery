@@ -4,6 +4,7 @@ from typing import (
     Optional,
 )
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -42,6 +43,7 @@ from icosa.models import (
     AssetCollection,
     AssetOwner,
 )
+from icosa.tasks import queue_upload_api_asset
 
 from .filters import (
     FiltersAsset,
@@ -165,20 +167,22 @@ def create_a_new_asset(
         from icosa.helpers.upload import upload_api_asset
 
         try:
-            upload_api_asset(
-                asset,
-                data,
-                files,
-            )
+            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                await queue_upload_api_asset(
+                    user,
+                    asset,
+                    data,
+                    files,
+                )
+            else:
+                await upload_api_asset(
+                    asset,
+                    data,
+                    files,
+                )
         except HttpError as err:
             raise err
 
-        # queue_upload_api_asset(
-        #     user,
-        #     asset,
-        #     data,
-        #     files,
-        # )
     return get_publish_url(request, asset, 201)
 
 
