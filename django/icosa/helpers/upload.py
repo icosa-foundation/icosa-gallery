@@ -3,9 +3,16 @@ import os
 import time
 import zipfile
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import (
+    List,
+    Optional,
+)
 
 from django.utils import timezone
+from ninja import Form
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+
 from icosa.api.exceptions import ZipException
 from icosa.api.schema import AssetMetaData
 from icosa.helpers.file import (
@@ -26,9 +33,6 @@ from icosa.models import (
     Format,
     Resource,
 )
-from ninja import Form
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
 
 SUB_FILE_MAP = {
     "IMAGE": "GLB",
