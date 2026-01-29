@@ -167,41 +167,7 @@ class Asset(models.Model):
         else:
             return None
 
-    def get_preferred_viewer_format_for_assignment(self):
-        formats = self.format_set.filter(root_resource__isnull=False)
-        # GLB is our primary preferred format;
-        inst = formats.filter(format_type="GLB").last()
-        if inst is not None:
-            return inst
-
-        # GLTF2 is the next best option;
-        inst = formats.filter(format_type="GLTF2").last()
-        if inst is not None:
-            return inst
-
-        # GLTF1, if we must.
-        inst = formats.filter(format_type="GLTF1").last()
-        if inst is not None:
-            return inst
-
-        # OBJ, if we really must
-        inst = formats.filter(format_type="OBJ").last()
-        if inst is not None:
-            return inst
-
-        # Last chance, can we get one of the newer format types?
-        # TODO: the ordering of these matters, but perhaps it is unlikely that
-        # a usdz and ksplat are present (for example).
-        for format_type in ["KSPLAT", "PLY", "STL", "SOG", "SPZ", "SPLAT", "USDZ", "VOX"]:
-            inst = formats.filter(format_type=format_type).last()
-            if inst is not None:
-                # This will return the first we find from the list above; this
-                # is why ordering matters.
-                return inst
-
-        return None
-
-    async def aget_preferred_viewer_format_for_assignment(self):
+    async def get_preferred_viewer_format_for_assignment(self):
         formats = self.format_set.filter(root_resource__isnull=False)
         # GLB is our primary preferred format;
         inst = await formats.filter(format_type="GLB").alast()
@@ -235,16 +201,8 @@ class Asset(models.Model):
 
         return None
 
-    def assign_preferred_viewer_format(self):
-        preferred_format = self.get_preferred_viewer_format_for_assignment()
-        if preferred_format is not None:
-            # TODO(james) do we mark all other formats as not preferred?
-            preferred_format.is_preferred_for_gallery_viewer = True
-            preferred_format.save()
-        return preferred_format
-
-    async def aassign_preferred_viewer_format(self):
-        preferred_format = await self.aget_preferred_viewer_format_for_assignment()
+    async def assign_preferred_viewer_format(self):
+        preferred_format = await self.get_preferred_viewer_format_for_assignment()
         if preferred_format is not None:
             # TODO(james) do we mark all other formats as not preferred?
             preferred_format.is_preferred_for_gallery_viewer = True

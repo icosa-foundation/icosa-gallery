@@ -183,7 +183,7 @@ def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
     return unzipped_files
 
 
-async def amake_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
+async def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
     # Main files determine folder
     format_type = mainfile.filetype
     name = mainfile.file.name
@@ -311,7 +311,7 @@ async def upload(
                 sub_files_list = []
 
         role = get_role(mainfile)
-        await amake_formats(
+        await make_formats(
             mainfile,
             sub_files_list,
             asset,
@@ -335,7 +335,7 @@ async def upload(
     # After this, we can mark each format as preferred.
     await asset.asave()
 
-    await asset.aassign_preferred_viewer_format()
+    await asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
     await asset.asave()
 

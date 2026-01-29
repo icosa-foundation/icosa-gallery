@@ -62,13 +62,13 @@ async def queue_upload_asset_web_ui(
 
 
 @db_task()
-def queue_upload_api_asset(
+async def queue_upload_api_asset(
     current_user: User,
     asset: Asset,
     data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
 ) -> str:
-    upload_api_asset(
+    await upload_api_asset(
         asset,
         data,
         files,

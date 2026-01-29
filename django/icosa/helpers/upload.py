@@ -126,7 +126,7 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
 
 # TODO(james): once this function and upload_asset have stabilised, the
 # common parts should be abstracted out to reduce duplication.
-def upload_api_asset(
+async def upload_api_asset(
     asset: Asset,
     data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = None,
@@ -226,7 +226,7 @@ def upload_api_asset(
             preferred_format.is_preferred_for_gallery_viewer = True
             preferred_format.save()
     else:
-        asset.assign_preferred_viewer_format()
+        await asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
     asset.save()
 
