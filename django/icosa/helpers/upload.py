@@ -134,7 +134,7 @@ async def upload_api_asset(
     total_start = time.time()  # Logging
 
     asset.state = ASSET_STATE_UPLOADING
-    asset.save()
+    await asset.asave()
     if files is None:
         raise HttpError(400, "Include files for upload.")
     try:
@@ -171,7 +171,7 @@ async def upload_api_asset(
     # Begin upload process.
 
     asset.name = asset_name
-    asset.save()
+    await asset.asave()
 
     tilt_or_blocks = None
     for mainfile in main_files:
@@ -198,7 +198,7 @@ async def upload_api_asset(
             tilt_or_blocks,
         )
 
-        make_formats(
+        await make_formats(
             mainfile,
             sub_files_list,
             asset,
@@ -207,28 +207,28 @@ async def upload_api_asset(
         )
 
     if upload_set.thumbnail:
-        add_thumbnail_to_asset(upload_set.thumbnail, asset)
+        await add_thumbnail_to_asset(upload_set.thumbnail, asset)
 
-    asset.save()  # Denorm asset so far and save formats
+    await asset.asave()  # Denorm asset so far and save formats
 
     # Apply the one triangle count to all formats and resources.
     formats = asset.format_set.all()
-    for fmt in formats:
+    async for fmt in formats:
         fmt.triangle_count = data.triangleCount
-        fmt.save()
+        await fmt.asave()
 
     asset.remix_ids = getattr(data, "remixIds", None)
 
     # TODO(james): We should move this blocks-related code into the flagship instance or trigger it some other way.
     if asset.has_blocks:
-        preferred_format = asset.format_set.filter(format_type="OBJ").first()
+        preferred_format = await asset.format_set.filter(format_type="OBJ").afirst()
         if preferred_format is not None and preferred_format.root_resource and preferred_format.root_resource.file:
             preferred_format.is_preferred_for_gallery_viewer = True
-            preferred_format.save()
+            await preferred_format.asave()
     else:
         await asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
-    asset.save()
+    await asset.asave()
 
     total_end = time.time()  # Logging
     icosa_log(f"Finish uploading asset {asset.url} in {total_end - total_start} seconds.")  # Logging
@@ -253,7 +253,7 @@ def get_format_overrides(data: AssetMetaData):
     return overrides
 
 
-def make_formats(mainfile, sub_files, asset, role, format_overrides):
+async def make_formats(mainfile, sub_files, asset, role, format_overrides):
     file = mainfile.file
     name = mainfile.file.name
     format_override = format_overrides.get(name)
@@ -267,7 +267,7 @@ def make_formats(mainfile, sub_files, asset, role, format_overrides):
         "asset": asset,
         "role": role,
     }
-    format = Format.objects.create(**format_data)
+    format = await Format.objects.acreate(**format_data)
 
     file_start = time.time()  # Logging
 
@@ -277,9 +277,9 @@ def make_formats(mainfile, sub_files, asset, role, format_overrides):
         "format": format,
         "contenttype": get_content_type(name),
     }
-    root_resource = Resource.objects.create(**root_resource_data)
-    format.add_root_resource(root_resource)
-    format.save()
+    root_resource = await Resource.objects.acreate(**root_resource_data)
+    await format.aadd_root_resource(root_resource)
+    await format.asave()
 
     file_end = time.time()  # Logging
     icosa_log(
@@ -295,7 +295,7 @@ def make_formats(mainfile, sub_files, asset, role, format_overrides):
             "asset": asset,
             "contenttype": get_content_type(subfile.file.name),
         }
-        Resource.objects.create(**sub_resource_data)
+        await Resource.objects.acreate(**sub_resource_data)
 
         file_end = time.time()  # Logging
         icosa_log(

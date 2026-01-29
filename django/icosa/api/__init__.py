@@ -53,11 +53,27 @@ def user_owns_asset(
     return user is not None and user == asset.owner.django_user
 
 
+async def auser_owns_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> bool:
+    user = await request.auser()
+    return user is not None and user == asset.owner.django_user
+
+
 def check_user_owns_asset(
     request: HttpRequest,
     asset: Asset,
 ) -> None:
     if not user_owns_asset(request, asset):
+        raise
+
+
+async def acheck_user_owns_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> None:
+    if not auser_owns_asset(request, asset):
         raise
 
 
@@ -67,6 +83,15 @@ def user_can_view_asset(
 ) -> bool:
     if asset.visibility == PRIVATE:
         return user_owns_asset(request, asset)
+    return True
+
+
+async def auser_can_view_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> bool:
+    if asset.visibility == PRIVATE:
+        return auser_owns_asset(request, asset)
     return True
 
 
@@ -80,6 +105,23 @@ def get_asset_by_url(
     except Asset.DoesNotExist:
         raise NOT_FOUND
     if not user_can_view_asset(request, asset):
+        if settings.DEBUG:
+            raise NOT_FOUND
+        else:
+            raise NOT_FOUND
+    return asset
+
+
+async def aget_asset_by_url(
+    request: HttpRequest,
+    asset_url: str,
+) -> Asset:
+    # get_object_or_404 raises the wrong error text
+    try:
+        asset = await Asset.objects.aget(url=asset_url)
+    except Asset.DoesNotExist:
+        raise NOT_FOUND
+    if not await auser_can_view_asset(request, asset):
         if settings.DEBUG:
             raise NOT_FOUND
         else:
@@ -135,11 +177,9 @@ class IcosaPagination(AsyncPaginationBase):
             "totalSize": queryset_count,
         }
         if offset + page_size < count:
-            pagination_data.update(
-                {
-                    "nextPageToken": str(page_token + 1),
-                }
-            )
+            pagination_data.update({
+                "nextPageToken": str(page_token + 1),
+            })
         return pagination_data
 
     async def apaginate_queryset(
@@ -174,11 +214,9 @@ class IcosaPagination(AsyncPaginationBase):
             "totalSize": count,
         }
         if offset + page_size < count:
-            pagination_data.update(
-                {
-                    "nextPageToken": str(page_token + 1),
-                }
-            )
+            pagination_data.update({
+                "nextPageToken": str(page_token + 1),
+            })
         return pagination_data
 
 

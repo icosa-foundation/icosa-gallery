@@ -329,7 +329,7 @@ async def upload(
     )
 
     if thumbnail is not None:
-        add_thumbnail_to_asset(thumbnail, asset)
+        await add_thumbnail_to_asset(thumbnail, asset)
 
     # Save here so all formats and resources are associated with the asset.
     # After this, we can mark each format as preferred.

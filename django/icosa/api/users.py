@@ -7,7 +7,10 @@ from typing import (
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
+from django.shortcuts import (
+    aget_object_or_404,
+    get_object_or_404,
+)
 from django.views.decorators.cache import never_cache
 from ninja import (
     File,
@@ -24,6 +27,8 @@ from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     AssetCollectionPagination,
     AssetPagination,
+    acheck_user_owns_asset,
+    aget_asset_by_url,
     check_user_owns_asset,
     get_asset_by_url,
     get_publish_url,
@@ -33,7 +38,10 @@ from icosa.helpers.file import (
     validate_mime,
 )
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.jwt.authentication import JWTAuth
+from icosa.jwt.authentication import (
+    JWTAuth,
+    JWTAuthAsync,
+)
 from icosa.models import (
     PRIVATE,
     PUBLIC,
@@ -139,15 +147,15 @@ def list_my_assets(
     return assets
 
 
-@router.post("/me/assets", response={201: UploadJobSchemaOut}, auth=JWTAuth())
+@router.post("/me/assets", response={201: UploadJobSchemaOut}, auth=JWTAuthAsync())
 @decorate_view(never_cache)
-def create_a_new_asset(
+async def create_a_new_asset(
     request,
     data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
 ):
     user = request.user
-    owner, _ = AssetOwner.objects.get_or_create(
+    owner, _ = await AssetOwner.objects.aget_or_create(
         django_user=user,
         email=user.email,
         defaults={
@@ -157,7 +165,7 @@ def create_a_new_asset(
     )
     job_snowflake = generate_snowflake()
     asset_token = secrets.token_urlsafe(8)
-    asset = Asset.objects.create(
+    asset = await Asset.objects.acreate(
         id=job_snowflake,
         url=asset_token,
         owner=owner,
@@ -223,25 +231,25 @@ def delete_an_asset(
 
 @router.post(
     "/me/assets/{str:asset_url}/set_thumbnail",
-    auth=JWTAuth(),
+    auth=JWTAuthAsync(),
     response={201: ImageSchema, 400: Error},
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def set_an_image_for_an_asset(
+async def set_an_image_for_an_asset(
     request,
     asset_url: str,
     image: File[UploadedFile],
 ):
-    asset = get_asset_by_url(request, asset_url)
-    check_user_owns_asset(request, asset)
+    asset = await aget_asset_by_url(request, asset_url)
+    await acheck_user_owns_asset(request, asset)
     magic_bytes = next(image.chunks(chunk_size=2048))
     image.seek(0)
     if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
         return 400, {"message": "Thumbnail must be png or jpg."}
     asset.thumbnail = image
     asset.thumbnail_contenttype = get_content_type(image.name)
-    asset.save()
+    asset.asave()
     return 201, {"url": asset.thumbnail}
 
 
@@ -433,22 +441,22 @@ def delete_a_collection(
 
 @router.post(
     "/me/collections/{str:asset_collection_url}/set_thumbnail",
-    auth=JWTAuth(),
+    auth=JWTAuthAsync(),
     response={201: ImageSchema, 400: Error},
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def set_an_image_for_a_collection(
+async def set_an_image_for_a_collection(
     request,
     asset_collection_url: str,
     image: File[UploadedFile],
 ):
     user = request.user
-    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    asset_collection = await aget_object_or_404(AssetCollection, url=asset_collection_url, user=user)
     magic_bytes = next(image.chunks(chunk_size=2048))
     image.seek(0)
     if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
         return 400, {"message": "Thumbnail must be png or jpg."}
     asset_collection.image = image
-    asset_collection.save()
+    await asset_collection.asave()
     return 201, {"url": asset_collection.image}

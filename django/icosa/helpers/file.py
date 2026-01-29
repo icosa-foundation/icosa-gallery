@@ -220,13 +220,13 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
             Resource.objects.create(**sub_resource_data)
 
 
-def add_thumbnail_to_asset(thumbnail, asset):
+async def add_thumbnail_to_asset(thumbnail, asset):
     extension = thumbnail.name.split(".")[-1].lower()
     thumbnail_upload_details = validate_file(thumbnail, extension)
     if thumbnail_upload_details is not None and thumbnail_upload_details.filetype == "IMAGE":
         asset.thumbnail = thumbnail_upload_details.file
         asset.thumbnail_contenttype = get_content_type(thumbnail_upload_details.file.name)
-        asset.save()
+        await asset.asave()
 
 
 def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
