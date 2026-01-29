@@ -11,13 +11,18 @@
 <div class="container">
 </div>
 <div class="container">
+    <div id="messagecontainer">
+    <ul class="messages" id="uploadsuccessmessages" hidden>
+        <li class="info"></li>
+    </ul>
     {% if messages %}
-    <ul class="messages" id="uploadmessages">
+    <ul class="messages">
         {% for message in messages %}
         <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
         {% endfor %}
     </ul>
     {% endif %}
+    </div>
     <div class="row">
         <div class="col">
             <h1><a href="/uploads">{{ page_title }}</a></h1>
@@ -32,10 +37,8 @@
         <div class="col-6">
             <form id="uploadform" action="{% url 'icosa:upload_asset' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                {% if form.file.errors %}
-                    {{ form.file.errors }}
-                {% endif %}
-                <input multiple type="file" class="form-control-file" name="file" required>
+                <ul class="errorlist" id="id_file_error" hidden></ul>
+                <input multiple type="file" class="form-control-file" name="file" id="uploadfile" required>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
             <script>
@@ -49,10 +52,26 @@
                             method: "POST",
                             body: data,
                         });
-                        console.log(await response.json());
+                        const resData = await response.json();
+                        if (resData.success === true) {
+                            uploadsuccessmessages.removeAttribute("hidden");
+                            uploadsuccessmessages.querySelector("li").textContent = resData.message;
+                        } else {
+                            const errors = resData.errors;
+                            if (errors.hasOwnProperty("file")) {
+                                id_file_error.removeAttribute("hidden");
+                                let itemHtml;
+                                errors.file.forEach((item) => {
+                                    itemHtml = document.createElement("li");
+                                    itemHtml.textContent = item
+                                    id_file_error.appendChild(itemHtml);
+                                })
+                            }
+                        }
                     } catch (e) {
                         console.error(e);
                     }
+                    uploadfile.value = null;
                 }
                 form.addEventListener("submit", (event) =>{
                     event.preventDefault();
@@ -105,17 +124,6 @@
             <h2>Manage Uploads</h2>
         </div>
     </div>
-    <div class="sketch-list">
-        {% if assets %}
-            {% for asset in assets %}
-                {% include "partials/sketch_list_item_owner.html" %}
-            {% endfor %}
-        {% else %}
-            <p>You haven't uploaded anything yet.</p>
-        {% endif %}
-    </div>
-    {% if assets %}
-        {% include "partials/pagination.html" %}
-    {% endif %}
+    {% include "partials/asset_upload_list.html" %}
 </div>
 {% endblock content %}

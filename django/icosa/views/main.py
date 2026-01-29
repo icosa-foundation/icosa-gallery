@@ -1,4 +1,5 @@
 import inspect
+import logging
 import random
 import secrets
 
@@ -362,6 +363,31 @@ def uploads(request):
 
 @login_required
 @never_cache
+def upload_list_partial(request):
+    template = "partials/asset_upload_list.html"
+    user = request.user
+    asset_objs = list(
+        Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+    )
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    assets = paginator.get_page(page_number)
+    context = {
+        "assets": assets,
+        "paginator": paginator,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@login_required
+@never_cache
 async def upload_asset(request):
     user = request.user
     if request.method != "POST":
@@ -385,23 +411,27 @@ async def upload_asset(request):
             owner=owner,
             state=ASSET_STATE_UPLOADING,
         )
-        # try:
-        if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-            await queue_upload_asset_web_ui(
-                current_user=user,
-                asset=asset,
-                files=[request.FILES["file"]],
-            )
-        else:
-            await upload(
-                asset,
-                [request.FILES["file"]],
-            )
-        return JsonResponse({"success": True, "messages": [{"tags": "info", "message": "Your upload has started"}]})
-        # except Exception as e:
-        #     asset.state = ASSET_STATE_FAILED
-        #     await asset.asave()
-        #     return JsonResponse({"success": False, "messages": [{"tags": "error", "message": f"{e}"}]})
+        try:
+            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                await queue_upload_asset_web_ui(
+                    current_user=user,
+                    asset=asset,
+                    files=[request.FILES["file"]],
+                )
+            else:
+                await upload(
+                    asset,
+                    [request.FILES["file"]],
+                )
+            return JsonResponse({"success": True, "message": "Your upload has started"})
+        except Exception as e:
+            asset.state = ASSET_STATE_FAILED
+            await asset.asave()
+            logging.exception(e)
+            return JsonResponse({
+                "success": False,
+                "errors": {"file": ["Your upload failed. Please try again later."]},
+            })  # TODO(james): Not the most useful error message.
 
     else:
         return JsonResponse({"success": False, "errors": form.errors})
