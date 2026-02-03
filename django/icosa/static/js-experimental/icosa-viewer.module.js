@@ -2304,12 +2304,7 @@ class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
             button.style.width = '100px';
             button.textContent = `START ${label}`;
             const sessionOptions = {
-                ...sessionInit,
-                optionalFeatures: [
-                    'local-floor',
-                    'bounded-floor',
-                    ...sessionInit.optionalFeatures || []
-                ]
+                ...sessionInit
             };
             button.onmouseenter = function() {
                 button.style.opacity = '1.0';
@@ -3955,6 +3950,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.outputColorSpace = $hBQxr$three.SRGBColorSpace;
         this.renderer.xr.enabled = true;
+        // Use 'local' reference space for full 6DOF tracking without floor offset
+        this.renderer.xr.setReferenceSpaceType('local');
         function handleController(inputSource) {
             const gamepad = inputSource.gamepad;
             if (gamepad) return {
@@ -5654,8 +5651,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         return generator && !generator.includes('Tilt Brush');
     }
     isNewTiltExporter(sceneGltf) {
-        const generator = sceneGltf?.asset?.generator;
-        return generator && generator.includes('Open Brush UnityGLTF Exporter');
+        return sceneGltf?.scene?.userData?.isNewTiltExporter ?? false;
     }
     isAnyTiltExporter(sceneGltf) {
         const generator = sceneGltf?.asset?.generator;
@@ -6039,13 +6035,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.xrCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
         this.cameraRig = new $hBQxr$three.Group();
         this.scene.add(this.cameraRig);
-        this.cameraRig.rotation.y = this.flatCamera.rotation.y;
         this.cameraRig.add(this.xrCamera);
-        this.xrCamera.updateProjectionMatrix();
         this.activeCamera = this.flatCamera;
+        let cameraTarget;
         if (this.sketchMetadata.FlyMode) {
             // Simulate fly mode by setting target point in front of camera
-            let cameraTarget;
             const forward = new $hBQxr$three.Vector3();
             this.flatCamera.getWorldDirection(forward);
             cameraTarget = this.flatCamera.position.clone().add(forward.multiplyScalar(0.05));
@@ -6060,7 +6054,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
             (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         } else {
-            let cameraTarget;
             let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
             if (pivot) // TODO this pivot should be recalculated to take into account
             //  any camera rotation adjustment applied above
@@ -6100,6 +6093,26 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
             (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         }
+        // Position and orient the cameraRig to match flatCamera AFTER camera controls are set up
+        // The flatCamera is independent of scene scale, but cameraRig is a child of the scene.
+        // For new Tilt exporters, the scene will be scaled to 0.1, so we need to compensate.
+        // We scale BOTH the position and the rig scale to counteract the scene scale.
+        const sceneScaleFactor = this.isNewTiltExporter(this.sceneGltf) ? 10 : 1;
+        this.cameraRig.position.copy(this.flatCamera.position).multiplyScalar(sceneScaleFactor);
+        this.cameraRig.scale.set(sceneScaleFactor, sceneScaleFactor, sceneScaleFactor);
+        // Calculate world position after setup
+        this.cameraRig.updateMatrixWorld(true);
+        // VR cameras should never be tilted - only copy Y-axis rotation (yaw)
+        // Calculate Y rotation from camera position to target (ignoring vertical component)
+        const flatCameraWorldDir = new $hBQxr$three.Vector3();
+        this.flatCamera.getWorldDirection(flatCameraWorldDir);
+        const directionToTarget = new $hBQxr$three.Vector3().subVectors(cameraTarget, this.flatCamera.position);
+        directionToTarget.y = 0; // Project onto XZ plane
+        directionToTarget.normalize();
+        const yaw = Math.atan2(directionToTarget.x, directionToTarget.z);
+        // Add 180 degrees because camera's default forward is -Z, not +Z
+        this.cameraRig.rotation.y = yaw + Math.PI;
+        this.xrCamera.updateProjectionMatrix();
     }
     calculatePivot(camera, centroid) {
         // 1. Get the camera's forward vector

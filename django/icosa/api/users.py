@@ -213,7 +213,7 @@ def show_an_asset(
 @router.delete(
     "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
-    response={204: int, 400: Error},
+    response={204: None, 400: Error},
 )
 def delete_an_asset(
     request,
@@ -226,7 +226,7 @@ def delete_an_asset(
     with transaction.atomic():
         asset.hide_media()
         asset.delete()
-    return 204
+    return 204, None
 
 
 @router.post(
@@ -425,7 +425,7 @@ def overwrite_assets_for_a_collection(
 @router.delete(
     "/me/collections/{str:asset_collection_url}",
     auth=JWTAuth(),
-    response={204: int},
+    response={204: None},
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
@@ -436,7 +436,7 @@ def delete_a_collection(
     user = request.user
     asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
     asset_collection.delete()
-    return 204
+    return 204, None
 
 
 @router.post(
