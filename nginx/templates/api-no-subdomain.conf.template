@@ -17,7 +17,7 @@ server {
     }
 
     location /foo/ {
-        root /var/www/foo;
+        root /var/www;
     }
     location / {
         return 301 https://$host$request_uri;
