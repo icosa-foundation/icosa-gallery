@@ -21,84 +21,84 @@ server {
     }
 }
 
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+# server {
+#     listen 443 ssl;
+#     listen [::]:443 ssl;
 
-    if ( $host != "${DEPLOYMENT_HOST_WEB}" ){
-        return 444; #CONNECTION CLOSED WITHOUT RESPONSE
-    }
+#     if ( $host != "${DEPLOYMENT_HOST_WEB}" ){
+#         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
+#     }
 
-    server_name ${DEPLOYMENT_HOST_WEB};
-    server_tokens off;
+#     server_name ${DEPLOYMENT_HOST_WEB};
+#     server_tokens off;
 
-    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
+#     ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
+#     ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
 
-    location /static/ {
-        add_header Access-Control-Allow-Origin *;
-        autoindex off;
-        alias /static/;
-    }
+#     location /static/ {
+#         add_header Access-Control-Allow-Origin *;
+#         autoindex off;
+#         alias /static/;
+#     }
 
-    location /media/ {
-        autoindex off;
-        alias /media/;
-    }
+#     location /media/ {
+#         autoindex off;
+#         alias /media/;
+#     }
 
-    location / {
-        proxy_pass http://web;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header Host $host;
-        proxy_redirect off;
-        proxy_read_timeout 60s;
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-    }
+#     location / {
+#         proxy_pass http://web;
+#         proxy_set_header X-Forwarded-For $remote_addr;
+#         proxy_set_header Host $host;
+#         proxy_redirect off;
+#         proxy_read_timeout 60s;
+#         proxy_connect_timeout 60s;
+#         proxy_send_timeout 60s;
+#     }
 
-    location ^~ /v1/ {
-        return 404;
-    }
-}
+#     location ^~ /v1/ {
+#         return 404;
+#     }
+# }
 
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+# server {
+#     listen 443 ssl;
+#     listen [::]:443 ssl;
 
-    if ( $host != "${DEPLOYMENT_HOST_API}" ){
-        return 444; #CONNECTION CLOSED WITHOUT RESPONSE
-    }
+#     if ( $host != "${DEPLOYMENT_HOST_API}" ){
+#         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
+#     }
 
-    server_name ${DEPLOYMENT_HOST_API};
-    server_tokens off;
+#     server_name ${DEPLOYMENT_HOST_API};
+#     server_tokens off;
 
-    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_API}/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_API}/privkey.pem;
+#     ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_API}/fullchain.pem;
+#     ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_API}/privkey.pem;
 
-    location /static/ {
-        autoindex off;
-        alias /static/;
-    }
+#     location /static/ {
+#         autoindex off;
+#         alias /static/;
+#     }
 
-    location /media/ {
-        autoindex off;
-        alias /media/;
-    }
+#     location /media/ {
+#         autoindex off;
+#         alias /media/;
+#     }
 
-    location /v1/ {
-        proxy_pass http://web;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header Host $host;
-        proxy_redirect off;
-        proxy_read_timeout 60s;
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-    }
+#     location /v1/ {
+#         proxy_pass http://web;
+#         proxy_set_header X-Forwarded-For $remote_addr;
+#         proxy_set_header Host $host;
+#         proxy_redirect off;
+#         proxy_read_timeout 60s;
+#         proxy_connect_timeout 60s;
+#         proxy_send_timeout 60s;
+#     }
 
-    location ^~ / {
-        return 404;
-    }
-}
+#     location ^~ / {
+#         return 404;
+#     }
+# }
 
 server {
     listen 80 default_server;
