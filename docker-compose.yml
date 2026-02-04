@@ -50,7 +50,8 @@ services:
     depends_on:
       - web
     ports:
-      - "80:80"
+      - 80:80
+      - 443:443
     volumes:
       - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro
       - static:/static:ro
