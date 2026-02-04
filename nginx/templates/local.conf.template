@@ -11,6 +11,7 @@ upstream web {
 
 server {
     listen 80;
+    listen [::]:80;
 
     location /static/ {
         autoindex off;
