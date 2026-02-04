@@ -52,8 +52,8 @@ services:
     ports:
         - "80:80"
     volumes:
-        - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template
-        - static:/static
-        - gallery-media:/media
+        - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+        - static:/static:ro
+        - gallery-media:/media:ro
     env_file: .env
 
