@@ -28,8 +28,8 @@ server {
 
     server_name ${DEPLOYMENT_HOST_WEB};
 
-    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
+    # ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
+    # ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
 
     location /static/ {
         add_header Access-Control-Allow-Origin *;
