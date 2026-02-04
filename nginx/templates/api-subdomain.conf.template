@@ -7,6 +7,23 @@ upstream web {
 
 server {
     listen 80;
+    listen [::]:80;
+
+    server_name ${DEPLOYMENT_HOST_WEB} ${DEPLOYMENT_HOST_API};
+    server_tokens off;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
 
     if ( $host != "${DEPLOYMENT_HOST_WEB}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
@@ -42,7 +59,8 @@ server {
 }
 
 server {
-    listen 80;
+    listen 443 ssl;
+    listen [::]:443 ssl;
 
     if ( $host != "${DEPLOYMENT_HOST_API}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
