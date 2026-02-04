@@ -100,18 +100,18 @@ server {
     }
 }
 
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    listen 443 default_server;
-    listen [::]:443 default_server;
-    listen 8000 default_server;
-    listen [::]:8000 default_server;
+# server {
+#     listen 80 default_server;
+#     listen [::]:80 default_server;
+#     listen 443 default_server;
+#     listen [::]:443 default_server;
+#     listen 8000 default_server;
+#     listen [::]:8000 default_server;
 
-    server_name _;
-    server_tokens off;
+#     server_name _;
+#     server_tokens off;
 
-    location / {
-        return 444; # CONNECTION CLOSED WITHOUT RESPONSE
-    }
-}
+#     location / {
+#         return 444; # CONNECTION CLOSED WITHOUT RESPONSE
+#     }
+# }
