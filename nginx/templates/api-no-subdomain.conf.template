@@ -17,13 +17,14 @@ server {
     }
 
     location / {
-        return 301 https://${DEPLOYMENT_HOST_WEB}$request_uri;
+        return 301 https://$host$request_uri;
     }
 }
 
 server {
-    listen 443 default_server ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 default_server ssl;
+    listen [::]:443 ssl;
+    http2 on;
 
     server_name ${DEPLOYMENT_HOST_WEB};
 
