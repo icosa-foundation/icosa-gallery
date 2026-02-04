@@ -22,8 +22,8 @@ server {
 }
 
 server {
-    listen 443 default_server ssl;
-    listen [::]:443 ssl;
+    listen 443 default_server ssl http2;
+    listen [::]:443 ssl http2;
 
     server_name ${DEPLOYMENT_HOST_WEB};
     server_tokens off;

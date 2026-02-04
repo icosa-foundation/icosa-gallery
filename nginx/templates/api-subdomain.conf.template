@@ -62,8 +62,8 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
 
     if ( $host != "${DEPLOYMENT_HOST_API}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
