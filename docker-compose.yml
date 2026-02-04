@@ -14,11 +14,11 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - static:/opt/static/
-      - logs:/opt/logs/
-      - ./django:/opt/
-      - web-bash-history:/root/hist
-      - gallery-media:/opt/media/
+      - static:/opt/static/:rw
+      - logs:/opt/logs/:rw
+      - ./django:/opt/:rw
+      - web-bash-history:/root/hist:rw
+      - gallery-media:/opt/media/:rw
     depends_on:
       - db
     env_file: .env
@@ -30,7 +30,7 @@ services:
     container_name: ig-redis
     image: redis:7.4.2-alpine
     volumes:
-      - "redis:/data"
+      - redis:/data:rw
     ports:
       - 127.0.0.1:6379:6379
 
@@ -38,7 +38,7 @@ services:
     image: postgres:16.2
     container_name: ig-db
     volumes:
-      - gallery-data:/var/lib/postgresql/data
+      - gallery-data:/var/lib/postgresql/data:rw
     env_file: .env
     ports:
       - 5432:5432
