@@ -32,6 +32,9 @@ server {
     server_name ${DEPLOYMENT_HOST_WEB};
     server_tokens off;
 
+    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
+
     location /static/ {
         add_header Access-Control-Allow-Origin *;
         autoindex off;
@@ -68,6 +71,9 @@ server {
 
     server_name ${DEPLOYMENT_HOST_API};
     server_tokens off;
+
+    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_API}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_API}/privkey.pem;
 
     location /static/ {
         autoindex off;
