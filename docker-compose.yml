@@ -12,7 +12,7 @@ services:
       context: ./django
     container_name: ig-web
     ports:
-      - "8000:8000"
+      - 8000:8000
     volumes:
       - static:/opt/static/:rw
       - logs:/opt/logs/:rw
