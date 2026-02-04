@@ -6,6 +6,10 @@ upstream web {
 }
 
 server {
+    listen 80;
+
+    server_name ${DEPLOYMENT_HOST_WEB};
+
     location /static/ {
         add_header Access-Control-Allow-Origin *;
         autoindex off;
@@ -26,15 +30,14 @@ server {
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
     }
-
-    listen 80;
-    server_name ${DEPLOYMENT_HOST_WEB};
 }
 
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
+
     server_name _;
+
     location / {
         return 444; # CONNECTION CLOSED WITHOUT RESPONSE
     }

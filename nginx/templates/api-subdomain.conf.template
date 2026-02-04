@@ -6,9 +6,13 @@ upstream web {
 }
 
 server {
+    listen 80;
+
     if ( $host != "${DEPLOYMENT_HOST_WEB}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
     }
+
+    server_name ${DEPLOYMENT_HOST_WEB};
 
     location /static/ {
         add_header Access-Control-Allow-Origin *;
@@ -34,14 +38,16 @@ server {
     location ^~ /v1/ {
         return 404;
     }
-
-    listen 80;
-    server_name ${DEPLOYMENT_HOST_WEB};
 }
+
 server {
+    listen 80;
+
     if ( $host != "${DEPLOYMENT_HOST_API}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
     }
+
+    server_name ${DEPLOYMENT_HOST_API};
 
     location /static/ {
         autoindex off;
@@ -66,9 +72,6 @@ server {
     location ^~ / {
         return 404;
     }
-
-    listen 80;
-    server_name ${DEPLOYMENT_HOST_API};
 }
 
 server {
@@ -78,7 +81,9 @@ server {
     listen [::]:443 default_server;
     listen 8000 default_server;
     listen [::]:8000 default_server;
+
     server_name _;
+
     location / {
         return 444; # CONNECTION CLOSED WITHOUT RESPONSE
     }
