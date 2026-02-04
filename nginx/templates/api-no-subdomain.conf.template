@@ -9,6 +9,7 @@ server {
     listen 80;
 
     server_name ${DEPLOYMENT_HOST_WEB};
+    server_tokens off;
 
     location /static/ {
         add_header Access-Control-Allow-Origin *;
@@ -37,6 +38,7 @@ server {
     listen [::]:80 default_server;
 
     server_name _;
+    server_tokens off;
 
     location / {
         return 444; # CONNECTION CLOSED WITHOUT RESPONSE
