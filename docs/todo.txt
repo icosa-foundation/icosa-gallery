@@ -53,3 +53,13 @@ Import the sql data:
 
 `\i /opt/db.sql`
 
+
+
+
+
+
+
+
+
+
+consider `http2 on;` directive for nginx
