@@ -17,7 +17,7 @@ server {
     }
 
     location / {
-        return 301 https://$host$request_uri;
+        return 301 https://${DEPLOYMENT_HOST_WEB}$request_uri;
     }
 }
 
@@ -26,7 +26,6 @@ server {
     listen [::]:443 ssl http2;
 
     server_name ${DEPLOYMENT_HOST_WEB};
-    server_tokens off;
 
     ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
