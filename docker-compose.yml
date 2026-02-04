@@ -48,12 +48,13 @@ services:
     image: nginx:latest
     container_name: ig-proxy
     depends_on:
-        - web
+      - web
     ports:
-        - "80:80"
+      - "80:80"
     volumes:
-        - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro
-        - static:/static:ro
-        - gallery-media:/media:ro
+      - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - static:/static:ro
+      - gallery-media:/media:ro
+      - ./certbot/www/:/var/www/certbot/:ro
     env_file: .env
 
