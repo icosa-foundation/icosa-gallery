@@ -16,9 +16,6 @@ server {
         root /var/www/certbot;
     }
 
-    location /foo/ {
-        root /var/www;
-    }
     location / {
         return 301 https://$host$request_uri;
     }
