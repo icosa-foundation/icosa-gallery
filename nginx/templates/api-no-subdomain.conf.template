@@ -7,7 +7,6 @@ upstream web {
 
 server {
     listen 80;
-    listen [::]:80;
 
     server_name ${DEPLOYMENT_HOST_WEB};
     server_tokens off;
