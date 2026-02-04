@@ -56,6 +56,7 @@ services:
       - static:/static:ro
       - gallery-media:/media:ro
       - ./certbot/www/:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
     env_file: .env
 
   certbot:
