@@ -19,11 +19,6 @@ server {
     location / {
         return 301 https://$host$request_uri;
     }
-    location /static/ {
-        add_header Access-Control-Allow-Origin *;
-        autoindex off;
-        alias /static/;
-    }
 }
 
 server {
