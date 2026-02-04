@@ -7,9 +7,29 @@ upstream web {
 
 server {
     listen 80;
+    listen [::]:80;
 
     server_name ${DEPLOYMENT_HOST_WEB};
     server_tokens off;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 default_server ssl;
+    listen [::]:443 ssl;
+
+    server_name ${DEPLOYMENT_HOST_WEB};
+    server_tokens off;
+
+    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
 
     location /static/ {
         add_header Access-Control-Allow-Origin *;
@@ -33,14 +53,3 @@ server {
     }
 }
 
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-
-    server_name _;
-    server_tokens off;
-
-    location / {
-        return 444; # CONNECTION CLOSED WITHOUT RESPONSE
-    }
-}
