@@ -1,7 +1,7 @@
 #!/bin/bash
 
 UP_TEST_RETRIES=10
-until bash -c '(echo > /dev/tcp/db/5432) > /dev/null 2>&1' || [ $UP_TEST_RETRIES -eq 0 ]; do
+until bash -c '(echo > /dev/tcp/postgres/5432) > /dev/null 2>&1' || [ $UP_TEST_RETRIES -eq 0 ]; do
     echo "Waiting for Postgres server, $((UP_TEST_RETRIES--)) remaining attempts..."
     sleep 1
 done

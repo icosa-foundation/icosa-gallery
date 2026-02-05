@@ -6,7 +6,7 @@ client_max_body_size 1024M;
 
 upstream web {
   ip_hash;
-  server web:8000;
+  server django:8000;
 }
 
 server {

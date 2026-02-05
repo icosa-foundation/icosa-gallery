@@ -4,9 +4,9 @@
 
 client_max_body_size 1024M;
 
-upstream web {
+upstream django {
   ip_hash;
-  server web:8000;
+  server django:8000;
 }
 
 server {
@@ -54,7 +54,7 @@ server {
     }
 
     location / {
-        proxy_pass http://web;
+        proxy_pass http://django;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
         proxy_redirect off;
@@ -97,7 +97,7 @@ server {
     }
 
     location /v1/ {
-        proxy_pass http://web;
+        proxy_pass http://django;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
         proxy_redirect off;
