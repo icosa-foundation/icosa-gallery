@@ -1,41 +1,20 @@
 # ===========================
-# api-subdomain.conf.template
+# api-subdomain-no-ssl.conf.template
 # ===========================
 
 client_max_body_size 1024M;
 
 server {
-    listen 80;
-    listen [::]:80;
-
-    server_name ${DEPLOYMENT_HOST_WEB} ${DEPLOYMENT_HOST_API};
-    server_tokens off;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-server {
-    listen 443 default_server ssl;
-    listen [::]:443 default_server ssl;
+    listen 80 default_server;
+    listen [::]:80 default_server;
 
     if ( $host != "${DEPLOYMENT_HOST_WEB}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
     }
 
     server_name ${DEPLOYMENT_HOST_WEB};
-
+    server_tokens off;
     http2 on;
-    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384";
 
     location /static/ {
         add_header Access-Control-Allow-Origin *;
@@ -50,7 +29,7 @@ server {
 
     location / {
         proxy_pass http://varnish:80;
-        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Proto http;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
         proxy_redirect off;
@@ -65,8 +44,8 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen 80;
+    listen [::]:80;
 
     if ( $host != "${DEPLOYMENT_HOST_API}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
@@ -76,11 +55,6 @@ server {
     server_tokens off;
 
     http2 on;
-    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_API}/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_API}/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384";
 
     location /static/ {
         autoindex off;
@@ -93,8 +67,8 @@ server {
     }
 
     location /v1/ {
-        proxy_pass http://varnish:80;
-        proxy_set_header X-Forwarded-Proto https;
+        proxy_pass http://varnish:8443;
+        proxy_set_header X-Forwarded-Proto http;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
         proxy_redirect off;
