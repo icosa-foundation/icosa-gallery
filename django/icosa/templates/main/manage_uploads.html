@@ -41,44 +41,6 @@
                 <input multiple type="file" class="form-control-file" name="file" id="uploadfile" required>
                 <button type="submit" class="btn btn-primary">Upload</button>
             </form>
-            <script>
-                const form = id_upload_form;
-                async function handleUploadForm() {
-                    const data = new FormData(form);
-                    file = data.get("file");
-                    filesize = file.size; // Use this later to handle uploads which are too large. 
-                    try {
-                        const response = await fetch(form.action, {
-                            method: "POST",
-                            body: data,
-                        });
-                        const resData = await response.json();
-                        if (resData.success === true) {
-                            id_upload_success_messages.removeAttribute("hidden");
-                            id_upload_success_messages.querySelector("li").textContent = resData.message;
-                            htmx.ajax("GET", "{% url 'icosa:upload_list_partial' %}", "#id_uploads_container");
-                        } else {
-                            const errors = resData.errors;
-                            if (errors.hasOwnProperty("file")) {
-                                id_file_error.removeAttribute("hidden");
-                                let itemHtml;
-                                errors.file.forEach((item) => {
-                                    itemHtml = document.createElement("li");
-                                    itemHtml.textContent = item
-                                    id_file_error.appendChild(itemHtml);
-                                })
-                            }
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    }
-                    uploadfile.value = null;
-                }
-                form.addEventListener("submit", (event) =>{
-                    event.preventDefault();
-                    handleUploadForm();
-                })
-            </script>
         </div>
         <div class="col-lg-6">
                 <details>
@@ -129,4 +91,42 @@
         {% include "partials/asset_upload_list.html" %}
     </div>
 </div>
+<script>
+    const form = id_upload_form;
+    async function handleUploadForm() {
+        const data = new FormData(form);
+        file = data.get("file");
+        filesize = file.size; // Use this later to handle uploads which are too large. 
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                body: data,
+            });
+            const resData = await response.json();
+            if (resData.success === true) {
+                id_upload_success_messages.removeAttribute("hidden");
+                id_upload_success_messages.querySelector("li").textContent = resData.message;
+                htmx.ajax("GET", "{% url 'icosa:upload_list_partial' %}", "#id_uploads_container");
+            } else {
+                const errors = resData.errors;
+                if (errors.hasOwnProperty("file")) {
+                    id_file_error.removeAttribute("hidden");
+                    let itemHtml;
+                    errors.file.forEach((item) => {
+                        itemHtml = document.createElement("li");
+                        itemHtml.textContent = item
+                        id_file_error.appendChild(itemHtml);
+                    })
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        uploadfile.value = null;
+    }
+    form.addEventListener("submit", (event) =>{
+        event.preventDefault();
+        handleUploadForm();
+    })
+</script>
 {% endblock content %}
