@@ -111,6 +111,7 @@
                 const errors = resData.errors;
                 if (errors.hasOwnProperty("file")) {
                     id_file_error.removeAttribute("hidden");
+                    id_file_error.replaceChildren();
                     let itemHtml;
                     errors.file.forEach((item) => {
                         itemHtml = document.createElement("li");
