@@ -63,13 +63,15 @@ services:
   varnish:
       image: varnish:stable
       container_name: ig-varnish
-      environment:
-        - VARNISH_SIZE=512M
       depends_on:
         - nginx
         - django
+      ports:
+        - 6081:6081
       volumes:
         - ./varnish/varnish.vcl:/etc/varnish/default.vcl
+      environment:
+        - VARNISH_SIZE=512M
 
   certbot:
     image: certbot/certbot:latest
