@@ -1,0 +1,36 @@
+# ==============================
+# api-no-subdomain.conf.template
+# ==============================
+
+client_max_body_size 1024M;
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    server_name ${DEPLOYMENT_HOST_WEB};
+    server_tokens off;
+    http2 on;
+
+    location /static/ {
+        add_header Access-Control-Allow-Origin *;
+        autoindex off;
+        alias /static/;
+    }
+
+    location /media/ {
+        autoindex off;
+        alias /media/;
+    }
+
+    location / {
+        proxy_pass http://varnish:80;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Host $host;
+        proxy_redirect off;
+        proxy_read_timeout 60s;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+    }
+}
+
