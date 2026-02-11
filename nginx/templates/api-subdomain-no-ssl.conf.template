@@ -27,6 +27,10 @@ server {
         alias /media/;
     }
 
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
     location / {
         proxy_pass http://varnish:80;
         proxy_set_header X-Forwarded-Proto http;
