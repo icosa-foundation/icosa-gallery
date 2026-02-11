@@ -66,8 +66,6 @@ services:
       depends_on:
         - nginx
         - django
-      ports:
-        - 6081:6081
       volumes:
         - ./varnish/varnish.vcl:/etc/varnish/default.vcl
       environment:

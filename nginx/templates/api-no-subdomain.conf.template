@@ -4,11 +4,6 @@
 
 client_max_body_size 1024M;
 
-upstream web {
-  ip_hash;
-  server django:8000;
-}
-
 server {
     listen 80;
     listen [::]:80;
@@ -50,7 +45,7 @@ server {
     }
 
     location / {
-        proxy_pass http://web;
+        proxy_pass http://varnish:80;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
         proxy_redirect off;

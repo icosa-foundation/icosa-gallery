@@ -49,7 +49,7 @@ server {
     }
 
     location / {
-        proxy_pass http://varnish:6081;
+        proxy_pass http://varnish:80;
         proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
@@ -93,7 +93,7 @@ server {
     }
 
     location /v1/ {
-        proxy_pass http://varnish:6081;
+        proxy_pass http://varnish:80;
         proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
