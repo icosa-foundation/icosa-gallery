@@ -25,8 +25,9 @@ server {
     listen [::]:443 default_server ssl;
 
     server_name ${DEPLOYMENT_HOST_WEB};
-
+    server_tokens off;
     http2 on;
+
     ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
