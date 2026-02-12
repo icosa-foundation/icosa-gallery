@@ -21,8 +21,8 @@ server {
 }
 
 server {
-    listen 443 default_server ssl;
-    listen [::]:443 default_server ssl;
+    listen 443 ssl;
+    listen [::]:443 ssl;
 
     if ( $host != "${DEPLOYMENT_HOST_WEB}" ){
         return 444; #CONNECTION CLOSED WITHOUT RESPONSE
@@ -109,3 +109,11 @@ server {
     }
 }
 
+server {
+    listen      80 default_server;
+    listen      [::]:80 default_server;
+    listen      443 ssl default_server;
+    listen      [::]:443 ssl default_server;
+    server_name "";
+    return      444;
+}
