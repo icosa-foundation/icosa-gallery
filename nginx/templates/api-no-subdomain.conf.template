@@ -21,8 +21,8 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen 443 default_server ssl;
+    listen [::]:443 default_server ssl;
 
     server_name ${DEPLOYMENT_HOST_WEB};
     server_tokens off;
@@ -56,11 +56,3 @@ server {
     }
 }
 
-server {
-    listen      80 default_server;
-    listen      [::]:80 default_server;
-    listen      443 ssl default_server;
-    listen      [::]:443 ssl default_server;
-    server_name "";
-    return      444;
-}
