@@ -59,17 +59,18 @@ services:
       - ./certbot/www/:/var/www/certbot/:ro
       - ./certbot/conf/:/etc/nginx/ssl/:ro
     env_file: .env
+    restart: unless-stopped
 
   varnish:
-      image: varnish:stable
-      container_name: ig-varnish
-      depends_on:
-        - nginx
-        - django
-      volumes:
-        - ./varnish/varnish.vcl:/etc/varnish/default.vcl
-      environment:
-        - VARNISH_SIZE=512M
+    image: varnish:stable
+    container_name: ig-varnish
+    depends_on:
+      - nginx
+      - django
+    volumes:
+      - ./varnish/varnish.vcl:/etc/varnish/default.vcl
+    environment:
+      - VARNISH_SIZE=512M
 
   certbot:
     image: certbot/certbot:latest
