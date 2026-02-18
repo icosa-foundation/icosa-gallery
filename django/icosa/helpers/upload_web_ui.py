@@ -7,9 +7,6 @@ from typing import List, Optional
 
 from django.conf import settings
 from django.utils import timezone
-from ninja import File
-from ninja.files import UploadedFile
-
 from icosa.api.exceptions import ZipException
 from icosa.helpers.file import (
     MAX_UNZIP_BYTES,
@@ -26,6 +23,8 @@ from icosa.models import (
     Format,
     Resource,
 )
+from ninja import File
+from ninja.files import UploadedFile
 
 CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
 
@@ -103,16 +102,18 @@ def convert_gltf(gltf_file, bin_file, asset_dir):
                 shader_dummy_path,
             )
         )
-        subprocess.run([
-            "node",
-            CONVERTER_EXE,
-            "-i",
-            gltf_file[0],
-            "-o",
-            out_path,
-            "--keepUnusedElements",
-            "--binary",
-        ])
+        subprocess.run(
+            [
+                "node",
+                CONVERTER_EXE,
+                "-i",
+                gltf_file[0],
+                "-o",
+                out_path,
+                "--keepUnusedElements",
+                "--binary",
+            ]
+        )
         return out_path
     else:
         return None

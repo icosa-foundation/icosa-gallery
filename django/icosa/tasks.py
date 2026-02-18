@@ -11,21 +11,19 @@ from huey.contrib.djhuey import (
     db_task,
     signal,
 )
-from ninja import (
-    File,
-    Form,
-)
-from ninja.files import UploadedFile
-
 from icosa.api.schema import AssetMetaData
 from icosa.helpers.upload import upload_api_asset
-from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ASSET_STATE_FAILED,
     Asset,
     BulkSaveLog,
     User,
 )
+from ninja import (
+    File,
+    Form,
+)
+from ninja.files import UploadedFile
 
 
 @signal(signals.SIGNAL_ERROR)
@@ -47,18 +45,6 @@ def handle_upload_error(task, exc):
     # viewed? How do we know it's been read?
     with open("huey_task_error.log", "a") as logfile:
         logfile.write(f"{timezone.now()} {asset.id} {user.id} {user.displayname}\n")
-
-
-@db_task()
-async def queue_upload_asset_web_ui(
-    current_user: User,
-    asset: Asset,
-    files: Optional[List[UploadedFile]] = File(None),
-) -> str:
-    await upload(
-        asset,
-        files,
-    )
 
 
 @db_task()

@@ -74,9 +74,14 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
     unzipped_files = []
     for file in files:
         if not file.name.endswith(".zip"):
-            # No further processing needed, though really we are not expecting
-            # extra files outside of a zip.
-            unzipped_files.append(file)
+            # Note, the mime type should be checked in the form if uploading
+            # from the web. This function assumes the correct mime type for zip
+            # or glb TODO: or binary file.
+            processed_file = ProcessedUpload(
+                file=file,
+                full_path=file.name,
+            )
+            unzipped_files.append(processed_file)
             continue
 
         magic_bytes = next(file.chunks(chunk_size=2048))
@@ -162,7 +167,7 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
 # common parts should be abstracted out to reduce duplication.
 async def upload_api_asset(
     asset: Asset,
-    data: Form[AssetMetaData],
+    data: Optional[Form[AssetMetaData]] = None,
     files: Optional[List[UploadedFile]] = None,
 ):
     total_start = time.time()  # Logging
@@ -246,12 +251,13 @@ async def upload_api_asset(
     await asset.asave()  # Denorm asset so far and save formats
 
     # Apply the one triangle count to all formats and resources.
-    formats = asset.format_set.all()
-    async for fmt in formats:
-        fmt.triangle_count = data.triangleCount
-        await fmt.asave()
+    if data is not None:
+        formats = asset.format_set.all()
+        async for fmt in formats:
+            fmt.triangle_count = data.triangleCount
+            await fmt.asave()
 
-    asset.remix_ids = getattr(data, "remixIds", None)
+        asset.remix_ids = getattr(data, "remixIds", None)
 
     # TODO(james): We should move this blocks-related code into the flagship instance or trigger it some other way.
     if asset.has_blocks:
@@ -270,9 +276,9 @@ async def upload_api_asset(
     return asset
 
 
-def get_format_overrides(data: AssetMetaData):
+def get_format_overrides(data: Optional[AssetMetaData]):
     overrides = {}
-    if data.formatOverride is not None:
+    if data is not None and data.formatOverride is not None:
         for item in data.formatOverride:
             splt = item.split(":")
             if len(splt) == 2:

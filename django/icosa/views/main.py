@@ -33,7 +33,6 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from honeypot.decorators import check_honeypot
-
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
@@ -46,7 +45,7 @@ from icosa.forms import (
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.upload_web_ui import upload
+from icosa.helpers.upload import upload_api_asset
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ARCHIVED,
@@ -63,7 +62,7 @@ from icosa.models import (
     MastheadSection,
     UserLike,
 )
-from icosa.tasks import queue_upload_asset_web_ui
+from icosa.tasks import queue_upload_api_asset
 
 User = get_user_model()
 
@@ -176,8 +175,7 @@ def landing_page(
 
     # TODO(james): filter out assets with no formats
     assets = (
-        assets
-        .exclude(license__isnull=True)
+        assets.exclude(license__isnull=True)
         .exclude(license=ALL_RIGHTS_RESERVED)
         .select_related("owner")
         .prefetch_related("resource_set", "format_set")
@@ -412,14 +410,16 @@ async def upload_asset(request):
         )
         try:
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                await queue_upload_asset_web_ui(
-                    current_user=user,
-                    asset=asset,
-                    files=[request.FILES["file"]],
+                await queue_upload_api_asset(
+                    user,
+                    asset,
+                    None,
+                    [request.FILES["file"]],
                 )
             else:
-                await upload(
+                await upload_api_asset(
                     asset,
+                    None,
                     [request.FILES["file"]],
                 )
             return JsonResponse({"success": True, "message": "Your upload has started"})
@@ -427,10 +427,12 @@ async def upload_asset(request):
             asset.state = ASSET_STATE_FAILED
             await asset.asave()
             logging.exception(e)
-            return JsonResponse({
-                "success": False,
-                "errors": {"file": ["Your upload failed. Please try again later."]},
-            })  # TODO(james): Not the most useful error message.
+            return JsonResponse(
+                {
+                    "success": False,
+                    "errors": {"file": ["Your upload failed. Please try again later."]},
+                }
+            )  # TODO(james): Not the most useful error message.
 
     else:
         return JsonResponse({"success": False, "errors": form.errors})

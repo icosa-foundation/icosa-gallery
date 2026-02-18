@@ -12,17 +12,6 @@ from django.shortcuts import (
     get_object_or_404,
 )
 from django.views.decorators.cache import never_cache
-from ninja import (
-    File,
-    Form,
-    Query,
-    Router,
-)
-from ninja.decorators import decorate_view
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-from ninja.pagination import paginate
-
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     AssetCollectionPagination,
@@ -38,6 +27,7 @@ from icosa.helpers.file import (
     validate_mime,
 )
 from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.upload import upload_api_asset
 from icosa.jwt.authentication import (
     JWTAuth,
     JWTAuthAsync,
@@ -52,6 +42,16 @@ from icosa.models import (
     AssetOwner,
 )
 from icosa.tasks import queue_upload_api_asset
+from ninja import (
+    File,
+    Form,
+    Query,
+    Router,
+)
+from ninja.decorators import decorate_view
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+from ninja.pagination import paginate
 
 from .filters import (
     FiltersAsset,
@@ -172,8 +172,6 @@ async def create_a_new_asset(
         name="Untitled Asset",
     )
     if files is not None:
-        from icosa.helpers.upload import upload_api_asset
-
         try:
             if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
                 await queue_upload_api_asset(
