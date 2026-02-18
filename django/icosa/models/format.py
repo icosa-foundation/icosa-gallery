@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Optional
 
 from django.db import models
@@ -73,16 +74,23 @@ class Format(models.Model):
         return self.get_resources(query, exclude_q)
 
     def get_resource_data(self, resources: List[Resource]):
+        local_files = []
+        for r in resources:
+            if not r.file:
+                continue
+            if r.uploaded_file_path:
+                full_path = str(Path(r.uploaded_file_path).parent)
+            else:
+                full_path = ""
+            local_files.append([f"{STORAGE_PREFIX}{r.file.name}", full_path])
+
         if all([x.is_cors_allowed and x.remote_host for x in resources]):
-            external_files = [x.external_url for x in resources if x.external_url]
-            local_files = [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file]
+            external_files = [[x.external_url, ""] for x in resources if x.external_url]
             resource_data = {
                 "files_to_zip": external_files + local_files,
             }
         elif all([x.file for x in resources]):
-            resource_data = {
-                "files_to_zip": [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file],
-            }
+            resource_data = {"files_to_zip": local_files}
         else:
             resource_data = {}
         return resource_data
