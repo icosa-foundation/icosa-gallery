@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from django.conf import settings
 
@@ -57,4 +58,12 @@ def format_upload_path(instance, filename):
         name = f"model-triangulated.{ext}"
     else:
         name = filename
-    return f"{root}{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
+
+    upload_path = f"{root}{asset.owner.id}/{asset.id}/{format.format_type}/{name}"
+    if instance.uploaded_file_path is None:
+        return upload_path
+
+    original_path = Path(instance.uploaded_file_path)
+    if len(original_path.parents) > 1:
+        upload_path = f"{root}{asset.owner.id}/{asset.id}/{format.format_type}/{original_path.parent}/{name}"
+    return upload_path

@@ -91,6 +91,13 @@ class UploadedFormat:
     extension: str
     filetype: str
     mainfile: bool
+    full_path: str
+
+
+@dataclass
+class ProcessedUpload:
+    file: UploadedFile
+    full_path: str
 
 
 def is_gltf2(file) -> bool:
@@ -103,7 +110,7 @@ def is_gltf2(file) -> bool:
     return True
 
 
-def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat]:
+def validate_file(file: ProcessedUpload, extension: str) -> Optional[UploadedFormat]:
     # Need to check if the resource is a main file or helper file.
     # Ordered in most likely file types for 'performance'
 
@@ -162,11 +169,15 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
     if IMAGE_REGEX.match(extension):
         filetype = "IMAGE"
 
+    if filetype is None:
+        return None
+
     return UploadedFormat(
-        file,
+        file.file,
         extension,
         filetype,
         mainfile,
+        file.full_path,
     )
 
 
@@ -221,7 +232,7 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
 
 
 async def add_thumbnail_to_asset(thumbnail, asset):
-    extension = thumbnail.name.split(".")[-1].lower()
+    extension = thumbnail.file.name.split(".")[-1].lower()
     thumbnail_upload_details = validate_file(thumbnail, extension)
     if thumbnail_upload_details is not None and thumbnail_upload_details.filetype == "IMAGE":
         asset.thumbnail = thumbnail_upload_details.file

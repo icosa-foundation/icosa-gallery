@@ -3,21 +3,19 @@ import os
 import time
 import zipfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import (
     List,
     Optional,
 )
 
 from django.utils import timezone
-from ninja import Form
-from ninja.errors import HttpError
-from ninja.files import UploadedFile
-
 from icosa.api.exceptions import ZipException
 from icosa.api.schema import AssetMetaData
 from icosa.helpers.file import (
     MAX_UNZIP_BYTES,
     MAX_UNZIP_SECONDS,
+    ProcessedUpload,
     UploadedFormat,
     add_thumbnail_to_asset,
     get_content_type,
@@ -33,6 +31,13 @@ from icosa.models import (
     Format,
     Resource,
 )
+from ninja import Form
+from ninja.errors import HttpError
+from ninja.files import UploadedFile
+
+DUMMY_EXTRACT_PATH = "/tmp"
+
+ZIP_MAX_DEPTH = 7
 
 SUB_FILE_MAP = {
     "IMAGE": "GLB",
@@ -51,8 +56,14 @@ TYPE_ROLE_MAP = {
 
 @dataclass
 class UploadSet:
-    files: List[UploadedFile]
-    thumbnail: Optional[UploadedFile] = None
+    files: List[ProcessedUpload]
+    thumbnail: Optional[ProcessedUpload] = None
+
+
+def is_safe_zip_path(target_path, proposed_path):
+    abs_target = os.path.abspath(target_path)
+    abs_proposed = os.path.abspath(proposed_path)
+    return abs_proposed.startswith(abs_target)
 
 
 def process_files(files: List[UploadedFile]) -> UploadSet:
@@ -76,42 +87,65 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
         total_size_bytes = 0
         # Read the file as a ZIP file
         with zipfile.ZipFile(io.BytesIO(file.read())) as zip_file:
-            for i, zip_info in enumerate(zip_file.infolist()):
+            for i, member in enumerate(zip_file.infolist()):
+                # Protect against unbounded execution time (i.e) stop if it's
+                # taking too long.
                 unzip_elapsed = timezone.now() - unzip_start
                 if unzip_elapsed.seconds > MAX_UNZIP_SECONDS:
                     raise ZipException("Zip taking too long to extract, aborting.")
-                # only allow 1000 "things" inside the zip. This includes
+
+                # Only allow 1000 "things" inside the zip. This includes
                 # directories, even though we are skipping them. This is for
                 # decompression safety.
                 if i >= 999:
                     raise ZipException("Too many files")
-                # Skip directories
-                # TODO(james): skipping directories is great for preventing zip
-                # bombs, but isn't flexible.
-                if zip_info.is_dir():
-                    continue
-                total_size_bytes += zip_info.file_size
+
+                # Only allow unzipping files 7 directories deep.
+                # Not a problem here, but a protection against unbounded
+                # recursion elsewhere.
+                depth = len(Path(member.filename).parents)
+                if depth >= ZIP_MAX_DEPTH:
+                    raise ZipException(f"Too many directory levels: {depth}.")
+
+                # Protect against `Zip Slip` path traversal exploit.
+                final_path = os.path.join(DUMMY_EXTRACT_PATH, member.filename)
+                if not is_safe_zip_path(DUMMY_EXTRACT_PATH, final_path):
+                    raise ZipException(f"Suspicious file path detected: {member.filename}.")
+
+                # Protect, roughly, against unzipping extremely large things.
+                total_size_bytes += member.file_size
                 if total_size_bytes > MAX_UNZIP_BYTES:
                     raise ZipException(f"Uncompressed zip will be larger than {MAX_UNZIP_BYTES}")
+
+                # Skip processing directories. This does not skip the
+                # directories' files.
+                if member.is_dir():
+                    continue
+
                 # Read the file contents
-                with zip_file.open(zip_info) as extracted_file:
+                with zip_file.open(member) as extracted_file:
                     # Create a new UploadedFile object
                     content = extracted_file.read()
-                    filename = zip_info.filename
-                    processed_file = UploadedFile(
-                        name=filename,
-                        file=io.BytesIO(content),
+                    filename = member.filename
+                    processed_file = ProcessedUpload(
+                        file=UploadedFile(
+                            name=filename,
+                            file=io.BytesIO(content),
+                        ),
+                        full_path=filename,
                     )
                     if thumbnail is None and filename.lower() in [
                         "thumbnail.png",
                         "thumbnail.jpg",
                         "thumbnail.jpeg",
                     ]:
-                        # Only process one thumbnail file: the first one
-                        # we find. All other files passing this test will
-                        # be ignored. This would go for textures named
-                        # thumbnail.png if we already found a thumbnail.jpg.
-                        # Unlikely, but possible.
+                        # Only process one thumbnail file: the first one we
+                        # find. All subsequent files passing this test will not
+                        # be treated as thumbnails.
+                        # NOTE: We cannot know if the first file that passes
+                        # this test is a texture rather than a thumbnail.
+                        # TODO: Perhaps we should warn the user about the above
+                        # note.
                         if validate_mime(content, VALID_THUMBNAIL_MIME_TYPES):
                             thumbnail = processed_file
                             continue
@@ -148,7 +182,7 @@ async def upload_api_asset(
         raise HttpError(400, "Invalid zip archive.")
 
     main_files = []
-    sub_files = {
+    sub_files: dict[str, List[UploadedFormat]] = {
         "GLB": [],  # All non-thumbnail images.
         "GLTF": [],  # All GLB's files plus BIN files.
         "OBJ": [],  # MTL files.
@@ -156,10 +190,10 @@ async def upload_api_asset(
     }
     asset_name = "Untitled Asset"
 
-    for file in upload_set.files:
-        splitext = os.path.splitext(file.name)
+    for processed_file in upload_set.files:
+        splitext = os.path.splitext(processed_file.file.name)
         extension = splitext[1].lower().replace(".", "")
-        upload_details = validate_file(file, extension)
+        upload_details = validate_file(processed_file, extension)
         if upload_details is not None:
             if upload_details.mainfile is True:
                 main_files.append(upload_details)
@@ -253,7 +287,7 @@ def get_format_overrides(data: AssetMetaData):
     return overrides
 
 
-async def make_formats(mainfile, sub_files, asset, role, format_overrides):
+async def make_formats(mainfile, sub_files: List[UploadedFormat], asset, role, format_overrides):
     file = mainfile.file
     name = mainfile.file.name
     format_override = format_overrides.get(name)
@@ -290,12 +324,14 @@ async def make_formats(mainfile, sub_files, asset, role, format_overrides):
         file_start = time.time()  # Logging
 
         sub_resource_data = {
-            "file": subfile.file,
+            "uploaded_file_path": subfile.full_path,
             "format": format,
             "asset": asset,
             "contenttype": get_content_type(subfile.file.name),
         }
-        await Resource.objects.acreate(**sub_resource_data)
+        resource = await Resource.objects.acreate(**sub_resource_data)
+        resource.file = subfile.file
+        await resource.asave()
 
         file_end = time.time()  # Logging
         icosa_log(

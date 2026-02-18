@@ -16,6 +16,7 @@ class Resource(models.Model):
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
     format = models.ForeignKey("Format", null=True, blank=True, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
+    uploaded_file_path = models.CharField(max_length=FILENAME_MAX_LENGTH, null=True, blank=True)
     file = models.FileField(
         null=True,
         blank=True,
