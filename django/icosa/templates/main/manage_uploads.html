@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load fontawesome_tags %}
 {% load static %}
 {% load paginator_tags %}
 
@@ -39,7 +40,7 @@
                 {% csrf_token %}
                 <ul class="errorlist" id="id_file_error" hidden></ul>
                 <input multiple type="file" class="form-control-file" name="file" id="uploadfile" required>
-                <button type="submit" class="btn btn-primary">Upload</button>
+                <button id="id_upload_submit" type="submit" class="btn btn-primary">Upload</button><span id="id_upload_spinner" hidden style="margin-inline-start:1em;">{% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Uploading files</span>
             </form>
         </div>
         <div class="col-lg-6">
@@ -94,6 +95,9 @@
 <script>
     const form = id_upload_form;
     async function handleUploadForm() {
+        id_upload_submit.setAttribute("disabled", true)
+        id_upload_spinner.removeAttribute("hidden")
+        id_file_error.setAttribute("hidden", true);
         const data = new FormData(form);
         file = data.get("file");
         filesize = file.size; // Use this later to handle uploads which are too large. 
@@ -103,6 +107,8 @@
                 body: data,
             });
             const resData = await response.json();
+            id_upload_spinner.setAttribute("hidden", true);
+            id_upload_submit.removeAttribute("disabled")
             if (resData.success === true) {
                 id_upload_success_messages.removeAttribute("hidden");
                 id_upload_success_messages.querySelector("li").textContent = resData.message;
