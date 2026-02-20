@@ -13,7 +13,6 @@ from django.forms.widgets import (
 from django.utils.translation import gettext_lazy as _
 from icosa.helpers.file import validate_mime
 from icosa.models import (
-    PRIVATE,
     RESERVED_LICENSE,
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
