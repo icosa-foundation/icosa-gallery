@@ -165,8 +165,6 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
     )
 
 
-# TODO(james): once this function and upload_asset have stabilised, the
-# common parts should be abstracted out to reduce duplication.
 async def upload_api_asset(
     asset: Asset,
     data: Optional[Form[AssetMetaData]] = None,
