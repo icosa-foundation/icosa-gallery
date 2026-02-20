@@ -32,18 +32,11 @@
                         </div>
                     {% endif %}
                 {% endfor %}
-                <div class="dropdown">
-                    <a class="btn btn-primary dropdown-toggle" href="#" role="button" id="savebtngroup" data-bs-toggle="dropdown" aria-expanded="false">Save</a>
-                        <ul class="dropdown-menu" aria-labelledby="savebtngroup">
-                            <li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>
-                            <li id="publish-mode"><button type="submit" name="_save_public" class="dropdown-item">Publish</button></li>
-                            <li><button type="submit" name="_save_unlisted" class="dropdown-item">Publish (as unlisted)</button></li>
-                        </ul>
-                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
                 <a href="{% url 'icosa:uploads' %}" class="btn btn-secondary">Cancel</a>
             </form>
             <p>
-                <button href="javascript:void(0);" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">Delete</button>
+                <button href="javascript:void(0);" class="btn btn-xs btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">Delete</button>
             </p>
         </div>
     </div>

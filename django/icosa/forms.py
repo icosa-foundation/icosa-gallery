@@ -13,7 +13,10 @@ from django.forms.widgets import (
 from django.utils.translation import gettext_lazy as _
 from icosa.helpers.file import validate_mime
 from icosa.models import (
+    PRIVATE,
+    PUBLIC,
     RESERVED_LICENSE,
+    UNLISTED,
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
     V4_CC_LICENSE_CHOICES,
@@ -104,6 +107,12 @@ class AssetPublishForm(forms.ModelForm):
             "UNLISTED",
         ]
 
+        self.fields["visibility"].choices = [
+            (PUBLIC, "Public"),
+            (PRIVATE, "Private"),
+            (UNLISTED, "Unlisted"),
+        ]
+
         self.fields["license"].choices = (
             [
                 ("", "No license chosen"),
@@ -118,6 +127,7 @@ class AssetPublishForm(forms.ModelForm):
         fields = [
             "name",
             "license",
+            "visibility",
         ]
 
 
@@ -126,6 +136,11 @@ class AssetEditForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = True
         license_value = self["license"].value()
+        self.fields["visibility"].choices = [
+            (PUBLIC, "Public"),
+            (PRIVATE, "Private"),
+            (UNLISTED, "Unlisted"),
+        ]
 
         self.fields["thumbnail_override"] = forms.BooleanField(required=False)
 
@@ -190,6 +205,7 @@ class AssetEditForm(forms.ModelForm):
             "name",
             "description",
             "license",
+            "visibility",
             "thumbnail",
             "category",
             "tags",
