@@ -10,7 +10,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
 
@@ -119,21 +118,6 @@ class Asset(models.Model):
     @property
     def is_published(self):
         return self.visibility in [PUBLIC, UNLISTED]
-
-    @property
-    def model_is_editable(self):
-        # Once a permissable license has been chosen, and the asset is
-        # available for use in other models, we cannot allow changing anything
-        # about it. Doing so would allow abuse.
-        is_editable = True
-        if self.is_published and self.license not in [
-            None,
-            ALL_RIGHTS_RESERVED,
-            "CREATIVE_COMMONS_BY_ND_3_0",
-            "CREATIVE_COMMONS_BY_3_0",
-        ]:
-            is_editable = False
-        return is_editable
 
     @property
     def slug(self):

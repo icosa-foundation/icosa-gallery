@@ -28,15 +28,7 @@
                 {% for field in form %}
                     {% if field.name != "thumbnail_override" %}
                         <div class="field-group">
-                            {% if is_editable %}
-                                {% include "partials/edit_asset_field.html" %}
-                            {% else %}
-                                {% if field.name in form.editable_fields %}
-                                    {% include "partials/edit_asset_field.html" %}
-                                {% else %}
-                                    {% include "partials/non_edit_asset_field.html" %}
-                                {% endif %}
-                            {% endif %}
+                            {% include "partials/edit_asset_field.html" %}
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -45,9 +37,7 @@
                         <div class="dropdown">
                             <a class="btn btn-primary dropdown-toggle" href="#" role="button" id="savebtngroup" data-bs-toggle="dropdown" aria-expanded="false">Save</a>
                                 <ul class="dropdown-menu" aria-labelledby="savebtngroup">
-                                    {% if is_editable %}
-                                        <li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>
-                                    {% endif %}
+                                    <li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">Save as Draft</button></li>
                                     <li id="publish-mode"><button type="submit" name="_save_public" class="dropdown-item">Publish</button></li>
                                     <li><button type="submit" name="_save_unlisted" class="dropdown-item">Publish (as unlisted)</button></li>
                                 </ul>
@@ -55,11 +45,9 @@
                     </div>
                 <a href="{% url 'icosa:uploads' %}" class="btn btn-secondary">Cancel</a>
             </form>
-            {% if is_editable %}
-                <p>
-                  <button href="javascript:void(0);" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">Delete</button>
-                </p>
-            {% endif %}
+            <p>
+              <button href="javascript:void(0);" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">Delete</button>
+            </p>
         </div>
     </div>
 </div>

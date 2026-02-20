@@ -1,7 +1,5 @@
 from constance import config
 from dal import autocomplete
-from simplemathcaptcha.fields import MathCaptchaField
-
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -26,6 +24,7 @@ from icosa.models import (
     AssetOwner,
     User,
 )
+from simplemathcaptcha.fields import MathCaptchaField
 
 ARTIST_QUERY_SUBJECT_CHOICES = [
     ("WORK_REMOVED", "I want my work removed from this website"),
@@ -114,10 +113,6 @@ class AssetPublishForm(forms.ModelForm):
             + [RESERVED_LICENSE]
         )
 
-    editable_fields = [
-        "name",
-    ]
-
     class Meta:
         model = Asset
 
@@ -130,8 +125,6 @@ class AssetPublishForm(forms.ModelForm):
 class AssetEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.instance.model_is_editable:
-            del self.fields["zip_file"]
         self.fields["name"].required = True
         license_value = self["license"].value()
 
@@ -165,42 +158,31 @@ class AssetEditForm(forms.ModelForm):
         license = cleaned_data.get("license")
         if self.instance.visibility in ["PUBLIC", "UNLISTED"] and not license:
             self.add_error("license", "Please add a CC License.")
-        if not self.instance.model_is_editable and self.instance.visibility == PRIVATE:
-            self.add_error(
-                "visibility",
-                "You cannot make this model private because you have published this work under a CC license.",
-            )
-
-        for field in self.fields:
-            if not self.instance.model_is_editable and field not in self.editable_fields and field in self.changed_data:
-                self.add_error(
-                    field,
-                    "You cannot modify this field because this work is not private and has a CC license.",
-                )
         thumbnail = cleaned_data.get("thumbnail")
         if thumbnail:
             if not validate_mime(next(thumbnail.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
                 self.add_error("thumbnail", "Image is not a png or jpg.")
-        zip_file = cleaned_data.get("zip_file")
-        if zip_file:
-            if not validate_mime(next(zip_file.chunks(chunk_size=2048)), ["application/zip"]):
-                self.add_error("zip_file", "File is not a zip archive.")
+        file = cleaned_data.get("file")
+        if file:
+            magic_bytes = next(file.chunks(chunk_size=2048))
+            file.seek(0)
+            if not validate_mime(
+                magic_bytes,
+                [
+                    "application/zip",
+                    "application/gzip",  # spz
+                    "model/gltf-binary",
+                    "application/octet-stream",
+                ],
+            ):  # TODO: "application/octet-stream" essentially makes this check redundant, but is required for many file types.
+                self.add_error("file", "File type is not supported.")
 
     thumbnail = forms.FileField(
         required=False, widget=CustomImageInput
     )  # No validator needed here; it's on the model field definition.
-    zip_file = forms.FileField(required=False, validators=[FileExtensionValidator(allowed_extensions=["zip"])])
-
-    editable_fields = [
-        "name",
-        "description",
-        "thumbnail",
-        "thumbnail_override",
-        "thumbnail_override_data",
-        "camera",
-        "category",
-        "tags",
-    ]
+    file = forms.FileField(
+        required=False, validators=[FileExtensionValidator(allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS)]
+    )
 
     class Meta:
         model = Asset
@@ -213,7 +195,7 @@ class AssetEditForm(forms.ModelForm):
             "category",
             "tags",
             "camera",
-            "zip_file",
+            "file",
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(
