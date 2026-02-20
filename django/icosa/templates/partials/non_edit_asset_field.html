@@ -1,7 +1,0 @@
-{{ field.label_tag }}
-{% if field.name == "license" %}
-    <p>{{ form.instance.get_license_display }}</p>
-{% else %}
-    <p>{{ field.value }}</p>
-{% endif %}
-<input type="hidden" name="{{ field.name}}" value="{{ field.value }}">
