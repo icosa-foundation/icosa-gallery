@@ -73,6 +73,8 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
     thumbnail = None
     unzipped_files = []
     for file in files:
+        if file.name is None:
+            raise HttpError(400, "Unknown error with uploaded file.")
         if not file.name.endswith(".zip"):
             # Note, the mime type should be checked in the form if uploading
             # from the web. This function assumes the correct mime type for zip
@@ -196,6 +198,8 @@ async def upload_api_asset(
     asset_name = "Untitled Asset"
 
     for processed_file in upload_set.files:
+        if processed_file.file.name is None:
+            continue
         splitext = os.path.splitext(processed_file.file.name)
         extension = splitext[1].lower().replace(".", "")
         upload_details = validate_file(processed_file, extension)
@@ -351,6 +355,8 @@ def get_role(
 ) -> str:
     filetype = mainfile.filetype
     role = ""
+    if mainfile.file.name is None:
+        return role
     if filetype in ["GLTF1", "GLTF2"]:
         if tilt_or_blocks == "tilt":
             role = "TILT_NATIVE_GLTF"
