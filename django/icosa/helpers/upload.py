@@ -267,9 +267,8 @@ async def upload_api_asset(
     # TODO(james): We should move this blocks-related code into the flagship instance or trigger it some other way.
     print(f"XXX {timezone.now().strftime('%Y/%m/%d %H:%M:%S')} ASSET HAS BLOCKS: {asset.has_blocks}")
     if asset.has_blocks:
-        preferred_format = await asset.format_set.filter(format_type="OBJ").afirst()
-        pf_root_resource = await preferred_format.root_resource
-        if preferred_format is not None and pf_root_resource and pf_root_resource.file:
+        preferred_format = await asset.format_set.select_related("root_resource").filter(format_type="OBJ").afirst()
+        if preferred_format is not None and preferred_format.root_resource and preferred_format.root_resource.file:
             preferred_format.is_preferred_for_gallery_viewer = True
             await preferred_format.asave()
     else:
