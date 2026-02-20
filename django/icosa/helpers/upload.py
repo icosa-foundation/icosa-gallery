@@ -66,7 +66,7 @@ def is_safe_zip_path(target_path, proposed_path):
     return abs_proposed.startswith(abs_target)
 
 
-def process_files(files: List[UploadedFile]) -> UploadSet:
+def process_files(files: List[UploadedFile], skip_thumbnail=False) -> UploadSet:
     # TODO(james): unify this with upload_web_ui.process_files
     # The two are similar and complex enough. Need to update the callsite of
     # the web_ui version. Prefer this version.
@@ -139,11 +139,11 @@ def process_files(files: List[UploadedFile]) -> UploadSet:
                         ),
                         full_path=filename,
                     )
-                    if thumbnail is None and filename.lower() in [
-                        "thumbnail.png",
-                        "thumbnail.jpg",
-                        "thumbnail.jpeg",
-                    ]:
+                    if (
+                        not skip_thumbnail
+                        and thumbnail is None
+                        and filename.lower() in ["thumbnail.png", "thumbnail.jpg", "thumbnail.jpeg"]
+                    ):
                         # Only process one thumbnail file: the first one we
                         # find. All subsequent files passing this test will not
                         # be treated as thumbnails.
@@ -169,6 +169,7 @@ async def upload_api_asset(
     asset: Asset,
     data: Optional[Form[AssetMetaData]] = None,
     files: Optional[List[UploadedFile]] = None,
+    skip_thumbnail: bool = False,
 ):
     total_start = time.time()  # Logging
 
@@ -178,7 +179,7 @@ async def upload_api_asset(
         raise HttpError(400, "Include files for upload.")
     try:
         process_files_start = time.time()  # Logging
-        upload_set = process_files(files)  # Logging
+        upload_set = process_files(files, skip_thumbnail)  # Logging
         process_files_end = time.time()
         icosa_log(
             f"Finish processing files for asset {asset.url} in {process_files_end - process_files_start} seconds."

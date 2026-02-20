@@ -419,12 +419,14 @@ async def upload_asset(request):
                     asset,
                     None,
                     [request.FILES["file"]],
+                    True,
                 )
             else:
                 await upload_api_asset(
                     asset,
                     None,
                     [request.FILES["file"]],
+                    True,
                 )
             return JsonResponse({"success": True, "message": "Your upload has started"})
         except Exception as e:
