@@ -95,8 +95,8 @@
 <script>
     const form = id_upload_form;
     async function handleUploadForm() {
-        id_upload_submit.setAttribute("disabled", true)
-        id_upload_spinner.removeAttribute("hidden")
+        id_upload_submit.setAttribute("disabled", true);
+        id_upload_spinner.removeAttribute("hidden");
         id_file_error.setAttribute("hidden", true);
         const data = new FormData(form);
         file = data.get("file");
@@ -108,7 +108,7 @@
             });
             const resData = await response.json();
             id_upload_spinner.setAttribute("hidden", true);
-            id_upload_submit.removeAttribute("disabled")
+            id_upload_submit.removeAttribute("disabled");
             if (resData.success === true) {
                 id_upload_success_messages.removeAttribute("hidden");
                 id_upload_success_messages.querySelector("li").textContent = resData.message;
