@@ -53,11 +53,13 @@ async def queue_upload_api_asset(
     asset: Asset,
     data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
+    skip_thumbnail: bool = False,
 ) -> str:
     await upload_api_asset(
         asset,
         data,
         files,
+        skip_thumbnail,
     )
 
 

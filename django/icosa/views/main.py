@@ -23,7 +23,11 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import (
+    aget_object_or_404,
+    get_object_or_404,
+    render,
+)
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -415,12 +419,14 @@ async def upload_asset(request):
                     asset,
                     None,
                     [request.FILES["file"]],
+                    True,
                 )
             else:
                 await upload_api_asset(
                     asset,
                     None,
                     [request.FILES["file"]],
+                    True,
                 )
             return JsonResponse({"success": True, "message": "Your upload has started"})
         except Exception as e:
@@ -708,10 +714,6 @@ def asset_edit(request, asset_url):
         asset = get_object_or_404(Asset, url=asset_url)
     else:
         asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
-    # We need to disconnect the editable state from the form during validation.
-    # Without this, if the form contains errors, some fields that need
-    # correction cannot be edited.
-    is_editable = asset.model_is_editable
 
     if request.method == "GET":
         form = AssetEditForm(instance=asset)
@@ -726,7 +728,7 @@ def asset_edit(request, asset_url):
                     image_file = b64_to_img(thumbnail_override_image)
                     asset.thumbnail = image_file
                 form.save_m2m()
-                if is_editable and "_save_private" in request.POST:
+                if "_save_private" in request.POST:
                     asset.visibility = PRIVATE
                 if "_save_public" in request.POST:
                     asset.visibility = PUBLIC
@@ -734,21 +736,6 @@ def asset_edit(request, asset_url):
                     asset.visibility = UNLISTED
                 asset.save(update_timestamps=True)
 
-                if request.FILES.get("zip_file"):
-                    asset.state = ASSET_STATE_UPLOADING
-                    asset.save(update_timestamps=True)
-
-                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                        queue_upload_asset_web_ui(
-                            current_user=request.user,
-                            asset=asset,
-                            files=[request.FILES["zip_file"]],
-                        )
-                    else:
-                        upload(
-                            asset,
-                            [request.FILES["zip_file"]],
-                        )
             if is_superuser:
                 return HttpResponseRedirect(reverse("icosa:asset_view", kwargs={"asset_url": asset.url}))
             else:
@@ -763,7 +750,6 @@ def asset_edit(request, asset_url):
 
     context = {
         "asset": asset,
-        "is_editable": is_editable,
         "form": form,
         "page_title": f"Edit {asset.name}",
     }
@@ -780,11 +766,6 @@ def asset_publish(request, asset_url):
     # TODO(james): This view is very similar to asset_edit
     template = "main/asset_edit.html"
     asset = get_object_or_404(Asset, url=asset_url)
-    # We need to disconnect the editable state from the form during validation.
-    # Without this, if the form contains errors, some fields that need
-    # correction cannot be edited.
-    is_editable = asset.model_is_editable
-
     if request.user != asset.owner.django_user:
         raise Http404()
 
@@ -795,7 +776,7 @@ def asset_publish(request, asset_url):
         if form.is_valid():
             with transaction.atomic():
                 asset = form.save()
-                if is_editable and "_save_private" in request.POST:
+                if "_save_private" in request.POST:
                     asset.visibility = PRIVATE
                 if "_save_public" in request.POST:
                     asset.visibility = PUBLIC
@@ -806,7 +787,6 @@ def asset_publish(request, asset_url):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
-        "is_editable": asset.model_is_editable,
         "asset": asset,
         "form": form,
         "page_title": f"Publish {asset.name}",
