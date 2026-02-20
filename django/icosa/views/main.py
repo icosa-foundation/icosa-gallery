@@ -705,13 +705,13 @@ def asset_status(request, asset_url):
 
 @login_required
 @never_cache
-async def asset_edit(request, asset_url):
+def asset_edit(request, asset_url):
     template = "main/asset_edit.html"
     is_superuser = request.user.is_superuser
     if is_superuser:
-        asset = await aget_object_or_404(Asset, url=asset_url)
+        asset = get_object_or_404(Asset, url=asset_url)
     else:
-        asset = await aget_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
+        asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
 
     if request.method == "GET":
         form = AssetEditForm(instance=asset)
@@ -734,23 +734,6 @@ async def asset_edit(request, asset_url):
                     asset.visibility = UNLISTED
                 asset.save(update_timestamps=True)
 
-                if request.FILES.get("file"):
-                    asset.state = ASSET_STATE_UPLOADING
-                    asset.save(update_timestamps=True)
-
-                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                        await queue_upload_api_asset(
-                            request.user,
-                            asset,
-                            None,
-                            [request.FILES["file"]],
-                        )
-                    else:
-                        await upload_api_asset(
-                            asset,
-                            None,
-                            [request.FILES["file"]],
-                        )
             if is_superuser:
                 return HttpResponseRedirect(reverse("icosa:asset_view", kwargs={"asset_url": asset.url}))
             else:
