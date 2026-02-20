@@ -224,6 +224,7 @@ async def upload_api_asset(
             break
 
     format_overrides = get_format_overrides(data)
+    print(f"XXX FORMAT_OVERRIDES: {format_overrides}")
     for mainfile in main_files:
         type = mainfile.filetype
         if type in ["GLTF1", "GLTF2"]:
@@ -253,7 +254,9 @@ async def upload_api_asset(
     await asset.asave()  # Denorm asset so far and save formats
 
     # Apply the one triangle count to all formats and resources.
+    print(f"XXX DATA IS NONE: {data is None}")
     if data is not None:
+        print(f"XXX DATA: {data}")
         formats = asset.format_set.all()
         async for fmt in formats:
             fmt.triangle_count = data.triangleCount
@@ -262,6 +265,7 @@ async def upload_api_asset(
         asset.remix_ids = getattr(data, "remixIds", None)
 
     # TODO(james): We should move this blocks-related code into the flagship instance or trigger it some other way.
+    print(f"XXX ASSET HAS BLOCKS: {asset.has_blocks}")
     if asset.has_blocks:
         preferred_format = await asset.format_set.filter(format_type="OBJ").afirst()
         if preferred_format is not None and preferred_format.root_resource and preferred_format.root_resource.file:
@@ -269,6 +273,7 @@ async def upload_api_asset(
             await preferred_format.asave()
     else:
         await asset.assign_preferred_viewer_format()
+    print("XXX ASSIGNED VIEWER FORMAT")
     asset.state = ASSET_STATE_COMPLETE
     await asset.asave()
 
