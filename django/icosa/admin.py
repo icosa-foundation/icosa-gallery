@@ -150,6 +150,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "category",
         "state",
         "last_reported_time",
+        "moderation_state",
     )
     readonly_fields = (
         "rank",
@@ -166,6 +167,9 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "last_reported_by",
         "last_reported_time",
         "triangle_count",
+        "moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by__username",
     )
 
     def display_thumbnail(self, obj):
