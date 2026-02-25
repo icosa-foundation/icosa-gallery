@@ -504,10 +504,14 @@ def user_show(request, slug):
     else:
         owners = owner.django_user.assetowner_set.all()
 
-    asset_objs = Asset.objects.filter(
-        owner__in=owners,
-        visibility=PUBLIC,
-    ).order_by("-id")
+    asset_objs = (
+        Asset.objects.filter(
+            owner__in=owners,
+            visibility=PUBLIC,
+        )
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .order_by("-id")
+    )
 
     try:
         page_number = int(request.GET.get("page", 1))
