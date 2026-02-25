@@ -24,7 +24,6 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import (
-    aget_object_or_404,
     get_object_or_404,
     render,
 )
@@ -151,7 +150,7 @@ def handler403(request, exception=None):
 @user_passes_test(lambda u: u.is_superuser)
 @never_cache
 def div_by_zero(request):
-    1 / 0
+    return 1 / 0
 
 
 @never_cache
