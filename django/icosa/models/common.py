@@ -125,3 +125,31 @@ class Category(Enum):
 CATEGORY_CHOICES = [(x.name, x.value) for x in Category]
 CATEGORY_LABELS = [x[0] for x in CATEGORY_CHOICES]
 CATEGORY_LABEL_MAP = {x[0].lower(): x[1] for x in CATEGORY_CHOICES}
+
+
+class ModerationState(Enum):
+    LEGACY = "Legacy"
+    NEW = "New"
+    APPROVED = "Approved"
+    REJECTED = "Rejected"
+    QUERIED = "Queried"
+    REPORTED = "Reported"
+    MODIFIED = "Modified"
+
+
+MOD_LEGACY = "LEGACY"
+MOD_NEW = "NEW"
+MOD_APPROVED = "APPROVED"
+MOD_REJECTED = "REJECTED"
+MOD_QUERIED = "QUERIED"
+MOD_REPORTED = "REPORTED"
+MOD_MODIFIED = "MODIFIED"
+MODERATION_STATE_CHOICES = [
+    (MOD_LEGACY, "Legacy"),
+    (MOD_NEW, "New"),
+    (MOD_APPROVED, "Approved"),
+    (MOD_REJECTED, "Rejected"),
+    (MOD_QUERIED, "Queried"),
+    (MOD_REPORTED, "Reported"),
+    (MOD_MODIFIED, "Modified"),
+]

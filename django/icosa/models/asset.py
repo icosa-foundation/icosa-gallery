@@ -1,8 +1,10 @@
+import logging
 from collections import OrderedDict
 from datetime import datetime
 from typing import Optional
 
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
 from django.db.models import Max, Q
@@ -12,6 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
+from icosa.models.moderation import ModerationEvent
 
 from .common import (
     ALL_RIGHTS_RESERVED,
@@ -21,6 +24,9 @@ from .common import (
     CC_LICENSES,
     FILENAME_MAX_LENGTH,
     LICENSE_CHOICES,
+    MOD_MODIFIED,
+    MOD_NEW,
+    MODERATION_STATE_CHOICES,
     PRIVATE,
     PUBLIC,
     UNLISTED,
@@ -33,6 +39,8 @@ from .helpers import (
     thumbnail_upload_path,
 )
 from .log import HiddenMediaFileLog
+
+logger = logging.getLogger("django")
 
 LIKES_WEIGHT = 100
 VIEWS_WEIGHT = 0.1
@@ -96,6 +104,21 @@ class Asset(models.Model):
         related_name="preferred_format_override_for",
         # limit_choices_to cannot have a reference to self. We must limit the
         # choices another way.
+    )
+
+    moderation_state = models.CharField(
+        max_length=255,
+        choices=MODERATION_STATE_CHOICES,
+        default="NEW",
+        db_default="New",
+    )
+    moderation_state_change_time = models.DateTimeField(null=True, blank=True)
+    moderation_state_change_by = models.ForeignKey(
+        "User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="moderated_assets",
     )
 
     # Denorm fields
@@ -432,6 +455,8 @@ class Asset(models.Model):
     def save(self, *args, **kwargs):
         update_timestamps = kwargs.pop("update_timestamps", False)
         bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
+        bypass_moderation_logging = kwargs.pop("bypass_moderation_logging", False)
+
         if not bypass_custom_logic:
             now = timezone.now()
             if self._state.adding:
@@ -446,6 +471,39 @@ class Asset(models.Model):
                 self.denorm_liked_time()
                 if update_timestamps:
                     self.update_time = now
+
+        if not bypass_custom_logic and not bypass_moderation_logging:
+            watch_fields = ["description", "name"]
+            should_log = False
+            try:
+                changed_fields = []
+                if self._state.adding:
+                    for field in watch_fields:
+                        changed_fields.append({"key": field, "value": getattr(self, field)})
+                    moderation_state = MOD_NEW
+                    should_log = True
+
+                else:
+                    original_instance = Asset.objects.get(pk=self.pk)
+                    for field in watch_fields:
+                        if getattr(self, field) != getattr(original_instance, field):
+                            changed_fields.append({"key": field, "value": getattr(self, field)})
+                    moderation_state = MOD_MODIFIED
+                    if changed_fields:
+                        should_log = True
+
+                if should_log:
+                    self.moderation_state = moderation_state
+                    self.moderation_state_change_time = timezone.now()
+                    ModerationEvent.objects.create(
+                        data=changed_fields,
+                        state=moderation_state,
+                        source_object=self,
+                    )
+
+            except Exception as e:
+                logger.error(e)
+
         super().save(*args, **kwargs)
 
     class Meta:

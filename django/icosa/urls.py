@@ -11,6 +11,7 @@ from icosa.views import asset_collections as asset_collection_views
 from icosa.views import auth as auth_views
 from icosa.views import autocomplete as autocomplete_views
 from icosa.views import main as main_views
+from icosa.views import moderation as moderation_views
 from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
@@ -195,6 +196,7 @@ urlpatterns = [
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
     path("waitlist", main_views.waitlist, name="waitlist"),
+    path("moderation", moderation_views.moderation_queue, name="moderation_queue"),
     # autocomplete views
     path(
         "tag-autocomplete",
