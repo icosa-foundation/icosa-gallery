@@ -25,7 +25,6 @@ from icosa.models import (
     Tag,
     UserLike,
 )
-
 from import_export.admin import ExportMixin
 
 User = get_user_model()
