@@ -1,5 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
+    {% if not objects_to_moderate %}
+    <div class="container">
+        <div class="row">
+            <div class="text-center col">
+                <h2>Done; nothing to moderate</h2>
+                <p>Thank you! If you had any issues during this moderation session, please contact the site administrator, who will be happy to help.</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
     <div class="container">
         <div class="row">
             <div class="text-center col">
@@ -8,12 +18,19 @@
         </div>
         <div class="row">
             <div class="text-center col">
-                <div class="login-container container">
-                    <div class="login-form row">
+                <div class="container">
+                    <div class="row">
                         <div class="col-md-8 col-12 offset-md-2">
+                            {% if moderation_template %}
                             {% include moderation_template %}
-                            <form class="form-inline" action="." method="post">
+                            {% endif %}
+                            <form action="{% url 'icosa:moderation_queue' %}" method="post">
                                 {% csrf_token %}
+                                <p style="width: 100%">
+                                <button style="float:left;" class="btn btn-primary inline"type="submit" name="_approve">Approve</button>
+                                <button class="btn btn-danger inline"type="submit" name="_approve">Reject</button>
+                                <button style="float:right;" class="btn btn-secondary inline"type="submit" name="_approve">Query</button>
+                                </p>
                             </form>
                             <p>{{ current_obj.pk }}</p>
                             <p>Next: {{ next_obj.pk }} </p>
@@ -23,6 +40,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 {% endblock content %}
 
 
