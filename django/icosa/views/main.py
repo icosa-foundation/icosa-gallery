@@ -570,6 +570,7 @@ def my_likes(request):
     )
 
 
+@ratelimit(key="user_or_ip", rate="20/m", method="POST")
 @never_cache
 def asset_view(request, asset_url):
     template = "main/asset_view.html"
