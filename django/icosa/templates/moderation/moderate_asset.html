@@ -9,6 +9,7 @@
 <br>
 <h3>Changed/new field values:</h3>
 {% for field in asset.moderation_changed_fields %}
+    <div class="well">
     <h4>{{ field }}:</h4>
     {% if field == "description" %}
         <p>{{ asset.description|linebreaksbr }}</p>
@@ -17,14 +18,8 @@
     {% else %}
         <p>{{ asset|get_attr:field }}</p>
     {% endif %}
+    </div>
 
 {% endfor %}
-<h3>Asset's tags</h3>
-<ul>
-{% for tag in asset.tags.all %}
-    <li>{{ tag }}</li>
-{% endfor %}
-</ul>
-
 
 {% endwith %}
