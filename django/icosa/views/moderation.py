@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.contenttypes.models import ContentType
 from django.http import (
@@ -24,6 +26,7 @@ from icosa.models.common import (
     MOD_REJECTED,
     MOD_REPORTED,
 )
+from icosa.models.moderation import ModerationEvent
 
 MOD_STATES_OF_INTEREST = [MOD_MODIFIED, MOD_NEW, MOD_REPORTED]
 
@@ -90,8 +93,19 @@ def moderation_queue(request):
         current_obj.moderation_changed_fields = None
 
         current_obj.save(
+            # `update_timestamps` is not strictly required given we are using
+            # `bypass_custom_logic`, but making it explicit here.
+            update_timestamps=False,
             bypass_custom_logic=True,
             bypass_moderation_logging=True,
+        )
+
+        ModerationEvent.objects.create(
+            source_object=current_obj,
+            state=current_obj.moderation_state,
+            notes=request.POST.get("notes", None),
+            user=request.user,
+            data=json.loads(request.POST.get("data", "")),
         )
 
         return HttpResponseRedirect(reverse("icosa:moderation_queue"))
@@ -100,6 +114,7 @@ def moderation_queue(request):
 
     context = {
         "objects_to_moderate": objects_to_moderate,
+        "queue_length": len(objects_to_moderate),
         "content_type": content_type,
         "current_obj": current_obj,
         "moderation_template": moderation_template,

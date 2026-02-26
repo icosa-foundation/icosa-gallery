@@ -18,6 +18,13 @@ class ModerationEvent(models.Model):
         db_default="New",
     )
     data = models.JSONField()
+    user = models.ForeignKey(
+        "User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="moderation_events",
+    )
     notes = models.TextField(null=True, blank=True)
 
     @transaction.atomic

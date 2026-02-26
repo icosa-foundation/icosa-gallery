@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+
+{% load util_tags %}
+
 {% block content %}
     {% if not objects_to_moderate %}
     <div class="container">
@@ -13,7 +16,7 @@
     <div class="container">
         <div class="row">
             <div class="text-center col">
-                <h2>{{ content_type }} requires moderation</h2>
+                <h2>{{ content_type }} requires moderation (1 of {{ queue_length }})</h2>
             </div>
         </div>
         <div class="row">
@@ -24,8 +27,12 @@
                             {% if moderation_template %}
                             {% include moderation_template %}
                             {% endif %}
+                            <hr style="border-top:2px solid white;">
                             <form action="{% url 'icosa:moderation_queue' %}" method="post">
                                 {% csrf_token %}
+                                <input type="hidden" name="data" value='[{% for field in current_obj.moderation_changed_fields %}{"{{ field }}": "{{ current_obj|get_attr:field }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                                <label for="id_notes">Add any notes about this review and then choose an action to {% if queue_length > 1 %}move on to the next item{% else %}finish{% endif %}.</label>
+                                <textarea name="notes" id="id_notes"></textarea>
                                 <p style="width: 100%" class="text-center">
                                 <button style="float:left;" class="btn btn-primary inline"type="submit" name="_approve">Approve</button>
                                 <button class="btn btn-danger inline"type="submit" name="_approve">Reject</button>

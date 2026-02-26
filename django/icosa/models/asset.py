@@ -489,10 +489,9 @@ class Asset(models.Model):
             ]
             should_log = False
             try:
-                changed_fields = {}
+                changed_fields = []
                 if self._state.adding:
-                    for field in watch_fields:
-                        changed_fields.update({field: getattr(self, field)})
+                    changed_fields = watch_fields
                     moderation_state = MOD_NEW
                     should_log = True
 
@@ -500,7 +499,7 @@ class Asset(models.Model):
                     original_instance = Asset.objects.get(pk=self.pk)
                     for field in watch_fields:
                         if getattr(self, field) != getattr(original_instance, field):
-                            changed_fields.update({field: getattr(self, field)})
+                            changed_fields.append(field)
                     moderation_state = MOD_MODIFIED
                     if changed_fields:
                         should_log = True
@@ -509,10 +508,10 @@ class Asset(models.Model):
                     self.moderation_state = moderation_state
                     self.moderation_state_change_time = timezone.now()
                     self.moderation_state_change_by = None
-                    self.moderation_changed_fields = list(
-                        set(self.moderation_changed_fields + list(changed_fields.keys()))
-                    )
-
+                    if self.moderation_changed_fields:
+                        self.moderation_changed_fields = list(set(self.moderation_changed_fields + changed_fields))
+                    else:
+                        self.moderation_changed_fields = changed_fields
             except Exception as e:
                 logger.error(e)
 
