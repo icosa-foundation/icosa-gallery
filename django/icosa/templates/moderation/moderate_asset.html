@@ -10,14 +10,14 @@
 <h3>Changed/new field values:</h3>
 {% for field in asset.moderation_changed_fields %}
     <div class="well">
-    <h4>{{ field }}:</h4>
-    {% if field == "description" %}
-        <p>{{ asset.description|linebreaksbr }}</p>
-    {% elif field == "thumbnail" %}
-        <img style="max-width:100%;" src="{{ asset.thumbnail.url }}?{% now "U" %}">
-    {% else %}
-        <p>{{ asset|get_attr:field }}</p>
-    {% endif %}
+        <h4>{{ field }}:</h4>
+        {% if field == "description" %}
+            <p>{{ asset.description|linebreaksbr }}</p>
+        {% elif field == "thumbnail" %}
+            <img style="max-width:100%;" src="{{ asset.thumbnail.url }}?{% now "U" %}">
+        {% else %}
+            <p>{{ asset|get_attr:field }}</p>
+        {% endif %}
     </div>
 {% endfor %}
 
