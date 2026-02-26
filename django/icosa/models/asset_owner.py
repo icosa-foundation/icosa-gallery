@@ -1,8 +1,19 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
-from django.db import models
+from django.db import models, transaction
 from django.db.models import QuerySet
 from django.urls import reverse
+from django.utils import timezone
+from icosa.models.moderation import ModerationMixin
+
+from .common import (
+    MOD_MODIFIED,
+    MOD_NEW,
+)
+
+logger = logging.getLogger("django")
 
 
 class AssetOwnerManager(models.Manager):
@@ -23,7 +34,9 @@ class AssetOwnerManager(models.Manager):
         )
 
 
-class AssetOwner(models.Model):
+class AssetOwner(ModerationMixin):
+    create_time = models.DateTimeField()
+    update_time = models.DateTimeField(null=True, blank=True)
     id = models.BigAutoField(primary_key=True)
     url = models.CharField("User Name / URL", max_length=255, unique=True)
     email = models.EmailField(max_length=255, null=True, blank=True)
@@ -45,6 +58,16 @@ class AssetOwner(models.Model):
         on_delete=models.SET_NULL,
         related_name="merged_owners",
     )
+    # `moderation_state_change_by` is defined in this model's superclass, but
+    # the default related name clashes with `django_user`, so we must define it
+    # again here.
+    moderation_state_change_by = models.ForeignKey(
+        "User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="moderated_owners",
+    )
     disable_profile = models.BooleanField(default=False)
 
     objects = AssetOwnerManager()
@@ -61,6 +84,55 @@ class AssetOwner(models.Model):
             return reverse("icosa:user_show", kwargs={"slug": self.url})
         else:
             return ""
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        update_timestamps = kwargs.pop("update_timestamps", False)
+        bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
+        bypass_moderation_logging = kwargs.pop("bypass_moderation_logging", False)
+
+        if not bypass_custom_logic:
+            now = timezone.now()
+            if self._state.adding:
+                self.create_time = now
+            else:
+                if update_timestamps:
+                    self.update_time = now
+
+        if not bypass_custom_logic and not bypass_moderation_logging:
+            watch_fields = [
+                "url",
+                "displayname",
+                "description",
+            ]
+            should_log = False
+            try:
+                changed_fields = []
+                if self._state.adding:
+                    changed_fields = watch_fields
+                    moderation_state = MOD_NEW
+                    should_log = True
+                else:
+                    original_instance = AssetOwner.objects.get(pk=self.pk)
+                    for field in watch_fields:
+                        if getattr(self, field) != getattr(original_instance, field):
+                            changed_fields.append(field)
+                    moderation_state = MOD_MODIFIED
+                    if changed_fields:
+                        should_log = True
+
+                if should_log:
+                    print(moderation_state)
+                    self.moderation_state = moderation_state
+                    self.moderation_state_change_time = timezone.now()
+                    self.moderation_state_change_by = None
+                    if self.moderation_changed_fields:
+                        self.moderation_changed_fields = list(set(self.moderation_changed_fields + changed_fields))
+                    else:
+                        self.moderation_changed_fields = changed_fields
+            except Exception as e:
+                logger.error(e)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.displayname

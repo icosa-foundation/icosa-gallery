@@ -300,10 +300,18 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         "is_claimed",
         "disable_profile",
     )
+
     raw_id_fields = [
         "django_user",
         "merged_with",
     ]
+
+    readonly_fields = (
+        "moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
+    )
 
     actions = [
         "create_related_django_user",

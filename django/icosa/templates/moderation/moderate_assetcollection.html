@@ -1,0 +1,15 @@
+{% load util_tags %}
+<h3>Changed/new field values:</h3>
+{% for field in current_obj.moderation_changed_fields %}
+    <div class="well">
+        <h4>{{ field }}:</h4>
+        {% if field == "description" %}
+            <p>{{ current_obj.description|linebreaksbr }}</p>
+        {% elif field == "image" %}
+            <img style="max-width:100%;" src="{{ current_obj.image.url }}?{% now "U" %}">
+        {% else %}
+            <p>{{ current_obj|get_attr:field }}</p>
+        {% endif %}
+    </div>
+{% endfor %}
+

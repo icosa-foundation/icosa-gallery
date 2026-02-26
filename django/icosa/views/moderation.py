@@ -41,9 +41,9 @@ def moderation_queue(request):
 
     assets = Asset.objects.filter(moderation_state__in=MOD_STATES_OF_INTEREST)
     collections = AssetCollection.objects.filter(moderation_state__in=MOD_STATES_OF_INTEREST)
-    # owners = AssetOwner.objects.filter(moderation_state__in=MOD_STATES_OF_INTEREST)
+    owners = AssetOwner.objects.filter(moderation_state__in=MOD_STATES_OF_INTEREST)
 
-    qs = list(assets) + list(collections)  # + list(owners)
+    qs = list(assets) + list(collections) + list(owners)
     objects_to_moderate = sorted(qs, key=lambda x: x.moderation_state_change_time)
 
     if len(objects_to_moderate) == 0:
