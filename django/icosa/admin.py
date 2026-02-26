@@ -18,6 +18,7 @@ from icosa.models import (
     FormatRoleLabel,
     HiddenMediaFileLog,
     MastheadSection,
+    ModerationEvent,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -169,7 +170,8 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "triangle_count",
         "moderation_state",
         "moderation_state_change_time",
-        "moderation_state_change_by__username",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
     )
 
     def display_thumbnail(self, obj):
@@ -438,6 +440,23 @@ class Oauth2CodeAdmin(ExportMixin, admin.ModelAdmin):
 @admin.register(Oauth2Token)
 class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
     pass
+
+
+@admin.register(ModerationEvent)
+class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
+    list_display = (
+        "create_time",
+        "content_type",
+        "state",
+    )
+    readonly_fields = (
+        "create_time",
+        "content_type",
+        "object_id",
+        "source_object",
+        "state",
+        "data",
+    )
 
 
 class UserLikeInline(admin.TabularInline):
