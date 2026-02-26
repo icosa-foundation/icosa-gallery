@@ -14,7 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
-from icosa.models.moderation import ModerationEvent
+from icosa.models.moderation import ModerationMixin
 
 from .common import (
     ALL_RIGHTS_RESERVED,
@@ -49,7 +49,7 @@ RECENCY_WEIGHT = 1
 NON_REMIXABLE_FORMAT_TYPES = ["TILT", "BLOCKS"]
 
 
-class Asset(models.Model):
+class Asset(ModerationMixin):
     COLOR_SPACES = [("LINEAR", "LINEAR"), ("GAMMA", "GAMMA")]
     id = models.BigAutoField(primary_key=True)
     url = models.CharField(max_length=255, blank=True, null=True, unique=True)
@@ -106,22 +106,6 @@ class Asset(models.Model):
         # limit_choices_to cannot have a reference to self. We must limit the
         # choices another way.
     )
-
-    moderation_state = models.CharField(
-        max_length=255,
-        choices=MODERATION_STATE_CHOICES,
-        default="NEW",
-        db_default="New",
-    )
-    moderation_state_change_time = models.DateTimeField(null=True, blank=True)
-    moderation_state_change_by = models.ForeignKey(
-        "User",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="moderated_assets",
-    )
-    moderation_changed_fields = models.JSONField(null=True, blank=True)
 
     # Denorm fields
     triangle_count = models.PositiveIntegerField(default=0)

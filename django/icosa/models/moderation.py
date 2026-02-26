@@ -36,3 +36,24 @@ class ModerationEvent(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["content_type", "object_id"])]
+
+
+class ModerationMixin(models.Model):
+    moderation_state = models.CharField(
+        max_length=255,
+        choices=MODERATION_STATE_CHOICES,
+        default="NEW",
+        db_default="New",
+    )
+    moderation_state_change_time = models.DateTimeField(null=True, blank=True)
+    moderation_state_change_by = models.ForeignKey(
+        "User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="moderated_assets",
+    )
+    moderation_changed_fields = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
