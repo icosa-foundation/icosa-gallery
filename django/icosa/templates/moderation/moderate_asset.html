@@ -1,3 +1,4 @@
+{% load util_tags %}
 {% with asset=current_obj %}
 <h3>Public view of asset:</h3>
 <div id="icosa-wrapper">
@@ -5,4 +6,25 @@
     <div id="icosa-viewer"></div>
 </div>
 {% include "partials/viewer.html" %}
+<br>
+<h3>Changed/new field values:</h3>
+{% for field in asset.moderation_changed_fields %}
+    <h4>{{ field }}:</h4>
+    {% if field == "description" %}
+        <p>{{ asset.description|linebreaksbr }}</p>
+    {% elif field == "thumbnail" %}
+        <img style="max-width:100%;" src="{{ asset.thumbnail.url }}">
+    {% else %}
+        <p>{{ asset|get_attr:field }}</p>
+    {% endif %}
+
+{% endfor %}
+<h3>Asset's tags</h3>
+<ul>
+{% for tag in asset.tags.all %}
+    <li>{{ tag }}</li>
+{% endfor %}
+</ul>
+
+
 {% endwith %}

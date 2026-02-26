@@ -17,7 +17,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="text-center col">
+            <div class="col">
                 <div class="container">
                     <div class="row">
                         <div class="col-md-8 col-12 offset-md-2">
@@ -26,14 +26,12 @@
                             {% endif %}
                             <form action="{% url 'icosa:moderation_queue' %}" method="post">
                                 {% csrf_token %}
-                                <p style="width: 100%">
+                                <p style="width: 100%" class="text-center">
                                 <button style="float:left;" class="btn btn-primary inline"type="submit" name="_approve">Approve</button>
                                 <button class="btn btn-danger inline"type="submit" name="_approve">Reject</button>
                                 <button style="float:right;" class="btn btn-secondary inline"type="submit" name="_approve">Query</button>
                                 </p>
                             </form>
-                            <p>{{ current_obj.pk }}</p>
-                            <p>Next: {{ next_obj.pk }} </p>
                         </div>
                     </div>
                 </div>
