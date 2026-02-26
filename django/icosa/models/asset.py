@@ -84,6 +84,7 @@ class Asset(models.Model):
     update_time = models.DateTimeField(null=True, blank=True)
     license = models.CharField(max_length=50, null=True, blank=True, choices=LICENSE_CHOICES)
     tags = models.ManyToManyField("Tag", blank=True)
+    raw_tags = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=255, null=True, blank=True, choices=CATEGORY_CHOICES)
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)
@@ -332,6 +333,9 @@ class Asset(models.Model):
         if last_liked is not None:
             self.last_liked_time = last_liked.date_liked
 
+    def denorm_tags(self):
+        self.raw_tags = ", ".join([t.name for t in self.tags.all()])
+
     def get_updated_rank(self):
         rank = (self.likes + self.historical_likes + 1) * LIKES_WEIGHT
         rank += (self.views + self.historical_views) * VIEWS_WEIGHT
@@ -469,6 +473,7 @@ class Asset(models.Model):
                 self.denorm_format_types()
                 self.denorm_triangle_count()
                 self.denorm_liked_time()
+                self.denorm_tags()
                 if update_timestamps:
                     self.update_time = now
 
