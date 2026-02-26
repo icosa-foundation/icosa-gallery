@@ -72,6 +72,7 @@ class AssetCollection(ModerationMixin):
             else:
                 if update_timestamps:
                     self.update_time = now
+
         if not bypass_custom_logic and not bypass_moderation_logging:
             watch_fields = [
                 "url",
