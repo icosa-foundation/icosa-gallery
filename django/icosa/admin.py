@@ -243,6 +243,13 @@ class AssetCollectionAdmin(admin.ModelAdmin):
         "user__displayname",
     )
 
+    readonly_fields = (
+        "moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
+    )
+
     inlines = (AssetCollectionAssetInline,)
 
     list_filter = ("visibility",)

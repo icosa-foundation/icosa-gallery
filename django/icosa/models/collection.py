@@ -1,21 +1,28 @@
+import logging
 import secrets
 
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import IntegrityError, models
 from django.urls import reverse
+from django.utils import timezone
 from icosa.models import Asset
+from icosa.models.moderation import ModerationMixin
 
 from .common import (
     ASSET_VISIBILITY_CHOICES,
     FILENAME_MAX_LENGTH,
+    MOD_MODIFIED,
+    MOD_NEW,
     PRIVATE,
     VALID_THUMBNAIL_EXTENSIONS,
 )
 from .helpers import collection_image_upload_path
 
+logger = logging.getLogger("django")
 
-class AssetCollection(models.Model):
+
+class AssetCollection(ModerationMixin):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True, null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_collections")
@@ -44,7 +51,10 @@ class AssetCollection(models.Model):
         return thumbnail_url
 
     def save(self, *args, **kwargs):
-        if self._state.adding or not self.url:
+        update_timestamps = kwargs.pop("update_timestamps", False)
+        bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
+        bypass_moderation_logging = kwargs.pop("bypass_moderation_logging", False)
+        if self._state.adding and not self.url:
             # TODO(james): this, or something like it should be used wherever
             # we try to generate unique urls for things.
             while True:
@@ -54,7 +64,48 @@ class AssetCollection(models.Model):
                 except IntegrityError:
                     continue
                 else:
-                    return
+                    break
+        if not bypass_custom_logic:
+            now = timezone.now()
+            if self._state.adding:
+                self.create_time = now
+            else:
+                if update_timestamps:
+                    self.update_time = now
+        if not bypass_custom_logic and not bypass_moderation_logging:
+            watch_fields = [
+                "url",
+                "name",
+                "description",
+                "image",
+            ]
+            should_log = False
+            try:
+                changed_fields = []
+                if self._state.adding:
+                    changed_fields = watch_fields
+                    moderation_state = MOD_NEW
+                    should_log = True
+                else:
+                    original_instance = AssetCollection.objects.get(pk=self.pk)
+                    for field in watch_fields:
+                        if getattr(self, field) != getattr(original_instance, field):
+                            changed_fields.append(field)
+                    moderation_state = MOD_MODIFIED
+                    if changed_fields:
+                        should_log = True
+
+                if should_log:
+                    print(moderation_state)
+                    self.moderation_state = moderation_state
+                    self.moderation_state_change_time = timezone.now()
+                    self.moderation_state_change_by = None
+                    if self.moderation_changed_fields:
+                        self.moderation_changed_fields = list(set(self.moderation_changed_fields + changed_fields))
+                    else:
+                        self.moderation_changed_fields = changed_fields
+            except Exception as e:
+                logger.error(e)
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):

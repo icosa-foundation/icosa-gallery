@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Optional
 
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
 from django.db.models import Max, Q
@@ -17,7 +16,6 @@ from icosa.helpers.storage import get_b2_bucket
 from icosa.models.moderation import ModerationMixin
 
 from .common import (
-    ALL_RIGHTS_RESERVED,
     ASSET_STATE_CHOICES,
     ASSET_VISIBILITY_CHOICES,
     CATEGORY_CHOICES,
@@ -26,7 +24,6 @@ from .common import (
     LICENSE_CHOICES,
     MOD_MODIFIED,
     MOD_NEW,
-    MODERATION_STATE_CHOICES,
     PRIVATE,
     PUBLIC,
     UNLISTED,

@@ -51,7 +51,6 @@ class ModerationMixin(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
-        related_name="moderated_assets",
     )
     moderation_changed_fields = models.JSONField(null=True, blank=True)
 
