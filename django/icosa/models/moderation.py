@@ -18,6 +18,7 @@ class ModerationEvent(models.Model):
         db_default="New",
     )
     data = models.JSONField()
+    notes = models.TextField(null=True, blank=True)
 
     @transaction.atomic
     def save(self, *args, **kwargs):

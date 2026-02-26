@@ -121,6 +121,7 @@ class Asset(models.Model):
         on_delete=models.SET_NULL,
         related_name="moderated_assets",
     )
+    moderation_changed_fields = models.JSONField(null=True, blank=True)
 
     # Denorm fields
     triangle_count = models.PositiveIntegerField(default=0)
@@ -478,13 +479,20 @@ class Asset(models.Model):
                     self.update_time = now
 
         if not bypass_custom_logic and not bypass_moderation_logging:
-            watch_fields = ["description", "name"]
+            watch_fields = [
+                "url",
+                "name",
+                "description",
+                "thumbnail",
+                "preview_image",
+                "raw_tags",
+            ]
             should_log = False
             try:
-                changed_fields = []
+                changed_fields = {}
                 if self._state.adding:
                     for field in watch_fields:
-                        changed_fields.append({"key": field, "value": getattr(self, field)})
+                        changed_fields.update({field: getattr(self, field)})
                     moderation_state = MOD_NEW
                     should_log = True
 
@@ -492,7 +500,7 @@ class Asset(models.Model):
                     original_instance = Asset.objects.get(pk=self.pk)
                     for field in watch_fields:
                         if getattr(self, field) != getattr(original_instance, field):
-                            changed_fields.append({"key": field, "value": getattr(self, field)})
+                            changed_fields.update({field: getattr(self, field)})
                     moderation_state = MOD_MODIFIED
                     if changed_fields:
                         should_log = True
@@ -500,10 +508,9 @@ class Asset(models.Model):
                 if should_log:
                     self.moderation_state = moderation_state
                     self.moderation_state_change_time = timezone.now()
-                    ModerationEvent.objects.create(
-                        data=changed_fields,
-                        state=moderation_state,
-                        source_object=self,
+                    self.moderation_state_change_by = None
+                    self.moderation_changed_fields = list(
+                        set(self.moderation_changed_fields + list(changed_fields.keys()))
                     )
 
             except Exception as e:
