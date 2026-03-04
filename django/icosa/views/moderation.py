@@ -22,6 +22,7 @@ from icosa.models.common import (
 from icosa.models.moderation import (
     MOD_STATES_OF_INTEREST,
     ModerationEvent,
+    get_objects_to_moderate,
 )
 
 
@@ -33,12 +34,7 @@ def get_str_content_type(obj):
 def moderation_queue(request):
     template = "moderation/queue.html"
 
-    assets = Asset.objects.filter(moderation_state__in=MOD_STATES_OF_INTEREST)
-    collections = AssetCollection.objects.filter(moderation_state__in=MOD_STATES_OF_INTEREST)
-    owners = AssetOwner.objects.filter(moderation_state__in=MOD_STATES_OF_INTEREST)
-
-    qs = list(assets) + list(collections) + list(owners)
-    objects_to_moderate = sorted(qs, key=lambda x: x.moderation_state_change_time)
+    objects_to_moderate = get_objects_to_moderate()
 
     if len(objects_to_moderate) == 0:
         context = {
