@@ -214,7 +214,7 @@ def landing_page(
     # This query is still quicker than filtering all possible mastheads
     # by visibility and should only result in a missing masthead on rare
     # occasions.
-    if masthead is not None and not masthead.avisibility() == PUBLIC:
+    if masthead is not None and not masthead.visibility == PUBLIC:
         masthead = None
 
     paginator = Paginator(assets.order_by("-rank"), settings.PAGINATION_PER_PAGE)
