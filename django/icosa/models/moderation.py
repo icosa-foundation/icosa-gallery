@@ -30,7 +30,12 @@ def get_objects_to_moderate() -> List:
     owners = AssetOwner.objects.filter(moderation_state__in=MOD_STATES_OF_INTEREST)
 
     qs = list(assets) + list(collections) + list(owners)
-    objects_to_moderate = sorted(qs, key=lambda x: x.moderation_state_change_time)
+    objects_to_moderate = sorted(
+        qs,
+        key=lambda x: (
+            x.moderation_state_change_time if x.moderation_state_change_time else datetime.datetime(1970, 1, 1)
+        ),
+    )
     return objects_to_moderate
 
 
