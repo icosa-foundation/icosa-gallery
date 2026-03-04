@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='asset',
             name='moderation_state',
-            field=models.CharField(choices=[('LEGACY', 'Legacy'), ('NEW', 'New'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected'), ('QUERIED', 'Queried'), ('REPORTED', 'Reported'), ('MODIFIED', 'Modified')], db_default='New', default='NEW', max_length=255),
+            field=models.CharField(choices=[('LEGACY', 'Legacy'), ('NEW', 'New'), ('APPROVED', 'Approved'), ('REJECTED', 'Rejected'), ('QUERIED', 'Queried'), ('REPORTED', 'Reported'), ('MODIFIED', 'Modified')], db_default='NEW', default='NEW', max_length=255),
         ),
         migrations.CreateModel(
             name='ModerationEvent',

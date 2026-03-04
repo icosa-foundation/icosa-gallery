@@ -71,7 +71,7 @@ class ModerationMixin(models.Model):
         max_length=255,
         choices=MODERATION_STATE_CHOICES,
         default="NEW",
-        db_default="New",
+        db_default="NEW",
     )
     moderation_state_change_time = models.DateTimeField(null=True, blank=True)
     moderation_state_change_by = models.ForeignKey(

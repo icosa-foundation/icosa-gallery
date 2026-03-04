@@ -13,9 +13,9 @@ from icosa.api import (
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ARCHIVED,
+    MOD_HIDDEN,
     PRIVATE,
     PUBLIC,
-    UNLISTED,
     Asset,
 )
 from icosa.views.decorators import cache_per_user
@@ -97,7 +97,7 @@ def get_assets(
 ):
     exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
     if config.HIDE_REPORTED_ASSETS:
-        exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(last_reported_time__isnull=False)
+        exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(moderation_state__in=MOD_HIDDEN)
 
     assets = filter_and_sort_assets(
         filters,

@@ -58,6 +58,7 @@ from icosa.models import (
     CATEGORY_LABEL_MAP,
     CATEGORY_LABELS,
     MOD_REPORTED,
+    MOD_VISIBLE,
     PRIVATE,
     PUBLIC,
     UNLISTED,
@@ -92,26 +93,23 @@ def set_viewer_js_version(request):
 
 
 def get_default_q():
+    cautious_q = Q(
+        visibility=PUBLIC,
+        is_viewer_compatible=True,
+        curated=True,
+        moderation_state__in=MOD_VISIBLE,
+    )
+
     try:
         if config.HIDE_REPORTED_ASSETS:
-            return Q(
-                visibility=PUBLIC,
-                is_viewer_compatible=True,
-                curated=True,
-                last_reported_time__isnull=True,
-            )
+            return cautious_q
         return Q(
             visibility=PUBLIC,
             is_viewer_compatible=True,
             curated=True,
         )
     except Exception:
-        return Q(
-            visibility=PUBLIC,
-            is_viewer_compatible=True,
-            curated=True,
-            last_reported_time__isnull=True,
-        )
+        return cautious_q
 
 
 def user_can_view_asset(
@@ -216,7 +214,7 @@ def landing_page(
     # This query is still quicker than filtering all possible mastheads
     # by visibility and should only result in a missing masthead on rare
     # occasions.
-    if masthead is not None and not masthead.avisibility() == PUBLIC:
+    if masthead is not None and not masthead.visibility == PUBLIC:
         masthead = None
 
     paginator = Paginator(assets.order_by("-rank"), settings.PAGINATION_PER_PAGE)
@@ -287,7 +285,7 @@ def home_other(request):
         home_q = Q(
             is_viewer_compatible=True,
             curated=True,
-            last_reported_time__isnull=True,
+            moderation_state__in=MOD_VISIBLE,
         )
     else:
         home_q = Q(
@@ -844,7 +842,9 @@ def report_asset(request, asset_url):
             else:
                 reporter_email = reporter.email
                 asset.last_reported_by = reporter
-            asset.save()
+            # We must bypass moderation logging because we have forced the
+            # moderation state ourselves.
+            asset.save(bypass_custom_logic=True, bypass_moderation_logging=True)
 
             current_site = get_current_site(request)
             mail_subject = "An Icosa asset has been reported"
@@ -1026,7 +1026,7 @@ def search(request):
         q = Q(
             visibility=PUBLIC,
             is_viewer_compatible=True,
-            last_reported_time__isnull=True,
+            moderation_state__in=MOD_VISIBLE,
         )
     else:
         q = Q(
