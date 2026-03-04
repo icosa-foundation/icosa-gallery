@@ -163,6 +163,7 @@ INSTALLED_APPS = [
     "constance.backends.database",
     "corsheaders",
     "email_logger",
+    "enforced_permissions",
     "honeypot",
     "huey.contrib.djhuey",
     "import_export",
@@ -432,6 +433,39 @@ if DEBUG_TOOLBAR_ENABLED:
     DEBUG_TOOLBAR_CONFIG = {
         "SHOW_TOOLBAR_CALLBACK": show_toolbar,
     }
+
+# Enforced permissions settings
+_TYPICAL_PERMS = {
+    "Content Editor": {"add": True, "delete": True, "change": True},
+    "Moderator": {"add": False, "delete": False, "change": False},
+}
+
+_ALL_NO_PERMS = {
+    "Content Editor": False,
+    "Moderator": False,
+}
+
+ENFORCED_PERMISSIONS = {
+    "groups": {
+        "Content Editor": "Content Editor",
+        "Moderator": "Moderator",
+    },
+    "exclude": [],
+    "permissions": {
+        "auth.*": _ALL_NO_PERMS,
+        "constance.*": _TYPICAL_PERMS,
+        "icosa.*": _TYPICAL_PERMS,
+        # The following models aren't in admin
+        "admin.logentry": _ALL_NO_PERMS,
+        "contenttypes.contenttype": _ALL_NO_PERMS,
+        "sessions.session": _ALL_NO_PERMS,
+        # The following models should only be modified by superusers
+        "sites.site": _ALL_NO_PERMS,
+        "axes.*": _ALL_NO_PERMS,
+        "email_logger.*": _ALL_NO_PERMS,
+    },
+}
+
 
 # Honeypot settings
 

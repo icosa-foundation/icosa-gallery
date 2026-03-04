@@ -114,10 +114,10 @@ class ModerationNotification(models.Model):
         html = f"<p>Please go to <a href='https://{current_site.domain}{reverse('icosa:moderation_queue')}'>the moderation queue</a> and approve or reject the latest changes.</p>"
         html = f"<html><body>{html}</body></html>"
 
-        moderators = User.objects.filter(groups__name__in=["moderators"])
+        moderators = User.objects.filter(groups__name__in=["Moderator"])
         if not moderators:
             return
-        recipients = [x.email_address for x in moderators]
+        recipients = [x.email for x in moderators]
 
         spawn_send_html_mail(subject, html, recipients)
 

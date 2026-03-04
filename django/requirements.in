@@ -1,5 +1,6 @@
 # Github requirements
 -e git+https://github.com/Ixxy-Open-Source/ixxy-email-logger.git@feature/django4#egg=ixxy_email_logger
+-e git+https://github.com/Ixxy-Open-Source/django-enforced-permissions.git@master#egg=enforced_permissions
 
 # Standard requirements
 b2sdk==2.8.0
