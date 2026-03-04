@@ -19,6 +19,7 @@ from icosa.models import (
     HiddenMediaFileLog,
     MastheadSection,
     ModerationEvent,
+    ModerationNotification,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -471,6 +472,21 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
         "source_object",
         "state",
         "data",
+    )
+
+
+@admin.register(ModerationNotification)
+class ModerationNotificationAdmin(ExportMixin, admin.ModelAdmin):
+    list_display = ("sent",)
+
+    list_filter = (
+        "sent",
+        "recipients",
+    )
+
+    readonly_fields = (
+        "sent",
+        "recipients",
     )
 
 

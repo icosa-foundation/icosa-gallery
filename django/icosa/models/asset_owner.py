@@ -136,3 +136,8 @@ class AssetOwner(ModerationMixin):
 
     def __str__(self):
         return self.displayname
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["moderation_state"]),
+        ]

@@ -3,14 +3,10 @@ import json
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.contenttypes.models import ContentType
 from django.http import (
-    Http404,
     HttpResponseBadRequest,
     HttpResponseRedirect,
 )
-from django.shortcuts import (
-    get_object_or_404,
-    render,
-)
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from icosa.models import (
@@ -20,15 +16,13 @@ from icosa.models import (
 )
 from icosa.models.common import (
     MOD_APPROVED,
-    MOD_MODIFIED,
-    MOD_NEW,
     MOD_QUERIED,
     MOD_REJECTED,
-    MOD_REPORTED,
 )
-from icosa.models.moderation import ModerationEvent
-
-MOD_STATES_OF_INTEREST = [MOD_MODIFIED, MOD_NEW, MOD_REPORTED]
+from icosa.models.moderation import (
+    MOD_STATES_OF_INTEREST,
+    ModerationEvent,
+)
 
 
 def get_str_content_type(obj):
@@ -74,7 +68,7 @@ def moderation_queue(request):
 
         current_obj.moderation_state_change_by = request.user
         current_obj.moderation_state_change_time = timezone.now()
-        current_obj.moderation_changed_fields = None
+        current_obj.moderation_changed_fields = []
 
         current_obj.save(
             # `update_timestamps` is not strictly required given we are using

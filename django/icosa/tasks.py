@@ -6,8 +6,12 @@ from typing import (
 
 from django.db import transaction
 from django.utils import timezone
-from huey import signals
+from huey import (
+    crontab,
+    signals,
+)
 from huey.contrib.djhuey import (
+    db_periodic_task,
     db_task,
     signal,
 )
@@ -17,6 +21,7 @@ from icosa.models import (
     ASSET_STATE_FAILED,
     Asset,
     BulkSaveLog,
+    ModerationNotification,
     User,
 )
 from ninja import (
@@ -122,3 +127,8 @@ def queue_save_all_assets(
     resume: bool = False,
 ):
     save_all_assets(resume)
+
+
+@db_periodic_task(crontab(minute="*/1"))
+def try_send_moderation_notifications():
+    ModerationNotification.try_send()

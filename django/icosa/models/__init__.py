@@ -11,6 +11,7 @@ __all__ = [
     "HiddenMediaFileLog",
     "MastheadSection",
     "ModerationEvent",
+    "ModerationNotification",
     "Oauth2Client",
     "Oauth2Code",
     "Oauth2Token",
@@ -41,7 +42,10 @@ from .helpers import (
 )
 from .log import BulkSaveLog, HiddenMediaFileLog
 from .masthead import MastheadSection
-from .moderation import ModerationEvent
+from .moderation import (
+    ModerationEvent,
+    ModerationNotification,
+)
 from .oauth import Oauth2Client, Oauth2Code, Oauth2Token
 from .resource import Resource
 from .tag import Tag

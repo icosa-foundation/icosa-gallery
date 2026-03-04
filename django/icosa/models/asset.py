@@ -519,4 +519,5 @@ class Asset(ModerationMixin):
             models.Index(fields=["owner"]),
             # Index for paginator
             models.Index(fields=["is_viewer_compatible", "last_reported_time", "visibility", "license"]),
+            models.Index(fields=["moderation_state"]),
         ]

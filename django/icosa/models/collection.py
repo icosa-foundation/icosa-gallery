@@ -124,6 +124,11 @@ class AssetCollection(ModerationMixin):
     def __str__(self):
         return self.name or ""
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["moderation_state"]),
+        ]
+
 
 class AssetCollectionAsset(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
