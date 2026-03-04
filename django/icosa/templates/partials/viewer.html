@@ -340,11 +340,4 @@
     if (!viewer.environmentObject) toggleEnvironmentControl.disable();
     if (!viewer.skyObject) toggleSkyControl.disable();
 
-
-    viewer.scene.traverse((child) => {
-        console.log(child)
-        if (child instanceof THREE.Texture && child !== viewer.skyObject) {
-            console.log(child)
-        }
-    })
 </script>
