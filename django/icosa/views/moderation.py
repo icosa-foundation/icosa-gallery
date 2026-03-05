@@ -72,6 +72,16 @@ def moderation_queue(request):
     if content_type is not None:
         moderation_template = f"moderation/moderate_{content_type.replace(' ', '')}.html"
 
+    if (
+        current_obj is not None
+        and current_obj.moderation_state == MOD_NEW
+        and not current_obj.moderation_changed_fields
+    ):
+        # This is likely because assets exist/have been imported outside the
+        # moderation flow.
+        current_obj.moderation_changed_fields = current_obj.moderation_watch_fields
+        current_obj.save(bypass_custom_logic=True)
+
     context = {
         "objects_to_moderate": objects_to_moderate,
         "queue_length": objects_to_moderate.count(),
