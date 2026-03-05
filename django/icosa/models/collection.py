@@ -57,6 +57,15 @@ class AssetCollection(ModerationMixin):
 
         return thumbnail_url
 
+    @property
+    def moderation_watch_fields(self):
+        return [
+            "url",
+            "name",
+            "description",
+            "image",
+        ]
+
     def save(self, *args, **kwargs):
         update_timestamps = kwargs.pop("update_timestamps", False)
         bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
@@ -81,22 +90,16 @@ class AssetCollection(ModerationMixin):
                     self.update_time = now
 
         if not bypass_custom_logic and not bypass_moderation_logging:
-            watch_fields = [
-                "url",
-                "name",
-                "description",
-                "image",
-            ]
             should_log = False
             try:
                 changed_fields = []
                 if self._state.adding:
-                    changed_fields = watch_fields
+                    changed_fields = self.moderation_watch_fields
                     moderation_state = MOD_NEW
                     should_log = True
                 else:
                     original_instance = AssetCollection.objects.get(pk=self.pk)
-                    for field in watch_fields:
+                    for field in self.moderation_watch_fields:
                         if getattr(self, field) != getattr(original_instance, field):
                             changed_fields.append(field)
                     moderation_state = MOD_MODIFIED

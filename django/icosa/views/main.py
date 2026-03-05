@@ -69,7 +69,6 @@ from icosa.models import (
     MastheadSection,
     UserLike,
 )
-from icosa.models.asset import WATCH_FIELDS
 from icosa.tasks import queue_upload_api_asset
 
 User = get_user_model()
@@ -835,7 +834,7 @@ def report_asset(request, asset_url):
             now = timezone.now()
             asset.last_reported_time = now
             asset.moderation_state = MOD_REPORTED
-            asset.moderation_changed_fields = WATCH_FIELDS
+            asset.moderation_changed_fields = asset.moderation_watch_fields
             asset.moderation_state_change_time = now
             asset.moderation_state_change_by = None
             reporter = request.user if not request.user.is_anonymous else None

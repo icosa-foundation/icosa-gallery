@@ -15,6 +15,7 @@ from icosa.helpers.moderation import (
 )
 from icosa.model_mixins import (
     MOD_APPROVED,
+    MOD_NEW,
     MOD_QUERIED,
     MOD_REJECTED,
 )

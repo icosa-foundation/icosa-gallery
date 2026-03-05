@@ -37,5 +37,9 @@ class ModerationMixin(models.Model):
     )
     moderation_changed_fields = models.JSONField(null=True, blank=True)
 
+    @property
+    def moderation_watch_fields(self):
+        raise NotImplementedError
+
     class Meta:
         abstract = True

@@ -47,15 +47,6 @@ RECENCY_WEIGHT = 1
 
 NON_REMIXABLE_FORMAT_TYPES = ["TILT", "BLOCKS"]
 
-WATCH_FIELDS = [
-    "url",
-    "name",
-    "description",
-    "thumbnail",
-    "preview_image",
-    "raw_tags",
-]
-
 
 class Asset(ModerationMixin):
     COLOR_SPACES = [("LINEAR", "LINEAR"), ("GAMMA", "GAMMA")]
@@ -453,6 +444,17 @@ class Asset(ModerationMixin):
                 # This is not a file we care to mess with.
                 pass
 
+    @property
+    def moderation_watch_fields(self):
+        return [
+            "url",
+            "name",
+            "description",
+            "thumbnail",
+            "preview_image",
+            "raw_tags",
+        ]
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         update_timestamps = kwargs.pop("update_timestamps", False)
@@ -480,13 +482,13 @@ class Asset(ModerationMixin):
             try:
                 changed_fields = []
                 if self._state.adding:
-                    changed_fields = WATCH_FIELDS
+                    changed_fields = self.moderation_watch_fields
                     moderation_state = MOD_NEW
                     should_log = True
 
                 else:
                     original_instance = Asset.objects.get(pk=self.pk)
-                    for field in WATCH_FIELDS:
+                    for field in self.moderation_watch_fields:
                         if getattr(self, field) != getattr(original_instance, field):
                             changed_fields.append(field)
                     moderation_state = MOD_MODIFIED

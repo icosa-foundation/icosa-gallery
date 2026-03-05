@@ -84,6 +84,14 @@ class AssetOwner(ModerationMixin):
         else:
             return ""
 
+    @property
+    def moderation_watch_fields(self):
+        return [
+            "url",
+            "displayname",
+            "description",
+        ]
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         update_timestamps = kwargs.pop("update_timestamps", False)
@@ -99,21 +107,16 @@ class AssetOwner(ModerationMixin):
                     self.update_time = now
 
         if not bypass_custom_logic and not bypass_moderation_logging:
-            watch_fields = [
-                "url",
-                "displayname",
-                "description",
-            ]
             should_log = False
             try:
                 changed_fields = []
                 if self._state.adding:
-                    changed_fields = watch_fields
+                    changed_fields = self.moderation_watch_fields
                     moderation_state = MOD_NEW
                     should_log = True
                 else:
                     original_instance = AssetOwner.objects.get(pk=self.pk)
-                    for field in watch_fields:
+                    for field in self.moderation_watch_fields:
                         if getattr(self, field) != getattr(original_instance, field):
                             changed_fields.append(field)
                     moderation_state = MOD_MODIFIED
