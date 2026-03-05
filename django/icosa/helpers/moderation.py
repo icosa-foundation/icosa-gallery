@@ -1,4 +1,3 @@
-import datetime
 from dataclasses import dataclass
 from typing import Optional
 
@@ -41,7 +40,9 @@ class ModerationObjects:
             key=lambda x: (
                 x.moderation_state_change_time
                 if x.moderation_state_change_time
-                else datetime.datetime.fromisoformat("1970-01-01T00:00:00.00Z")
+                else x.update_time
+                if x.update_time
+                else x.create_time
             ),
             reverse=last,
         )[0]
