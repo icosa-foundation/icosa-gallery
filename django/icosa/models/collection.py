@@ -6,14 +6,16 @@ from django.core.validators import FileExtensionValidator
 from django.db import IntegrityError, models
 from django.urls import reverse
 from django.utils import timezone
+from icosa.model_mixins import (
+    MOD_MODIFIED,
+    MOD_NEW,
+    ModerationMixin,
+)
 from icosa.models import Asset
-from icosa.models.moderation import ModerationMixin
 
 from .common import (
     ASSET_VISIBILITY_CHOICES,
     FILENAME_MAX_LENGTH,
-    MOD_MODIFIED,
-    MOD_NEW,
     PRIVATE,
     VALID_THUMBNAIL_EXTENSIONS,
 )

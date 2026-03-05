@@ -6,11 +6,10 @@ from django.db import models, transaction
 from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils import timezone
-from icosa.models.moderation import ModerationMixin
-
-from .common import (
+from icosa.model_mixins import (
     MOD_MODIFIED,
     MOD_NEW,
+    ModerationMixin,
 )
 
 logger = logging.getLogger("django")

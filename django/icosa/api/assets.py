@@ -10,10 +10,10 @@ from icosa.api import (
     AssetPagination,
     get_asset_by_url,
 )
+from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ARCHIVED,
-    MOD_HIDDEN,
     PRIVATE,
     PUBLIC,
     Asset,

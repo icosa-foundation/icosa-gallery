@@ -1,58 +1,40 @@
 import json
 
-from django.contrib.auth.decorators import user_passes_test
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.decorators import login_required
 from django.http import (
     HttpResponseBadRequest,
+    HttpResponseForbidden,
     HttpResponseRedirect,
 )
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
-from icosa.models import (
-    Asset,
-    AssetCollection,
-    AssetOwner,
+from icosa.helpers.moderation import (
+    get_objects_to_moderate,
+    get_str_content_type,
 )
-from icosa.models.common import (
+from icosa.model_mixins import (
     MOD_APPROVED,
     MOD_QUERIED,
     MOD_REJECTED,
 )
-from icosa.models.moderation import (
-    MOD_STATES_OF_INTEREST,
-    ModerationEvent,
-    get_objects_to_moderate,
-)
+from icosa.models.moderation import ModerationEvent
 
 
-def get_str_content_type(obj):
-    return str(ContentType.objects.get_for_model(obj)).split("|")[-1].strip()
-
-
-@user_passes_test(lambda u: u.is_superuser)  # TODO, change to test for moderator group
+@login_required
 def moderation_queue(request):
+    if not request.user.groups.filter(name="Moderator").exists():
+        return HttpResponseForbidden()
+
     template = "moderation/queue.html"
 
     objects_to_moderate = get_objects_to_moderate()
 
-    if len(objects_to_moderate) == 0:
-        context = {
-            "objects_to_moderate": objects_to_moderate,
-            "content_type": None,
-            "current_obj": None,
-            "moderation_template": None,
-        }
-
-        return render(
-            request,
-            template,
-            context,
-        )
-
-    current_obj = objects_to_moderate[0]
+    current_obj = objects_to_moderate.first()
 
     if request.method == "POST":
+        if current_obj is None:
+            return HttpResponseBadRequest("No more objects to moderate")
         if "_approve" in request.POST:
             current_obj.moderation_state = MOD_APPROVED
         elif "_reject" in request.POST:
@@ -85,11 +67,13 @@ def moderation_queue(request):
         return HttpResponseRedirect(reverse("icosa:moderation_queue"))
 
     content_type = get_str_content_type(current_obj)
-    moderation_template = f"moderation/moderate_{content_type.replace(' ', '')}.html"
+    moderation_template = None
+    if content_type is not None:
+        moderation_template = f"moderation/moderate_{content_type.replace(' ', '')}.html"
 
     context = {
         "objects_to_moderate": objects_to_moderate,
-        "queue_length": len(objects_to_moderate),
+        "queue_length": objects_to_moderate.count(),
         "content_type": content_type,
         "current_obj": current_obj,
         "moderation_template": moderation_template,

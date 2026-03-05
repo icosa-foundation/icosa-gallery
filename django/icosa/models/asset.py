@@ -13,7 +13,11 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
-from icosa.models.moderation import ModerationMixin
+from icosa.model_mixins import (
+    MOD_MODIFIED,
+    MOD_NEW,
+    ModerationMixin,
+)
 
 from .common import (
     ASSET_STATE_CHOICES,
@@ -22,8 +26,6 @@ from .common import (
     CC_LICENSES,
     FILENAME_MAX_LENGTH,
     LICENSE_CHOICES,
-    MOD_MODIFIED,
-    MOD_NEW,
     PRIVATE,
     PUBLIC,
     UNLISTED,
