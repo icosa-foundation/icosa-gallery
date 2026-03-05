@@ -25,8 +25,10 @@ class ModerationObjects:
     def count(self) -> int:
         return self.assets.count() + self.asset_collections.count() + self.asset_owners.count()
 
-    def first(self) -> Optional[Asset | AssetCollection | AssetOwner]:
+    def fetch_one(self, last=False) -> Optional[Asset | AssetCollection | AssetOwner]:
         order = "moderation_state_change_time"
+        if last is True:
+            order = f"-{order}"
         asset = self.assets.order_by(order).first()
         asset_collection = self.asset_collections.order_by(order).first()
         asset_owner = self.asset_owners.order_by(order).first()
@@ -37,8 +39,11 @@ class ModerationObjects:
         return sorted(
             objs,
             key=lambda x: (
-                x.moderation_state_change_time if x.moderation_state_change_time else datetime.datetime(1970, 1, 1)
+                x.moderation_state_change_time
+                if x.moderation_state_change_time
+                else datetime.datetime.fromisoformat("1970-01-01T00:00:00.00Z")
             ),
+            reverse=last,
         )[0]
 
 

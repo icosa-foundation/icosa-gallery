@@ -31,7 +31,7 @@ def moderation_queue(request):
 
     objects_to_moderate = get_objects_to_moderate()
 
-    current_obj = objects_to_moderate.first()
+    current_obj = objects_to_moderate.fetch_one()
 
     if request.method == "POST":
         if current_obj is None:
