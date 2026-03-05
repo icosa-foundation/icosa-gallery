@@ -144,6 +144,11 @@ class Asset(ModerationMixin):
     def timestamp(self):
         return get_snowflake_timestamp(self.id)
 
+    def get_displayname(self):
+        # Used for compatibiliy with AssetOwner and AssetCollection's methods
+        # of the same name.
+        return self.name
+
     def get_base_license(self) -> str:
         # Transform our internal license representations to be compatible with
         # the Google Poly API.

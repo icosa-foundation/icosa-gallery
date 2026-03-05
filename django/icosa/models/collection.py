@@ -41,6 +41,11 @@ class AssetCollection(ModerationMixin):
     )
     visibility = models.CharField(max_length=255, default=PRIVATE, choices=ASSET_VISIBILITY_CHOICES, db_default=PRIVATE)
 
+    def get_displayname(self):
+        # Used for compatibiliy with Asset and AssetCollection's methods of the
+        # same name.
+        return self.name
+
     def get_thumbnail_url(self):
         thumbnail_url = (
             f"{settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}{settings.STATIC_URL}images/nothumbnail.png?v=1"
