@@ -27,6 +27,7 @@ RUN set -x            \
 # npm packages setup
 # Disabled until we need to use the gltf converter
 # COPY package.json .
+# COPY .npmrc .
 # RUN npm install
 
 # Virtualenv setup
