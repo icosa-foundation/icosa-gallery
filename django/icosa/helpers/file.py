@@ -47,6 +47,8 @@ VALID_FORMAT_TYPES = [
     "splat",
 ]
 
+VALID_FORMAT_STRINGS = [x.upper() for x in VALID_FORMAT_TYPES if x != "gltf"] + ["GLTF1", "GLTF2"]
+
 CONTENT_TYPE_MAP = {
     "jpeg": "image/jpeg",
     "jpg": "image/jpeg",

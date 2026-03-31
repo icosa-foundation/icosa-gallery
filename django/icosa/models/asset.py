@@ -211,27 +211,6 @@ class Asset(ModerationMixin):
     def preferred_viewer_format(self):
         return self.format_set.filter(is_preferred_for_gallery_viewer=True).first()
 
-    @property
-    def has_cors_allowed_preferred_format(self):
-        preferred_format = self.preferred_viewer_format
-        if not preferred_format:
-            return False
-
-        # If this asset's preferred_format has a file managed by Django
-        # storage, or if any of the externally-hosted files' sources have been
-        # allowed by the site admin in django constance settings, then it will
-        # be viewable.
-        is_allowed = False
-
-        for format in self.format_set.all():
-            root = format.root_resource
-            if root is not None:
-                if root.file or root.is_cors_allowed:
-                    is_allowed = True
-                    break
-
-        return is_allowed
-
     def get_absolute_url(self):
         return reverse("icosa:asset_view", kwargs={"asset_url": self.url})
 
@@ -299,7 +278,24 @@ class Asset(ModerationMixin):
     def calc_is_viewer_compatible(self):
         if not self.pk:
             return False
-        return self.has_cors_allowed_preferred_format
+        preferred_format = self.preferred_viewer_format
+        if not preferred_format:
+            return False
+
+        # If this asset's preferred_format has a file managed by Django
+        # storage, or if any of the externally-hosted files' sources have been
+        # allowed by the site admin in django constance settings, then it will
+        # be viewable.
+        is_allowed = False
+
+        for format in self.format_set.all():
+            root = format.root_resource
+            if root is not None:
+                if root.file or root.is_cors_allowed:
+                    is_allowed = True
+                    break
+
+        return is_allowed
 
     def denorm_format_types(self):
         if not self.pk:

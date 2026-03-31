@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List, Literal, Optional
 
 from django.urls import reverse_lazy
+from icosa.helpers.file import VALID_FORMAT_STRINGS
 from icosa.models import PUBLIC, Asset, AssetCollection
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
@@ -108,7 +109,13 @@ class AssetFormat(Schema):
         description="This field is deprecated. Do not rely on it for anything.",
         deprecated=True,
     )
-    isPreferredForDownload: bool = Field(default=False, alias="is_preferred_for_download")
+    isPreferredForDownload: bool = Field(..., alias="is_preferred_for_download")
+    isPreferredForGalleryViewer: bool = Field(..., alias="is_preferred_for_gallery_viewer")
+    isCorsAllowed: bool
+
+    @staticmethod
+    def resolve_isCorsAllowed(obj):
+        return obj.is_cors_allowed
 
     @staticmethod
     def resolve_formatComplexity(obj):
@@ -137,6 +144,7 @@ class AssetSchema(ModelSchema):
     triangleCount: int = Field(..., alias=("triangle_count"))
     license: str
     licenseVersion: Optional[str]
+    isIcosaGalleryCompatible: bool = Field(..., alias=("is_viewer_compatible"))
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
     formats: List[AssetFormat]
 
@@ -172,7 +180,7 @@ class AssetSchema(ModelSchema):
 
     @staticmethod
     def resolve_formats(obj, context):
-        return [f for f in obj.format_set.all()]
+        return [f for f in obj.format_set.filter(format_type__in=VALID_FORMAT_STRINGS)]
 
     @staticmethod
     def resolve_tags(obj):

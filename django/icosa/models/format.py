@@ -1,12 +1,14 @@
 from pathlib import Path
 from typing import List, Optional
 
+from django.core.cache import cache
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
 from .asset import Asset
 from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
+from .helpers import get_cached_cors_allow_list
 from .resource import Resource
 
 ROLE_MAX_LENGTH = 255
@@ -104,11 +106,34 @@ class Format(models.Model):
             return self.format_type.lower()
         return role_label.label
 
+    @property
+    def is_cors_allowed(self):
+        cors_allow_list = get_cached_cors_allow_list()
+        resources = self.get_all_resources()
+        resource_pks = "-".join([str(x.pk) for x in resources])
+        cache_key = f"format_is_cors_allowed-{self.pk}-{resource_pks}-{cors_allow_list}"
+
+        is_allowed = cache.get(cache_key, None)
+
+        if is_allowed is not None:
+            return is_allowed
+
+        # We got nothing back from the cache; let's compute the value.
+        disallowed_list = [not x.is_cors_allowed for x in resources]
+        is_disallowed = any(disallowed_list)
+
+        # NOTE(james): Purely so I leave parsing double-negatives in my head until the very end.
+        is_allowed = not is_disallowed
+        cache.set(cache_key, is_allowed, None)  # No expiry
+        return is_allowed
+
     class Meta:
         indexes = [
             models.Index(
                 fields=[
                     "role",
+                    "is_preferred_for_gallery_viewer",
+                    "is_preferred_for_download",
                 ]
             )
         ]
