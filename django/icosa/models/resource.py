@@ -98,7 +98,7 @@ class Resource(models.Model):
         remote_host = self.remote_host
         if remote_host is None:
             is_allowed = True
-        elif remote_host is not None and not self.file:
+        elif remote_host is not None and self.file:
             is_allowed = True
         elif cors_allow_list:
             allowed_sources = tuple([x.strip() for x in cors_allow_list.split(",")])
