@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List, Literal, Optional
 
 from django.urls import reverse_lazy
+from icosa.helpers.file import VALID_FORMAT_STRINGS
 from icosa.models import PUBLIC, Asset, AssetCollection
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
@@ -179,7 +180,7 @@ class AssetSchema(ModelSchema):
 
     @staticmethod
     def resolve_formats(obj, context):
-        return [f for f in obj.format_set.all()]
+        return [f for f in obj.format_set.filter(format_type__in=VALID_FORMAT_STRINGS)]
 
     @staticmethod
     def resolve_tags(obj):
