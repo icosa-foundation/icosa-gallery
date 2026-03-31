@@ -15,7 +15,6 @@ from icosa.models import (
     ARCHIVED,
     PRIVATE,
     PUBLIC,
-    UNLISTED,
     Asset,
 )
 from icosa.views.decorators import cache_per_user
