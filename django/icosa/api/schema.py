@@ -109,8 +109,8 @@ class AssetFormat(Schema):
         description="This field is deprecated. Do not rely on it for anything.",
         deprecated=True,
     )
-    isPreferredForDownload: bool = Field(default=False, alias="is_preferred_for_download")
-    isPreferredForGalleryViewer: bool = Field(default=False, alias="is_preferred_for_gallery_viewer")
+    isPreferredForDownload: bool = Field(..., alias="is_preferred_for_download")
+    isPreferredForGalleryViewer: bool = Field(..., alias="is_preferred_for_gallery_viewer")
     isCorsAllowed: bool
 
     @staticmethod
