@@ -110,7 +110,8 @@ class Format(models.Model):
     def is_cors_allowed(self):
         cors_allow_list = get_cached_cors_allow_list()
         resources = self.get_all_resources()
-        cache_key = f"format_is_cors_allowed-{self.pk}-{[x.pk for x in resources]}-{cors_allow_list}"
+        resource_pks = "-".join([str(x.pk) for x in resources])
+        cache_key = f"format_is_cors_allowed-{self.pk}-{resource_pks}-{cors_allow_list}"
 
         is_allowed = cache.get(cache_key, None)
 
