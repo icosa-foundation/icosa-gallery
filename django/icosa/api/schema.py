@@ -109,6 +109,12 @@ class AssetFormat(Schema):
         deprecated=True,
     )
     isPreferredForDownload: bool = Field(default=False, alias="is_preferred_for_download")
+    isPreferredForGalleryViewer: bool = Field(default=False, alias="is_preferred_for_gallery_viewer")
+    isCorsAllowed: bool
+
+    @staticmethod
+    def resolve_isCorsAllowed(obj):
+        return obj.is_cors_allowed
 
     @staticmethod
     def resolve_formatComplexity(obj):

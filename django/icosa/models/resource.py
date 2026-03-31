@@ -3,13 +3,17 @@ from urllib.parse import urlparse
 
 from constance import config
 from django.conf import settings
+from django.core.cache import cache
 from django.db import models
 
 from .asset import Asset
 from .common import (
     FILENAME_MAX_LENGTH,
 )
-from .helpers import format_upload_path
+from .helpers import (
+    format_upload_path,
+    get_cached_cors_allow_list,
+)
 
 
 class Resource(models.Model):
@@ -81,10 +85,21 @@ class Resource(models.Model):
 
     @property
     def is_cors_allowed(self):
+        cors_allow_list = get_cached_cors_allow_list()
+        cache_key = f"resource_is_cors_allowed-{self.pk}-{cors_allow_list}"
+
+        is_allowed = cache.get(cache_key, None)
+
+        if is_allowed is not None:
+            return is_allowed
+
+        # We got nothing back from the cache; let's compute the value.
+        is_allowed = False
         remote_host = self.remote_host
         if remote_host is None:
-            return True
-        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
+            is_allowed = True
+        elif cors_allow_list:
             allowed_sources = tuple([x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")])
             return remote_host in allowed_sources
-        return False
+        cache.set(cache_key, is_allowed, None)  # No expiry
+        return is_allowed
