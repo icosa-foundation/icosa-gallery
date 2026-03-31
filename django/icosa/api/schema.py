@@ -137,6 +137,7 @@ class AssetSchema(ModelSchema):
     triangleCount: int = Field(..., alias=("triangle_count"))
     license: str
     licenseVersion: Optional[str]
+    isCorsFriendly: bool
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
     formats: List[AssetFormat]
 
@@ -195,6 +196,10 @@ class AssetSchema(ModelSchema):
             return f"{obj.owner}"
         else:
             return ""
+
+    @staticmethod
+    def resolve_isCorsFriendly(obj, context):
+        return obj.has_cors_allowed_preferred_format
 
     # TODO: Uncomment this method to have a Google Poly-compatible schema.
     # @staticmethod
