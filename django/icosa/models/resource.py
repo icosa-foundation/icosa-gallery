@@ -98,8 +98,10 @@ class Resource(models.Model):
         remote_host = self.remote_host
         if remote_host is None:
             is_allowed = True
+        elif remote_host is not None and not self.file:
+            is_allowed = True
         elif cors_allow_list:
-            allowed_sources = tuple([x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")])
-            return remote_host in allowed_sources
+            allowed_sources = tuple([x.strip() for x in cors_allow_list.split(",")])
+            is_allowed = remote_host in allowed_sources
         cache.set(cache_key, is_allowed, None)  # No expiry
         return is_allowed
