@@ -2,6 +2,10 @@
 
 {% load util_tags %}
 
+{% block banner %}
+{% include "partials/js_version_banner.html" %}
+{% endblock banner %}
+
 {% block content %}
     {% if not queue_length %}
     <div class="container">

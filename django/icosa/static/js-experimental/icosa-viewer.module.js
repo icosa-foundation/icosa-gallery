@@ -4035,6 +4035,15 @@ class $677737c8a5cbea2f$var$SketchMetadata {
         this.SkyTexture = userData['TB_SkyTexture'] ?? this.EnvironmentPreset.SkyTexture;
         this.ReflectionTexture = userData['TB_ReflectionTexture'] ?? this.EnvironmentPreset.ReflectionTexture;
         this.ReflectionIntensity = userData['TB_ReflectionIntensity'] ?? this.EnvironmentPreset.ReflectionIntensity;
+        // Convert Unity Euler angles (YXZ, left-handed) to Three.js XYZ Euler degrees.
+        // Goes through a quaternion to correctly change both Euler order and handedness.
+        function unityRotToThreeJSDegrees(rot, label) {
+            const unityEuler = new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(-rot.x), $hBQxr$three.MathUtils.degToRad(-rot.y), $hBQxr$three.MathUtils.degToRad(rot.z), 'YXZ');
+            const q = new $hBQxr$three.Quaternion().setFromEuler(unityEuler);
+            const threeEuler = new $hBQxr$three.Euler().setFromQuaternion(q, 'XYZ');
+            const result = new $hBQxr$three.Vector3($hBQxr$three.MathUtils.radToDeg(threeEuler.x), $hBQxr$three.MathUtils.radToDeg(threeEuler.y), $hBQxr$three.MathUtils.radToDeg(threeEuler.z));
+            return result;
+        }
         function radToDeg3(rot) {
             return {
                 x: $hBQxr$three.MathUtils.radToDeg(rot.x),
@@ -4042,16 +4051,19 @@ class $677737c8a5cbea2f$var$SketchMetadata {
                 z: $hBQxr$three.MathUtils.radToDeg(rot.z)
             };
         }
+        // GLTF node rotations are already in Three.js right-handed XYZ space.
         let light0rot = sceneLights.length >= 1 ? radToDeg3(sceneLights[0].rotation) : null;
         let light1rot = sceneLights.length >= 2 ? radToDeg3(sceneLights[1].rotation) : null;
         // Light 0 Rotation
-        if (userData['TB_SceneLight0Rotation']) this.SceneLight0Rotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']);
+        // Metadata and preset values are in Unity format and need conversion.
+        // GLTF node rotations are already in Three.js space.
+        if (userData['TB_SceneLight0Rotation']) this.SceneLight0Rotation = unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']), 'Light0 TB_metadata');
         else if (light0rot) this.SceneLight0Rotation = new $hBQxr$three.Vector3(light0rot.x, light0rot.y, light0rot.z);
-        else this.SceneLight0Rotation = this.EnvironmentPreset.SceneLight0Rotation;
+        else this.SceneLight0Rotation = unityRotToThreeJSDegrees(this.EnvironmentPreset.SceneLight0Rotation, 'Light0 preset');
         // Light 1 Rotation
-        if (userData['TB_SceneLight1Rotation']) this.SceneLight1Rotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']);
+        if (userData['TB_SceneLight1Rotation']) this.SceneLight1Rotation = unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']), 'Light1 TB_metadata');
         else if (light1rot) this.SceneLight1Rotation = new $hBQxr$three.Vector3(light1rot.x, light1rot.y, light1rot.z);
-        else this.SceneLight1Rotation = this.EnvironmentPreset.SceneLight1Rotation;
+        else this.SceneLight1Rotation = unityRotToThreeJSDegrees(this.EnvironmentPreset.SceneLight1Rotation, 'Light1 preset');
         // Light 0 Color
         if (userData['TB_SceneLight0Color']) this.SceneLight0Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_SceneLight0Color'], this.EnvironmentPreset.SceneLight0Color);
         else this.SceneLight0Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(null, this.EnvironmentPreset.SceneLight0Color);
@@ -4092,15 +4104,7 @@ class $677737c8a5cbea2f$var$EnvironmentPreset {
     }
 }
 class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
-    constructor(assetBaseUrl, pre_render = (_)=>{
-        return {
-            speed: 0.05,
-            flight_speed: 0,
-            update_controls: true
-        };
-    }, frame){
-        this.pre_render = pre_render ///
-        ;
+    constructor(assetBaseUrl, frame){
         this.loadingError = false;
         this.icosa_frame = frame;
         // Attempt to find viewer frame if not assigned
@@ -4110,19 +4114,16 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.icosa_frame = document.createElement('div');
             this.icosa_frame.id = 'icosa-viewer';
         }
-        /* initCustomUi(this.icosa_frame); ///
-
+        initCustomUi(this.icosa_frame);
         const controlPanel = document.createElement('div');
         controlPanel.classList.add('control-panel');
-
         const fullscreenButton = document.createElement('button');
         fullscreenButton.classList.add('panel-button', 'fullscreen-button');
-        fullscreenButton.onclick = () => { this.toggleFullscreen(fullscreenButton); }
-
+        fullscreenButton.onclick = ()=>{
+            this.toggleFullscreen(fullscreenButton);
+        };
         controlPanel.appendChild(fullscreenButton);
-
         this.icosa_frame.appendChild(controlPanel);
-        */ ///
         //loadscreen
         const loadscreen = document.createElement('div');
         loadscreen.id = 'loadscreen';
@@ -4149,8 +4150,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             document.getElementById('loadscreen')?.classList.remove('loaded');
         };
         manager.onLoad = function() {
+            const evt = new Event("icosa-viewer-load-gltf", {
+                bubbles: true,
+                cancelable: false
+            });
             let loadscreen = document.getElementById('loadscreen');
             if (!loadscreen?.classList.contains('loaderror')) loadscreen?.classList.add('fade-out');
+            document.dispatchEvent(evt);
         };
         this.brushPath = new URL('brushes/', assetBaseUrl);
         this.environmentPath = new URL('environments/', assetBaseUrl);
@@ -4218,29 +4224,20 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         let controllerGrip0;
         let controllerGrip1;
         let previousLeftThumbstickX = 0;
-        try {
-            controller0 = this.renderer.xr.getController(0);
-            this.scene.add(controller0);
-            controller1 = this.renderer.xr.getController(1);
-            this.scene.add(controller1);
-            const controllerModelFactory = new (0, $hBQxr$XRControllerModelFactory)();
-            controllerGrip0 = this.renderer.xr.getControllerGrip(0);
-            controllerGrip0.add(controllerModelFactory.createControllerModel(controllerGrip0));
-            this.scene.add(controllerGrip0);
-            controllerGrip1 = this.renderer.xr.getControllerGrip(1);
-            controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
-            this.scene.add(controllerGrip1);
-        } catch (error) {} ///
-        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer, {
-            requiredFeatures: [
-                'hand-tracking'
-            ]
-        }, true); ///
-        this.xrButton_container = xrButton;
-        /* ///this.icosa_frame.appendChild(xrButton);
-
-        function initCustomUi(viewerContainer : HTMLElement) {
-
+        controller0 = this.renderer.xr.getController(0);
+        this.scene.add(controller0);
+        controller1 = this.renderer.xr.getController(1);
+        this.scene.add(controller1);
+        const controllerModelFactory = new (0, $hBQxr$XRControllerModelFactory)();
+        controllerGrip0 = this.renderer.xr.getControllerGrip(0);
+        controllerGrip0.add(controllerModelFactory.createControllerModel(controllerGrip0));
+        this.scene.add(controllerGrip0);
+        controllerGrip1 = this.renderer.xr.getControllerGrip(1);
+        controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
+        this.scene.add(controllerGrip1);
+        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer, {}, true);
+        this.icosa_frame.appendChild(xrButton);
+        function initCustomUi(viewerContainer) {
             const button = document.createElement('button');
             button.innerHTML = `<?xml version="1.0" encoding="utf-8"?>
 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -4258,52 +4255,38 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             button.title = 'Fit Scene to View';
             viewerContainer.appendChild(button);
             const svgPath = button.querySelector('path');
-            button.addEventListener('click', () => {
-                viewer.frameScene();
+            button.addEventListener('click', ()=>{
+                viewer1.frameScene();
             });
-
-            button.addEventListener('mouseover', () => {
+            button.addEventListener('mouseover', ()=>{
                 svgPath.setAttribute('stroke', 'rgba(255, 255, 255, 0.7)');
             });
-            button.addEventListener('mouseout', () => {
+            button.addEventListener('mouseout', ()=>{
                 svgPath.setAttribute('stroke', 'white');
             });
-
-
-        } */ ///
+        }
         const animate = ()=>{
             this.renderer.setAnimationLoop(render);
         // requestAnimationFrame( animate );
         // composer.render();
         };
         const render = ()=>{
-            const { speed: moveSpeed, flight_speed: flight_speed, update_controls: update_controls } = this.pre_render() ///
-            ;
             const delta = clock.getDelta();
             if (this.renderer.xr.isPresenting) {
                 let session = this.renderer.xr.getSession();
                 viewer1.activeCamera = viewer1?.xrCamera;
                 const inputSources = Array.from(session.inputSources);
-                //const moveSpeed = 0.05; ///
-                const snapAngle = -45; /// 15;
+                const moveSpeed = 0.05;
+                const snapAngle = 15;
                 inputSources.forEach((inputSource)=>{
                     const controllerData = handleController(inputSource);
                     if (controllerData) {
-                        //const axes = controllerData.axes; ///
-                        let axes = controllerData.axes ///
-                        ;
-                        if (axes.length < 4) axes = [
-                            0,
-                            0,
-                            0,
-                            0
-                        ] ///                       
-                        ;
+                        const axes = controllerData.axes;
                         if (inputSource.handedness === 'left') // Movement (left thumbstick)
                         {
-                            if (Math.abs(axes[2]) > 0.1 || Math.abs(axes[3]) > 0.1 || flight_speed) {
+                            if (Math.abs(axes[2]) > 0.1 || Math.abs(axes[3]) > 0.1) {
                                 const moveX = axes[2] * moveSpeed;
-                                const moveZ = -axes[3] * moveSpeed + flight_speed; ///
+                                const moveZ = -axes[3] * moveSpeed;
                                 // Get the camera's forward and right vectors
                                 const forward = new $hBQxr$three.Vector3();
                                 viewer1.activeCamera.getWorldDirection(forward);
@@ -4322,10 +4305,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                         if (inputSource.handedness === 'right') {
                             // Rotation (right thumbstick x)
                             if (Math.abs(axes[2]) > 0.8 && Math.abs(previousLeftThumbstickX) <= 0.8) {
-                                if (axes[2] > 0) viewer1.cameraRig.rotateOnWorldAxis(viewer1.activeCamera.up, $hBQxr$three.MathUtils.degToRad(snapAngle)) ///
-                                ;
-                                else viewer1.cameraRig.rotateOnWorldAxis(viewer1.activeCamera.up, -$hBQxr$three.MathUtils.degToRad(snapAngle)) ///
-                                ;
+                                if (axes[2] > 0) viewer1.cameraRig.rotation.y -= $hBQxr$three.MathUtils.degToRad(snapAngle);
+                                else viewer1.cameraRig.rotation.y += $hBQxr$three.MathUtils.degToRad(snapAngle);
                             }
                             previousLeftThumbstickX = axes[2];
                             // Up/down position right thumbstick y)
@@ -4341,10 +4322,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                     viewer1.flatCamera.aspect = viewer1.canvas.clientWidth / viewer1.canvas.clientHeight;
                     viewer1.flatCamera.updateProjectionMatrix();
                 }
-                if (update_controls) {
-                    if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
-                    if (viewer1?.trackballControls) viewer1.trackballControls.update();
-                }
+                if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
+                if (viewer1?.trackballControls) viewer1.trackballControls.update();
             }
             if (viewer1?.activeCamera) this.attachAudioListener(viewer1.activeCamera);
             this.tryStartAutoplayAudio(viewer1.scene);
@@ -5961,6 +5940,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.loadedModel = sceneGltf.scene;
         this.sceneGltf = sceneGltf;
         this.initializeScene();
+        const evt = new Event("icosa-viewer-init-scene-gltf", {
+            bubbles: true,
+            cancelable: false
+        });
+        document.dispatchEvent(evt);
     }
     isLegacyTiltExporter(sceneGltf) {
         const generator = sceneGltf.asset?.generator;
@@ -6301,7 +6285,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
-        const near = cameraOverrides?.perspective?.znear || 0.01;
+        const near = cameraOverrides?.perspective?.znear || 0.1;
         const far = 6000;
         this.flatCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
         let cameraPos = [];
@@ -6454,7 +6438,9 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // 3. Does the GLTF have custom metadata for light transform and color?
         // 4. Does the GLTF have an environment preset guid? If so use the light transform and colors from that
         // 5. If there's neither custom metadata, an environment guid or explicit GLTF lights - create some default lighting.
-        function convertTBEuler(rot) {
+        // All rotations are now stored in Three.js XYZ Euler degrees
+        // (Unity values are converted at parse time in the SketchMetadata constructor).
+        function toEuler(rot) {
             return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z));
         }
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
@@ -6463,30 +6449,25 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.loadedModel.add(light);
             return;
         }
-        let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color, 1.0);
-        let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
-        let light0Euler = convertTBEuler(this.sketchMetadata.SceneLight0Rotation);
-        let light1Euler = convertTBEuler(this.sketchMetadata.SceneLight1Rotation);
-        // Same rotation adjustment we apply to scene and environment
-        if (this.isNewTiltExporter(this.sceneGltf) || this.isV1) {
-            light0Euler.y += Math.PI;
-            light1Euler.y += Math.PI;
-        }
-        const light0Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light0Euler);
+        let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color.clone().convertSRGBToLinear(), 1.0);
+        let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color.clone().convertSRGBToLinear(), 1.0);
+        let light0Euler = toEuler(this.sketchMetadata.SceneLight0Rotation);
+        let light1Euler = toEuler(this.sketchMetadata.SceneLight1Rotation);
+        const light0Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light0Euler);
         l0.position.copy(light0Direction.multiplyScalar(10));
-        const light1Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light1Euler);
+        const light1Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light1Euler);
         l1.position.copy(light1Direction.multiplyScalar(10));
         l0.castShadow = true;
         l1.castShadow = false;
         this.loadedModel?.add(l0);
         this.loadedModel?.add(l1);
         const ambientLight = new $hBQxr$three.AmbientLight();
-        ambientLight.color = this.sketchMetadata.AmbientLightColor;
+        ambientLight.color = this.sketchMetadata.AmbientLightColor.clone().convertSRGBToLinear();
         this.scene.add(ambientLight);
     }
     initFog() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
-        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor, this.sketchMetadata.FogDensity);
+        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor.clone().convertSRGBToLinear(), this.sketchMetadata.FogDensity);
     }
     initSceneBackground() {
         // OBJ and FBX models don't have metadata

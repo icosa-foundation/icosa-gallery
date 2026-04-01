@@ -20,6 +20,7 @@ from icosa.model_mixins import (
     MOD_REJECTED,
 )
 from icosa.models.moderation import ModerationEvent
+from icosa.views.main import set_viewer_js_version
 
 
 @login_required
@@ -28,6 +29,8 @@ def moderation_queue(request):
         return HttpResponseForbidden()
 
     template = "moderation/queue.html"
+
+    set_viewer_js_version(request)
 
     objects_to_moderate = get_objects_to_moderate()
 
