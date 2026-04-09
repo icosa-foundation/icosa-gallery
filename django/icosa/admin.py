@@ -300,6 +300,7 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         ("django_user", admin.EmptyFieldListFilter),
         "is_claimed",
         "disable_profile",
+        "moderation_state",
     )
 
     raw_id_fields = [
