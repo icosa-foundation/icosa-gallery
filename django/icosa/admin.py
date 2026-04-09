@@ -242,7 +242,6 @@ class AssetCollectionAdmin(admin.ModelAdmin):
         "name",
         "url",
         "user__displayname",
-        "moderation_state",
     )
 
     readonly_fields = (
@@ -254,7 +253,10 @@ class AssetCollectionAdmin(admin.ModelAdmin):
 
     inlines = (AssetCollectionAssetInline,)
 
-    list_filter = ("visibility",)
+    list_filter = (
+        "visibility",
+        "moderation_state",
+    )
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(asset_count=Count("assets"))
