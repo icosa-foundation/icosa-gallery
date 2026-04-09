@@ -15,12 +15,14 @@
     <div class="well">
         <h4>{{ field }}:</h4>
         {% if field == "description" %}
-            <p>{{ asset.description|linebreaksbr }}</p>
+            {% if asset.description %}
+                <p>{{ asset.description|linebreaksbr }}</p>
+            {% endif %}
         {% elif field == "thumbnail" %}
             {% if asset.thumbnail %}
-            <img style="max-width:100%;" src="{{ asset.thumbnail.url }}?{% now "U" %}">
+                <img style="max-width:100%;" src="{{ asset.thumbnail.url }}?{% now "U" %}">
             {% else %}
-            No thumbnail
+                No thumbnail
             {% endif %}
         {% else %}
             <p>{{ asset|get_attr:field }}</p>

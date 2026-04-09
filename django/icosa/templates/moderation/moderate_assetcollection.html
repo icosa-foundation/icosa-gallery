@@ -4,9 +4,15 @@
     <div class="well">
         <h4>{{ field }}:</h4>
         {% if field == "description" %}
-            <p>{{ current_obj.description|linebreaksbr }}</p>
+            {% if current_obj.description %}
+                <p>{{ current_obj.description|linebreaksbr }}</p>
+            {% endif %}
         {% elif field == "image" %}
-            <img style="max-width:100%;" src="{{ current_obj.image.url }}?{% now "U" %}">
+            {% if current_obj.image %}
+                <img style="max-width:100%;" src="{{ current_obj.image.url }}?{% now "U" %}">
+            {% else %}
+                No image
+            {% endif %}
         {% else %}
             <p>{{ current_obj|get_attr:field }}</p>
         {% endif %}

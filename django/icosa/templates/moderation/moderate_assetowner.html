@@ -4,7 +4,9 @@
     <div class="well">
         <h4>{{ field }}:</h4>
         {% if field == "description" %}
-            <p>{{ current_obj.description|linebreaksbr }}</p>
+            {% if current_obj.description %}
+                <p>{{ current_obj.description|linebreaksbr }}</p>
+            {% endif %}
         {% else %}
             <p>{{ current_obj|get_attr:field }}</p>
         {% endif %}
