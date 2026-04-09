@@ -9,6 +9,7 @@ from django.http import (
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.cache import never_cache
 from icosa.helpers.moderation import (
     get_objects_to_moderate,
     get_str_content_type,
@@ -23,6 +24,7 @@ from icosa.models.moderation import ModerationEvent
 from icosa.views.main import set_viewer_js_version
 
 
+@never_cache
 @login_required
 def moderation_queue(request):
     if not request.user.groups.filter(name="Moderator").exists():
