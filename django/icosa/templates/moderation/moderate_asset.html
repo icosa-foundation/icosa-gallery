@@ -17,7 +17,11 @@
         {% if field == "description" %}
             <p>{{ asset.description|linebreaksbr }}</p>
         {% elif field == "thumbnail" %}
+            {% if asset.thumbnail %}
             <img style="max-width:100%;" src="{{ asset.thumbnail.url }}?{% now "U" %}">
+            {% else %}
+            No thumbnail
+            {% endif %}
         {% else %}
             <p>{{ asset|get_attr:field }}</p>
         {% endif %}
