@@ -68,6 +68,9 @@ class AssetOwner(ModerationMixin):
         on_delete=models.SET_NULL,
         related_name="moderated_owners",
     )
+    # Assets can be made exempt from moderation by looking
+    # up this field through an FK.
+    moderation_exempt = models.BooleanField(default=False)
     disable_profile = models.BooleanField(default=False)
 
     objects = AssetOwnerManager()

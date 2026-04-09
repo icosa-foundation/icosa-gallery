@@ -52,12 +52,14 @@ def get_objects_to_moderate() -> ModerationObjects:
 
     assets = Asset.objects.filter(
         moderation_state__in=MOD_STATES_OF_INTEREST,
+        owner__moderation_exempt=False,
     ).order_by("moderation_state_change_time")
     collections = AssetCollection.objects.filter(
         moderation_state__in=MOD_STATES_OF_INTEREST,
     ).order_by("moderation_state_change_time")
     owners = AssetOwner.objects.filter(
         moderation_state__in=MOD_STATES_OF_INTEREST,
+        moderation_exempt=False,
     ).order_by("moderation_state_change_time")
 
     return ModerationObjects(
