@@ -1,11 +1,15 @@
 {% load util_tags %}
 {% with asset=current_obj %}
 <h3>Public view of asset:</h3>
-<div id="icosa-wrapper">
-    <div id="tree-view"></div>
-    <div id="icosa-viewer"></div>
-</div>
-{% include "partials/viewer.html" %}
+{% if asset.is_viewer_compatible %}
+    <div id="icosa-wrapper">
+        <div id="tree-view"></div>
+        <div id="icosa-viewer"></div>
+    </div>
+    {% include "partials/viewer.html" %}
+{% else %}
+    <p>Unable to display this model in the viewer. It still requires moderation for the rest of the fields below:</p>
+{% endif %}
 <br>
 <h3>Image textures embedded in the asset:</h3>
 <div id="assetTex"></div>
