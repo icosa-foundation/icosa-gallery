@@ -242,6 +242,7 @@ class AssetCollectionAdmin(admin.ModelAdmin):
         "name",
         "url",
         "user__displayname",
+        "moderation_state",
     )
 
     readonly_fields = (
