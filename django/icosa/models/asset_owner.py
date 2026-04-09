@@ -7,6 +7,7 @@ from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils import timezone
 from icosa.model_mixins import (
+    MOD_DEFERRED,
     MOD_MODIFIED,
     MOD_NEW,
     ModerationMixin,
@@ -114,7 +115,7 @@ class AssetOwner(ModerationMixin):
                     changed_fields = self.moderation_watch_fields
                     moderation_state = MOD_NEW
                     should_log = True
-                else:
+                elif self.moderation_state != MOD_DEFERRED:
                     original_instance = AssetOwner.objects.get(pk=self.pk)
                     for field in self.moderation_watch_fields:
                         if getattr(self, field) != getattr(original_instance, field):
@@ -122,9 +123,11 @@ class AssetOwner(ModerationMixin):
                     moderation_state = MOD_MODIFIED
                     if changed_fields:
                         should_log = True
+                else:
+                    # Just for QA
+                    moderation_state = self.moderation_state
 
                 if should_log:
-                    print(moderation_state)
                     self.moderation_state = moderation_state
                     self.moderation_state_change_time = timezone.now()
                     self.moderation_state_change_by = None

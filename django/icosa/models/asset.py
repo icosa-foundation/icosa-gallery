@@ -14,6 +14,7 @@ from django.utils.text import slugify
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
 from icosa.model_mixins import (
+    MOD_DEFERRED,
     MOD_MODIFIED,
     MOD_NEW,
     ModerationMixin,
@@ -481,8 +482,7 @@ class Asset(ModerationMixin):
                     changed_fields = self.moderation_watch_fields
                     moderation_state = MOD_NEW
                     should_log = True
-
-                else:
+                elif self.moderation_state != MOD_DEFERRED:
                     original_instance = Asset.objects.get(pk=self.pk)
                     for field in self.moderation_watch_fields:
                         if getattr(self, field) != getattr(original_instance, field):
@@ -490,6 +490,9 @@ class Asset(ModerationMixin):
                     moderation_state = MOD_MODIFIED
                     if changed_fields:
                         should_log = True
+                else:
+                    # Just for QA
+                    moderation_state = self.moderation_state
 
                 if should_log:
                     self.moderation_state = moderation_state

@@ -3,6 +3,7 @@ from django.db import models
 MOD_LEGACY = "LEGACY"
 MOD_NEW = "NEW"
 MOD_APPROVED = "APPROVED"
+MOD_DEFERRED = "DEFERRED"
 MOD_REJECTED = "REJECTED"
 MOD_QUERIED = "QUERIED"
 MOD_REPORTED = "REPORTED"
@@ -14,6 +15,7 @@ MODERATION_STATE_CHOICES = [
     (MOD_LEGACY, "Legacy"),
     (MOD_NEW, "New"),
     (MOD_APPROVED, "Approved"),
+    (MOD_DEFERRED, "Deferred"),
     (MOD_REJECTED, "Rejected"),
     (MOD_QUERIED, "Queried"),
     (MOD_REPORTED, "Reported"),
