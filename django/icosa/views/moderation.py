@@ -35,7 +35,7 @@ def moderation_queue(request):
         obj_id = request.POST.get("obj_id")
         if not obj_contenttype:
             return HttpResponseBadRequest("Missing contenttype")
-        if obj_contenttype not in ["asset", "assetowner", "assetcollection"]:
+        if obj_contenttype not in ["asset", "asset owner", "asset collection"]:
             return HttpResponseBadRequest(f"Invalid contenttype: {obj_contenttype}")
         if not obj_id:
             return HttpResponseBadRequest("Missing object id")
