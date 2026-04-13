@@ -47,12 +47,12 @@ def moderation_queue(request):
                 obj = Asset.objects.get(id=obj_id)
             except Asset.DoesNotExist:
                 pass
-        if obj_contenttype == "assetowner":
+        if obj_contenttype == "asset owner":
             try:
                 obj = AssetOwner.objects.get(id=obj_id)
             except AssetOwner.DoesNotExist:
                 pass
-        if obj_contenttype == "assetcollection":
+        if obj_contenttype == "asset collection":
             try:
                 obj = AssetCollection.objects.get(id=obj_id)
             except AssetOwner.DoesNotExist:
