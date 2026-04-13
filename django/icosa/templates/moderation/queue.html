@@ -35,7 +35,7 @@
                             <hr style="border-top:2px solid white;">
                             <form action="{% url 'icosa:moderation_queue' %}" method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="data" value='[{% for field in obj.moderation_changed_fields %}{"{{ field }}": "{{ obj|get_attr:field }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                                <input type="hidden" name="data" value='{{ changed_data }}'>
                                 <input type="hidden" name="obj_contenttype" value="{{ content_type }}">
                                 <input type="hidden" name="obj_id" value="{{ obj.id }}">
                                 <label for="id_notes">Add any notes about this review and then choose an action to {% if queue_length > 1 %}move on to the next item{% else %}finish{% endif %}.</label>
