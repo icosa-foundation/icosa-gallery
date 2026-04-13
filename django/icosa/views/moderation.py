@@ -111,8 +111,7 @@ def moderation_queue(request):
 
     changed_data = {}
     if obj is not None:
-        for field in obj.moderation_changed_fields:
-            changed_data["field"] = getattr(obj, field, "")
+        changed_data = json.dumps(obj.moderation_changed_fields)
 
     context = {
         "objects_to_moderate": objects_to_moderate,
@@ -121,7 +120,7 @@ def moderation_queue(request):
         "obj": obj,
         "moderation_template": moderation_template,
         "is_moderating": True,  # XXX Currently forces viewer.html to load the experimental js.
-        "changed_data": json.dumps(changed_data),
+        "changed_data": changed_data,
     }
 
     return render(
