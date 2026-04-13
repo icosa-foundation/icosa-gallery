@@ -21,7 +21,7 @@
         <div class="row">
             <div class="text-center col">
                 <h2>{{ content_type }} requires moderation (1 of {{ queue_length }})</h2>
-                <p><strong>View on site (new tab): <a href="{{ current_obj.get_absolute_url }}" target="_blank">{{ current_obj.get_displayname }}</a></strong></p>
+                <p><strong>View on site (new tab): <a href="{{ obj.get_absolute_url }}" target="_blank">{{ obj.get_displayname }}</a></strong></p>
             </div>
         </div>
         <div class="row">
@@ -35,7 +35,9 @@
                             <hr style="border-top:2px solid white;">
                             <form action="{% url 'icosa:moderation_queue' %}" method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="data" value='[{% for field in current_obj.moderation_changed_fields %}{"{{ field }}": "{{ current_obj|get_attr:field }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                                <input type="hidden" name="data" value='[{% for field in obj.moderation_changed_fields %}{"{{ field }}": "{{ obj|get_attr:field }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                                <input type="hidden" name="obj_contenttype" value="{{ content_type }}">
+                                <input type="hidden" name="obj_id" value="{{ obj.id }}">
                                 <label for="id_notes">Add any notes about this review and then choose an action to {% if queue_length > 1 %}move on to the next item{% else %}finish{% endif %}.</label>
                                 <textarea name="notes" id="id_notes"></textarea>
                                 <p style="width: 100%" class="text-center">
