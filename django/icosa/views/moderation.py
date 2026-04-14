@@ -113,8 +113,9 @@ def moderation_queue(request):
     if obj is not None:
         for field in obj.moderation_changed_fields:
             if field in ["thumbnail", "preview_image", "image"]:
-                continue
-            changed_data[field] = getattr(obj, field, "")
+                changed_data[field] = str(getattr(obj, field, ""))
+            else:
+                changed_data[field] = getattr(obj, field, "")
 
     context = {
         "objects_to_moderate": objects_to_moderate,
