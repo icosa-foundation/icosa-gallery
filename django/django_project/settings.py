@@ -338,10 +338,6 @@ if os.environ.get("DJANGO_CORS_ALLOWED_ORIGINS", None) is not None:
         if x
     ]
 
-# Compressor settings
-
-COMPRESS_PRECOMPILERS = (("text/x-scss", "django_libsass.SassCompiler"),)
-
 # Constance settings
 
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"

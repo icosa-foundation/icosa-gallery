@@ -19,7 +19,6 @@ django-ratelimit==4.1.0
 django-redis==6.0.0
 django-honeypot==1.3.0
 django-import-export[all]==4.3.7
-django-libsass==0.9
 django-maintenance-mode==0.21.1
 django-ninja==1.4.3
 django-simple-math-captcha==2.0.1
