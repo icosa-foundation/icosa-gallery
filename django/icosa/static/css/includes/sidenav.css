@@ -1,4 +1,4 @@
-@import '../vendor/react-pro-sidebar/styles.scss';
+@import '../vendor/react-pro-sidebar.css';
 
 .toggler {
   position: absolute;
