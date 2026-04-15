@@ -1036,7 +1036,7 @@ def search(request):
         )
 
     if query is not None:
-        q &= Q(search_text__icontains=query)
+        q &= Q(name__icontains=query)
 
     asset_objs = (
         Asset.objects.filter(q).exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).order_by("-rank")
