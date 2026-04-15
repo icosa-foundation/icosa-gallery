@@ -12,7 +12,6 @@ handler500 = icosa_urls.handler500
 
 urlpatterns = [
     path("", include("icosa.urls")),
-    path("admin_tools/", include("admin_tools.urls")),
     path("admin/", admin.site.urls),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
