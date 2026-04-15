@@ -479,6 +479,15 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
         "state",
         "data",
     )
+    list_filter = ("state",)
+    search_fields = (
+        "user",
+        "notes",
+        "content_type",
+        "object_id",
+        "source_object",
+        "data",
+    )
 
 
 @admin.register(ModerationNotification)
