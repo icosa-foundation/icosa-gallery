@@ -479,13 +479,13 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
         "state",
         "data",
     )
-    list_filter = ("state",)
+    list_filter = (
+        "state",
+        ("content_type", admin.RelatedOnlyFieldListFilter),
+    )
     search_fields = (
-        "user",
         "notes",
-        "content_type",
         "object_id",
-        "source_object",
         "data",
     )
 
