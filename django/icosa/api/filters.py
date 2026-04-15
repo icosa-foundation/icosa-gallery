@@ -179,7 +179,7 @@ class FiltersBase(FilterSchema):
             if len(keyword_list) > 16:
                 raise HttpError(400, "Exceeded 16 space-separated keywords.")
             for keyword in keyword_list:
-                q &= Q(search_text__icontains=keyword)
+                q &= Q(name__icontains=keyword)
         return q
 
     def filter_triangleCountMin(self, value: int) -> Q:
