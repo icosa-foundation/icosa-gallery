@@ -68,7 +68,7 @@
             margin-right: 0;
 
             .pro-icon .fa-icon svg {
-              vertical-align: -0.25em; // Magic number fix for this context only
+              vertical-align: -0.25em; /* Magic number fix for this context only */
             }
           }
         }
@@ -106,7 +106,7 @@
     .pro-menu-item {
       .pro-icon-wrapper {
         .pro-icon .fa-icon svg {
-          vertical-align: -0.25em; // Magic number fix for this context only
+          vertical-align: -0.25em; /* Magic number fix for this context only */
         }
       }
     }
