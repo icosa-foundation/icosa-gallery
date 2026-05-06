@@ -1,6 +1,6 @@
 {% load util_tags %}
 <h3>Changed/new field values:</h3>
-{% for field in obj.moderation_changed_fields %}
+{% for field in obj.moderation_watch_fields %}
     <div class="well">
         <h4>{{ field }}:</h4>
         {% if field == "description" %}
