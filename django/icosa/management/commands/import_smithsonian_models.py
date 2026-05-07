@@ -916,6 +916,7 @@ class Command(BaseCommand):
                         existing.add_entry(entry)
                     if not had_models and existing.model_entries:
                         usable_asset_count += 1
+                        page_assets[model_url] = existing
                 else:
                     aggregated_assets[model_url] = asset_data
                     page_assets[model_url] = asset_data
