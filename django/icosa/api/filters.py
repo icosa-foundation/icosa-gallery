@@ -1,15 +1,14 @@
 from enum import Enum, auto
 from typing import List, Optional
 
-from ninja import Field, FilterSchema, Schema
-from ninja.errors import HttpError
-from pydantic import model_validator
-from pydantic.json_schema import SkipJsonSchema
-
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from icosa.api.exceptions import FilterException
 from icosa.models import Asset
+from ninja import Field, FilterSchema, Schema
+from ninja.errors import HttpError
+from pydantic import model_validator
+from pydantic.json_schema import SkipJsonSchema
 
 
 class FilterCategory(Enum):
@@ -34,9 +33,9 @@ class FilterCategory(Enum):
     NONE = ""
 
     @classmethod
-    def _missing_(cls, name):
+    def _missing_(cls, value):
         for member in cls:
-            if member.name.lower() == name.lower():
+            if member.name.lower() == str(value).lower():
                 return member
 
 
@@ -54,6 +53,7 @@ class FilterFormat(Enum):
     GLTF2 = "GLTF2"
     OBJ = "OBJ"
     FBX = "FBX"
+    VOX = "VOX"
     NO_TILT = "-TILT"
     NO_BLOCKS = "-BLOCKS"
     NO_GLTF = "-GLTF"
@@ -61,6 +61,7 @@ class FilterFormat(Enum):
     NO_GLTF2 = "-GLTF2"
     NO_OBJ = "-OBJ"
     NO_FBX = "-FBX"
+    NO_VOX = "-VOX"
 
 
 class FilterLicense(Enum):
@@ -97,9 +98,9 @@ class FilterOrder(Enum):
     AUTHOR_NAME_DESC = "-AUTHOR_NAME"
 
     @classmethod
-    def _missing_(cls, name):
+    def _missing_(cls, value):
         for member in cls:
-            if member.name.lower() == name.lower():
+            if member.name.lower() == str(value).lower():
                 return member
 
 
@@ -152,6 +153,11 @@ class FiltersBase(FilterSchema):
     triangleCountMax: Optional[int] = None
     maxComplexity: Optional[FilterComplexity] = Field(default=None)
     zipArchiveUrl: Optional[str] = Field(default=None, q="format__zip_archive_url__icontains")
+    inCollection: Optional[bool] = None
+
+    def filter_inCollection(self, value: bool) -> Q:
+        q = Q(assetcollection__isnull=not value)
+        return q
 
     def filter_category(self, value: FilterCategory) -> Q:
         POLY_CATEGORY_MAP = {
@@ -173,7 +179,7 @@ class FiltersBase(FilterSchema):
             if len(keyword_list) > 16:
                 raise HttpError(400, "Exceeded 16 space-separated keywords.")
             for keyword in keyword_list:
-                q &= Q(search_text__icontains=keyword)
+                q &= Q(name__icontains=keyword)
         return q
 
     def filter_triangleCountMin(self, value: int) -> Q:
@@ -183,26 +189,34 @@ class FiltersBase(FilterSchema):
         return Q(triangle_count__lte=value) & Q(triangle_count__gte=0) if value else Q()
 
     def filter_format(self, value: List[FilterFormat]) -> Q:
-        q = Q()
+        positive_q = Q()
+        negative_q = Q()
         if value:
             valid_q = False
-            for format in value:
+            for format_type in value:
                 # Reliant on the fact that each of FILTERABLE_FORMATS has an
-                # associated has_<format> field in the db.
-                format_value = format.value
-                if format == FilterFormat.GLTF:
+                # associated has_<format_type> field in the db.
+                format_value = format_type.value
+                if format_type == FilterFormat.GLTF:
                     format_value = "GLTF_ANY"
-                if format == FilterFormat.NO_GLTF:
+                if format_type == FilterFormat.NO_GLTF:
                     format_value = "-GLTF_ANY"
+
                 if format_value.startswith("-"):
-                    q |= Q(**{f"has_{format_value.lower()[1:]}": False})
+                    negative_q |= Q(**{f"has_{format_value.lower()[1:]}": False})
                 else:
-                    q |= Q(**{f"has_{format_value.lower()}": True})
+                    positive_q |= Q(**{f"has_{format_value.lower()}": True})
+
+                # TODO(james): valid_q should really check a list of valid types and break early if not in the list
                 valid_q = True
 
             if not valid_q:
                 choices = ", ".join([x.value for x in FilterFormat])
                 raise FilterException(f"Format filter not one of {choices}")
+
+        # The query we want is, for example Q: (AND: (OR: ('has_fbx', True), ('has_obj', True), ('has_gltf2', True)), (OR: ('has_blocks', False), ('has_tilt', False)))
+        q = positive_q
+        q &= negative_q
         return q
 
     def filter_maxComplexity(self, value: FilterComplexity) -> Q:

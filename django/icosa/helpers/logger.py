@@ -1,10 +1,10 @@
 import inspect
-from typing import NoReturn, Optional
+from typing import Optional
 
 from django.utils import timezone
 
 
-def icosa_log(message: Optional[str] = None, logname: Optional[str] = None, logfile: Optional[str] = None) -> NoReturn:
+def icosa_log(message: Optional[str] = None, logfile: Optional[str] = None) -> None:
     try:
         now = timezone.now().strftime("%d/%m/%Y %H:%M:%S:%f %z")
 

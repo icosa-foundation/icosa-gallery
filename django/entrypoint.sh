@@ -1,7 +1,7 @@
 #!/bin/bash
 
 UP_TEST_RETRIES=10
-until bash -c '(echo > /dev/tcp/db/5432) > /dev/null 2>&1' || [ $UP_TEST_RETRIES -eq 0 ]; do
+until bash -c '(echo > /dev/tcp/postgres/5432) > /dev/null 2>&1' || [ $UP_TEST_RETRIES -eq 0 ]; do
     echo "Waiting for Postgres server, $((UP_TEST_RETRIES--)) remaining attempts..."
     sleep 1
 done
@@ -18,11 +18,5 @@ fi
 
 
 echo "Running in $DEPLOYMENT_ENV mode"
-if [[ $DEPLOYMENT_ENV == 'production' ]];
-then
-    python manage.py run_huey &
-    gunicorn django_project.wsgi:application --bind 0.0.0.0:8000 --timeout 900
-else
-    python manage.py run_huey &
-    python manage.py runserver 0.0.0.0:8000
-fi
+python manage.py run_huey &
+uvicorn --host=0.0.0.0 --port=8000 django_project.asgi:application --lifespan off

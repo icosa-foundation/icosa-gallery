@@ -5,7 +5,7 @@
         <div class="col text-center">
             <h2 class="uppercase">
                 {% if client_secret %}
-                    {% if client_id %}{{ client_id }} Login{% else %}Login Code{% endif %}
+                    {% if client_name %}{{ client_name }} Login{% else %}Login Code{% endif %}
                 {% else %}
                     Login Code
                 {% endif %}

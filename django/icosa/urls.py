@@ -1,9 +1,7 @@
-from ninja import NinjaAPI
-from ninja.throttling import AnonRateThrottle, AuthRateThrottle
-
 from django.conf import settings
 from django.urls import path
 from django.views.generic import RedirectView
+from icosa.api.asset_collections import router as asset_collections_router
 from icosa.api.assets import router as assets_router
 from icosa.api.login import router as login_router
 from icosa.api.oembed import router as oembed_router
@@ -13,6 +11,9 @@ from icosa.views import asset_collections as asset_collection_views
 from icosa.views import auth as auth_views
 from icosa.views import autocomplete as autocomplete_views
 from icosa.views import main as main_views
+from icosa.views import moderation as moderation_views
+from ninja import NinjaAPI
+from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
 app_name = "icosa"
 
@@ -21,7 +22,7 @@ handler404 = main_views.handler404
 handler500 = main_views.handler500
 
 throttle_rules = [
-    AnonRateThrottle("60/h"),
+    AnonRateThrottle("600/h"),
     AuthRateThrottle("1000/h"),
 ]
 
@@ -48,6 +49,7 @@ else:
     )
 
 api.add_router("assets", assets_router, tags=["Assets"])
+api.add_router("collections", asset_collections_router, tags=["Collections"])
 api.add_router("login", login_router, tags=["Login"])
 api.add_router("oembed", oembed_router, tags=["Oembed"])
 api.add_router("users", users_router, tags=["Users"])
@@ -82,6 +84,7 @@ urlpatterns = [
         name="password_reset_confirm",
     ),
     path("device", auth_views.devicecode, name="devicecode"),
+    path("device/<str:appid>/<str:secret>", auth_views.devicecode, name="devicecode"),
     path("device-login-success", auth_views.device_login_success, name="device_login_success"),
     # Other views
     path("", main_views.home, name="home"),
@@ -94,8 +97,14 @@ urlpatterns = [
     path("other", main_views.home_other, name="home_other"),
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
+    path("upload_list_partial", main_views.upload_list_partial, name="upload_list_partial"),
+    path("upload_asset", main_views.upload_asset, name="upload_asset"),
     path("user/<str:slug>", main_views.user_show, name="user_show"),
-    path("user/<str:user_url>/collections", asset_collection_views.user_asset_collection_list, name="user_asset_collection_list"),
+    path(
+        "user/<str:user_url>/collections",
+        asset_collection_views.user_asset_collection_list,
+        name="user_asset_collection_list",
+    ),
     path(
         "user/<str:user_url>/collections/<str:collection_url>",
         asset_collection_views.user_asset_collection_view,
@@ -187,6 +196,7 @@ urlpatterns = [
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
     path("waitlist", main_views.waitlist, name="waitlist"),
+    path("moderation", moderation_views.moderation_queue, name="moderation_queue"),
     # autocomplete views
     path(
         "tag-autocomplete",

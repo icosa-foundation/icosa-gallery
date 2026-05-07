@@ -27,18 +27,4 @@
         </details>
     {% endif %}
 {% endif %}
-{% if field.name == "zip_file" %}
-    <p>Upload a new zip file to replace the work you've already uploaded. You cannot change this once you have published your work.</p>
-{% endif %}
-{% if field.name == "thumbnail" %}
-    <div>
-        <input type="hidden" name="thumbnail_override_image">
-        <label for="thumbnail_override">Use current viewport as the thumbnail:</label>
-        <input class="input-inline" type="checkbox" name="thumbnail_override" id="id_thumbnail_override">
-        <img class="img-preview" src="{% if asset.thumbnail %}{{ asset.thumbnail.url }}{% endif %}" id="thumbnail_override_preview">
-        <a href="javascript:void(0)" id="thumbnail_override_refresh">Update</a>
-        {{ field }}
-    </div>
-{% else %}
-    {{ field }}
-{% endif %}
+{{ field }}

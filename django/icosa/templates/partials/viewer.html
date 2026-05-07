@@ -72,7 +72,7 @@
         "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/",
-        {% if request.session.viewer_js_version == "experimental" %}
+        {% if request.session.viewer_js_version == "experimental" or is_moderating %}
             "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
         {% else %}
             "three-icosa": "/static/js/three-icosa.module.js?v={% now "U" %}",
@@ -87,7 +87,7 @@
 
     {% if request.session.viewer_js_version == "previous" %}
         import { Viewer } from "/static/js-previous/icosa-viewer.module.js?v={% now "U" %}";
-    {% elif request.session.viewer_js_version == "experimental" %}
+    {% elif request.session.viewer_js_version == "experimental" or is_moderating %}
         import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
         import * as THREE from "three";
     {% else %}
@@ -97,7 +97,7 @@
 
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-    {% if request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" or is_moderating %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-experimental/");
     {% elif request.session.viewer_js_version == "previous" %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-previous/");
@@ -163,7 +163,7 @@
         console.log("Trying to load obj");
         {% with mtl_resource=asset.preferred_viewer_format.resource_set.first %}
             {% if mtl_resource %}
-                let mtlUrl = "{{ mtl_resource.url }}";
+                let mtlUrl = "{{ mtl_resource.url|default_if_none:'' }}";
                 await viewer.loadObjWithMtl(url, mtlUrl, overrides);
             {% else %}
                 await viewer.loadObj(url, overrides);

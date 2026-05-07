@@ -2277,34 +2277,34 @@ class $e1f901905a002d12$export$2e2bcd8739ae039 extends $e1f901905a002d12$export$
 
 
 class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
-    static createButton(renderer, sessionInit = {}) {
-        const button = document.createElement('button');
-        function showStartXR(mode) {
+    static createButton(renderer, sessionInit = {}, allowAR = true) {
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.bottom = '20px';
+        container.style.left = '50%';
+        container.style.transform = 'translateX(-50%)';
+        container.style.display = 'flex';
+        container.style.gap = '10px';
+        container.style.zIndex = '999';
+        function createXRButton(mode, label) {
+            const button = document.createElement('button');
             let currentSession = null;
             async function onSessionStarted(session) {
                 session.addEventListener('end', onSessionEnded);
                 await renderer.xr.setSession(session);
-                button.textContent = 'STOP XR';
+                button.textContent = `STOP ${label}`;
                 currentSession = session;
             }
             function onSessionEnded() {
                 currentSession.removeEventListener('end', onSessionEnded);
-                button.textContent = 'START XR';
+                button.textContent = `START ${label}`;
                 currentSession = null;
             }
-            //
-            button.style.display = '';
             button.style.cursor = 'pointer';
-            button.style.left = 'calc(50% - 50px)';
             button.style.width = '100px';
-            button.textContent = 'START XR';
+            button.textContent = `START ${label}`;
             const sessionOptions = {
-                ...sessionInit,
-                optionalFeatures: [
-                    'local-floor',
-                    'bounded-floor',
-                    ...sessionInit.optionalFeatures || []
-                ]
+                ...sessionInit
             };
             button.onmouseenter = function() {
                 button.style.opacity = '1.0';
@@ -2324,29 +2324,10 @@ class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
             if (navigator.xr.offerSession !== undefined) navigator.xr.offerSession(mode, sessionOptions).then(onSessionStarted).catch((err)=>{
                 console.warn(err);
             });
-        }
-        function disableButton() {
-            button.style.display = '';
-            button.style.cursor = 'auto';
-            button.style.left = 'calc(50% - 75px)';
-            button.style.width = '150px';
-            button.onmouseenter = null;
-            button.onmouseleave = null;
-            button.onclick = null;
-        }
-        function showXRNotSupported() {
-            disableButton();
-            button.textContent = 'No headset found';
-            button.style.display = 'none';
-        }
-        function showXRNotAllowed(exception) {
-            disableButton();
-            console.warn('Exception when trying to call xr.isSessionSupported', exception);
-            button.textContent = 'XR NOT ALLOWED';
+            stylizeElement(button);
+            return button;
         }
         function stylizeElement(element) {
-            element.style.position = 'absolute';
-            element.style.bottom = '20px';
             element.style.padding = '12px 6px';
             element.style.border = '1px solid #fff';
             element.style.borderRadius = '4px';
@@ -2356,33 +2337,59 @@ class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
             element.style.textAlign = 'center';
             element.style.opacity = '0.5';
             element.style.outline = 'none';
-            element.style.zIndex = '999';
         }
         if ('xr' in navigator) {
-            button.id = 'XRButton';
-            button.style.display = 'none';
-            stylizeElement(button);
-            navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
-                if (supported) showStartXR('immersive-ar');
-                else navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
-                    if (supported) showStartXR('immersive-vr');
-                    else showXRNotSupported();
-                }).catch(showXRNotAllowed);
-            }).catch(showXRNotAllowed);
-            return button;
+            const promises = [];
+            if (allowAR) promises.push(navigator.xr.isSessionSupported('immersive-ar').then((supported)=>({
+                    mode: 'immersive-ar',
+                    supported: supported,
+                    label: 'AR'
+                })).catch(()=>({
+                    mode: 'immersive-ar',
+                    supported: false,
+                    label: 'AR'
+                })));
+            promises.push(navigator.xr.isSessionSupported('immersive-vr').then((supported)=>({
+                    mode: 'immersive-vr',
+                    supported: supported,
+                    label: 'VR'
+                })).catch(()=>({
+                    mode: 'immersive-vr',
+                    supported: false,
+                    label: 'VR'
+                })));
+            Promise.all(promises).then((results)=>{
+                let supportedModes = results.filter((r)=>r.supported);
+                // For debugging
+                // if (supportedModes.length === 0 || true) {
+                //     supportedModes.push({mode: 'immersive-vr', supported: true, label: 'VR'});
+                //     supportedModes.push({mode: 'immersive-ar', supported: true, label: 'AR'});
+                // }
+                if (supportedModes.length === 0) {
+                    const message = document.createElement('div');
+                    message.textContent = 'No headset found';
+                    message.style.cursor = 'auto';
+                    message.style.width = '150px';
+                    message.style.display = 'none';
+                    stylizeElement(message);
+                    container.appendChild(message);
+                } else supportedModes.forEach(({ mode: mode, label: label })=>{
+                    const button = createXRButton(mode, label);
+                    container.appendChild(button);
+                });
+            });
+            return container;
         } else {
             const message = document.createElement('a');
             if (window.isSecureContext === false) {
                 message.href = document.location.href.replace(/^http:/, 'https:');
-                message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
-            } else // message.href = 'https://immersiveweb.dev/';
-            // message.innerHTML = 'WEBXR NOT AVAILABLE';
-            message.style = 'display: none';
-            message.style.left = 'calc(50% - 90px)';
+                message.innerHTML = 'WEBXR NEEDS HTTPS';
+            } else message.style.display = 'none';
             message.style.width = '180px';
             message.style.textDecoration = 'none';
             stylizeElement(message);
-            return message;
+            container.appendChild(message);
+            return container;
         }
     }
 }
@@ -2601,47 +2608,60 @@ function $7f098f70bc341b4e$export$fc22e28a11679cb8(cameraControls) {
         ARROW_RIGHT: 39,
         ARROW_DOWN: 40
     };
-    const wKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.W, 1);
-    const aKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.A, 1);
-    const sKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.S, 1);
-    const dKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.D, 1);
-    const qKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.Q, 1);
-    const eKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.E, 1);
+    let baseTranslationSpeed = 0.0001;
+    let rotSpeed = 1;
+    let holdInterval = 0.1;
+    let maxSpeedMultiplier = 50;
+    let accelerationTime = 1500;
+    const getSpeedMultiplier = (elapsedTime)=>{
+        const t = Math.min(elapsedTime / accelerationTime, 1);
+        return 1 + (maxSpeedMultiplier - 1) * t;
+    };
+    const wKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.W, holdInterval);
+    const aKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.A, holdInterval);
+    const sKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.S, holdInterval);
+    const dKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.D, holdInterval);
+    const qKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.Q, holdInterval);
+    const eKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.E, holdInterval);
     aKey.addEventListener('holding', function(event) {
-        cameraControls.truck(-0.01 * event?.deltaTime, 0, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.truck(-speed, 0, true);
     });
     dKey.addEventListener('holding', function(event) {
-        cameraControls.truck(0.01 * event?.deltaTime, 0, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.truck(speed, 0, true);
     });
     wKey.addEventListener('holding', function(event) {
-        cameraControls.forward(0.01 * event?.deltaTime, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.forward(speed, true);
     });
     sKey.addEventListener('holding', function(event) {
-        cameraControls.forward(-0.01 * event?.deltaTime, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.forward(-speed, true);
     });
     qKey.addEventListener('holding', function(event) {
-        cameraControls.truck(0, 0.01 * event?.deltaTime, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.truck(0, speed, true);
     });
     eKey.addEventListener('holding', function(event) {
-        cameraControls.truck(0, -0.01 * event?.deltaTime, true);
+        const speed = baseTranslationSpeed * getSpeedMultiplier(event?.elapsedTime) * event?.deltaTime;
+        cameraControls.truck(0, -speed, true);
     });
-    // Leaving this here because I hope I can use it later somehow.
-    // cameraControls.mouseButtons.wheel = CameraControls.ACTION.ZOOM;
-    const leftKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_LEFT, 1);
-    const rightKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_RIGHT, 1);
-    const upKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_UP, 1);
-    const downKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_DOWN, 1);
+    const leftKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_LEFT, holdInterval);
+    const rightKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_RIGHT, holdInterval);
+    const upKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_UP, holdInterval);
+    const downKey = new $8ae143a90d3c4f75$export$b930b29ba9cf39c9(KEYCODE.ARROW_DOWN, holdInterval);
     leftKey.addEventListener('holding', function(event) {
-        cameraControls.rotate(0.1 * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, 0, true);
+        cameraControls.rotate(rotSpeed * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, 0, true);
     });
     rightKey.addEventListener('holding', function(event) {
-        cameraControls.rotate(-0.1 * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, 0, true);
+        cameraControls.rotate(-rotSpeed * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, 0, true);
     });
     upKey.addEventListener('holding', function(event) {
-        cameraControls.rotate(0, -0.05 * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, true);
+        cameraControls.rotate(0, -rotSpeed * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, true);
     });
     downKey.addEventListener('holding', function(event) {
-        cameraControls.rotate(0, 0.05 * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, true);
+        cameraControls.rotate(0, rotSpeed * (0, $hBQxr$MathUtils).DEG2RAD * event?.deltaTime, true);
     });
 }
 
@@ -3758,6 +3778,233 @@ class $81e80e8b2d2d5e9f$var$GLTFParser {
 }
 
 
+class $707bd002539ed0ea$export$1b293339dff011f9 {
+    constructor(parser, listener, threeNamespace){
+        this.name = 'KHR_audio_emitter';
+        this.parser = parser;
+        this.listener = listener;
+        this.three = threeNamespace;
+        this.sourceBufferCache = new Map();
+    }
+    createNodeAttachment(nodeIndex) {
+        const nodeDef = this.parser?.json?.nodes?.[nodeIndex];
+        const nodeExt = nodeDef?.extensions?.[this.name];
+        const emitterIndex = nodeExt?.emitter;
+        if (typeof emitterIndex !== 'number') return null;
+        return this.createAudioForEmitter(emitterIndex, true).then((audio)=>{
+            if (audio) return audio;
+            console.warn(`[KHR_audio_emitter] node ${nodeIndex} emitter ${emitterIndex} produced no audio attachment`);
+            return this.createEmptyAttachment();
+        }).catch((err)=>{
+            console.error(`[KHR_audio_emitter] node ${nodeIndex} emitter ${emitterIndex} attachment failed`, err);
+            return this.createEmptyAttachment();
+        });
+    }
+    async afterRoot(result) {
+        const scenes = result?.scenes || [];
+        const processedSceneIndices = new Set();
+        const pending = [];
+        for (const scene of scenes){
+            const sceneIndex = this.parser?.associations?.get(scene)?.scenes;
+            if (typeof sceneIndex !== 'number' || processedSceneIndices.has(sceneIndex)) continue;
+            processedSceneIndices.add(sceneIndex);
+            const sceneDef = this.parser?.json?.scenes?.[sceneIndex];
+            const sceneExt = sceneDef?.extensions?.[this.name];
+            const emitterIndices = this.toIndexList(sceneExt?.emitters);
+            for (const emitterIndex of emitterIndices)pending.push(this.createAudioForEmitter(emitterIndex, false).then((audio)=>{
+                if (audio) scene.add(audio);
+            }).catch(()=>{}));
+        }
+        await Promise.all(pending);
+    }
+    getExtensionRoot() {
+        const rootExt = this.parser?.json?.extensions?.[this.name];
+        return rootExt && typeof rootExt === 'object' ? rootExt : null;
+    }
+    getSource(sourceIndex) {
+        const ext = this.getExtensionRoot();
+        const sources = ext?.sources;
+        return Array.isArray(sources) ? sources[sourceIndex] ?? null : null;
+    }
+    getEmitter(emitterIndex) {
+        const ext = this.getExtensionRoot();
+        const emitters = ext?.emitters;
+        return Array.isArray(emitters) ? emitters[emitterIndex] ?? null : null;
+    }
+    getAudio(audioIndex) {
+        const ext = this.getExtensionRoot();
+        const audioDefs = ext?.audio;
+        return Array.isArray(audioDefs) ? audioDefs[audioIndex] ?? null : null;
+    }
+    async createAudioForEmitter(emitterIndex, positionalPreferred) {
+        try {
+            const emitter = this.getEmitter(emitterIndex);
+            if (!emitter) {
+                console.warn(`[KHR_audio_emitter] missing emitter ${emitterIndex}`);
+                return null;
+            }
+            const sourceIndices = this.toIndexList(emitter.sources);
+            if (sourceIndices.length === 0) {
+                console.warn(`[KHR_audio_emitter] emitter ${emitterIndex} has no sources`);
+                return null;
+            }
+            const audioNodes = [];
+            for (const sourceIndex of sourceIndices){
+                const audioNode = await this.createAudioForSource(emitter, sourceIndex, positionalPreferred);
+                if (audioNode) audioNodes.push(audioNode);
+            }
+            if (audioNodes.length === 0) return null;
+            if (audioNodes.length === 1) return audioNodes[0];
+            const root = audioNodes[0];
+            for(let i = 1; i < audioNodes.length; i++)root.add(audioNodes[i]);
+            return root;
+        } catch (_err) {
+            return null;
+        }
+    }
+    createEmptyAttachment() {
+        const Object3DCtor = this.getThreeCtor([
+            79,
+            98,
+            106,
+            101,
+            99,
+            116,
+            51,
+            68
+        ]); // Object3D
+        return new Object3DCtor();
+    }
+    async createAudioForSource(emitter, sourceIndex, positionalPreferred) {
+        const source = this.getSource(sourceIndex);
+        if (!source) {
+            console.warn(`[KHR_audio_emitter] missing source ${sourceIndex}`);
+            return null;
+        }
+        const emitterType = emitter.type;
+        const isPositional = positionalPreferred && emitterType !== 'global';
+        const ctorNameCodes = isPositional ? [
+            80,
+            111,
+            115,
+            105,
+            116,
+            105,
+            111,
+            110,
+            97,
+            108,
+            65,
+            117,
+            100,
+            105,
+            111
+        ] // PositionalAudio
+         : [
+            65,
+            117,
+            100,
+            105,
+            111
+        ]; // Audio
+        const AudioCtor = this.getThreeCtor(ctorNameCodes);
+        const audio = new AudioCtor(this.listener);
+        const buffer = await this.loadSourceBuffer(sourceIndex);
+        if (!buffer) {
+            console.warn(`[KHR_audio_emitter] source ${sourceIndex} buffer load failed`);
+            return null;
+        }
+        audio.setBuffer(buffer);
+        const sourceGain = typeof source.gain === 'number' ? source.gain : 1.0;
+        const emitterGain = typeof emitter.gain === 'number' ? emitter.gain : 1.0;
+        audio.setVolume(sourceGain * emitterGain);
+        audio.setLoop(Boolean(source.loop));
+        audio.userData = audio.userData || {};
+        audio.userData.__khrAudioAutoPlay = Boolean(source.autoPlay);
+        if (isPositional) this.applyPositionalSettings(audio, emitter);
+        if (source.autoPlay) try {
+            audio.play();
+        } catch (_err) {
+            // Browsers can block autoplay until user interaction.
+            console.warn(`[KHR_audio_emitter] source ${sourceIndex} autoplay blocked (waiting for unlock)`);
+        }
+        return audio;
+    }
+    applyPositionalSettings(audio, emitter) {
+        const positional = emitter?.positional && typeof emitter.positional === 'object' ? emitter.positional : null;
+        if (!positional) return;
+        if (typeof positional.distanceModel === 'string') audio.setDistanceModel(positional.distanceModel);
+        if (typeof positional.maxDistance === 'number') audio.setMaxDistance(positional.maxDistance);
+        if (typeof positional.refDistance === 'number') audio.setRefDistance(positional.refDistance);
+        if (typeof positional.rolloffFactor === 'number') audio.setRolloffFactor(positional.rolloffFactor);
+        const shapeType = positional.shapeType;
+        if (shapeType === 'cone') {
+            const innerAngleRad = positional.coneInnerAngle ?? Math.PI * 2;
+            const outerAngleRad = positional.coneOuterAngle ?? Math.PI * 2;
+            const outerGain = positional.coneOuterGain ?? 0;
+            audio.setDirectionalCone(this.three.MathUtils.radToDeg(innerAngleRad), this.three.MathUtils.radToDeg(outerAngleRad), outerGain);
+        }
+    }
+    loadSourceBuffer(sourceIndex) {
+        const cached = this.sourceBufferCache.get(sourceIndex);
+        if (cached) return cached;
+        const source = this.getSource(sourceIndex);
+        if (!source || typeof source.audio !== 'number') {
+            const missing = Promise.resolve(null);
+            this.sourceBufferCache.set(sourceIndex, missing);
+            return missing;
+        }
+        const promise = this.loadAudioBuffer(source.audio);
+        this.sourceBufferCache.set(sourceIndex, promise);
+        return promise;
+    }
+    toIndexList(value) {
+        if (!Array.isArray(value)) return [];
+        const out = [];
+        for (const item of value)if (typeof item === 'number') out.push(item);
+        return out;
+    }
+    async loadAudioBuffer(audioIndex) {
+        const audioDef = this.getAudio(audioIndex);
+        if (!audioDef) {
+            console.warn(`[KHR_audio_emitter] missing audio entry ${audioIndex}`);
+            return null;
+        }
+        let arrayBuffer = null;
+        if (typeof audioDef.uri === 'string') arrayBuffer = await this.loadArrayBufferFromUri(audioDef.uri);
+        else if (typeof audioDef.bufferView === 'number') arrayBuffer = await this.parser.getDependency('bufferView', audioDef.bufferView);
+        if (!arrayBuffer) {
+            console.warn(`[KHR_audio_emitter] audio ${audioIndex} has no uri/bufferView data`);
+            return null;
+        }
+        const clonedBuffer = arrayBuffer.slice(0);
+        try {
+            const decoded = await this.listener.context.decodeAudioData(clonedBuffer);
+            return decoded;
+        } catch (err) {
+            console.error(`[KHR_audio_emitter] audio ${audioIndex} decode failed`, err);
+            return null;
+        }
+    }
+    loadArrayBufferFromUri(uri) {
+        return new Promise((resolve, reject)=>{
+            const path = this.parser?.options?.path || '';
+            const resolvedUri = this.three.LoaderUtils.resolveURL(uri, path);
+            const loader = new this.three.FileLoader(this.parser?.options?.manager);
+            loader.setResponseType('arraybuffer');
+            loader.setWithCredentials(this.parser?.options?.withCredentials === true);
+            loader.load(resolvedUri, (data)=>resolve(data), undefined, reject);
+        });
+    }
+    getThreeCtor(charCodes) {
+        const key = String.fromCharCode(...charCodes);
+        const ctor = this.three[key];
+        if (typeof ctor !== 'function') throw new Error(`[KHR_audio_emitter] THREE.${key} constructor unavailable`);
+        return ctor;
+    }
+}
+
+
 
 class $677737c8a5cbea2f$var$SketchMetadata {
     constructor(scene, userData){
@@ -3788,6 +4035,15 @@ class $677737c8a5cbea2f$var$SketchMetadata {
         this.SkyTexture = userData['TB_SkyTexture'] ?? this.EnvironmentPreset.SkyTexture;
         this.ReflectionTexture = userData['TB_ReflectionTexture'] ?? this.EnvironmentPreset.ReflectionTexture;
         this.ReflectionIntensity = userData['TB_ReflectionIntensity'] ?? this.EnvironmentPreset.ReflectionIntensity;
+        // Convert Unity Euler angles (YXZ, left-handed) to Three.js XYZ Euler degrees.
+        // Goes through a quaternion to correctly change both Euler order and handedness.
+        function unityRotToThreeJSDegrees(rot, label) {
+            const unityEuler = new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(-rot.x), $hBQxr$three.MathUtils.degToRad(-rot.y), $hBQxr$three.MathUtils.degToRad(rot.z), 'YXZ');
+            const q = new $hBQxr$three.Quaternion().setFromEuler(unityEuler);
+            const threeEuler = new $hBQxr$three.Euler().setFromQuaternion(q, 'XYZ');
+            const result = new $hBQxr$three.Vector3($hBQxr$three.MathUtils.radToDeg(threeEuler.x), $hBQxr$three.MathUtils.radToDeg(threeEuler.y), $hBQxr$three.MathUtils.radToDeg(threeEuler.z));
+            return result;
+        }
         function radToDeg3(rot) {
             return {
                 x: $hBQxr$three.MathUtils.radToDeg(rot.x),
@@ -3795,16 +4051,34 @@ class $677737c8a5cbea2f$var$SketchMetadata {
                 z: $hBQxr$three.MathUtils.radToDeg(rot.z)
             };
         }
+        // GLTF node rotations are already in Three.js right-handed XYZ space.
         let light0rot = sceneLights.length >= 1 ? radToDeg3(sceneLights[0].rotation) : null;
         let light1rot = sceneLights.length >= 2 ? radToDeg3(sceneLights[1].rotation) : null;
-        this.SceneLight0Rotation = userData['TB_SceneLight0Rotation'] ?? light0rot ?? this.EnvironmentPreset.SceneLight0Rotation;
-        this.SceneLight1Rotation = userData['TB_SceneLight1Rotation'] ?? light1rot ?? this.EnvironmentPreset.SceneLight1Rotation;
-        let light0col = userData['TB_SceneLight0Color'] ?? this.EnvironmentPreset.SceneLight0Color;
-        let light1col = userData['TB_SceneLight1Color'] ?? this.EnvironmentPreset.SceneLight1Color;
-        this.SceneLight0Color = new $hBQxr$three.Color(light0col.r, light0col.g, light0col.b);
-        this.SceneLight1Color = new $hBQxr$three.Color(light1col.r, light1col.g, light1col.b);
+        // Light 0 Rotation
+        // Metadata and preset values are in Unity format and need conversion.
+        // GLTF node rotations are already in Three.js space.
+        if (userData['TB_SceneLight0Rotation']) this.SceneLight0Rotation = unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight0Rotation']), 'Light0 TB_metadata');
+        else if (light0rot) this.SceneLight0Rotation = new $hBQxr$three.Vector3(light0rot.x, light0rot.y, light0rot.z);
+        else this.SceneLight0Rotation = unityRotToThreeJSDegrees(this.EnvironmentPreset.SceneLight0Rotation, 'Light0 preset');
+        // Light 1 Rotation
+        if (userData['TB_SceneLight1Rotation']) this.SceneLight1Rotation = unityRotToThreeJSDegrees($677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_SceneLight1Rotation']), 'Light1 TB_metadata');
+        else if (light1rot) this.SceneLight1Rotation = new $hBQxr$three.Vector3(light1rot.x, light1rot.y, light1rot.z);
+        else this.SceneLight1Rotation = unityRotToThreeJSDegrees(this.EnvironmentPreset.SceneLight1Rotation, 'Light1 preset');
+        // Light 0 Color
+        if (userData['TB_SceneLight0Color']) this.SceneLight0Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_SceneLight0Color'], this.EnvironmentPreset.SceneLight0Color);
+        else this.SceneLight0Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(null, this.EnvironmentPreset.SceneLight0Color);
+        // Light 1 Color
+        if (userData['TB_SceneLight1Color']) this.SceneLight1Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(userData['TB_SceneLight1Color'], this.EnvironmentPreset.SceneLight1Color);
+        else this.SceneLight1Color = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBColorString(null, this.EnvironmentPreset.SceneLight1Color);
+        // Remove original GLTF lights since we'll create new ones from metadata
+        sceneLights.forEach((light)=>{
+            light.parent?.remove(light);
+        });
         this.CameraTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_CameraTranslation'], null);
         this.CameraRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_CameraRotation'], null);
+        const parsed = parseFloat(userData['TB_CameraTargetDistance']);
+        this.CameraTargetDistance = Number.isFinite(parsed) ? parsed : null;
+        this.FlyMode = userData['TB_FlyMode'] ? JSON.parse(userData['TB_FlyMode'].toLowerCase()) : false;
     }
 }
 class $677737c8a5cbea2f$var$EnvironmentPreset {
@@ -3876,8 +4150,13 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             document.getElementById('loadscreen')?.classList.remove('loaded');
         };
         manager.onLoad = function() {
+            const evt = new Event("icosa-viewer-load-gltf", {
+                bubbles: true,
+                cancelable: false
+            });
             let loadscreen = document.getElementById('loadscreen');
             if (!loadscreen?.classList.contains('loaderror')) loadscreen?.classList.add('fade-out');
+            document.dispatchEvent(evt);
         };
         this.brushPath = new URL('brushes/', assetBaseUrl);
         this.environmentPath = new URL('environments/', assetBaseUrl);
@@ -3894,8 +4173,10 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.voxLoader = new (0, $hBQxr$VOXLoader)(manager);
         this.gltfLegacyLoader = new (0, $81e80e8b2d2d5e9f$export$9559c3115faeb0b0)(manager, assetBaseUrl);
         this.gltfLoader = new (0, $hBQxr$GLTFLoader)(manager);
+        this.audioListener = new $hBQxr$three.AudioListener();
         // this.gltfLoader.register(parser => new GLTFGoogleTiltBrushTechniquesExtension(parser, this.brushPath.toString()));
         this.gltfLoader.register((parser)=>new (0, $hBQxr$GLTFGoogleTiltBrushMaterialExtension)(parser, this.brushPath.toString()));
+        this.gltfLoader.register((parser)=>new (0, $707bd002539ed0ea$export$1b293339dff011f9)(parser, this.audioListener, $hBQxr$three));
         const dracoLoader = new (0, $hBQxr$DRACOLoader)();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
         this.gltfLoader.setDRACOLoader(dracoLoader);
@@ -3908,6 +4189,16 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.canvas.onmouseup = ()=>{
             this.canvas.classList.remove('grabbed');
         };
+        const unlockAudio = ()=>{
+            if (this.audioListener.context.state !== 'running') this.audioListener.context.resume().catch(()=>{});
+            this.tryStartAutoplayAudio(this.scene);
+        };
+        window.addEventListener('pointerdown', unlockAudio, {
+            passive: true
+        });
+        window.addEventListener('touchstart', unlockAudio, {
+            passive: true
+        });
         this.renderer = new $hBQxr$three.WebGLRenderer({
             canvas: this.canvas,
             antialias: true
@@ -3915,6 +4206,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.outputColorSpace = $hBQxr$three.SRGBColorSpace;
         this.renderer.xr.enabled = true;
+        // Use 'local' reference space for full 6DOF tracking without floor offset
+        this.renderer.xr.setReferenceSpaceType('local');
         function handleController(inputSource) {
             const gamepad = inputSource.gamepad;
             if (gamepad) return {
@@ -3942,7 +4235,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         controllerGrip1 = this.renderer.xr.getControllerGrip(1);
         controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
         this.scene.add(controllerGrip1);
-        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer);
+        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer, {}, true);
         this.icosa_frame.appendChild(xrButton);
         function initCustomUi(viewerContainer) {
             const button = document.createElement('button');
@@ -4032,6 +4325,9 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 if (viewer1?.cameraControls) viewer1.cameraControls.update(delta);
                 if (viewer1?.trackballControls) viewer1.trackballControls.update();
             }
+            if (viewer1?.activeCamera) this.attachAudioListener(viewer1.activeCamera);
+            this.tryStartAutoplayAudio(viewer1.scene);
+            // SparkRenderer stochastic setup is now handled by GUI toggle
             if (viewer1?.activeCamera) this.renderer.render(viewer1.scene, viewer1.activeCamera);
         };
         this.dataURLtoBlob = (dataURL)=>{
@@ -4143,6 +4439,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         if (!defaultBackgroundColor) defaultBackgroundColor = "#000000";
         this.defaultBackgroundColor = new $hBQxr$three.Color(defaultBackgroundColor);
         if (!this.loadedModel) return;
+        this.stopAllAudio(this.scene);
         this.scene.clear();
         this.initSceneBackground();
         this.initFog();
@@ -4157,7 +4454,46 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             sceneNode.scale.divideScalar(excess);
             // Reframe the scaled scene
             this.frameNode(sceneNode);
-        } else this.scene.add(this.loadedModel);
+        } else {
+            if (this.isNewTiltExporter(this.sceneGltf)) this.scene.scale.set(0.1, 0.1, 0.1);
+            this.scene.add(this.loadedModel);
+        }
+    }
+    attachAudioListener(camera) {
+        if (!camera) return;
+        if (this.audioListener.parent !== camera) {
+            this.audioListener.removeFromParent();
+            camera.add(this.audioListener);
+        }
+    }
+    stopAllAudio(root) {
+        if (!root) return;
+        root.traverse((node)=>{
+            if (node?.isAudio) {
+                const audio = node;
+                if (audio.isPlaying) audio.stop();
+                audio.disconnect();
+            }
+        });
+    }
+    tryStartAutoplayAudio(root) {
+        if (!root || this.audioListener.context.state !== 'running') return;
+        root.traverse((node)=>{
+            if (!node?.isAudio) return;
+            const audio = node;
+            const wantsAutoPlay = Boolean(audio.userData?.__khrAudioAutoPlay);
+            if (!wantsAutoPlay || audio.isPlaying || !audio.buffer) return;
+            try {
+                audio.play();
+                if (!audio.userData?.__khrAudioAutoplayLoggedStart) audio.userData.__khrAudioAutoplayLoggedStart = true;
+            } catch (_err) {
+                // Keep trying in later frames while unlocked.
+                if (!audio.userData?.__khrAudioAutoplayLoggedBlocked) {
+                    console.warn(`[KHR_audio_emitter] autoplay retry failed; will keep trying`);
+                    audio.userData.__khrAudioAutoplayLoggedBlocked = true;
+                }
+            }
+        });
     }
     toggleTreeView(root) {
         if (root.childElementCount == 0) {
@@ -5590,27 +5926,32 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     async _loadGltf(url, loadEnvironment, overrides, isV1) {
         let sceneGltf;
         this.overrides = overrides;
-        if (isV1) {
+        this.isV1 = isV1;
+        if (this.isV1) {
             sceneGltf = await this.gltfLegacyLoader.loadAsync(url);
             await this.replaceGltf1Materials(sceneGltf.scene, this.brushPath.toString());
         } else sceneGltf = await this.gltfLoader.loadAsync(url);
         // The legacy loader has the latter structure
         let userData = (Object.keys(sceneGltf.userData || {}).length > 0 ? sceneGltf.userData : null) ?? sceneGltf.scene.userData;
-        this.scaleScene(sceneGltf, true);
+        if (!this.isNewTiltExporter(sceneGltf)) this.scaleScene(sceneGltf, userData, true);
         this.setupSketchMetaDataFromScene(sceneGltf.scene, userData);
         if (loadEnvironment) await this.assignEnvironment(sceneGltf);
         if (overrides?.tiltUrl) this.tiltData = await this.tiltLoader.loadAsync(tiltUrl);
         this.loadedModel = sceneGltf.scene;
         this.sceneGltf = sceneGltf;
         this.initializeScene();
+        const evt = new Event("icosa-viewer-init-scene-gltf", {
+            bubbles: true,
+            cancelable: false
+        });
+        document.dispatchEvent(evt);
     }
     isLegacyTiltExporter(sceneGltf) {
         const generator = sceneGltf.asset?.generator;
         return generator && !generator.includes('Tilt Brush');
     }
     isNewTiltExporter(sceneGltf) {
-        const generator = sceneGltf?.asset?.generator;
-        return generator && generator.includes('Open Brush UnityGLTF Exporter');
+        return sceneGltf?.scene?.userData?.isNewTiltExporter ?? false;
     }
     isAnyTiltExporter(sceneGltf) {
         const generator = sceneGltf?.asset?.generator;
@@ -5621,6 +5962,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         let poseTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseTranslation'], new $hBQxr$three.Vector3(0, 0, 0));
         let poseRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseRotation'], new $hBQxr$three.Vector3(0, 0, 0));
         let poseScale = userData['TB_PoseScale'] ?? 1;
+        // Correct the scale for new exporter (handled automatically for the legacy exporter)
         if (this.isNewTiltExporter(sceneGltf)) poseScale *= negate ? 10 : 0.1;
         if (negate) {
             // Create inverse transformation matrix: (T * R * S)^-1 = S^-1 * R^-1 * T^-1
@@ -5641,9 +5983,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             sceneGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(poseRotation.x), $hBQxr$three.MathUtils.degToRad(poseRotation.y), $hBQxr$three.MathUtils.degToRad(poseRotation.z)));
             sceneGltf.scene.scale.multiplyScalar(poseScale);
         }
-        console.log(`scene Position: ${sceneGltf.scene.position.x}, ${sceneGltf.scene.position.y}, ${sceneGltf.scene.position.z}`);
-        console.log(`scene Rotation: ${sceneGltf.scene.rotation.x}, ${sceneGltf.scene.rotation.y}, ${sceneGltf.scene.rotation.z}`);
-        console.log(`scene Scale: ${sceneGltf.scene.scale.x}`);
     }
     async loadTilt(url, overrides) {
         try {
@@ -5789,7 +6128,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             for(let i = 0; i < chunks.length; i++){
                 const chunk = chunks[i];
                 const mesh = new (0, $hBQxr$VOXMesh)(chunk);
-                mesh.scale.setScalar(0.0015);
+                mesh.scale.setScalar(0.15);
                 voxModel.add(mesh);
             }
             this.loadedModel = voxModel;
@@ -5808,7 +6147,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             const moduleName = "@sparkjsdev/spark";
             const sparkModule = await import(/* webpackIgnore: true */ moduleName);
             if (!sparkModule.SplatMesh) throw new Error("SplatMesh not found in Spark module exports");
-            return sparkModule.SplatMesh;
+            return sparkModule;
         } catch (error) {
             throw new Error(`Spark (@sparkjsdev/spark) is not available: ${error.message}`);
         }
@@ -5834,16 +6173,16 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 };
             }
             // Dynamic import for optional Spark dependency
-            let SplatMesh;
+            let SparkModule;
             try {
-                SplatMesh = await this.loadSparkModule();
+                SparkModule = await this.loadSparkModule();
             } catch (importError) {
                 console.error(importError.message);
                 this.showErrorIcon();
                 this.loadingError = true;
                 return;
             }
-            const splatModel = new SplatMesh({
+            const splatModel = new SparkModule.SplatMesh({
                 url: url
             });
             await splatModel.initialized;
@@ -5864,7 +6203,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
     }
     async assignEnvironment(sceneGltf) {
-        console.log("assigning environment");
         let scene = sceneGltf.scene;
         const guid = this.sketchMetadata?.EnvironmentGuid;
         if (guid) {
@@ -5873,8 +6211,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 // Use the standard GLTFLoader for environments
                 const standardLoader = new (0, $hBQxr$GLTFLoader)();
                 const envGltf = await standardLoader.loadAsync(envUrl.toString());
-                if (this.isNewTiltExporter(sceneGltf)) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
-                envGltf.scene.scale.set(.1, .1, .1);
+                if (this.isV1) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
+                if (!this.isNewTiltExporter(sceneGltf)) envGltf.scene.scale.set(.1, .1, .1);
                 scene.attach(envGltf.scene);
                 this.environmentObject = envGltf.scene;
             } catch (error) {
@@ -5889,8 +6227,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         canvas.height = 256;
         const context = canvas.getContext('2d');
         const gradient = context.createLinearGradient(0, 0, 0, 256);
-        gradient.addColorStop(0, colorB.convertSRGBToLinear().getStyle());
-        gradient.addColorStop(1, colorA.convertSRGBToLinear().getStyle());
+        gradient.addColorStop(0, colorB.clone().convertSRGBToLinear().getStyle());
+        gradient.addColorStop(1, colorA.clone().convertSRGBToLinear().getStyle());
         context.fillStyle = gradient;
         context.fillRect(0, 0, 1, 256);
         const texture = new $hBQxr$three.CanvasTexture(canvas);
@@ -5931,102 +6269,150 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     initCameras() {
         let cameraOverrides = this.overrides?.camera;
-        // const userData = this.sceneGltf?.scene?.userData || {};
-        // let poseTranslation = Viewer.parseTBVector3(userData['TB_PoseTranslation'], new THREE.Vector3(0, 0, 0));
-        // let poseRotation = Viewer.parseTBVector3(userData['TB_PoseRotation'], new THREE.Vector3(0, 0, 0));
-        // let poseScale = (userData['TB_PoseScale'] ?? 1);
+        // Check if there's a GLTF camera in the scene
+        let gltfCamera = null;
+        this.loadedModel.traverse((object)=>{
+            if (object instanceof $hBQxr$three.Camera && object.name === "TB_ThumbnailSaveCamera" && !gltfCamera) gltfCamera = object;
+        });
         let sketchCam = this.sketchMetadata?.CameraTranslation?.toArray();
         if (sketchCam) {
             let poseScale = this.isAnyTiltExporter(this.sceneGltf) ? 0.1 : 1;
-            console.log("posescale", poseScale);
             sketchCam = [
                 sketchCam[0] * poseScale,
                 sketchCam[1] * poseScale,
                 sketchCam[2] * poseScale
             ];
         }
-        let cameraPos = cameraOverrides?.translation || sketchCam || [
-            0,
-            0.25,
-            -3.5
-        ];
-        let cameraRot = cameraOverrides?.rotation || this.sketchMetadata?.CameraRotation?.toArray() || [
-            0,
-            0,
-            0
-        ]; // Could be euler angles or quaternion
-        if (this.isNewTiltExporter(this.sceneGltf)) {
-            // the scene scale is modified elsewhere but here we correct the camera to match
-            //cameraPos = [cameraPos[0] * 0.1, cameraPos[1] * 0.1, cameraPos[2] * 0.1];
-            cameraPos[1] -= 1;
-            cameraRot[1] += 180;
-        }
-        // Fix handedness between Unity and gltf/three.js
-        // Should we fix this on export?
-        if (cameraRot.length == 3) {
-            // Assume euler angles in degrees
-            cameraRot[0] += 0;
-            cameraRot[1] += 180;
-            cameraRot[2] += 0;
-            cameraRot[0] = $hBQxr$three.MathUtils.degToRad(cameraRot[0]);
-            cameraRot[1] = $hBQxr$three.MathUtils.degToRad(cameraRot[1]);
-            cameraRot[2] = $hBQxr$three.MathUtils.degToRad(cameraRot[2]);
-        }
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
         const near = cameraOverrides?.perspective?.znear || 0.1;
         const far = 6000;
         this.flatCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
-        this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
-        if (cameraRot.length == 3) this.flatCamera.rotation.setFromVector3(new $hBQxr$three.Vector3(cameraRot[0], cameraRot[1], cameraRot[2]));
-        else this.flatCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
+        let cameraPos = [];
+        // Use GLTF camera transform if available AND we are in fly mode
+        // (which currently indicates a recent Open Brush export)
+        if (this.sketchMetadata.FlyMode && gltfCamera) {
+            var worldPos = new $hBQxr$three.Vector3();
+            gltfCamera.getWorldPosition(worldPos);
+            worldPos.multiplyScalar(0.1);
+            cameraPos[0] = worldPos.x;
+            cameraPos[1] = worldPos.y;
+            cameraPos[2] = worldPos.z;
+            this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
+            var worldQuat = new $hBQxr$three.Quaternion();
+            gltfCamera.getWorldQuaternion(worldQuat);
+            // var yRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+            // worldQuat.multiply(yRotation);
+            this.flatCamera.quaternion.set(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w);
+        } else {
+            cameraPos = cameraOverrides?.translation || sketchCam || [
+                0,
+                0.25,
+                -3.5
+            ];
+            let cameraRot = cameraOverrides?.rotation || this.sketchMetadata?.CameraRotation?.toArray() || [
+                0,
+                0,
+                0
+            ]; // Could be euler angles or quaternion
+            // Fix handedness between Unity and gltf/three.js
+            // Should we fix this on export?
+            if (cameraRot.length == 3) {
+                // Assume euler angles in degrees
+                cameraRot[0] += 0;
+                cameraRot[1] += 180;
+                cameraRot[2] += 0;
+                cameraRot[0] = $hBQxr$three.MathUtils.degToRad(cameraRot[0]);
+                cameraRot[1] = $hBQxr$three.MathUtils.degToRad(cameraRot[1]);
+                cameraRot[2] = $hBQxr$three.MathUtils.degToRad(cameraRot[2]);
+            }
+            this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
+            if (cameraRot.length == 3) this.flatCamera.rotation.setFromVector3(new $hBQxr$three.Vector3(cameraRot[0], cameraRot[1], cameraRot[2]));
+            else this.flatCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
+        }
         this.flatCamera.updateProjectionMatrix();
+        this.flatCamera.updateMatrixWorld();
         this.xrCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
         this.cameraRig = new $hBQxr$three.Group();
         this.scene.add(this.cameraRig);
-        this.cameraRig.rotation.y = this.flatCamera.rotation.y;
-        this.cameraRig.rotation.setFromQuaternion(this.flatCamera.quaternion);
         this.cameraRig.add(this.xrCamera);
-        this.xrCamera.updateProjectionMatrix();
         this.activeCamera = this.flatCamera;
         let cameraTarget;
-        let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
-        if (pivot) cameraTarget = new $hBQxr$three.Vector3(pivot[0], pivot[1], pivot[2]);
-        else {
-            let vp = this.overrides?.geometryData?.visualCenterPoint;
-            if (!vp) {
-                const box = this.modelBoundingBox;
-                if (box != undefined) {
-                    const boxCenter = box.getCenter(new $hBQxr$three.Vector3());
-                    vp = [
-                        boxCenter.x,
-                        boxCenter.y,
-                        boxCenter.z
-                    ];
+        if (this.sketchMetadata.FlyMode) {
+            // Simulate fly mode by setting target point in front of camera
+            const forward = new $hBQxr$three.Vector3();
+            this.flatCamera.getWorldDirection(forward);
+            cameraTarget = this.flatCamera.position.clone().add(forward.multiplyScalar(0.05));
+            (0, $e1f901905a002d12$export$2e2bcd8739ae039).install({
+                THREE: $hBQxr$three
+            });
+            this.cameraControls = new (0, $e1f901905a002d12$export$2e2bcd8739ae039)(this.flatCamera, viewer.canvas);
+            this.cameraControls.smoothTime = 0.1;
+            this.cameraControls.draggingSmoothTime = 0.1;
+            this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 1.0;
+            this.cameraControls.setPosition(cameraPos[0], cameraPos[1], cameraPos[2], false);
+            this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
+            (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
+        } else {
+            let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
+            if (pivot) // TODO this pivot should be recalculated to take into account
+            //  any camera rotation adjustment applied above
+            cameraTarget = new $hBQxr$three.Vector3(pivot[0], pivot[1], pivot[2]);
+            else if (this.sketchMetadata.CameraTargetDistance) {
+                // We do have a distance so can calculate target point
+                // Capture camera direction BEFORE CameraControls modifies anything
+                const forward = new $hBQxr$three.Vector3();
+                this.flatCamera.getWorldDirection(forward);
+                let cameraTargetDistance = this.sketchMetadata.CameraTargetDistance;
+                cameraTarget = this.flatCamera.position.clone().add(forward.multiplyScalar(cameraTargetDistance));
+            } else {
+                let vp = this.overrides?.geometryData?.visualCenterPoint;
+                if (!vp) {
+                    const box = this.modelBoundingBox;
+                    if (box != undefined) {
+                        const boxCenter = box.getCenter(new $hBQxr$three.Vector3());
+                        vp = [
+                            boxCenter.x,
+                            boxCenter.y,
+                            boxCenter.z
+                        ];
+                    }
                 }
+                let visualCenterPoint = new $hBQxr$three.Vector3(vp[0], vp[1], vp[2]);
+                cameraTarget = this.calculatePivot(this.flatCamera, visualCenterPoint);
+                cameraTarget = cameraTarget || visualCenterPoint;
             }
-            let visualCenterPoint = new $hBQxr$three.Vector3(vp[0], vp[1], vp[2]);
-            cameraTarget = this.calculatePivot(this.flatCamera, visualCenterPoint);
-            cameraTarget = cameraTarget || visualCenterPoint;
+            (0, $e1f901905a002d12$export$2e2bcd8739ae039).install({
+                THREE: $hBQxr$three
+            });
+            this.cameraControls = new (0, $e1f901905a002d12$export$2e2bcd8739ae039)(this.flatCamera, viewer.canvas);
+            this.cameraControls.smoothTime = 0.1;
+            this.cameraControls.draggingSmoothTime = 0.1;
+            this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 1.0;
+            this.cameraControls.setPosition(cameraPos[0], cameraPos[1], cameraPos[2], false);
+            this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
+            (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         }
-        (0, $e1f901905a002d12$export$2e2bcd8739ae039).install({
-            THREE: $hBQxr$three
-        });
-        this.cameraControls = new (0, $e1f901905a002d12$export$2e2bcd8739ae039)(this.flatCamera, viewer.canvas);
-        this.cameraControls.smoothTime = 1;
-        this.cameraControls.polarRotateSpeed = this.cameraControls.azimuthRotateSpeed = 0.5;
-        this.cameraControls.setPosition(cameraPos[0], cameraPos[1], cameraPos[2], false);
-        this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
-        (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
-    // this.trackballControls = new TrackballControls(this.activeCamera, this.canvas);
-    // this.trackballControls.target = cameraTarget;
-    // this.trackballControls.rotateSpeed = 1.0;
-    // this.trackballControls.zoomSpeed = 1.2;
-    // this.trackballControls.panSpeed = 0.8;
-    // let noOverrides = !cameraOverrides || !cameraOverrides?.perspective;
-    // if (noOverrides) {
-    //     this.frameScene();
-    // }
+        // Position and orient the cameraRig to match flatCamera AFTER camera controls are set up
+        // The flatCamera is independent of scene scale, but cameraRig is a child of the scene.
+        // For new Tilt exporters, the scene will be scaled to 0.1, so we need to compensate.
+        // We scale BOTH the position and the rig scale to counteract the scene scale.
+        const sceneScaleFactor = this.isNewTiltExporter(this.sceneGltf) ? 10 : 1;
+        this.cameraRig.position.copy(this.flatCamera.position).multiplyScalar(sceneScaleFactor);
+        this.cameraRig.scale.set(sceneScaleFactor, sceneScaleFactor, sceneScaleFactor);
+        // Calculate world position after setup
+        this.cameraRig.updateMatrixWorld(true);
+        // VR cameras should never be tilted - only copy Y-axis rotation (yaw)
+        // Calculate Y rotation from camera position to target (ignoring vertical component)
+        const flatCameraWorldDir = new $hBQxr$three.Vector3();
+        this.flatCamera.getWorldDirection(flatCameraWorldDir);
+        const directionToTarget = new $hBQxr$three.Vector3().subVectors(cameraTarget, this.flatCamera.position);
+        directionToTarget.y = 0; // Project onto XZ plane
+        directionToTarget.normalize();
+        const yaw = Math.atan2(directionToTarget.x, directionToTarget.z);
+        // Add 180 degrees because camera's default forward is -Z, not +Z
+        this.cameraRig.rotation.y = yaw + Math.PI;
+        this.xrCamera.updateProjectionMatrix();
     }
     calculatePivot(camera, centroid) {
         // 1. Get the camera's forward vector
@@ -6052,8 +6438,9 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // 3. Does the GLTF have custom metadata for light transform and color?
         // 4. Does the GLTF have an environment preset guid? If so use the light transform and colors from that
         // 5. If there's neither custom metadata, an environment guid or explicit GLTF lights - create some default lighting.
-        function convertTBEuler(rot) {
-            const deg2rad = Math.PI / 180;
+        // All rotations are now stored in Three.js XYZ Euler degrees
+        // (Unity values are converted at parse time in the SketchMetadata constructor).
+        function toEuler(rot) {
             return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z));
         }
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) {
@@ -6062,28 +6449,25 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.loadedModel.add(light);
             return;
         }
-        let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color, 1.0);
-        let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
-        // Convert rotation to position for directional lights
-        const light0Euler = convertTBEuler(this.sketchMetadata.SceneLight0Rotation);
-        const light0Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light0Euler);
+        let l0 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight0Color.clone().convertSRGBToLinear(), 1.0);
+        let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color.clone().convertSRGBToLinear(), 1.0);
+        let light0Euler = toEuler(this.sketchMetadata.SceneLight0Rotation);
+        let light1Euler = toEuler(this.sketchMetadata.SceneLight1Rotation);
+        const light0Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light0Euler);
         l0.position.copy(light0Direction.multiplyScalar(10));
-        l0.lookAt(0, 0, 0);
-        const light1Euler = convertTBEuler(this.sketchMetadata.SceneLight1Rotation);
-        const light1Direction = new $hBQxr$three.Vector3(0, 0, 1).applyEuler(light1Euler);
+        const light1Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light1Euler);
         l1.position.copy(light1Direction.multiplyScalar(10));
-        l1.lookAt(0, 0, 0);
         l0.castShadow = true;
         l1.castShadow = false;
         this.loadedModel?.add(l0);
         this.loadedModel?.add(l1);
         const ambientLight = new $hBQxr$three.AmbientLight();
-        ambientLight.color = this.sketchMetadata.AmbientLightColor;
+        ambientLight.color = this.sketchMetadata.AmbientLightColor.clone().convertSRGBToLinear();
         this.scene.add(ambientLight);
     }
     initFog() {
         if (this.sketchMetadata == undefined || this.sketchMetadata == null) return;
-        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor, this.sketchMetadata.FogDensity);
+        this.scene.fog = new $hBQxr$three.FogExp2(this.sketchMetadata.FogColor.clone().convertSRGBToLinear(), this.sketchMetadata.FogDensity);
     }
     initSceneBackground() {
         // OBJ and FBX models don't have metadata

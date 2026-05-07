@@ -1,12 +1,41 @@
-upstream web {
-  ip_hash;
-  server web:8000;
+# ==============================
+# api-no-subdomain.conf.template
+# ==============================
+
+client_max_body_size 1024M;
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name ${DEPLOYMENT_HOST_WEB};
+    server_tokens off;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 
 server {
-    client_max_body_size 500M;
+    listen 443 default_server ssl;
+    listen [::]:443 default_server ssl;
+
+    server_name ${DEPLOYMENT_HOST_WEB};
+    server_tokens off;
+    http2 on;
+
+    ssl_certificate /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/live/${DEPLOYMENT_HOST_WEB}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384";
 
     location /static/ {
+        add_header Access-Control-Allow-Origin *;
         autoindex off;
         alias /static/;
     }
@@ -17,7 +46,7 @@ server {
     }
 
     location / {
-        proxy_pass http://web;
+        proxy_pass http://varnish:80;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
         proxy_redirect off;
@@ -25,16 +54,5 @@ server {
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
     }
-
-    listen 80;
-    server_name ${DEPLOYMENT_HOST_WEB};
 }
 
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
-    location / {
-        return 444; # CONNECTION CLOSED WITHOUT RESPONSE
-    }
-}

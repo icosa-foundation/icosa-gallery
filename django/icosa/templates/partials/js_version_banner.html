@@ -1,9 +1,11 @@
-{% if request.session.viewer_js_version %}
+{% if request.session.viewer_js_version or is_moderating %}
 <div class="infobanner warn front oneline">
-    {% if request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" or is_moderating %}
         <p>
         Using the experimental viewer. Things might look broken.
+        {% if not is_moderating %}
         <a href="{{ request.path }}?viewerjs=normal">Use normal version</a>, <a href="{{ request.path }}?viewerjs=previous">Use previous version</a>.
+        {% endif %}
         </p>
     {% elif request.session.viewer_js_version == "previous" %}
         <p>

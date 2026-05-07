@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load fontawesome_tags %}
 {% load static %}
 {% load paginator_tags %}
 
@@ -11,13 +12,18 @@
 <div class="container">
 </div>
 <div class="container">
+    <div id="messagecontainer">
+    <ul class="messages" id="id_upload_success_messages" hidden>
+        <li class="info"></li>
+    </ul>
     {% if messages %}
-    <ul class="messages" id="uploadmessages">
+    <ul class="messages">
         {% for message in messages %}
         <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
         {% endfor %}
     </ul>
     {% endif %}
+    </div>
     <div class="row">
         <div class="col">
             <h1>{{ page_title }}</h1>
@@ -30,13 +36,11 @@
     </div>
     <div class="row">
         <div class="col-6">
-            <form action="{% url 'icosa:uploads' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
+            <form id="id_upload_form" action="{% url 'icosa:upload_asset' %}" class="file-form" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                {% if form.file.errors %}
-                    {{ form.file.errors }}
-                {% endif %}
-                <input multiple type="file" class="form-control-file" name="file" required>
-                <button type="submit" class="btn btn-primary">Upload</button>
+                <ul class="errorlist" id="id_file_error" hidden></ul>
+                <input multiple type="file" class="form-control-file" name="file" id="uploadfile" required>
+                <button id="id_upload_submit" type="submit" class="btn btn-primary">Upload</button><span id="id_upload_spinner" hidden style="margin-inline-start:1em;">{% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Uploading files</span>
             </form>
         </div>
         <div class="col-lg-6">
@@ -71,7 +75,7 @@
                 <br>
                 <strong>or</strong> you can upload a glb file.
             </p>
-            <p>Include an image file named <code>thumbnail.png</code> in the root of your zip file to use this as your asset's thumbnail for display on this site. If uploading a glb or zip without a thumbnail, you can upload one later by editing your work's settings.</p>
+            <p>You can create a thumbnail after uploading by editing your work's settings.</p>
             {% if config.BETA_MODE %}
                 <p><strong>This site is currently in Beta mode. While we will do our best to keep things stable, your data may be removed at any time. Please bear this in mind when uploading your work.</strong></p>
             {% endif %}
@@ -84,17 +88,52 @@
             <h2>Manage Uploads</h2>
         </div>
     </div>
-    <div class="sketch-list">
-        {% if assets %}
-            {% for asset in assets %}
-                {% include "partials/sketch_list_item_owner.html" %}
-            {% endfor %}
-        {% else %}
-            <p>You haven't uploaded anything yet.</p>
-        {% endif %}
+    <div id="id_uploads_container">
+        {% include "partials/asset_upload_list.html" %}
     </div>
-    {% if assets %}
-        {% include "partials/pagination.html" %}
-    {% endif %}
 </div>
+<script>
+    const form = id_upload_form;
+    async function handleUploadForm() {
+        id_upload_submit.setAttribute("disabled", true);
+        id_upload_spinner.removeAttribute("hidden");
+        id_file_error.setAttribute("hidden", true);
+        const data = new FormData(form);
+        file = data.get("file");
+        filesize = file.size; // Use this later to handle uploads which are too large. 
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                body: data,
+            });
+            const resData = await response.json();
+            id_upload_spinner.setAttribute("hidden", true);
+            id_upload_submit.removeAttribute("disabled");
+            if (resData.success === true) {
+                id_upload_success_messages.removeAttribute("hidden");
+                id_upload_success_messages.querySelector("li").textContent = resData.message;
+                htmx.ajax("GET", "{% url 'icosa:upload_list_partial' %}", "#id_uploads_container");
+            } else {
+                const errors = resData.errors;
+                if (errors.hasOwnProperty("file")) {
+                    id_file_error.removeAttribute("hidden");
+                    id_file_error.replaceChildren();
+                    let itemHtml;
+                    errors.file.forEach((item) => {
+                        itemHtml = document.createElement("li");
+                        itemHtml.textContent = item
+                        id_file_error.appendChild(itemHtml);
+                    })
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        uploadfile.value = null;
+    }
+    form.addEventListener("submit", (event) =>{
+        event.preventDefault();
+        handleUploadForm();
+    })
+</script>
 {% endblock content %}

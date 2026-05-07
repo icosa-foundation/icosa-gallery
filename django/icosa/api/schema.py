@@ -1,11 +1,12 @@
 from datetime import datetime
+from enum import Enum
 from typing import List, Literal, Optional
 
+from django.urls import reverse_lazy
+from icosa.helpers.file import VALID_FORMAT_STRINGS
+from icosa.models import PUBLIC, Asset, AssetCollection
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
-
-from django.urls import reverse_lazy
-from icosa.models import Asset
 
 API_DOWNLOAD_COMPATIBLE_ROLES = [
     "ORIGINAL_OBJ_FORMAT",
@@ -31,7 +32,7 @@ class FullUserSchema(Schema):
     id: int
     username: str
     email: EmailStr
-    displayName: str = Field(None, alias="displayname")
+    displayName: Optional[str] = Field(None, alias="displayname")
     description: Optional[str] = None
     url: str
 
@@ -51,7 +52,7 @@ class PatchUserSchema(Schema):
     # via the api.
     # email: Optional[EmailStr] = None
     url: Optional[str] = None
-    displayName: str = Field(None, alias="displayname")
+    displayName: Optional[str] = Field(None, alias="displayname")
     description: Optional[str] = None
 
 
@@ -87,6 +88,10 @@ class FormatComplexity(Schema):
     lodHint: Optional[int] = None
 
 
+class ImageSchema(Schema):
+    url: Optional[str] = None
+
+
 class AssetFormat(Schema):
     root: Optional[AssetResource] = Field(
         None,
@@ -97,14 +102,20 @@ class AssetFormat(Schema):
         alias="resource_set",
     )
     formatComplexity: FormatComplexity
-    formatType: str = Field(None, alias="format_type")
+    formatType: Optional[str] = Field(None, alias="format_type")
     zip_archive_url: Optional[str] = None
     role: Optional[str] = Field(
         default=None,
         description="This field is deprecated. Do not rely on it for anything.",
         deprecated=True,
     )
-    isPreferredForDownload: bool = Field(default=False, alias="is_preferred_for_download")
+    isPreferredForDownload: bool = Field(..., alias="is_preferred_for_download")
+    isPreferredForGalleryViewer: bool = Field(..., alias="is_preferred_for_gallery_viewer")
+    isCorsAllowed: bool
+
+    @staticmethod
+    def resolve_isCorsAllowed(obj):
+        return obj.is_cors_allowed
 
     @staticmethod
     def resolve_formatComplexity(obj):
@@ -116,7 +127,7 @@ class AssetFormat(Schema):
 
 
 class AssetSchema(ModelSchema):
-    authorId: str = Field(None, alias=("owner.url"))
+    authorId: Optional[str] = Field(None, alias=("owner.url"))
     authorName: str
     # authorUrl: str # TODO create API endpoints for user
     name: str
@@ -133,10 +144,11 @@ class AssetSchema(ModelSchema):
     triangleCount: int = Field(..., alias=("triangle_count"))
     license: str
     licenseVersion: Optional[str]
+    isIcosaGalleryCompatible: bool = Field(..., alias=("is_viewer_compatible"))
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
     formats: List[AssetFormat]
 
-    class Config:
+    class Config(Schema.Config):
         model = Asset
         model_fields = ["url", "license"]
 
@@ -168,12 +180,7 @@ class AssetSchema(ModelSchema):
 
     @staticmethod
     def resolve_formats(obj, context):
-        return [
-            f
-            for f in obj.format_set.filter(
-                role__in=API_DOWNLOAD_COMPATIBLE_ROLES,
-            )
-        ]
+        return [f for f in obj.format_set.filter(format_type__in=VALID_FORMAT_STRINGS)]
 
     @staticmethod
     def resolve_tags(obj):
@@ -230,7 +237,7 @@ class AssetSchemaPrivate(AssetSchema):
 
 
 class AssetStateSchema(ModelSchema):
-    class Config:
+    class Config(Schema.Config):
         model = Asset
         model_fields = ["state"]
 
@@ -242,10 +249,10 @@ class AssetPatchData(Schema):
     visibility: Optional[str]
 
 
-class AssetFinalizeData(Schema):
-    objPolyCount: int
-    triangulatedObjPolyCount: int
+class AssetMetaData(Schema):
+    triangleCount: Optional[int] = None
     remixIds: Optional[List[str]] = None
+    formatOverride: Optional[List[str]] = None
 
 
 class UploadJobSchemaOut(Schema):
@@ -283,3 +290,81 @@ class OembedOut(Schema):
     html: str
     width: int
     height: int
+
+
+class AssetCollectionSchema(ModelSchema):
+    collectionId: str
+    name: str
+    description: Optional[str] = Field(None)
+    url: str
+    createTime: datetime = Field(..., alias=("create_time"))
+    updateTime: Optional[datetime] = Field(..., alias=("update_time"))
+    visibility: str
+    imageUrl: Optional[str] = Field(None)
+    assets: Optional[List[AssetSchema]] = Field(None)
+
+    @staticmethod
+    def resolve_collectionId(obj, context):
+        return obj.url
+
+    @staticmethod
+    def resolve_assets(obj, context):
+        # NOTE: obj.assets are the raw assets without any of the collection's
+        # metadata (e.g. time added, order in the collection).
+        assets = obj.assets.filter(visibility__in=[PUBLIC])
+        return assets
+
+    @staticmethod
+    def resolve_imageUrl(obj, context):
+        if not bool(obj.image):
+            return None
+        return obj.image
+
+    @staticmethod
+    def resolve_url(obj, context):
+        request = context["request"]
+        root_url = request.build_absolute_uri("/").rstrip("/")
+        return f"{root_url}{reverse_lazy('icosa:api:asset_collection_list')}/{obj.url}"
+
+    class Config(Schema.Config):
+        model = AssetCollection
+        model_fields = [
+            "url",
+            "name",
+            "description",
+            "visibility",
+        ]
+
+
+class AssetCollectionSchemaWithRejections(Schema):
+    collection: AssetCollectionSchema
+    rejectedAssetUrls: Optional[List[str]] = None
+
+
+class AssetVisibility(Enum):
+    # TODO(james): This should be accessible to others
+    PRIVATE = "PRIVATE"
+    PUBLIC = "PUBLIC"
+    UNLISTED = "UNLISTED"
+
+
+class AssetCollectionPostSchema(Schema):
+    name: str
+    description: Optional[str] = None
+    visibility: Optional[AssetVisibility] = None
+    asset_url: Optional[List[str]] = None
+
+
+class AssetCollectionPatchSchema(Schema):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    visibility: Optional[AssetVisibility] = None
+    asset_url: Optional[List[str]] = None
+
+
+class AssetCollectionPutSchema(Schema):
+    asset_url: Optional[List[str]] = None
+
+
+class Error(Schema):
+    message: str

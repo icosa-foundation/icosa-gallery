@@ -5,9 +5,6 @@ import zipfile
 from pathlib import Path
 from typing import List, Optional
 
-from ninja import File
-from ninja.files import UploadedFile
-
 from django.conf import settings
 from django.utils import timezone
 from icosa.api.exceptions import ZipException
@@ -26,6 +23,8 @@ from icosa.models import (
     Format,
     Resource,
 )
+from ninja import File
+from ninja.files import UploadedFile
 
 CONVERTER_EXE = "/node_modules/gltf-pipeline/bin/gltf-pipeline.js"
 
@@ -180,13 +179,12 @@ def process_files(files: List[UploadedFile]) -> List[UploadedFile]:
                         name=filename,
                         file=io.BytesIO(content),
                     )
-                    # Add the file to the list of unzipped files to process. Do
-                    # not include the  manifest.
+                    # Add the file to the list of unzipped files to process.
                     unzipped_files.append(processed_file)
     return unzipped_files
 
 
-def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
+async def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
     # Main files determine folder
     format_type = mainfile.filetype
     name = mainfile.file.name
@@ -205,18 +203,18 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
         "asset": asset,
         "role": role,
     }
-    format = Format.objects.create(**format_data)
+    format = await Format.objects.acreate(**format_data)
 
     root_resource_data = {
         "asset": asset,
         "format": format,
         "contenttype": get_content_type(name),
     }
-    root_resource = Resource.objects.create(**root_resource_data)
-    format.add_root_resource(root_resource)
-    format.save()
+    root_resource = await Resource.objects.acreate(**root_resource_data)
+    await format.aadd_root_resource(root_resource)
+    await format.asave()
     root_resource.file = file
-    root_resource.save()
+    await root_resource.asave()
 
     for subfile in sub_files:
         sub_resource_data = {
@@ -225,10 +223,10 @@ def make_formats(mainfile, sub_files, asset, gltf_to_convert, role=None):
             "asset": asset,
             "contenttype": get_content_type(subfile.file.name),
         }
-        Resource.objects.create(**sub_resource_data)
+        await Resource.objects.acreate(**sub_resource_data)
 
 
-def upload(
+async def upload(
     asset: Asset,
     files: Optional[List[UploadedFile]] = File(None),
 ):
@@ -301,7 +299,7 @@ def upload(
 
     if not asset.name:
         asset.name = asset_name
-    asset.save()
+    await asset.asave()
 
     for mainfile in main_files:
         type = mainfile.filetype
@@ -314,7 +312,7 @@ def upload(
                 sub_files_list = []
 
         role = get_role(mainfile)
-        make_formats(
+        await make_formats(
             mainfile,
             sub_files_list,
             asset,
@@ -332,14 +330,14 @@ def upload(
     )
 
     if thumbnail is not None:
-        add_thumbnail_to_asset(thumbnail, asset)
+        await add_thumbnail_to_asset(thumbnail, asset)
 
     # Save here so all formats and resources are associated with the asset.
     # After this, we can mark each format as preferred.
-    asset.save()
+    await asset.asave()
 
-    asset.assign_preferred_viewer_format()
+    await asset.assign_preferred_viewer_format()
     asset.state = ASSET_STATE_COMPLETE
-    asset.save()
+    await asset.asave()
 
     return asset

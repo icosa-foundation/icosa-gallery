@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% load util_tags %}
+
+{% block banner %}
+{% include "partials/js_version_banner.html" %}
+{% endblock banner %}
+
+{% block content %}
+    {% if not queue_length %}
+    <div class="container">
+        <div class="row">
+            <div class="text-center col">
+                <h2>Done; nothing to moderate</h2>
+                <p>Thank you! If you had any issues during this moderation session, please contact the site administrator, who will be happy to help.</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="container">
+        <div class="row">
+            <div class="text-center col">
+                <h2>{{ content_type }} requires moderation (1 of {{ queue_length }})</h2>
+                <p><strong>View on site (new tab): <a href="{{ obj.get_absolute_url }}" target="_blank">{{ obj.get_displayname }}</a></strong></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-8 col-12 offset-md-2">
+                            {% if moderation_template %}
+                            {% include moderation_template %}
+                            {% endif %}
+                            <hr style="border-top:2px solid white;">
+                            <form action="{% url 'icosa:moderation_queue' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="data" value='{{ changed_data }}'>
+                                <input type="hidden" name="obj_contenttype" value="{{ content_type }}">
+                                <input type="hidden" name="obj_id" value="{{ obj.id }}">
+                                <label for="id_notes">Add any notes about this review and then choose an action to {% if queue_length > 1 %}move on to the next item{% else %}finish{% endif %}.</label>
+                                <textarea name="notes" id="id_notes"></textarea>
+                                <p style="width: 100%" class="text-center">
+                                <button style="float:left;" class="btn btn-primary inline"type="submit" name="_approve">Approve</button>
+                                <button class="btn btn-danger inline"type="submit" name="_reject">Reject</button>
+                                <button style="float:right;" class="btn btn-secondary inline"type="submit" name="_query">Query</button>
+                                </p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock content %}
+
+

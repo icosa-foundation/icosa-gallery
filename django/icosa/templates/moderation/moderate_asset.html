@@ -1,0 +1,102 @@
+{% load util_tags %}
+{% with asset=obj %}
+<h3>Public view of asset:</h3>
+{% if asset.is_viewer_compatible %}
+    <div id="icosa-wrapper">
+        <div id="tree-view"></div>
+        <div id="icosa-viewer"></div>
+    </div>
+    {% include "partials/viewer.html" %}
+{% else %}
+    <p>Unable to display this model in the viewer. It still requires moderation for the rest of the fields below:</p>
+{% endif %}
+<br>
+<h3>Image textures embedded in the asset:</h3>
+<div id="assetTex"></div>
+<br>
+<h3>Changed/new field values:</h3>
+{% for field in asset.moderation_watch_fields %}
+    <div class="well">
+        <h4>{{ field }}:</h4>
+        {% if field == "description" %}
+            {% if asset.description %}
+                <p>{{ asset.description|linebreaksbr }}</p>
+            {% endif %}
+        {% elif field == "thumbnail" %}
+            {% if asset.thumbnail %}
+                <img style="max-width:100%;" src="{{ asset.thumbnail.url }}?{% now "U" %}">
+            {% else %}
+                No thumbnail
+            {% endif %}
+        {% else %}
+            <p>{{ asset|get_attr:field }}</p>
+        {% endif %}
+    </div>
+{% endfor %}
+<script type="module">
+// One thumbnail per unique IMAGE referenced by the glTF (including embedded .glb images),
+// even if not used by any material in the scene.
+//
+// Usage (after load):
+//   const thumbs = await gltfImageThumbnails(gltf, 128);
+//   thumbs.forEach(t => container.appendChild(t.img));
+
+async function gltfImageThumbnails(gltf, size = 128) {
+  if (!gltf?.parser) throw new Error("gltf.parser missing (did you load with GLTFLoader?)");
+
+  // glTF-level textures (covers images referenced by the file, not just what's used on the scene graph)
+  const textures = await gltf.parser.getDependencies("texture");
+
+  // Dedup by underlying image object identity
+  const seenImages = new Set();
+  const results = [];
+
+  for (const tex of textures) {
+    const image = tex?.image;
+    if (!image || seenImages.has(image)) continue;
+    seenImages.add(image);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext("2d");
+
+    const sw = image.naturalWidth ?? image.videoWidth ?? image.width ?? size;
+    const sh = image.naturalHeight ?? image.videoHeight ?? image.height ?? size;
+
+    // cover-crop to square
+    const s = Math.min(sw, sh);
+    const sx = Math.floor((sw - s) / 2);
+    const sy = Math.floor((sh - s) / 2);
+
+    ctx.clearRect(0, 0, size, size);
+    ctx.drawImage(image, sx, sy, s, s, 0, 0, size, size);
+
+    const url = canvas.toDataURL("image/png");
+
+    const img = document.createElement("img");
+    img.src = url;
+    img.width = size;
+    img.height = size;
+
+    // helpful hover text; embedded images usually have no .src
+    const label = (image.src && image.src.trim()) ? image.src : "(embedded image)";
+    img.title = label;
+
+    results.push({ img, url, canvas, image });
+  }
+
+  return results;
+}
+
+let thumbs;
+
+document.addEventListener("icosa-viewer-init-scene-gltf", async function() {
+    thumbs = await gltfImageThumbnails(viewer.sceneGltf, 128);
+    for (let i = 0; i < thumbs.length; i++) {
+        assetTex.append(thumbs[i].img);
+    }
+})
+</script>
+{% endwith %}

@@ -96,3 +96,30 @@ class MaybeJWTAuth(CustomHttpAuthBase):
             raise authentication_error
         request.user = user
         return user
+
+
+class JWTAuthAsync(HttpBearer):
+    async def authenticate(self, request, token):
+        authentication_error = HttpError(401, "Invalid Credentials")
+        try:
+            token = AccessToken(token)
+            email = token.get("sub")
+            if email is None:
+                # headers={"WWW-Authenticate": "Bearer"},
+                raise authentication_error
+        except TokenError:
+            # headers={"WWW-Authenticate": "Bearer"},
+            raise authentication_error
+        try:
+            user = await User.objects.aget(email=email)
+        except User.MultipleObjectsReturned:
+            # headers={"WWW-Authenticate": "Bearer"},
+            raise authentication_error
+        if user is None:
+            # headers={"WWW-Authenticate": "Bearer"},
+            raise authentication_error
+        if not user.is_active:
+            # headers={"WWW-Authenticate": "Bearer"},
+            raise authentication_error
+        request.user = user
+        return user
