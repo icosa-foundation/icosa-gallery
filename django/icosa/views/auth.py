@@ -1,5 +1,6 @@
 import random
 import time
+from datetime import timedelta
 from typing import Optional
 
 from constance import config
@@ -43,6 +44,8 @@ User = get_user_model()
 
 
 def dummy_key(group, request):
+    _ = group
+    _ = request
     # Return the same key every time. This essentially bypasses the key
     # entirely and rate limits the route regardless of who is accessing it.
     return "number9"
@@ -96,12 +99,7 @@ def debug_password_reset_email(request):
 def debug_registration_email(request):
     user = request.user
     owner = AssetOwner.objects.get(django_user=user)
-    send_registration_email(
-        request,
-        user,
-        owner,
-        settings.ADMIN_EMAIL,
-    )
+    send_registration_email(request, user, owner)
 
     return HttpResponse("ok")
 
@@ -191,25 +189,47 @@ def register(request):
     if request.method == "POST":
         form = NewUserForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data["email"]
+            email_addr = form.cleaned_data["email"]
             password = form.cleaned_data["password_new"]
             username = form.cleaned_data["username"]
             displayname = form.cleaned_data["displayname"]
-            if not User.objects.filter(email=email).exists():
+
+            should_send_email = False
+            try:
+                user = User.objects.get(email=email_addr)
+            except User.DoesNotExist:
+                user = None
+            if user is not None:
+                # We should re-register an existing user who has never logged in and has never activated.
+                # Users who are is_active==False and have logged in are to be considered banned.
+                # TODO: We could have a policy of periodically deleting users who never completed registration.
+                if user.is_active is False and user.last_login is None:
+                    with transaction.atomic():
+                        user.set_password(password)
+                        user.username = username
+                        user.displayname = displayname
+                        user.save()
+                        should_send_email = True
+            else:
+                # This is a normal, new user registration
                 try:
                     with transaction.atomic():
                         user = User.objects.create_user(
                             username=username,
                             displayname=displayname,
-                            email=email,
+                            email=email_addr,
                             password=password,
                         )
                         user.is_active = False
                         user.save()
+                        should_send_email = True
 
-                    send_registration_email(request, user, to_email=form.cleaned_data.get("email"))
                 except IntegrityError:
                     pass
+
+            if should_send_email:
+                send_registration_email(request, user, to_email=email_addr)
+
             success = True
             # Sleep a random amount of time to throw off timing attacks a bit more.
             time.sleep(random.randrange(0, 200) / 100)
@@ -253,13 +273,10 @@ def password_reset(request):
     if request.method == "POST":
         form = PasswordResetForm(request.POST)
         if form.is_valid():
+            email_addr = form.cleaned_data.get("email")
             try:
-                user = User.objects.get(email=form.cleaned_data["email"])
-                send_password_reset_email(
-                    request,
-                    user,
-                    to_email=form.cleaned_data.get("email"),
-                )
+                user = User.objects.get(email=email_addr, is_active=True, last_login__isnull=False)
+                send_password_reset_email(request, user, to_email=email_addr)
             except User.DoesNotExist:
                 pass
             return redirect(reverse("icosa:password_reset_done"))
@@ -291,7 +308,7 @@ def password_reset_confirm(request, uidb64, token):
     form = PasswordResetConfirmForm()
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
+        user = User.objects.get(pk=uid, is_active=True, last_login__isnull=False)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
     if user is not None:
@@ -343,68 +360,72 @@ def password_reset_complete(request):
     )
 
 
+def get_device_redirect_url(query_dict) -> Optional[str]:
+    query_dict = {k.lower(): v for k, v in query_dict.items()}
+    secret = query_dict.get("secret", None)
+    appid = query_dict.get("appid", None)
+    if secret is None or appid is None:
+        return None
+    return reverse("icosa:devicecode", kwargs={"appid": appid, "secret": secret})
+
+
+CLIENT_CONFIG = {
+    "openblocks": ("Open Blocks", "http://localhost:40084/api/v1/device_login"),
+    "openbrush": ("Open Brush", "http://localhost:40074/device_login/v1"),
+}
+
+
 @never_cache
-def devicecode(request):
+def devicecode(request, appid=None, secret=None):
     # This function generates device codes for authenticated users which are
     # exchanged for application keys at api/v1/device_login.
     #
-    # If the querystring is populated, we instead present a form which posts to
-    # the user's local machine with the querystring and device code. The local
-    # server should accept these data and post to api/v1/device_login.
+    # If the url path is populated, we instead present a form which posts to
+    # the user's local machine with the client ID and secret code derived from
+    # path segments. The local server should accept these data and post to
+    # api/v1/device_login.
     #
     # This is a workaround for having a terrible keyboard experience on some
     # headsets running Open Brush.
+
     template = "auth/device.html"
     user = request.user
     context = {}
-    if user.is_authenticated:
-        if request.method == "GET":
-            query_dict = {k.lower(): v for k, v in request.GET.items()}
-            client_secret = None
-            client_id = None
-            form_action = None
 
-            if len(request.GET.keys()) == 1:
-                # Deprecated form where the one query param key is the client
-                # secret. Comes from Open Brush
-                client_secret = list(request.GET.keys())[0]
-                # Check that the secret query param is an empty key. If it has
-                # a value, the request is malformed.
-                if client_secret and not request.GET.get(client_secret):
-                    client_id = "Open Brush"
-                    form_action = "http://localhost:40074/device_login/v1"
-            elif len(request.GET.keys()) == 2:
-                client_secret = query_dict.get("secret", None)
-                client_id = query_dict.get("appid", None)
+    # If we see query parameters and app_id and secret are both None, we
+    # will redirect, converting the query params to path segments. This is to
+    # preserve the data in the "next" query param during a login redirect if
+    # the user is not currently authenticated.
+    if appid is None and secret is None:
+        if len(request.GET.keys()) > 0:
+            redirect_url = get_device_redirect_url(request.GET)
+            if redirect_url is None:
+                raise Http404()
+            return HttpResponseRedirect(redirect_url)
 
-            if client_id == "openblocks":
-                client_id = "Open Blocks"
-                form_action = "http://localhost:40084/api/v1/device_login"
-            if client_id == "openbrush":
-                client_id = "Open Brush"
-                form_action = "http://localhost:40074/device_login/v1"
+    if user.is_authenticated and request.method == "GET":
+        client_name, form_action = CLIENT_CONFIG.get(str(appid), (None, None))
+        code = User.generate_device_code()
+        expiry_time = timezone.now() + timedelta(minutes=1)
 
-            code = User.generate_device_code()
-            expiry_time = timezone.now() + timezone.timedelta(minutes=1)
-
-            with transaction.atomic():
-                # Delete all codes for this user
-                DeviceCode.objects.filter(user=user).delete()
-                # Delete all expired codes for any user
-                DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
-
-                DeviceCode.objects.create(
-                    user=user,
-                    devicecode=code,
-                    expiry=expiry_time,
-                )
+        with transaction.atomic():
+            # Delete all codes for this user
+            DeviceCode.objects.filter(user=user).delete()
+            # Delete all expired codes for any user
+            DeviceCode.objects.filter(expiry__lt=timezone.now()).delete()
+            DeviceCode.objects.create(
+                user=user,
+                devicecode=code,
+                expiry=expiry_time,
+            )
 
         context = {
             "device_code": code.upper(),
-            "client_secret": client_secret,
-            "client_id": client_id,
+            "client_secret": secret,
+            "client_name": client_name,
             "form_action": form_action,
         }
+
     return render(request, template, context)
 
 

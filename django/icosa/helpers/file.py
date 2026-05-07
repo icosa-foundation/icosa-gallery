@@ -47,6 +47,8 @@ VALID_FORMAT_TYPES = [
     "splat",
 ]
 
+VALID_FORMAT_STRINGS = [x.upper() for x in VALID_FORMAT_TYPES if x != "gltf"] + ["GLTF1", "GLTF2"]
+
 CONTENT_TYPE_MAP = {
     "jpeg": "image/jpeg",
     "jpg": "image/jpeg",
@@ -71,8 +73,7 @@ CONTENT_TYPE_MAP = {
 }
 
 
-MAX_UNZIP_BYTES = 524288000  # 500MB
-
+MAX_UNZIP_BYTES = 1073741824  # 1024MB
 MAX_UNZIP_SECONDS = 120
 
 
@@ -92,6 +93,13 @@ class UploadedFormat:
     extension: str
     filetype: str
     mainfile: bool
+    full_path: str
+
+
+@dataclass
+class ProcessedUpload:
+    file: UploadedFile
+    full_path: str
 
 
 def is_gltf2(file) -> bool:
@@ -104,7 +112,7 @@ def is_gltf2(file) -> bool:
     return True
 
 
-def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat]:
+def validate_file(file: ProcessedUpload, extension: str) -> Optional[UploadedFormat]:
     # Need to check if the resource is a main file or helper file.
     # Ordered in most likely file types for 'performance'
 
@@ -163,11 +171,15 @@ def validate_file(file: UploadedFile, extension: str) -> Optional[UploadedFormat
     if IMAGE_REGEX.match(extension):
         filetype = "IMAGE"
 
+    if filetype is None:
+        return None
+
     return UploadedFormat(
-        file,
+        file.file,
         extension,
         filetype,
         mainfile,
+        file.full_path,
     )
 
 
@@ -221,13 +233,13 @@ def process_main_file(mainfile, sub_files, asset, gltf_to_convert):
             Resource.objects.create(**sub_resource_data)
 
 
-def add_thumbnail_to_asset(thumbnail, asset):
-    extension = thumbnail.name.split(".")[-1].lower()
+async def add_thumbnail_to_asset(thumbnail, asset):
+    extension = thumbnail.file.name.split(".")[-1].lower()
     thumbnail_upload_details = validate_file(thumbnail, extension)
     if thumbnail_upload_details is not None and thumbnail_upload_details.filetype == "IMAGE":
         asset.thumbnail = thumbnail_upload_details.file
         asset.thumbnail_contenttype = get_content_type(thumbnail_upload_details.file.name)
-        asset.save()
+        await asset.asave()
 
 
 def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
@@ -239,6 +251,7 @@ def get_blocks_role_id_from_file(name: str, filetype: str) -> Optional[int]:
             return "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
         if name == "model":
             return "ORIGINAL_OBJ_FORMAT"
+        return "ORIGINAL_TRIANGULATED_OBJ_FORMAT"
     # For tilt, have a new role, TILT_NATIVE_GLTF, which behaves like
     # UPDATED_GLTF currently.
     if filetype in ["GLTF1", "GLTF2"]:

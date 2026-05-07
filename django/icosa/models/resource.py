@@ -3,19 +3,24 @@ from urllib.parse import urlparse
 
 from constance import config
 from django.conf import settings
+from django.core.cache import cache
 from django.db import models
 
 from .asset import Asset
 from .common import (
     FILENAME_MAX_LENGTH,
 )
-from .helpers import format_upload_path
+from .helpers import (
+    format_upload_path,
+    get_cached_cors_allow_list,
+)
 
 
 class Resource(models.Model):
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
     format = models.ForeignKey("Format", null=True, blank=True, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
+    uploaded_file_path = models.CharField(max_length=FILENAME_MAX_LENGTH, null=True, blank=True)
     file = models.FileField(
         null=True,
         blank=True,
@@ -27,34 +32,14 @@ class Resource(models.Model):
 
     @property
     def url(self) -> Optional[str]:
-        """
-        This function currently returns the resource's local file url or its external url. If the latter, we need to substitute out archive.org urls that link to an interstitial web page with our best guess at a link to the resource of the same type.
-        """
         if self.file:
             storage = settings.DJANGO_STORAGE_URL
             bucket = settings.DJANGO_STORAGE_BUCKET_NAME
             url_str = f"{storage}/{bucket}/{self.file.name}"
+            return url_str
         elif self.external_url:
-            ext_url = self.external_url
-            prefix = "https://web.archive.org/web/"
-            decider = "https://"
-            if ext_url.startswith(f"{prefix}{decider}"):
-                # If we are here it means we are linking to a non snapshotted
-                # version of the file, and so are returning a link to an html
-                # page. We need to force linking to a snapshot, so create a
-                # fake timestamp to guess at a snapshot. Archive.org, at time
-                # of writing, will notice there is no snapshot at that time,
-                # and will return a redirect to the latest snapshot it has.
-                #
-                # Clients will need to follow redirects for this to work
-                # properly for them.
-                fake_timestamp_path = "20250101010101id_/"
-                url_str = f"{prefix}{fake_timestamp_path}{ext_url[len(prefix) :]}"
-            else:
-                url_str = ext_url
-        else:
-            url_str = ""
-        return url_str
+            return self.external_url
+        return None
 
     @property
     def internal_or_cors_url(self):
@@ -66,7 +51,7 @@ class Resource(models.Model):
 
     @property
     def relative_path(self):
-        file_name = None
+        file_name = ""
         if self.file:
             file_name = self.file.name.split("/")[-1]
         elif self.external_url:
@@ -85,11 +70,38 @@ class Resource(models.Model):
             return None
 
     @property
+    def external_file_name(self):
+        if self.external_url:
+            return self.external_url.split("/")[-1]
+        else:
+            return None
+
+    @property
+    def extension(self):
+        if self.external_url:
+            return self.external_url.split(".")[-1]
+        else:
+            return self.file.name.split(".")[-1]
+
+    @property
     def is_cors_allowed(self):
+        cors_allow_list = get_cached_cors_allow_list()
+        cache_key = f"resource_is_cors_allowed-{self.pk}-{cors_allow_list}"
+
+        is_allowed = cache.get(cache_key, None)
+
+        if is_allowed is not None:
+            return is_allowed
+
+        # We got nothing back from the cache; let's compute the value.
+        is_allowed = False
         remote_host = self.remote_host
         if remote_host is None:
-            return True
-        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
-            allowed_sources = tuple([x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")])
-            return remote_host in allowed_sources
-        return False
+            is_allowed = True
+        elif remote_host is not None and self.file:
+            is_allowed = True
+        elif cors_allow_list:
+            allowed_sources = tuple([x.strip() for x in cors_allow_list.split(",")])
+            is_allowed = remote_host in allowed_sources
+        cache.set(cache_key, is_allowed, None)  # No expiry
+        return is_allowed

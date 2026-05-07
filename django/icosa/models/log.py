@@ -1,4 +1,5 @@
 from b2sdk._internal.exception import FileNotHidden, FileNotPresent
+
 from django.db import models
 from icosa.helpers.storage import get_b2_bucket
 

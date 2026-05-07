@@ -1,5 +1,5 @@
 {{ asset.presentation_params|json_script:"presentation-params" }}
-{{ asset.camera|default_if_none:"{}"|json_script:"camera-data" }}
+{{ asset.camera|json_script:"camera-data" }}
 <style>
     .lil-gui {
         --title-background-color: rgba(0,0,0,0.25);
@@ -72,7 +72,11 @@
         "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/",
-		"three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
+        {% if request.session.viewer_js_version == "experimental" or is_moderating %}
+            "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
+        {% else %}
+            "three-icosa": "/static/js/three-icosa.module.js?v={% now "U" %}",
+        {% endif %}
 		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/gh/sparkjsdev/spark@b60e9d9acbe621e67eda5d98417fcfdea5af6291/dist/spark.module.js"
     {% endif %}
@@ -83,7 +87,7 @@
 
     {% if request.session.viewer_js_version == "previous" %}
         import { Viewer } from "/static/js-previous/icosa-viewer.module.js?v={% now "U" %}";
-    {% elif request.session.viewer_js_version == "experimental" %}
+    {% elif request.session.viewer_js_version == "experimental" or is_moderating %}
         import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
         import * as THREE from "three";
     {% else %}
@@ -93,7 +97,7 @@
 
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-    {% if request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" or is_moderating %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-experimental/");
     {% elif request.session.viewer_js_version == "previous" %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-previous/");
@@ -157,9 +161,16 @@
         await viewer.loadFbx(url, overrides);
     } else if (formatType === 'obj') {
         console.log("Trying to load obj");
-        let mtlUrl = "{{ asset.preferred_viewer_format.resource_set.first }}";
-        await viewer.loadObjWithMtl(url, mtlUrl, overrides);
+        {% with mtl_resource=asset.preferred_viewer_format.resource_set.first %}
+            {% if mtl_resource %}
+                let mtlUrl = "{{ mtl_resource.url|default_if_none:'' }}";
+                await viewer.loadObjWithMtl(url, mtlUrl, overrides);
+            {% else %}
+                await viewer.loadObj(url, overrides);
+            {% endif %}
+        {% endwith %}
     // PLYs are now assumed to be Gaussian splats
+    // TODO allow override?
     // } else if (formatType === 'ply') {
     //     console.log("Trying to load ply");
     //     await viewer.loadPly(url, overrides);

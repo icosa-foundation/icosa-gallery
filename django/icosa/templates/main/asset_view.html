@@ -6,6 +6,7 @@
 
 {% block extrahead %}
     <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ asset.get_absolute_url }}" />
+    <link rel="alternate" as="spatial-entrypoint" href="{{ asset.preferred_viewer_format.root_resource.internal_or_cors_url }}">
     {% include "partials/oembed_head.html" %}
 {% endblock extrahead %}
 
@@ -30,6 +31,7 @@
 {% include "partials/artist_info_banner.html" %}
 {% endif %}
 {% include "partials/js_version_banner.html" %}
+{% admin_peek_banner request asset %}
 {% endblock banner %}
 
 {% block content %}
@@ -72,6 +74,13 @@
                     </a>
                 {% endif %}
                 <p>
+                    {% if request.user.is_authenticated %}
+                    {% if request.user.is_superuser %}
+                    <a id="collection-btn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#collections-modal">
+                        {% fa_icon "solid" "plus" %} Add to collection
+                    </a>
+                    {% endif %}
+                    {% endif %}
                     {% if downloadable_formats %}
                         <a href="{% url 'icosa:asset_downloads' asset_url=asset.url %}" class="btn btn-primary btn-sm">
                             {% fa_icon "solid" "download" %} Downloads
@@ -100,6 +109,7 @@
         </div>
     </div>
 </div>
+{% include "modals/user_asset_collection_modal.html" %}
 {% if asset.is_viewer_compatible %}
     {% include "partials/viewer.html" %}
 {% endif %}

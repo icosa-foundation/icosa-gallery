@@ -1,4 +1,5 @@
 import inspect
+import logging
 import random
 import secrets
 
@@ -20,8 +21,12 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponseNotAllowed,
     HttpResponseRedirect,
+    JsonResponse,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import (
+    get_object_or_404,
+    render,
+)
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -43,7 +48,11 @@ from icosa.forms import (
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.helpers.upload_web_ui import upload
+from icosa.helpers.upload import upload_api_asset
+from icosa.model_mixins import (
+    MOD_REPORTED,
+    MOD_VISIBLE,
+)
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ARCHIVED,
@@ -56,13 +65,11 @@ from icosa.models import (
     PUBLIC,
     UNLISTED,
     Asset,
-    AssetCollection,
     AssetOwner,
     MastheadSection,
     UserLike,
 )
-from icosa.tasks import queue_upload_asset_web_ui
-from silk.profiling.profiler import silk_profile
+from icosa.tasks import queue_upload_api_asset
 
 User = get_user_model()
 
@@ -87,26 +94,23 @@ def set_viewer_js_version(request):
 
 
 def get_default_q():
+    cautious_q = Q(
+        visibility=PUBLIC,
+        is_viewer_compatible=True,
+        curated=True,
+        moderation_state__in=MOD_VISIBLE,
+    )
+
     try:
         if config.HIDE_REPORTED_ASSETS:
-            return Q(
-                visibility=PUBLIC,
-                is_viewer_compatible=True,
-                curated=True,
-                last_reported_time__isnull=True,
-            )
+            return cautious_q
         return Q(
             visibility=PUBLIC,
             is_viewer_compatible=True,
             curated=True,
         )
     except Exception:
-        return Q(
-            visibility=PUBLIC,
-            is_viewer_compatible=True,
-            curated=True,
-            last_reported_time__isnull=True,
-        )
+        return cautious_q
 
 
 def user_can_view_asset(
@@ -115,6 +119,8 @@ def user_can_view_asset(
 ) -> bool:
     # Superusers should be able to view any asset. Preferably while showing a
     # banner and with the option to check the real access.
+    if user.is_staff or user.is_superuser:
+        return True
     if asset.visibility in [PRIVATE, ARCHIVED]:
         return user.is_authenticated and asset.owner.django_user == user
     return True
@@ -145,7 +151,7 @@ def handler403(request, exception=None):
 @user_passes_test(lambda u: u.is_superuser)
 @never_cache
 def div_by_zero(request):
-    1 / 0
+    return 1 / 0
 
 
 @never_cache
@@ -172,16 +178,21 @@ def landing_page(
     template = "main/home.html"
 
     # TODO(james): filter out assets with no formats
-    assets = assets.exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).select_related("owner")
+    assets = (
+        assets.exclude(license__isnull=True)
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .select_related("owner")
+        .prefetch_related("resource_set", "format_set")
+    )
 
     try:
         page_number = int(request.GET.get("page", 1))
     except ValueError:
-        page_number = 0
+        page_number = 1
 
     # Only show the masthead if we're on page 1 of a lister.
     # If show_masthead is false, keep it that way.
-    if show_masthead is True and (page_number is None or page_number < 2):
+    if show_masthead is True and (page_number == 1):
         # The mastheads query is slow, but we still want a rotating list on
         # every page load. Cache a list of mastheads and choose one at random
         # each time.
@@ -219,6 +230,7 @@ def landing_page(
         "page_title": page_title,
         "paginator": paginator,
     }
+
     return render(
         request,
         template,
@@ -226,7 +238,6 @@ def landing_page(
     )
 
 
-@silk_profile(name="Home page")
 @never_cache
 def home(request):
     return landing_page(request)
@@ -275,7 +286,7 @@ def home_other(request):
         home_q = Q(
             is_viewer_compatible=True,
             curated=True,
-            last_reported_time__isnull=True,
+            moderation_state__in=MOD_VISIBLE,
         )
     else:
         home_q = Q(
@@ -322,55 +333,20 @@ def category(request, category):
 @login_required
 @never_cache
 def uploads(request):
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+
     template = "main/manage_uploads.html"
-
     user = request.user
-    if request.method == "POST":
-        form = AssetUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            job_snowflake = generate_snowflake()
-            asset_token = secrets.token_urlsafe(8)
-            with transaction.atomic():
-                owner, _ = AssetOwner.objects.get_or_create(
-                    django_user=user,
-                    email=user.email,
-                    defaults={
-                        "url": secrets.token_urlsafe(8),
-                        "displayname": user.displayname,
-                    },
-                )
-                asset = Asset.objects.create(
-                    id=job_snowflake,
-                    url=asset_token,
-                    owner=owner,
-                    state=ASSET_STATE_UPLOADING,
-                )
-                try:
-                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                        queue_upload_asset_web_ui(
-                            current_user=user,
-                            asset=asset,
-                            files=[request.FILES["file"]],
-                        )
-                    else:
-                        upload(
-                            asset,
-                            [request.FILES["file"]],
-                        )
-                except Exception:
-                    asset.state = ASSET_STATE_FAILED
-                    asset.save()
-
-            messages.add_message(request, messages.INFO, "Your upload has started.")
-            return HttpResponseRedirect(reverse("icosa:uploads"))
-    elif request.method == "GET":
-        form = AssetUploadForm()
-    else:
-        return HttpResponseNotAllowed(["GET", "POST"])
-
-    asset_objs = Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+    form = AssetUploadForm()
+    asset_objs = list(
+        Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+    )
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
 
     context = {
@@ -384,6 +360,88 @@ def uploads(request):
         template,
         context,
     )
+
+
+@login_required
+@never_cache
+def upload_list_partial(request):
+    template = "partials/asset_upload_list.html"
+    user = request.user
+    asset_objs = list(
+        Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+    )
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
+    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    assets = paginator.get_page(page_number)
+    context = {
+        "assets": assets,
+        "paginator": paginator,
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@login_required
+@never_cache
+async def upload_asset(request):
+    user = request.user
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    form = AssetUploadForm(request.POST, request.FILES)
+    if form.is_valid():
+        job_snowflake = generate_snowflake()
+        asset_token = secrets.token_urlsafe(8)
+        owner, _ = await AssetOwner.objects.aget_or_create(
+            django_user=user,
+            email=user.email,
+            defaults={
+                "url": secrets.token_urlsafe(8),
+                "displayname": user.displayname,
+            },
+        )
+        asset = await Asset.objects.acreate(
+            id=job_snowflake,
+            url=asset_token,
+            owner=owner,
+            state=ASSET_STATE_UPLOADING,
+        )
+        try:
+            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                await queue_upload_api_asset(
+                    user,
+                    asset,
+                    None,
+                    [request.FILES["file"]],
+                    True,
+                )
+            else:
+                await upload_api_asset(
+                    asset,
+                    None,
+                    [request.FILES["file"]],
+                    True,
+                )
+            return JsonResponse({"success": True, "message": "Your upload has started"})
+        except Exception as e:
+            asset.state = ASSET_STATE_FAILED
+            await asset.asave()
+            logging.exception(e)
+            return JsonResponse(
+                {
+                    "success": False,
+                    "errors": {"file": ["Your upload failed. Please try again later."]},
+                }
+            )  # TODO(james): Not the most useful error message.
+
+    else:
+        return JsonResponse({"success": False, "errors": form.errors})
 
 
 @never_cache
@@ -401,8 +459,11 @@ def owner_show(request, slug):
         visibility=PUBLIC,
     ).order_by("-id")
 
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
         "user": request.user,
@@ -444,13 +505,20 @@ def user_show(request, slug):
     else:
         owners = owner.django_user.assetowner_set.all()
 
-    asset_objs = Asset.objects.filter(
-        owner__in=owners,
-        visibility=PUBLIC,
-    ).order_by("-id")
+    asset_objs = (
+        Asset.objects.filter(
+            owner__in=owners,
+            visibility=PUBLIC,
+        )
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .order_by("-id")
+    )
 
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
 
     if owners.count() > 1:
@@ -475,63 +543,6 @@ def user_show(request, slug):
     )
 
 
-def user_asset_collection_list(request, user_url: str):
-    template = "main/user_asset_collection_list.html"
-    owner = get_object_or_404(
-        AssetOwner,
-        url=user_url,
-    )
-    user = owner.django_user
-
-    if user == request.user:
-        collections = AssetCollection.objects.filter(user=owner.django_user)
-    else:
-        collections = AssetCollection.objects.filter(user=owner.django_user, visibility__in=[PUBLIC, UNLISTED])
-    context = {
-        "collections": collections,
-        "page_title": f"Collections by {user.displayname}",
-        "user": user,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
-
-
-def user_asset_collection_view(request, user_url: str, collection_url: str):
-    template = "main/asset_collection_view.html"
-    owner = get_object_or_404(
-        AssetOwner,
-        url=user_url,
-    )
-    user = owner.django_user
-
-    if user == request.user:
-        collection = get_object_or_404(AssetCollection, url=collection_url)
-    else:
-        collection = get_object_or_404(AssetCollection, url=collection_url, visibility__in=[PUBLIC, UNLISTED])
-
-    asset_objs = collection.collected_assets.filter(asset__visibility=PUBLIC)
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
-    assets = paginator.get_page(page_number)
-    context = {
-        "assets": assets,
-        "page_number": page_number,
-        "result_count": asset_objs.count(),
-        "paginator": paginator,
-        "page_title": collection.name or "Untitled collection",
-        "collection": collection,
-        "owner": owner,
-    }
-    return render(
-        request,
-        template,
-        context,
-    )
-
-
 @never_cache
 @login_required
 def my_likes(request):
@@ -543,8 +554,12 @@ def my_likes(request):
 
     liked_assets = UserLike.objects.filter(user=user).filter(q)
     asset_objs = [ul.asset for ul in liked_assets]
+
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
 
     context = {
@@ -560,12 +575,13 @@ def my_likes(request):
     )
 
 
+@ratelimit(key="user_or_ip", rate="20/m", method="GET")
 @never_cache
 def asset_view(request, asset_url):
     template = "main/asset_view.html"
     user = request.user
 
-    asset = get_object_or_404(Asset, url=asset_url)
+    asset = get_object_or_404(Asset.objects.prefetch_related("resource_set", "format_set"), url=asset_url)
     check_user_can_view_asset(user, asset)
     asset.inc_views_and_rank()
     format_override = request.GET.get("forceformat", "")
@@ -703,10 +719,6 @@ def asset_edit(request, asset_url):
         asset = get_object_or_404(Asset, url=asset_url)
     else:
         asset = get_object_or_404(Asset, url=asset_url, owner__in=request.user.assetowner_set.all())
-    # We need to disconnect the editable state from the form during validation.
-    # Without this, if the form contains errors, some fields that need
-    # correction cannot be edited.
-    is_editable = asset.model_is_editable
 
     if request.method == "GET":
         form = AssetEditForm(instance=asset)
@@ -721,29 +733,8 @@ def asset_edit(request, asset_url):
                     image_file = b64_to_img(thumbnail_override_image)
                     asset.thumbnail = image_file
                 form.save_m2m()
-                if is_editable and "_save_private" in request.POST:
-                    asset.visibility = PRIVATE
-                if "_save_public" in request.POST:
-                    asset.visibility = PUBLIC
-                if "_save_unlisted" in request.POST:
-                    asset.visibility = UNLISTED
                 asset.save(update_timestamps=True)
 
-                if request.FILES.get("zip_file"):
-                    asset.state = ASSET_STATE_UPLOADING
-                    asset.save(update_timestamps=True)
-
-                    if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
-                        queue_upload_asset_web_ui(
-                            current_user=request.user,
-                            asset=asset,
-                            files=[request.FILES["zip_file"]],
-                        )
-                    else:
-                        upload(
-                            asset,
-                            [request.FILES["zip_file"]],
-                        )
             if is_superuser:
                 return HttpResponseRedirect(reverse("icosa:asset_view", kwargs={"asset_url": asset.url}))
             else:
@@ -758,7 +749,6 @@ def asset_edit(request, asset_url):
 
     context = {
         "asset": asset,
-        "is_editable": is_editable,
         "form": form,
         "page_title": f"Edit {asset.name}",
     }
@@ -775,11 +765,6 @@ def asset_publish(request, asset_url):
     # TODO(james): This view is very similar to asset_edit
     template = "main/asset_edit.html"
     asset = get_object_or_404(Asset, url=asset_url)
-    # We need to disconnect the editable state from the form during validation.
-    # Without this, if the form contains errors, some fields that need
-    # correction cannot be edited.
-    is_editable = asset.model_is_editable
-
     if request.user != asset.owner.django_user:
         raise Http404()
 
@@ -790,7 +775,7 @@ def asset_publish(request, asset_url):
         if form.is_valid():
             with transaction.atomic():
                 asset = form.save()
-                if is_editable and "_save_private" in request.POST:
+                if "_save_private" in request.POST:
                     asset.visibility = PRIVATE
                 if "_save_public" in request.POST:
                     asset.visibility = PUBLIC
@@ -801,7 +786,6 @@ def asset_publish(request, asset_url):
     else:
         return HttpResponseNotAllowed(["GET", "POST"])
     context = {
-        "is_editable": asset.model_is_editable,
         "asset": asset,
         "form": form,
         "page_title": f"Publish {asset.name}",
@@ -847,14 +831,22 @@ def report_asset(request, asset_url):
     elif request.method == "POST":
         form = AssetReportForm(request.POST)
         if form.is_valid():
-            asset.last_reported_time = timezone.now()
+            now = timezone.now()
+            asset.last_reported_time = now
+            asset.moderation_state = MOD_REPORTED
+            asset.moderation_changed_fields = asset.moderation_watch_fields
+            asset.moderation_state_change_time = now
+            asset.moderation_state_change_by = None
             reporter = request.user if not request.user.is_anonymous else None
             if reporter is None:
                 reporter_email = None
             else:
                 reporter_email = reporter.email
                 asset.last_reported_by = reporter
-            asset.save()
+            # We must bypass moderation logging because we have forced the
+            # moderation state ourselves.
+            asset.save(bypass_custom_logic=True, bypass_moderation_logging=True)
+
             current_site = get_current_site(request)
             mail_subject = "An Icosa asset has been reported"
             to_email = getattr(settings, "ADMIN_EMAIL", None)
@@ -1035,7 +1027,7 @@ def search(request):
         q = Q(
             visibility=PUBLIC,
             is_viewer_compatible=True,
-            last_reported_time__isnull=True,
+            moderation_state__in=MOD_VISIBLE,
         )
     else:
         q = Q(
@@ -1044,13 +1036,17 @@ def search(request):
         )
 
     if query is not None:
-        q &= Q(search_text__icontains=query)
+        q &= Q(name__icontains=query)
 
     asset_objs = (
         Asset.objects.filter(q).exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).order_by("-rank")
     )
+
+    try:
+        page_number = int(request.GET.get("page", 1))
+    except ValueError:
+        page_number = 1
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
-    page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
         "assets": assets,

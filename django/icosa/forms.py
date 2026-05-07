@@ -14,7 +14,9 @@ from django.utils.translation import gettext_lazy as _
 from icosa.helpers.file import validate_mime
 from icosa.models import (
     PRIVATE,
+    PUBLIC,
     RESERVED_LICENSE,
+    UNLISTED,
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
     V4_CC_LICENSE_CHOICES,
@@ -105,6 +107,12 @@ class AssetPublishForm(forms.ModelForm):
             "UNLISTED",
         ]
 
+        self.fields["visibility"].choices = [
+            (PUBLIC, "Public"),
+            (PRIVATE, "Private"),
+            (UNLISTED, "Unlisted"),
+        ]
+
         self.fields["license"].choices = (
             [
                 ("", "No license chosen"),
@@ -113,26 +121,26 @@ class AssetPublishForm(forms.ModelForm):
             + [RESERVED_LICENSE]
         )
 
-    editable_fields = [
-        "name",
-    ]
-
     class Meta:
         model = Asset
 
         fields = [
             "name",
             "license",
+            "visibility",
         ]
 
 
 class AssetEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.instance.model_is_editable:
-            del self.fields["zip_file"]
         self.fields["name"].required = True
         license_value = self["license"].value()
+        self.fields["visibility"].choices = [
+            (PUBLIC, "Public"),
+            (PRIVATE, "Private"),
+            (UNLISTED, "Unlisted"),
+        ]
 
         self.fields["thumbnail_override"] = forms.BooleanField(required=False)
 
@@ -164,42 +172,31 @@ class AssetEditForm(forms.ModelForm):
         license = cleaned_data.get("license")
         if self.instance.visibility in ["PUBLIC", "UNLISTED"] and not license:
             self.add_error("license", "Please add a CC License.")
-        if not self.instance.model_is_editable and self.instance.visibility == PRIVATE:
-            self.add_error(
-                "visibility",
-                "You cannot make this model private because you have published this work under a CC license.",
-            )
-
-        for field in self.fields:
-            if not self.instance.model_is_editable and field not in self.editable_fields and field in self.changed_data:
-                self.add_error(
-                    field,
-                    "You cannot modify this field because this work is not private and has a CC license.",
-                )
         thumbnail = cleaned_data.get("thumbnail")
         if thumbnail:
             if not validate_mime(next(thumbnail.chunks(chunk_size=2048)), VALID_THUMBNAIL_MIME_TYPES):
                 self.add_error("thumbnail", "Image is not a png or jpg.")
-        zip_file = cleaned_data.get("zip_file")
-        if zip_file:
-            if not validate_mime(next(zip_file.chunks(chunk_size=2048)), ["application/zip"]):
-                self.add_error("zip_file", "File is not a zip archive.")
+        file = cleaned_data.get("file")
+        if file:
+            magic_bytes = next(file.chunks(chunk_size=2048))
+            file.seek(0)
+            if not validate_mime(
+                magic_bytes,
+                [
+                    "application/zip",
+                    "application/gzip",  # spz
+                    "model/gltf-binary",
+                    "application/octet-stream",
+                ],
+            ):  # TODO: "application/octet-stream" essentially makes this check redundant, but is required for many file types.
+                self.add_error("file", "File type is not supported.")
 
     thumbnail = forms.FileField(
         required=False, widget=CustomImageInput
     )  # No validator needed here; it's on the model field definition.
-    zip_file = forms.FileField(required=False, validators=[FileExtensionValidator(allowed_extensions=["zip"])])
-
-    editable_fields = [
-        "name",
-        "description",
-        "thumbnail",
-        "thumbnail_override",
-        "thumbnail_override_data",
-        "camera",
-        "category",
-        "tags",
-    ]
+    file = forms.FileField(
+        required=False, validators=[FileExtensionValidator(allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS)]
+    )
 
     class Meta:
         model = Asset
@@ -208,11 +205,12 @@ class AssetEditForm(forms.ModelForm):
             "name",
             "description",
             "license",
+            "visibility",
             "thumbnail",
             "category",
             "tags",
             "camera",
-            "zip_file",
+            "file",
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(
@@ -311,6 +309,21 @@ class NewUserForm(forms.ModelForm):
         )
         self.fields["password_confirm"] = forms.CharField(required=False, widget=PasswordInput)
         self.fields["captcha"] = MathCaptchaField()
+
+    def validate_unique(self):
+        exclude = self._get_validation_exclusions()
+        try:
+            self.instance.validate_unique(exclude=exclude)
+        except forms.ValidationError as e:
+            try:
+                # If email or username unique validation occurs it will be omitted and form.is_valid() method pass
+                # This is so we can re-register users who never completed registration
+                del e.error_dict["email"]
+                del e.error_dict["username"]
+            except Exception:
+                # If there are other errors in the form those will be returned to views and is_valid() method will fail.
+                pass
+            self._update_errors(e)
 
     def clean(self):
         cleaned_data = super().clean()

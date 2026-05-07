@@ -1,27 +1,53 @@
 import secrets
-from typing import List, Optional
+from typing import (
+    List,
+    Optional,
+)
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import (
+    aget_object_or_404,
+    get_object_or_404,
+)
 from django.views.decorators.cache import never_cache
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
+    AssetCollectionPagination,
     AssetPagination,
+    acheck_user_owns_asset,
+    aget_asset_by_url,
     check_user_owns_asset,
     get_asset_by_url,
     get_publish_url,
 )
+from icosa.helpers.file import (
+    get_content_type,
+    validate_mime,
+)
 from icosa.helpers.snowflake import generate_snowflake
-from icosa.jwt.authentication import JWTAuth
+from icosa.helpers.upload import upload_api_asset
+from icosa.jwt.authentication import (
+    JWTAuth,
+    JWTAuthAsync,
+)
 from icosa.models import (
     PRIVATE,
     PUBLIC,
     UNLISTED,
+    VALID_THUMBNAIL_MIME_TYPES,
     Asset,
+    AssetCollection,
     AssetOwner,
 )
-from icosa.tasks import queue_blocks_upload_format, queue_finalize_asset
-from ninja import File, Query, Router
+from icosa.tasks import queue_upload_api_asset
+from ninja import (
+    File,
+    Form,
+    Query,
+    Router,
+)
 from ninja.decorators import decorate_view
 from ninja.errors import HttpError
 from ninja.files import UploadedFile
@@ -34,10 +60,18 @@ from .filters import (
     filter_and_sort_assets,
 )
 from .schema import (
-    AssetFinalizeData,
+    AssetCollectionPatchSchema,
+    AssetCollectionPostSchema,
+    AssetCollectionPutSchema,
+    AssetCollectionSchema,
+    AssetCollectionSchemaWithRejections,
+    AssetMetaData,
     AssetSchema,
     AssetSchemaPrivate,
+    AssetVisibility,
+    Error,
     FullUserSchema,
+    ImageSchema,
     PatchUserSchema,
     UploadJobSchemaOut,
 )
@@ -51,7 +85,7 @@ router = Router()
     response=FullUserSchema,
 )
 @decorate_view(never_cache)
-def get_users_me(request):
+def show_my_user(request):
     return request.user
 
 
@@ -61,7 +95,7 @@ def get_users_me(request):
     response=FullUserSchema,
 )
 @decorate_view(never_cache)
-def update_user(
+def update_my_user(
     request,
     patch_user: PatchUserSchema,
 ):
@@ -95,7 +129,7 @@ def update_user(
 )
 @decorate_view(never_cache)
 @paginate(AssetPagination)
-def get_assets(
+def list_my_assets(
     request,
     filters: FiltersUserAsset = Query(...),
     order: FiltersOrder = Query(...),
@@ -113,19 +147,15 @@ def get_assets(
     return assets
 
 
-@router.post(
-    "/me/assets",
-    response={201: UploadJobSchemaOut},
-    auth=JWTAuth(),
-    include_in_schema=False,
-)
+@router.post("/me/assets", response={201: UploadJobSchemaOut}, auth=JWTAuthAsync())
 @decorate_view(never_cache)
-def new_asset(
+async def create_a_new_asset(
     request,
+    data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
 ):
     user = request.user
-    owner, _ = AssetOwner.objects.get_or_create(
+    owner, _ = await AssetOwner.objects.aget_or_create(
         django_user=user,
         email=user.email,
         defaults={
@@ -135,62 +165,90 @@ def new_asset(
     )
     job_snowflake = generate_snowflake()
     asset_token = secrets.token_urlsafe(8)
-    asset = Asset.objects.create(
+    asset = await Asset.objects.acreate(
         id=job_snowflake,
         url=asset_token,
         owner=owner,
         name="Untitled Asset",
     )
     if files is not None:
-        from icosa.helpers.upload import upload_api_asset
-
         try:
-            upload_api_asset(
-                asset,
-                files,
-            )
+            if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+                await queue_upload_api_asset(
+                    user,
+                    asset,
+                    data,
+                    files,
+                )
+            else:
+                await upload_api_asset(
+                    asset,
+                    data,
+                    files,
+                )
         except HttpError as err:
             raise err
 
-        # queue_upload_api_asset(
-        #     user,
-        #     asset,
-        #     files,
-        # )
     return get_publish_url(request, asset, 201)
 
 
 @router.get(
-    "/me/assets/{str:asset}",
+    "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
     response=AssetSchemaPrivate,
     **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-def get_asset(
+def show_an_asset(
     request,
-    asset: str,
+    asset_url: str,
 ):
-    asset = get_asset_by_url(request, asset)
+    asset = get_asset_by_url(request, asset_url)
     check_user_owns_asset(request, asset)
     return asset
 
 
 @router.delete(
-    "/me/assets/{str:asset}",
+    "/me/assets/{str:asset_url}",
     auth=JWTAuth(),
-    response={204: int},
+    response={204: None, 400: Error},
 )
-def delete_asset(
+def delete_an_asset(
     request,
-    asset: str,
+    asset_url: str,
 ):
-    asset = get_asset_by_url(request, asset)
+    asset = get_asset_by_url(request, asset_url)
     check_user_owns_asset(request, asset)
+    if asset.is_published:
+        return 400, {"message": "Cannot delete published assets."}
     with transaction.atomic():
         asset.hide_media()
         asset.delete()
-    return 204
+    return 204, None
+
+
+@router.post(
+    "/me/assets/{str:asset_url}/set_thumbnail",
+    auth=JWTAuthAsync(),
+    response={201: ImageSchema, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+async def set_an_image_for_an_asset(
+    request,
+    asset_url: str,
+    image: File[UploadedFile],
+):
+    asset = await aget_asset_by_url(request, asset_url)
+    await acheck_user_owns_asset(request, asset)
+    magic_bytes = next(image.chunks(chunk_size=2048))
+    image.seek(0)
+    if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
+        return 400, {"message": "Thumbnail must be png or jpg."}
+    asset.thumbnail = image
+    asset.thumbnail_contenttype = get_content_type(image.name)
+    asset.asave()
+    return 201, {"url": asset.thumbnail}
 
 
 @router.get(
@@ -201,7 +259,7 @@ def delete_asset(
 )
 @decorate_view(never_cache)
 @paginate(AssetPagination)
-def get_likedassets(
+def list_my_likedassets(
     request,
     filters: FiltersAsset = Query(...),
     order: FiltersOrder = Query(...),
@@ -227,65 +285,176 @@ def get_likedassets(
     return assets
 
 
-# ----------------------------------------------------------------------------
-# UPLOADS ENDPOINTS
-# (These are duplicated in api.assets. Remove the ones defined over there after
-# blocks/brush refactors have been done. )
-# ----------------------------------------------------------------------------
-
-
-# This endpoint is for internal Open Blocks use for now. It's more complex than
-# it needs to be until Open Blocks can send the formats data in a zip or some
-# other way.
-@router.post(
-    "/me/assets/{str:asset}/blocks_format",
+@router.get(
+    "/me/collections",
     auth=JWTAuth(),
-    response={200: UploadJobSchemaOut},
-    include_in_schema=False,  # TODO this route, coupled with finalize_asset
-    # has a race condition. If this route becomes public, this will probably
-    # need to be fixed.
+    response=List[AssetCollectionSchema],
+    **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-@decorate_view(transaction.atomic)
-def add_blocks_asset_format(
+@paginate(AssetCollectionPagination)
+def get_my_collections(
     request,
-    asset: str,
-    files: Optional[List[UploadedFile]] = File(None),
 ):
     user = request.user
-    asset = get_asset_by_url(request, asset)
-    check_user_owns_asset(request, asset)
-
-    if request.headers.get("content-type").startswith("multipart/form-data"):
-        try:
-            queue_blocks_upload_format(user, asset, files)
-        except HttpError:
-            raise
-    else:
-        raise HttpError(415, "Unsupported content type.")
-
-    asset.save()
-    return get_publish_url(request, asset)
+    collections = AssetCollection.objects.filter(user=user)
+    return collections
 
 
 @router.post(
-    "/me/assets/{str:asset}/blocks_finalize",
+    "/me/collections",
     auth=JWTAuth(),
-    response={200: UploadJobSchemaOut},
-    include_in_schema=False,  # TODO this route has a race condition with
-    # add_blocks_asset_format and will overwrite the last format uploaded. If this
-    # route becomes public, this will probably need to be fixed.
+    response={201: AssetCollectionSchemaWithRejections, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
 )
 @decorate_view(never_cache)
-@decorate_view(transaction.atomic)
-def finalize_asset(
+def create_a_collection(
     request,
-    asset: str,
-    data: AssetFinalizeData,
+    data: AssetCollectionPostSchema,
 ):
-    asset = get_asset_by_url(request, asset)
-    check_user_owns_asset(request, asset)
+    user = request.user
+    visibility = data.visibility if data.visibility is not None else AssetVisibility.PRIVATE.value
 
-    queue_finalize_asset(asset.url, data)
+    assets = Asset.objects.none()
+    rejected_asset_urls = []
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
 
-    return get_publish_url(request, asset)
+    collection = AssetCollection.objects.create(
+        name=data.name, description=data.description, visibility=visibility, user=user
+    )
+    for asset in assets:
+        collection.assets.add(asset)
+
+    return 201, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
+
+
+@router.get(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response=AssetCollectionSchema,
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def show_a_collection(
+    request,
+    asset_collection_url: str,
+):
+    user = request.user
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    return asset_collection
+
+
+@router.patch(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response={200: AssetCollectionSchemaWithRejections, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def update_a_collection(
+    request,
+    asset_collection_url: str,
+    data: AssetCollectionPatchSchema,
+):
+    user = request.user
+    collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    filtered_data = data.dict(exclude_unset=True)
+    for attr, value in filtered_data.items():
+        setattr(collection, attr, value)
+    collection.save()
+
+    assets = Asset.objects.none()
+    rejected_asset_urls = []
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
+    for asset in assets:
+        collection.assets.add(asset)
+
+    return 200, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
+
+
+@router.put(
+    "/me/collections/{str:asset_collection_url}/set_assets",
+    auth=JWTAuth(),
+    response={200: AssetCollectionSchemaWithRejections, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def overwrite_assets_for_a_collection(
+    request,
+    asset_collection_url: str,
+    data: AssetCollectionPutSchema,
+):
+    user = request.user
+    collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    for asset in collection.assets.all():
+        collection.assets.remove(asset)
+
+    assets = Asset.objects.none()
+    rejected_asset_urls = []
+    if data.asset_url is not None:
+        urls = []
+        for url in data.asset_url:
+            if Asset.objects.filter(url=url, visibility=PUBLIC).exists():
+                urls.append(url)
+            else:
+                rejected_asset_urls.append(url)
+        assets = Asset.objects.filter(url__in=urls)
+    for asset in assets:
+        collection.assets.add(asset)
+
+    collection.save()
+    return 200, {"collection": collection, "rejectedAssetUrls": rejected_asset_urls if rejected_asset_urls else None}
+
+
+@router.delete(
+    "/me/collections/{str:asset_collection_url}",
+    auth=JWTAuth(),
+    response={204: None},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+def delete_a_collection(
+    request,
+    asset_collection_url: str,
+):
+    user = request.user
+    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    asset_collection.delete()
+    return 204, None
+
+
+@router.post(
+    "/me/collections/{str:asset_collection_url}/set_thumbnail",
+    auth=JWTAuthAsync(),
+    response={201: ImageSchema, 400: Error},
+    **COMMON_ROUTER_SETTINGS,
+)
+@decorate_view(never_cache)
+async def set_an_image_for_a_collection(
+    request,
+    asset_collection_url: str,
+    image: File[UploadedFile],
+):
+    user = request.user
+    asset_collection = await aget_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    magic_bytes = next(image.chunks(chunk_size=2048))
+    image.seek(0)
+    if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
+        return 400, {"message": "Thumbnail must be png or jpg."}
+    asset_collection.image = image
+    await asset_collection.asave()
+    return 201, {"url": asset_collection.image}

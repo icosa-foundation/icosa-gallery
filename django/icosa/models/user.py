@@ -3,6 +3,7 @@ import string
 from datetime import datetime, timedelta
 
 import jwt
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -24,6 +25,12 @@ class User(AbstractUser):
         else:
             url = None
         return url
+
+    def get_url(self):
+        owners = self.assetowner_set.all()
+        if owners.exists():
+            return owners.first().url
+        return None
 
     @staticmethod
     def generate_device_code(length=5):

@@ -1,0 +1,12 @@
+<div id="uploads" class="sketch-list">
+    {% if assets %}
+        {% for asset in assets %}
+            {% include "partials/sketch_list_item_owner.html" %}
+        {% endfor %}
+    {% else %}
+        <p>You haven't uploaded anything yet.</p>
+    {% endif %}
+</div>
+{% if assets %}
+    {% include "partials/pagination.html" %}
+{% endif %}
