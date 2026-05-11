@@ -39,6 +39,7 @@ from honeypot.decorators import check_honeypot
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
+    AssetBrokenForm,
     AssetEditForm,
     AssetPublishForm,
     AssetReportForm,
@@ -823,6 +824,65 @@ def asset_delete(request, asset_url):
 @ratelimit(key="user_or_ip", rate="5/m", method="POST")
 @check_honeypot
 @never_cache
+def report_broken_asset(request, asset_url):
+    template = "main/broken_asset.html"
+    asset = get_object_or_404(Asset, url=asset_url)
+    if request.method == "GET":
+        form = AssetBrokenForm(initial={"asset_url": asset.url})
+    elif request.method == "POST":
+        form = AssetBrokenForm(request.POST)
+        if form.is_valid():
+            cleaned_data = form.cleaned_data
+            reporter = request.user if not request.user.is_anonymous else None
+            reporter_email = cleaned_data.get("contact_email", None)
+            if reporter is not None:
+                asset.last_reported_by = reporter
+                if reporter_email is None:
+                    reporter_email = reporter.email
+
+            current_site = get_current_site(request)
+            mail_subject = "An Icosa asset is reportedly not viewable"
+            to_email = getattr(settings, "ADMIN_EMAIL", None)
+            if to_email is not None:
+                message = render_to_string(
+                    "emails/broken_asset_email.html",
+                    {
+                        "asset": asset,
+                        "request": request,
+                        "reporter_email": reporter_email,
+                        "reporter": reporter,
+                        "reason": cleaned_data["reason_for_reporting"],
+                        "domain": current_site.domain,
+                    },
+                )
+                spawn_send_html_mail(mail_subject, message, [to_email])
+            return HttpResponseRedirect(reverse("icosa:report_broken_success"))
+    else:
+        return HttpResponseNotAllowed(["GET", "POST"])
+    context = {
+        "asset": asset,
+        "form": form,
+        "page_title": f"Report {asset.name} as broken",
+    }
+    return render(
+        request,
+        template,
+        context,
+    )
+
+
+@never_cache
+def report_broken_success(request):
+    return template_view(
+        request,
+        "main/report_success.html",
+        "Reported broken work successfully",
+    )
+
+
+@ratelimit(key="user_or_ip", rate="5/m", method="POST")
+@check_honeypot
+@never_cache
 def report_asset(request, asset_url):
     template = "main/report_asset.html"
     asset = get_object_or_404(Asset, url=asset_url)
@@ -831,6 +891,7 @@ def report_asset(request, asset_url):
     elif request.method == "POST":
         form = AssetReportForm(request.POST)
         if form.is_valid():
+            cleaned_data = form.cleaned_data
             now = timezone.now()
             asset.last_reported_time = now
             asset.moderation_state = MOD_REPORTED
@@ -838,11 +899,11 @@ def report_asset(request, asset_url):
             asset.moderation_state_change_time = now
             asset.moderation_state_change_by = None
             reporter = request.user if not request.user.is_anonymous else None
-            if reporter is None:
-                reporter_email = None
-            else:
-                reporter_email = reporter.email
+            reporter_email = cleaned_data.get("contact_email", None)
+            if reporter is not None:
                 asset.last_reported_by = reporter
+                if reporter_email is None:
+                    reporter_email = reporter.email
             # We must bypass moderation logging because we have forced the
             # moderation state ourselves.
             asset.save(bypass_custom_logic=True, bypass_moderation_logging=True)
@@ -857,7 +918,7 @@ def report_asset(request, asset_url):
                         "asset": asset,
                         "request": request,
                         "reporter": reporter_email,
-                        "reason": form.cleaned_data["reason_for_reporting"],
+                        "reason": cleaned_data.get("reason_for_reporting", ""),
                         "domain": current_site.domain,
                     },
                 )

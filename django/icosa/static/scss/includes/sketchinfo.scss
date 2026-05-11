@@ -45,8 +45,10 @@
 
   .actions {
     a {
-      &:first-child {
-        padding-inline-end: 1rem;
+      padding-inline-end: 1rem;
+
+      &:last-child {
+        padding-inline-end: 0;
       }
     }
   }
