@@ -1017,6 +1017,14 @@ def supporters(request):
     )
 
 
+def help(request):
+    return template_view(
+        request,
+        "main/help.html",
+        "Getting help",
+    )
+
+
 def artist_info(request):
     template = "main/info_for_artists.html"
     subject = ""

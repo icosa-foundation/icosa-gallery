@@ -196,6 +196,7 @@ urlpatterns = [
     path("settings", main_views.user_settings, name="settings"),
     path("about", main_views.about, name="about"),
     path("terms", main_views.terms, name="terms"),
+    path("help", main_views.help, name="help"),
     path(
         "information-for-artists-and-creators",
         main_views.artist_info,
