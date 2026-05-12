@@ -29,7 +29,8 @@ huey==2.5.1
 ijson==3.3.0
 passlib==1.7.4
 pillow==11.2.1
-psycopg2==2.9.10
+psycopg==3.3.4
+psycopg-pool==3.3.1
 pydantic[email]==2.12.5
 PyJWT==2.10.1
 python-magic==0.4.27
