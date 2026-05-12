@@ -610,6 +610,7 @@ def asset_view(request, asset_url):
         "downloadable_formats": bool(asset.get_all_downloadable_formats(user)),
         "page_title": asset.name,
         "embed_code": embed_code.strip(),
+        "is_viewing_asset": True,
     }
     return render(
         request,

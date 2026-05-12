@@ -95,15 +95,13 @@
                     <textarea rows="6" class="embed-code">{{ embed_code }}</textarea>
                 </div>
                 <p class="text-right actions">
-                    <small>
-                        <a href="{% url 'icosa:artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a>
-                        <a href="{% url "icosa:report_asset" asset_url=asset.url %}">
-                            {% fa_icon "solid" "flag" %} Report
-                        </a>
-                        <a href="{% url "icosa:report_broken_asset" asset_url=asset.url %}">
-                            {% fa_icon "solid" "triangle-exclamation" %} Can't view this work?
-                        </a>
-                    </small>
+                    <a href="{% url 'icosa:artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here?</a>
+                    <a href="{% url "icosa:report_asset" asset_url=asset.url %}">
+                        {% fa_icon "solid" "flag" %} Report inappropriate
+                    </a>
+                    <a href="{% url "icosa:report_broken_asset" asset_url=asset.url %}">
+                        {% fa_icon "solid" "triangle-exclamation" %} Can't view this work?
+                    </a>
                 </p>
                 {% if request.user.is_superuser and not settings.DEBUG %}
                 {% include "include/asset_superuser_actions.html" %}

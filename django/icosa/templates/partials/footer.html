@@ -20,7 +20,7 @@
                                 Our supporters
                             </a>
                         </li>
-                        {% if can_view_in_maintenance %}
+                        {% if can_view_in_maintenance and not is_viewing_asset %}
                             <li class="push">
                                 <strong>
                                     <a href="{% url 'icosa:artist_info' %}">
@@ -29,7 +29,7 @@
                                 </strong>
                             </li>
                         {% endif %}
-                        <li{% if not can_view_in_maintenance %} class="push"{% endif %}>
+                        <li{% if not can_view_in_maintenance or is_viewing_asset %} class="push"{% endif %}>
                             <a href="{% url 'icosa:privacy_policy' %}">
                                 Privacy Policy
                             </a>
