@@ -10,6 +10,7 @@ from typing import Dict, Generator, Iterable, List, Optional
 import requests
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 from django.utils import timezone
 
 from icosa.helpers.file import (
@@ -316,254 +317,269 @@ class Command(BaseCommand):
         if not uid:
             raise CommandError("Missing uid in model data")
 
-        asset_url = f"sketchfab-{uid}"
+        uploaded_files: List[str] = []
 
-        # Lookup existing
-        asset = Asset.objects.filter(url=asset_url).first()
-        created = False
-        if not asset:
-            created = True
-            asset = Asset(url=asset_url)
-        else:
-            if not update_existing:
-                # Nothing to do
-                return None
+        try:
+            with transaction.atomic():
+                asset_url = f"sketchfab-{uid}"
 
-        # Prepare owner
-        user = model.get("user") or {}
-        username = (user.get("username") or "").strip() or f"user-{user.get('uid','unknown')}"
-        displayname = user.get("displayName") or username
-        owner_slug = f"sketchfab-{username}"
-        owner, _ = AssetOwner.objects.get_or_create(
-            url=owner_slug,
-            defaults={
-                "displayname": displayname,
-                "imported": True,
-                "is_claimed": False,
-            },
-        )
+                # Lookup existing
+                asset = Asset.objects.filter(url=asset_url).first()
+                created = False
+                if not asset:
+                    created = True
+                    asset = Asset(url=asset_url)
+                else:
+                    if not update_existing:
+                        # Nothing to do
+                        return None
 
-        # Timestamps
-        created_at = parse_iso8601(model.get("createdAt")) or timezone.now()
-        updated_at = parse_iso8601(model.get("publishedAt")) or created_at
+                # Prepare owner
+                user = model.get("user") or {}
+                username = (user.get("username") or "").strip() or f"user-{user.get('uid','unknown')}"
+                displayname = user.get("displayName") or username
+                owner_slug = f"sketchfab-{username}"
+                owner, _ = AssetOwner.objects.get_or_create(
+                    url=owner_slug,
+                    defaults={
+                        "displayname": displayname,
+                        "imported": True,
+                        "is_claimed": False,
+                    },
+                )
 
-        # Map license
-        license_label = (model.get("license") or {}).get("label")
-        license_slug = None
-        if license_label:
-            low = license_label.lower()
-            if "cc0" in low or "public domain" in low:
-                license_slug = "cc0"
-            elif "sharealike" in low or "share alike" in low:
-                license_slug = "by-sa"
-            elif "attribution" in low and "no" not in low and "non" not in low:
-                license_slug = "by"
-        internal_license = sketchfab_license_to_internal(license_slug)
+                # Timestamps
+                created_at = parse_iso8601(model.get("createdAt")) or timezone.now()
+                updated_at = parse_iso8601(model.get("publishedAt")) or created_at
 
-        # Core fields
-        if created and not asset.create_time:
-            asset.create_time = created_at
-        asset.update_time = updated_at
-        asset.name = model.get("name")
-        asset.description = model.get("description")
-        asset.visibility = PUBLIC
-        asset.state = ASSET_STATE_COMPLETE
-        asset.owner = owner
-        asset.imported_from = IMPORT_SOURCE
-        asset.polydata = model  # Store raw sketchfab metadata
-        asset.historical_likes = int(model.get("likeCount") or 0)
-        asset.historical_views = int(model.get("viewCount") or 0)
-        if internal_license:
-            asset.license = internal_license
+                # Map license
+                license_label = (model.get("license") or {}).get("label")
+                license_slug = None
+                if license_label:
+                    low = license_label.lower()
+                    if "cc0" in low or "public domain" in low:
+                        license_slug = "cc0"
+                    elif "sharealike" in low or "share alike" in low:
+                        license_slug = "by-sa"
+                    elif "attribution" in low and "no" not in low and "non" not in low:
+                        license_slug = "by"
+                internal_license = sketchfab_license_to_internal(license_slug)
 
-        # Category mapping (first category name if provided)
-        cat_name = None
-        cats = model.get("categories") or []
-        if cats:
-            # categories sometimes carry only name strings
-            c0 = cats[0]
-            if isinstance(c0, dict):
-                cat_name = c0.get("name")
-            elif isinstance(c0, str):
-                cat_name = c0
-        if cat_name:
-            key = str(cat_name).strip().lower()
-            asset.category = key.upper() if key in CATEGORY_LABEL_MAP else None
+                # Core fields
+                if created and not asset.create_time:
+                    asset.create_time = created_at
+                asset.update_time = updated_at
+                asset.name = model.get("name")
+                asset.description = model.get("description")
+                asset.visibility = PUBLIC
+                asset.state = ASSET_STATE_COMPLETE
+                asset.owner = owner
+                asset.imported_from = IMPORT_SOURCE
+                asset.polydata = model  # Store raw sketchfab metadata
+                asset.historical_likes = int(model.get("likeCount") or 0)
+                asset.historical_views = int(model.get("viewCount") or 0)
+                if internal_license:
+                    asset.license = internal_license
 
-        # Assign an id for new assets
-        if created:
-            asset.id = generate_snowflake()
+                # Category mapping (first category name if provided)
+                cat_name = None
+                cats = model.get("categories") or []
+                if cats:
+                    # categories sometimes carry only name strings
+                    c0 = cats[0]
+                    if isinstance(c0, dict):
+                        cat_name = c0.get("name")
+                    elif isinstance(c0, str):
+                        cat_name = c0
+                if cat_name:
+                    key = str(cat_name).strip().lower()
+                    asset.category = key.upper() if key in CATEGORY_LABEL_MAP else None
 
-        asset.save()
+                # Assign an id for new assets
+                if created:
+                    asset.id = generate_snowflake()
 
-        # Tags
-        tags = model.get("tags") or []
-        tag_names = []
-        for t in tags:
-            if isinstance(t, dict):
-                tag_names.append(t.get("name") or t.get("slug"))
-            elif isinstance(t, str):
-                tag_names.append(t)
-        tag_objs = []
-        for name in filter(None, set(tag_names)):
-            tag, _ = Tag.objects.get_or_create(name=name)
-            tag_objs.append(tag)
-        if tag_objs:
-            asset.tags.set(tag_objs)
+                asset.save()
 
-        # Thumbnail: download and store locally if possible
-        if not asset.thumbnail:
-            thumb_url = pick_thumbnail_url(model)
-            if thumb_url:
-                try:
-                    resp = requests.get(thumb_url, timeout=20)
-                    if resp.status_code == 200:
-                        content_type = resp.headers.get("Content-Type")
-                        ext = mimetypes.guess_extension(content_type or "") or ".jpg"
-                        if ext == ".jpe":
-                            ext = ".jpg"
-                        filename = f"thumbnail-{uid}{ext}"
-                        asset.thumbnail.save(filename, ContentFile(resp.content), save=False)
-                        asset.thumbnail_contenttype = content_type or "image/jpeg"
-                        asset.save()
-                except Exception:
-                    # Non-fatal
-                    pass
+                # Tags
+                tags = model.get("tags") or []
+                tag_names = []
+                for t in tags:
+                    if isinstance(t, dict):
+                        tag_names.append(t.get("name") or t.get("slug"))
+                    elif isinstance(t, str):
+                        tag_names.append(t)
+                tag_objs = []
+                for name in filter(None, set(tag_names)):
+                    tag, _ = Tag.objects.get_or_create(name=name)
+                    tag_objs.append(tag)
+                if tag_objs:
+                    asset.tags.set(tag_objs)
 
-        # Formats/resources: prefer GLB if available, and download into storage
-        download = client.download_info(uid)
-        if not download:
-            raise CommandError(
-                "Could not fetch download URLs. Ensure the model is downloadable and a valid token is provided via --token or SKETCHFAB_TOKEN."
-            )
+                # Thumbnail: download and store locally if possible
+                if not asset.thumbnail:
+                    thumb_url = pick_thumbnail_url(model)
+                    if thumb_url:
+                        try:
+                            resp = requests.get(thumb_url, timeout=20)
+                            if resp.status_code == 200:
+                                content_type = resp.headers.get("Content-Type")
+                                ext = mimetypes.guess_extension(content_type or "") or ".jpg"
+                                if ext == ".jpe":
+                                    ext = ".jpg"
+                                filename = f"thumbnail-{uid}{ext}"
+                                asset.thumbnail.save(filename, ContentFile(resp.content), save=False)
+                                uploaded_files.append(asset.thumbnail.name)
+                                asset.thumbnail_contenttype = content_type or "image/jpeg"
+                                asset.save()
+                        except Exception:
+                            # Non-fatal
+                            pass
 
-        created_any_format = False
+                # Formats/resources: prefer GLB if available, and download into storage
+                download = client.download_info(uid)
+                if not download:
+                    raise CommandError(
+                        "Could not fetch download URLs. Ensure the model is downloadable and a valid token is provided via --token or SKETCHFAB_TOKEN."
+                    )
 
-        def download_to_contentfile(url: str, *, timeout: int = 60) -> Optional[ContentFile]:
-            try:
-                resp = requests.get(url, timeout=timeout)
-                if resp.status_code != 200:
-                    return None
-                return ContentFile(resp.content)
-            except Exception:
-                return None
+                created_any_format = False
 
-        def add_format_from_url(url: str, fmt_type: str, *, role: Optional[str] = None, filename: Optional[str] = None):
-            nonlocal created_any_format
-            data = download_to_contentfile(url)
-            if not data:
-                return
-            # Infer filename and content type
-            content_type = None
-            try:
-                # attempt to fetch content type via HEAD for better accuracy
-                head = requests.head(url, timeout=15, allow_redirects=True)
-                content_type = head.headers.get("Content-Type")
-            except Exception:
-                pass
-            guessed_ext = mimetypes.guess_extension(content_type or "") or os.path.splitext(url.split("?")[0])[1] or ".bin"
-            if guessed_ext == ".jpe":
-                guessed_ext = ".jpg"
-            name = filename or f"{fmt_type.lower()}-{uid}{guessed_ext}"
+                def download_to_contentfile(url: str, *, timeout: int = 60) -> Optional[ContentFile]:
+                    try:
+                        resp = requests.get(url, timeout=timeout)
+                        if resp.status_code != 200:
+                            return None
+                        return ContentFile(resp.content)
+                    except Exception:
+                        return None
 
-            fmt = Format.objects.create(asset=asset, format_type=fmt_type, role=role)
-            # Saving file to storage via FileField
-            res = Resource(asset=asset, format=fmt, contenttype=content_type or get_content_type(name) or "application/octet-stream")
-            res.file.save(name, data, save=True)
-            fmt.add_root_resource(res)
-            created_any_format = True
+                def add_format_from_url(url: str, fmt_type: str, *, role: Optional[str] = None, filename: Optional[str] = None):
+                    nonlocal created_any_format
+                    data = download_to_contentfile(url)
+                    if not data:
+                        return
+                    # Infer filename and content type
+                    content_type = None
+                    try:
+                        # attempt to fetch content type via HEAD for better accuracy
+                        head = requests.head(url, timeout=15, allow_redirects=True)
+                        content_type = head.headers.get("Content-Type")
+                    except Exception:
+                        pass
+                    guessed_ext = mimetypes.guess_extension(content_type or "") or os.path.splitext(url.split("?")[0])[1] or ".bin"
+                    if guessed_ext == ".jpe":
+                        guessed_ext = ".jpg"
+                    name = filename or f"{fmt_type.lower()}-{uid}{guessed_ext}"
 
-        def add_formats_from_zip(url: str, *, preferred_ext_order: Optional[List[str]] = None):
-            nonlocal created_any_format
-            if preferred_ext_order is None:
-                preferred_ext_order = [
-                    "glb",
-                    "gltf",
-                    "fbx",
-                    "obj",
-                    "usdz",
-                    "ply",
-                    "stl",
-                    "vox",
-                    "tilt",
-                    "blocks",
-                ]
-            try:
-                resp = requests.get(url, timeout=90)
-                if resp.status_code != 200:
-                    return
-                zf = zipfile.ZipFile(io.BytesIO(resp.content))
-            except Exception:
-                return
+                    fmt = Format.objects.create(asset=asset, format_type=fmt_type, role=role)
+                    # Saving file to storage via FileField
+                    res = Resource(asset=asset, format=fmt, contenttype=content_type or get_content_type(name) or "application/octet-stream")
+                    res.file.save(name, data, save=True)
+                    uploaded_files.append(res.file.name)
+                    fmt.add_root_resource(res)
+                    created_any_format = True
 
-            # Build UploadedFormats from zip members
-            uploaded: List[UploadedFormat] = []
-            for info in zf.infolist():
-                if info.is_dir():
-                    continue
-                fname = info.filename
-                # Ignore hidden or MACOSX metadata
-                base = basename(fname)
-                if not base or base.startswith(".__") or "/." in fname or base.startswith("."):
-                    continue
-                try:
-                    with zf.open(info) as fp:
-                        data = fp.read()
-                except Exception:
-                    continue
-                # Construct an in-memory uploaded file
-                su = SimpleUploadedFile(base, data, content_type=get_content_type(base) or "application/octet-stream")
-                ext = base.split(".")[-1].lower() if "." in base else ""
-                details = validate_file(su, ext)
-                if details is not None:
-                    uploaded.append(details)
+                def add_formats_from_zip(url: str, *, preferred_ext_order: Optional[List[str]] = None):
+                    nonlocal created_any_format
+                    if preferred_ext_order is None:
+                        preferred_ext_order = [
+                            "glb",
+                            "gltf",
+                            "fbx",
+                            "obj",
+                            "usdz",
+                            "ply",
+                            "stl",
+                            "vox",
+                            "tilt",
+                            "blocks",
+                        ]
+                    try:
+                        resp = requests.get(url, timeout=90)
+                        if resp.status_code != 200:
+                            return
+                        zf = zipfile.ZipFile(io.BytesIO(resp.content))
+                    except Exception:
+                        return
 
-            if not uploaded:
-                return
+                    # Build UploadedFormats from zip members
+                    uploaded: List[UploadedFormat] = []
+                    for info in zf.infolist():
+                        if info.is_dir():
+                            continue
+                        fname = info.filename
+                        # Ignore hidden or MACOSX metadata
+                        base = basename(fname)
+                        if not base or base.startswith(".__") or "/." in fname or base.startswith("."):
+                            continue
+                        try:
+                            with zf.open(info) as fp:
+                                data = fp.read()
+                        except Exception:
+                            continue
+                        # Construct an in-memory uploaded file
+                        su = SimpleUploadedFile(base, data, content_type=get_content_type(base) or "application/octet-stream")
+                        ext = base.split(".")[-1].lower() if "." in base else ""
+                        details = validate_file(su, ext)
+                        if details is not None:
+                            uploaded.append(details)
 
-            # Choose mainfile by extension preference first, then by mainfile flag
-            def pref_index(ext: str) -> int:
-                try:
-                    return preferred_ext_order.index(ext)
-                except ValueError:
-                    return len(preferred_ext_order) + 100
+                    if not uploaded:
+                        return
 
-            # Filter potential mains
-            mains = [u for u in uploaded if u.mainfile]
-            if not mains:
-                mains = uploaded
-            # Choose by extension order on the original filename
-            mains_sorted = sorted(mains, key=lambda u: pref_index(u.file.name.split(".")[-1].lower()))
-            main = mains_sorted[0]
-            subs = [u for u in uploaded if u is not main]
+                    # Choose mainfile by extension preference first, then by mainfile flag
+                    def pref_index(ext: str) -> int:
+                        try:
+                            return preferred_ext_order.index(ext)
+                        except ValueError:
+                            return len(preferred_ext_order) + 100
 
-            # Hand off to existing helper to build Format + Resources in storage
-            process_main_file(main, subs, asset, gltf_to_convert=None)
-            created_any_format = True
+                    # Filter potential mains
+                    mains = [u for u in uploaded if u.mainfile]
+                    if not mains:
+                        mains = uploaded
+                    # Choose by extension order on the original filename
+                    mains_sorted = sorted(mains, key=lambda u: pref_index(u.file.name.split(".")[-1].lower()))
+                    main = mains_sorted[0]
+                    subs = [u for u in uploaded if u is not main]
 
-        # The download payload usually has entries like {'glb': {'url': ...}, 'gltf': {'url': ...}, 'usdz': {'url': ...}}
-        glb_url = (download.get("glb") or {}).get("url")
-        if glb_url:
-            add_format_from_url(glb_url, "GLB", role="SKETCHFAB_GLB")
+                    # Hand off to existing helper to build Format + Resources in storage
+                    process_main_file(main, subs, asset, gltf_to_convert=None)
+                    created_any_format = True
 
-        # Provide USDZ if present (not viewer-preferred, but useful to store)
-        usdz_url = (download.get("usdz") or {}).get("url")
-        if usdz_url:
-            add_format_from_url(usdz_url, "USDZ", role="SKETCHFAB_USDZ")
+                # The download payload usually has entries like {'glb': {'url': ...}, 'gltf': {'url': ...}, 'usdz': {'url': ...}}
+                glb_url = (download.get("glb") or {}).get("url")
+                if glb_url:
+                    add_format_from_url(glb_url, "GLB", role="SKETCHFAB_GLB")
 
-        # GLTF archive (zip): unpack to root + resources
-        gltf_url = (download.get("gltf") or {}).get("url")
-        if gltf_url:
-            add_formats_from_zip(gltf_url, preferred_ext_order=["gltf", "glb", "fbx", "obj"])  # prefer GLTF as main
+                # Provide USDZ if present (not viewer-preferred, but useful to store)
+                usdz_url = (download.get("usdz") or {}).get("url")
+                if usdz_url:
+                    add_format_from_url(usdz_url, "USDZ", role="SKETCHFAB_USDZ")
 
-        # Source archive (zip): prefer FBX, then OBJ, then others
-        source_url = (download.get("source") or {}).get("url")
-        if source_url:
-            add_formats_from_zip(source_url, preferred_ext_order=["fbx", "obj", "gltf", "glb", "ply", "stl"])  # prefer authoring formats
+                # GLTF archive (zip): unpack to root + resources
+                gltf_url = (download.get("gltf") or {}).get("url")
+                if gltf_url:
+                    add_formats_from_zip(gltf_url, preferred_ext_order=["gltf", "glb", "fbx", "obj"])  # prefer GLTF as main
 
-        # Assign preferred viewer format if possible
-        asset.assign_preferred_viewer_format()
-        # Final save in case any denorms/validations occur
-        asset.save()
+                # Source archive (zip): prefer FBX, then OBJ, then others
+                source_url = (download.get("source") or {}).get("url")
+                if source_url:
+                    add_formats_from_zip(source_url, preferred_ext_order=["fbx", "obj", "gltf", "glb", "ply", "stl"])  # prefer authoring formats
 
-        return asset
+                # Assign preferred viewer format if possible
+                asset.assign_preferred_viewer_format()
+                # Final save in case any denorms/validations occur
+                asset.save()
+
+                return asset
+
+        except Exception:
+            if uploaded_files:
+                self.stderr.write(
+                    f"  DB rolled back for {uid} but the following files were already written to storage and must be cleaned up manually:"
+                )
+                for f in uploaded_files:
+                    self.stderr.write(f"    {f}")
+            raise
