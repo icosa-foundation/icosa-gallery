@@ -585,6 +585,9 @@ class Command(BaseCommand):
                 if source_url:
                     add_formats_from_zip(source_url, preferred_ext_order=["fbx", "obj", "gltf", "glb", "ply", "stl"])  # prefer authoring formats
 
+                if not created_any_format:
+                    raise CommandError("No formats could be created; skipping asset.")
+
                 # Assign preferred viewer format if possible
                 asset.assign_preferred_viewer_format()
                 # Final save in case any denorms/validations occur
