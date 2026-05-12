@@ -484,6 +484,7 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
     list_filter = (
         "state",
         ("content_type", admin.RelatedOnlyFieldListFilter),
+        "query_resolved",
     )
     search_fields = (
         "notes",
