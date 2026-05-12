@@ -20,6 +20,7 @@ from icosa.models import (
     V3_CC_LICENSE_MAP,
     V3_CC_LICENSES,
     V4_CC_LICENSE_CHOICES,
+    V4_CC_LICENSE_MAP,
     V4_CC_LICENSES,
     VALID_THUMBNAIL_MIME_TYPES,
     Asset,
@@ -158,6 +159,11 @@ class AssetEditForm(forms.ModelForm):
                 (license_value, V3_CC_LICENSE_MAP[license_value]),
                 ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
             ]
+        elif license_value in V4_CC_LICENSE_MAP and license_value not in [x[0] for x in V4_CC_LICENSE_CHOICES]:
+            # Asset already has an extended license (e.g. imported from Sketchfab); show it
+            # as the only option so it isn't silently cleared, but don't offer it as a new choice.
+            self.fields["license"].choices = [(license_value, V4_CC_LICENSE_MAP[license_value])]
+            self.fields["license"].disabled = True
         else:
             self.fields["license"].choices = (
                 [
