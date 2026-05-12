@@ -163,6 +163,16 @@ urlpatterns = [
         name="report_success",
     ),
     path(
+        "report_broken/<str:asset_url>",
+        main_views.report_broken_asset,
+        name="report_broken_asset",
+    ),
+    path(
+        "report-broken-success",
+        main_views.report_broken_success,
+        name="report_broken_success",
+    ),
+    path(
         "edit/<str:asset_url>",
         main_views.asset_edit,
         name="asset_edit",
@@ -186,6 +196,7 @@ urlpatterns = [
     path("settings", main_views.user_settings, name="settings"),
     path("about", main_views.about, name="about"),
     path("terms", main_views.terms, name="terms"),
+    path("help", main_views.help, name="help"),
     path(
         "information-for-artists-and-creators",
         main_views.artist_info,

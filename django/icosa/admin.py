@@ -468,6 +468,7 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
         "create_time",
         "content_type",
         "state",
+        "notes",
     )
     readonly_fields = (
         "user",
@@ -478,16 +479,28 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
         "source_object",
         "state",
         "data",
+        "display_links",
     )
     list_filter = (
         "state",
         ("content_type", admin.RelatedOnlyFieldListFilter),
+        "query_resolved",
     )
     search_fields = (
         "notes",
         "object_id",
         "data",
     )
+
+    def display_links(self, obj):
+        src_obj = obj.source_object
+        change_url_str = f"admin:{src_obj._meta.app_label}_{src_obj._meta.model_name}_change"
+        change_url = reverse(change_url_str, args=(src_obj.id,))
+
+        return mark_safe(f'<a href="{change_url}">View in admin</a> | <a href="{src_obj.get_absolute_url()}">View on site</a>')
+
+    display_links.short_description = "Links"
+    display_links.allow_tags = True
 
 
 @admin.register(ModerationNotification)

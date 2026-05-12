@@ -90,7 +90,20 @@ class AssetReportForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 4}),
         label="Your reason for reporting this work. (Maximum length is 1,000 characters)",
     )
-    contact_email = forms.CharField(
+    contact_email = forms.EmailField(
+        label="The email address you can be contacted at (optional)",
+        required=False,
+    )
+
+
+class AssetBrokenForm(forms.Form):
+    asset_url = forms.CharField(widget=forms.widgets.HiddenInput())
+    reason_for_reporting = forms.CharField(
+        max_length=1000,
+        widget=forms.Textarea(attrs={"rows": 4}),
+        label="Description of the problem and device, browser and operating system, if known.",
+    )
+    contact_email = forms.EmailField(
         label="The email address you can be contacted at (optional)",
         required=False,
     )

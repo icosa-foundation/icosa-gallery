@@ -11,7 +11,10 @@ from django.urls import reverse
 from django.utils import timezone
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.moderation import get_objects_to_moderate
-from icosa.model_mixins import MODERATION_STATE_CHOICES
+from icosa.model_mixins import (
+    MOD_QUERIED,
+    MODERATION_STATE_CHOICES,
+)
 
 
 class ModerationEvent(models.Model):
@@ -34,12 +37,15 @@ class ModerationEvent(models.Model):
         related_name="moderation_events",
     )
     notes = models.TextField(null=True, blank=True)
+    query_resolved = models.BooleanField(default=False)
 
     @transaction.atomic
     def save(self, *args, **kwargs):
         now = timezone.now()
         if self._state.adding:
             self.create_time = now
+        if self.state != MOD_QUERIED:
+            self.query_resolved = True
         super().save(*args, **kwargs)
 
     class Meta:
