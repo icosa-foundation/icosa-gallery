@@ -270,6 +270,13 @@ DATABASES = {
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
         "HOST": os.environ.get("POSTGRES_HOST", "postgres"),
         "PORT": 5432,
+        "OPTIONS": {
+            "pool": {
+                "min_size": 2,
+                "max_size": 90,
+                "timeout": 10,
+            }
+        },
     }
 }
 
