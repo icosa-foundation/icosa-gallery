@@ -1,5 +1,7 @@
 import os
+import tempfile
 import time
+import types
 import mimetypes
 import zipfile
 import io
@@ -8,6 +10,7 @@ from datetime import datetime
 from typing import Dict, Generator, Iterable, List, Optional
 
 import requests
+from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -19,7 +22,6 @@ from icosa.helpers.file import (
     process_main_file,
     UploadedFormat,
 )
-from django.core.files.uploadedfile import SimpleUploadedFile
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.models import (
     ASSET_STATE_COMPLETE,
@@ -445,18 +447,23 @@ class Command(BaseCommand):
 
                 created_any_format = False
 
-                def download_to_contentfile(url: str, *, timeout: int = 60) -> Optional[ContentFile]:
+                def download_to_file(url: str, *, timeout: int = 60) -> Optional[File]:
                     try:
-                        resp = requests.get(url, timeout=timeout)
+                        resp = requests.get(url, stream=True, timeout=timeout)
                         if resp.status_code != 200:
                             return None
-                        return ContentFile(resp.content)
+                        tmp = tempfile.TemporaryFile()
+                        for chunk in resp.iter_content(chunk_size=1024 * 1024):
+                            if chunk:
+                                tmp.write(chunk)
+                        tmp.seek(0)
+                        return File(tmp)
                     except Exception:
                         return None
 
                 def add_format_from_url(url: str, fmt_type: str, *, role: Optional[str] = None, filename: Optional[str] = None):
                     nonlocal created_any_format
-                    data = download_to_contentfile(url)
+                    data = download_to_file(url)
                     if not data:
                         return
                     # Infer filename and content type
@@ -496,14 +503,19 @@ class Command(BaseCommand):
                             "blocks",
                         ]
                     try:
-                        resp = requests.get(url, timeout=90)
+                        resp = requests.get(url, stream=True, timeout=90)
                         if resp.status_code != 200:
                             return
-                        zf = zipfile.ZipFile(io.BytesIO(resp.content))
+                        tmp_zip = tempfile.TemporaryFile()
+                        for chunk in resp.iter_content(chunk_size=1024 * 1024):
+                            if chunk:
+                                tmp_zip.write(chunk)
+                        tmp_zip.seek(0)
+                        zf = zipfile.ZipFile(tmp_zip)
                     except Exception:
                         return
 
-                    # Build UploadedFormats from zip members
+                    # Build UploadedFormats from zip members, extracting one at a time
                     uploaded: List[UploadedFormat] = []
                     for info in zf.infolist():
                         if info.is_dir():
@@ -515,13 +527,18 @@ class Command(BaseCommand):
                             continue
                         try:
                             with zf.open(info) as fp:
-                                data = fp.read()
+                                tmp_member = tempfile.TemporaryFile()
+                                for chunk in iter(lambda: fp.read(1024 * 1024), b""):
+                                    tmp_member.write(chunk)
+                                tmp_member.seek(0)
                         except Exception:
                             continue
-                        # Construct an in-memory uploaded file
-                        su = SimpleUploadedFile(base, data, content_type=get_content_type(base) or "application/octet-stream")
                         ext = base.split(".")[-1].lower() if "." in base else ""
-                        details = validate_file(su, ext)
+                        entry = types.SimpleNamespace(
+                            file=File(tmp_member, name=base),
+                            full_path="",
+                        )
+                        details = validate_file(entry, ext)
                         if details is not None:
                             uploaded.append(details)
 
