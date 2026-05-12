@@ -246,7 +246,7 @@ class Command(BaseCommand):
             cat_name = cats
         if cat_name:
             key = str(cat_name).strip().lower()
-            asset.category = CATEGORY_LABEL_MAP.get(key)
+            asset.category = key.upper() if key in CATEGORY_LABEL_MAP else None
 
         # Assign id for new assets
         if created:
