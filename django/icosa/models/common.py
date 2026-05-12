@@ -53,9 +53,9 @@ VALID_IMAGE_EXTENSIONS = VALID_THUMBNAIL_EXTENSIONS + [
 V4_CC_LICENSE_CHOICES = [
     # ("CREATIVE_COMMONS_SA_4_0", "CC SA Attribution 4.0 International"), # Not yet supported
     # ("CREATIVE_COMMONS_ND_4_0", "CC ND Attribution 4.0 International"), # Not yet supported
-    # ("CREATIVE_COMMONS_NC_4_0", "CC NC Attribution 4.0 International"), # Not yet supported
-    # ("CREATIVE_COMMONS_NC_ND_4_0", "CC NC_ND Attribution 4.0 International"), # Not yet supported
-    # ("CREATIVE_COMMONS_NC_SA_4_0", "CC NC_SA Attribution 4.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_4_0", "CC BY-NC Attribution-NonCommercial 4.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_ND_4_0", "CC BY-NC-ND Attribution-NonCommercial-NoDerivatives 4.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_SA_4_0", "CC BY-NC-SA Attribution-NonCommercial-ShareAlike 4.0 International"), # Not yet supported
     ("CREATIVE_COMMONS_BY_4_0", "CC BY Attribution 4.0 International"),
     ("CREATIVE_COMMONS_0", "CC0 1.0 Universal"),
 ]
@@ -68,16 +68,16 @@ V4_CC_LICENSE_CHOICES_PLUS_ND = V4_CC_LICENSE_CHOICES + [
 V4_CC_LICENSE_CHOICES_EXTENDED = V4_CC_LICENSE_CHOICES + [
     ("CREATIVE_COMMONS_BY_SA_4_0", "CC BY-SA Attribution-ShareAlike 4.0 International"),
     ("CREATIVE_COMMONS_BY_ND_4_0", "CC BY-ND Attribution-NoDerivatives 4.0 International"),
-    ("CREATIVE_COMMONS_NC_4_0", "CC NC Attribution 4.0 International"),
-    ("CREATIVE_COMMONS_NC_SA_4_0", "CC NC-SA Attribution-NonCommercial-ShareAlike 4.0 International"),
-    ("CREATIVE_COMMONS_NC_ND_4_0", "CC NC-ND Attribution-NonCommercial-NoDerivatives 4.0 International"),
+    ("CREATIVE_COMMONS_NC_4_0", "CC BY-NC Attribution-NonCommercial 4.0 International"),
+    ("CREATIVE_COMMONS_NC_SA_4_0", "CC BY-NC-SA Attribution-NonCommercial-ShareAlike 4.0 International"),
+    ("CREATIVE_COMMONS_NC_ND_4_0", "CC BY-NC-ND Attribution-NonCommercial-NoDerivatives 4.0 International"),
 ]
 V3_CC_LICENSE_CHOICES = [
     # ("CREATIVE_COMMONS_SA_3_0", "CC SA Attribution 3.0 International"), # Not yet supported
     # ("CREATIVE_COMMONS_ND_3_0", "CC ND Attribution 3.0 International"), # Not yet supported
-    # ("CREATIVE_COMMONS_NC_3_0", "CC NC Attribution 3.0 International"), # Not yet supported
-    # ("CREATIVE_COMMONS_NC_ND_3_0", "CC NC_ND Attribution 3.0 International"), # Not yet supported
-    # ("CREATIVE_COMMONS_NC_SA_3_0", "CC NC_SA Attribution 3.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_3_0", "CC BY-NC Attribution-NonCommercial 3.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_ND_3_0", "CC BY-NC-ND Attribution-NonCommercial-NoDerivatives 3.0 International"), # Not yet supported
+    # ("CREATIVE_COMMONS_NC_SA_3_0", "CC BY-NC-SA Attribution-NonCommercial-ShareAlike 3.0 International"), # Not yet supported
     ("CREATIVE_COMMONS_BY_3_0", "CC BY Attribution 3.0 International"),
     (
         "CREATIVE_COMMONS_BY_ND_3_0",
