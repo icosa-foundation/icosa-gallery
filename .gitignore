@@ -177,3 +177,4 @@ shell.nix
 uv.lock
 .envrc
 certbot/**
+tags
