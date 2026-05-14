@@ -11,6 +11,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
+
 from icosa.helpers.moderation import (
     get_objects_to_moderate,
     get_str_content_type,
@@ -84,15 +85,40 @@ def moderation_queue(request):
                 bypass_moderation_logging=True,
             )
 
+            form_close_queries = bool(request.POST.get("close_queries", False))
+            if form_close_queries:
+                # We don't populate changed_data in the normal asset*
+                # views where close_queries is set so we have to derive
+                # it from the obj.
+                changed_data = {}
+                for field in obj.moderation_changed_fields:
+                    if field in ["thumbnail", "preview_image", "image"]:
+                        changed_data[field] = str(getattr(obj, field, ""))
+                    else:
+                        changed_data[field] = getattr(obj, field, "")
+
+                # This moderation event should close all past queries
+                obj.moderation_events.filter(
+                    state=MOD_QUERIED,
+                    query_resolved=False,
+                ).update(query_resolved=True)
+            else:
+                changed_data = json.loads(request.POST.get("data", ""))
+
             ModerationEvent.objects.create(
                 source_object=obj,
                 state=obj.moderation_state,
                 notes=request.POST.get("notes", None),
                 user=request.user,
-                data=json.loads(request.POST.get("data", "")),
+                data=changed_data,
             )
 
-            return HttpResponseRedirect(reverse("icosa:moderation_queue"))
+            return_to = request.POST.get("return_to", None)
+            if return_to is not None:
+                res = HttpResponseRedirect(return_to)
+            else:
+                res = HttpResponseRedirect(reverse("icosa:moderation_queue"))
+            return res
 
     template = "moderation/queue.html"
     objects_to_moderate = get_objects_to_moderate()

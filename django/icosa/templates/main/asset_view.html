@@ -103,9 +103,14 @@
                         {% fa_icon "solid" "triangle-exclamation" %} Can't view this work?
                     </a>
                 </p>
-                {% if request.user.is_superuser and not settings.DEBUG %}
+                {% if request.user.is_superuser %}
                 {% include "include/asset_superuser_actions.html" %}
                 {% endif %}
+                {% with obj=asset %}
+                {% if user_is_moderator and obj.moderation_state == "QUERIED" %}
+                {% include "include/moderator_actions.html" %}
+                {% endif %}
+                {% endwith %}
             </div>
         </div>
     </div>

@@ -7,6 +7,8 @@ from django.db.models import Count
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from import_export.admin import ExportMixin
+
 from icosa.models import (
     Asset,
     AssetCollection,
@@ -27,7 +29,6 @@ from icosa.models import (
     Tag,
     UserLike,
 )
-from import_export.admin import ExportMixin
 
 User = get_user_model()
 
@@ -346,8 +347,6 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
     display_django_user.short_description = "Django User"
 
     def create_related_django_user(self, request, queryset):
-        opts = self.model._meta
-        app_label = opts.app_label
         created_objs = []
         existing_objs = []
 

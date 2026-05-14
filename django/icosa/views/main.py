@@ -36,6 +36,7 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from honeypot.decorators import check_honeypot
+
 from icosa.forms import (
     ARTIST_QUERY_SUBJECT_CHOICES,
     ArtistQueryForm,
@@ -48,6 +49,7 @@ from icosa.forms import (
 )
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img
+from icosa.helpers.moderation import get_str_content_type
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.upload import upload_api_asset
 from icosa.model_mixins import (
@@ -472,6 +474,8 @@ def owner_show(request, slug):
         "assets": assets,
         "page_title": owner.displayname,
         "paginator": paginator,
+        "user_is_moderator": request.user.groups.filter(name="Moderator").exists(),
+        "content_type": get_str_content_type(owner),
     }
     return render(
         request,
@@ -536,6 +540,8 @@ def user_show(request, slug):
         "page_title": page_title,
         "paginator": paginator,
         "is_multi_owner": bool(owners.count()),
+        "user_is_moderator": request.user.groups.filter(name="Moderator").exists(),
+        "content_type": get_str_content_type(owner),
     }
     return render(
         request,
@@ -611,6 +617,8 @@ def asset_view(request, asset_url):
         "page_title": asset.name,
         "embed_code": embed_code.strip(),
         "is_viewing_asset": True,
+        "user_is_moderator": request.user.groups.filter(name="Moderator").exists(),
+        "content_type": get_str_content_type(asset),
     }
     return render(
         request,

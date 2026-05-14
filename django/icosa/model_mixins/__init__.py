@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 
 MOD_LEGACY = "LEGACY"
@@ -38,6 +39,7 @@ class ModerationMixin(models.Model):
         on_delete=models.SET_NULL,
     )
     moderation_changed_fields = models.JSONField(null=True, blank=True)
+    moderation_events = GenericRelation("ModerationEvent")
 
     @property
     def moderation_watch_fields(self):

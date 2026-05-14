@@ -1,0 +1,16 @@
+<h2>Moderation actions:</h2>
+<p>
+    This object has been queried by a moderator. As a moderator yourself,
+    you can approve or reject it from here.
+</p>
+<form action="{% url 'icosa:moderation_queue' %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="data" value='{{ changed_data }}'>
+    <input type="hidden" name="obj_contenttype" value="{{ content_type }}">
+    <input type="hidden" name="obj_id" value="{{ obj.id }}">
+    <input type="hidden" name="return_to" value="{{ request.path }}">
+    <input type="hidden" name="close_queries" value="1">
+    <button class="btn btn-primary inline"type="submit" name="_approve">Approve</button>
+    <button class="btn btn-danger inline"type="submit" name="_reject">Reject</button>
+</form>
+
