@@ -274,7 +274,7 @@ DATABASES = {
             "pool": {
                 "min_size": 2,
                 "max_size": 90,
-                "timeout": 10,
+                "timeout": 30,
             }
         },
     }
