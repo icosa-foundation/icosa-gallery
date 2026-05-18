@@ -155,6 +155,8 @@ django/huey.db
 django/huey.db-wal
 django/huey.db-shm
 
+# userland overrides
+django/icosa_custom_overrides/
 
 # node stuff
 

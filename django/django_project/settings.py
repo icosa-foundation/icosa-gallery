@@ -170,6 +170,9 @@ INSTALLED_APPS = [
     "maintenance_mode",
     "simplemathcaptcha",
 ]
+USE_CUSTOM_OVERRIDES = bool(os.environ.get("DJANGO_USE_CUSTOM_OVERRIDES", False))
+if USE_CUSTOM_OVERRIDES:
+    INSTALLED_APPS = ["icosa_custom_overrides",] + INSTALLED_APPS
 
 
 AUTHENTICATION_BACKENDS = [
