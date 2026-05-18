@@ -468,6 +468,7 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
         "content_type",
         "state",
         "notes",
+        "display_links",
     )
     readonly_fields = (
         "user",
@@ -496,8 +497,10 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
         change_url_str = f"admin:{src_obj._meta.app_label}_{src_obj._meta.model_name}_change"
         change_url = reverse(change_url_str, args=(src_obj.id,))
 
+        # TODO(james): The nowrap class should really be applied to the containing td element.
+        # I couldn't quickly find a way to declare this. Revisit and fix.
         return mark_safe(
-            f'<a href="{change_url}">View in admin</a> | <a href="{src_obj.get_absolute_url()}">View on site</a>'
+            f'<span class="nowrap"><a href="{change_url}">View in admin</a> | <a href="{src_obj.get_absolute_url()}">View on site</a></span>'
         )
 
     display_links.short_description = "Links"
