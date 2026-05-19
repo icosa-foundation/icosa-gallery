@@ -1,13 +1,13 @@
 from typing import Optional
 from urllib.parse import urlparse
 
-from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 
 from .asset import Asset
 from .common import (
     FILENAME_MAX_LENGTH,
+    STORAGE_PREFIX,
 )
 from .helpers import (
     format_upload_path,
@@ -32,9 +32,7 @@ class Resource(models.Model):
     @property
     def url(self) -> Optional[str]:
         if self.file:
-            storage = settings.DJANGO_STORAGE_URL
-            bucket = settings.DJANGO_STORAGE_BUCKET_NAME
-            url_str = f"{storage}/{bucket}/{self.file.name}"
+            url_str = f"{STORAGE_PREFIX}{self.file.name}"
             return url_str
         elif self.external_url:
             return self.external_url
