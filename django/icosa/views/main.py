@@ -1018,6 +1018,13 @@ def terms(request):
     )
 
 
+def terms_full(request):
+    return template_view(
+        request,
+        "main/terms_full.html",
+        "Website Terms and Conditions of Use",
+    )
+
 def supporters(request):
     return template_view(
         request,

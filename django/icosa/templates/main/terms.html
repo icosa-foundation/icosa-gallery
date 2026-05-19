@@ -2,14 +2,14 @@
 {% block content %}
 <div class="container">
 <div class="row">
-<div class="col">
-<h3>{{ page_title }}</h3>
+<div class="col-lg-6 offset-lg-3 tacs">
+<h1>{{ page_title }}</h1>
 <p>
 Welcome to our website. If you continue to browse and use this website, you
 are agreeing to comply with and be bound by the following terms and conditions
 of use, which together with our privacy policy govern Icosa Foundation's
 relationship with you in relation to this website. If you disagree with any part
-of these terms and conditions, please do not use our website. The term ' Icosa
+of these terms and conditions, please do not use our website. The term 'Icosa
 Foundation' or 'us' or 'we' refers to the owner of the website. The term 'you'
 refers to the user or viewer of our website. The use of this website is subject
 to the following terms of use:
@@ -62,6 +62,9 @@ Your use of this website and any dispute arising out of such use of the website
 is subject to the laws of England and Wales.
 </li>
 </ul>
+<p>
+Read the <a href="{% url 'icosa:terms_full' %}">full Terms and Conditions</a>.
+</p>
 </div>
 </div>
 </div>
