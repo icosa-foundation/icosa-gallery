@@ -349,6 +349,8 @@ class Asset(ModerationMixin):
                 file_list.append(resource.file.name)
         return file_list
 
+    # TODO(james|performance): This causes a bunch of n+1 queries but is
+    # impervious to `select_related`-type optimisations.
     def get_all_downloadable_formats(self, user=None):
         # The user owns this asset so can view all files.
         if self.is_owned_by_django_user(user):
