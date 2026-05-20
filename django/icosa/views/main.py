@@ -53,6 +53,7 @@ from icosa.helpers.moderation import get_str_content_type
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.upload import upload_api_asset
 from icosa.model_mixins import (
+    MOD_HIDDEN,
     MOD_REPORTED,
     MOD_VISIBLE,
 )
@@ -126,6 +127,8 @@ def user_can_view_asset(
         return True
     if asset.visibility in [PRIVATE, ARCHIVED]:
         return user.is_authenticated and asset.owner.django_user == user
+    if asset.moderation_state in MOD_HIDDEN:
+        return False
     return True
 
 
@@ -343,7 +346,9 @@ def uploads(request):
     user = request.user
     form = AssetUploadForm()
     asset_objs = list(
-        Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+        Asset.objects.filter(owner__django_user=user)
+        .exclude(state=ASSET_STATE_BARE, moderation_state__in=MOD_HIDDEN)
+        .order_by("-create_time")
     )
     try:
         page_number = int(request.GET.get("page", 1))
@@ -371,7 +376,9 @@ def upload_list_partial(request):
     template = "partials/asset_upload_list.html"
     user = request.user
     asset_objs = list(
-        Asset.objects.filter(owner__django_user=user).exclude(state=ASSET_STATE_BARE).order_by("-create_time")
+        Asset.objects.filter(owner__django_user=user)
+        .exclude(state=ASSET_STATE_BARE, moderation_state__in=MOD_HIDDEN)
+        .order_by("-create_time")
     )
     try:
         page_number = int(request.GET.get("page", 1))
@@ -458,9 +465,13 @@ def owner_show(request, slug):
     if owner.disable_profile and not request.user.is_superuser:
         raise Http404
 
-    asset_objs = owner.asset_set.filter(
-        visibility=PUBLIC,
-    ).order_by("-id")
+    asset_objs = (
+        owner.asset_set.filter(
+            visibility=PUBLIC,
+        )
+        .exclude(moderation_state__in=MOD_HIDDEN)
+        .order_by("-id")
+    )
 
     try:
         page_number = int(request.GET.get("page", 1))
@@ -515,6 +526,7 @@ def user_show(request, slug):
             owner__in=owners,
             visibility=PUBLIC,
         )
+        .exclude(moderation_state__in=MOD_HIDDEN)
         .exclude(license=ALL_RIGHTS_RESERVED)
         .order_by("-id")
     )
@@ -1024,6 +1036,7 @@ def terms_full(request):
         "main/terms_full.html",
         "Website Terms and Conditions of Use",
     )
+
 
 def supporters(request):
     return template_view(

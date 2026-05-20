@@ -107,7 +107,7 @@
                 {% include "include/asset_superuser_actions.html" %}
                 {% endif %}
                 {% with obj=asset %}
-                {% if user_is_moderator and obj.moderation_state == "QUERIED" %}
+                {% if user_is_moderator %}
                 {% include "include/moderator_actions.html" %}
                 {% endif %}
                 {% endwith %}

@@ -3,12 +3,14 @@ from typing import List, Optional
 
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
-from icosa.api.exceptions import FilterException
-from icosa.models import Asset
 from ninja import Field, FilterSchema, Schema
 from ninja.errors import HttpError
 from pydantic import model_validator
 from pydantic.json_schema import SkipJsonSchema
+
+from icosa.api.exceptions import FilterException
+from icosa.model_mixins import MOD_HIDDEN
+from icosa.models import Asset
 
 
 class FilterCategory(Enum):
@@ -348,6 +350,7 @@ def filter_and_sort_assets(
         assets = (
             assets.filter(inc_q)
             .exclude(exc_q)
+            .exclude(moderation_state__in=MOD_HIDDEN)
             .select_related("owner")
             .prefetch_related(
                 "resource_set",

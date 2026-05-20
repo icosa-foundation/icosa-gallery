@@ -1,7 +1,6 @@
 <h2>Moderation actions:</h2>
 <p>
-    This object has been queried by a moderator. As a moderator yourself,
-    you can approve or reject it from here.
+    As a moderator, you can approve or reject this asset.
 </p>
 <form action="{% url 'icosa:moderation_queue' %}" method="post">
     {% csrf_token %}
