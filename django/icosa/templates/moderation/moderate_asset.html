@@ -28,6 +28,12 @@
             {% else %}
                 No thumbnail
             {% endif %}
+        {% elif field == "preview_image" %}
+            {% if asset.preview_image %}
+                <img style="max-width:100%;" src="{{ asset.preview_image.url }}?{% now "U" %}">
+            {% else %}
+                No image
+            {% endif %}
         {% else %}
             <p>{{ asset|get_attr:field }}</p>
         {% endif %}
