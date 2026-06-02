@@ -50,15 +50,14 @@ class Resource(models.Model):
         if self.format is not None:
             return self.format.root_resource.get_base_path()
         else:
+            # We are a root resource and so do not have a sub path
             if self.file:
                 path_split = self.file.name.split("/")
             elif self.external_url:
                 path_split = self.external_url.split("/")
             else:
                 return None
-            if self.format is None:
-                # We are a root resource and so do not have a sub path
-                return f'{"/".join(path_split[0:-1])}/'
+            return f'{"/".join(path_split[0:-1])}/'
 
     @property
     def relative_path(self):
