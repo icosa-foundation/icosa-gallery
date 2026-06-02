@@ -46,14 +46,34 @@ class Resource(models.Model):
             return self.external_url
         return None
 
+    def get_base_path(self):
+        if self.format is not None:
+            return self.format.root_resource.get_base_path()
+        else:
+            if self.file:
+                path_split = self.file.name.split("/")
+            elif self.external_url:
+                path_split = self.external_url.split("/")
+            else:
+                return None
+            if self.format is None:
+                # We are a root resource and so do not have a sub path
+                return f'{"/".join(path_split[0:-1])}/'
+
     @property
     def relative_path(self):
-        file_name = ""
+        base_path = self.get_base_path()
+
         if self.file:
-            file_name = self.file.name.split("/")[-1]
+            full_path = self.file.name
         elif self.external_url:
-            file_name = self.external_url.split("/")[-1]
-        return file_name
+            full_path = self.external_url
+        else:
+            return None
+        if full_path.startswith(base_path) and len(full_path) != len(base_path):
+            return full_path[len(base_path):]
+        else:
+            return None
 
     @property
     def content_type(self):
