@@ -57,7 +57,7 @@ class PatchUserSchema(Schema):
 
 
 class AssetResource(Schema):
-    relativePath: str
+    relativePath: Optional[str] = None
     contentType: str
     url: str
 
