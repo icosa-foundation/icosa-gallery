@@ -95,7 +95,7 @@
                     <textarea rows="6" class="embed-code">{{ embed_code }}</textarea>
                 </div>
                 <p class="text-right actions">
-                    {% if not asset.owner.django_user %}
+                    {% if not asset.owner.is_claimed %}
                         <a href="{% url 'icosa:artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here?</a>
                     {% endif %}
                     <a href="{% url "icosa:report_asset" asset_url=asset.url %}">
