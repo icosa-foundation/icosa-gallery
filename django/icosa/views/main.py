@@ -527,7 +527,6 @@ def user_show(request, slug):
             visibility=PUBLIC,
         )
         .exclude(moderation_state__in=MOD_HIDDEN)
-        .exclude(license=ALL_RIGHTS_RESERVED)
         .order_by("-id")
     )
 
