@@ -15,9 +15,10 @@
 <div id="assetTex"></div>
 <br>
 <h3>Changed/new field values:</h3>
-{% for field in asset.moderation_watch_fields %}
+{% for item in mod_fields %}
+    {% with changed=item.0 field=item.1 %}
     <div class="well">
-        <h4>{{ field }}:</h4>
+        <h4>{{ field }}:{% if changed %} <strong>(changed)</strong>{% endif %}</h4>
         {% if field == "description" %}
             {% if asset.description %}
                 <p>{{ asset.description|linebreaksbr }}</p>
@@ -38,6 +39,7 @@
             <p>{{ asset|get_attr:field }}</p>
         {% endif %}
     </div>
+    {% endwith %}
 {% endfor %}
 <script type="module">
 // One thumbnail per unique IMAGE referenced by the glTF (including embedded .glb images),

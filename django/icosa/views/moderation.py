@@ -136,12 +136,15 @@ def moderation_queue(request):
         obj.save(bypass_custom_logic=True)
 
     changed_data = {}
+    mod_fields = []
     if obj is not None:
         for field in obj.moderation_changed_fields:
             if field in ["thumbnail", "preview_image", "image"]:
                 changed_data[field] = str(getattr(obj, field, ""))
             else:
                 changed_data[field] = getattr(obj, field, "")
+        changed_fields = obj.moderation_changed_fields
+        mod_fields = [[field in changed_fields, field] for field in obj.moderation_watch_fields]
 
     context = {
         "objects_to_moderate": objects_to_moderate,
@@ -151,6 +154,7 @@ def moderation_queue(request):
         "moderation_template": moderation_template,
         "is_moderating": True,  # XXX Currently forces viewer.html to load the experimental js.
         "changed_data": json.dumps(changed_data),
+        "mod_fields": mod_fields,
     }
 
     return render(
