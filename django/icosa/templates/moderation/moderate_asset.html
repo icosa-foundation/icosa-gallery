@@ -41,6 +41,8 @@
     </div>
     {% endwith %}
 {% endfor %}
+<h3>Asset curated?</h3>
+<p>{% if asset.curated %}Yes{% else %}No{% endif %}</p>
 <script type="module">
 // One thumbnail per unique IMAGE referenced by the glTF (including embedded .glb images),
 // even if not used by any material in the scene.
