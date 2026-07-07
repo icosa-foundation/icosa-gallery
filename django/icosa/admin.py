@@ -154,6 +154,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "state",
         "last_reported_time",
         "moderation_state",
+        "previous_moderation_state",
     )
     readonly_fields = (
         "rank",
@@ -171,6 +172,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "last_reported_time",
         "triangle_count",
         "moderation_state",
+        "previous_moderation_state",
         "moderation_state_change_time",
         "moderation_state_change_by",
         "moderation_changed_fields",
@@ -247,6 +249,7 @@ class AssetCollectionAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "moderation_state",
+        "previous_moderation_state",
         "moderation_state_change_time",
         "moderation_state_change_by",
         "moderation_changed_fields",
@@ -257,6 +260,7 @@ class AssetCollectionAdmin(admin.ModelAdmin):
     list_filter = (
         "visibility",
         "moderation_state",
+        "previous_moderation_state",
     )
 
     def get_queryset(self, request):
@@ -305,6 +309,7 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         "is_claimed",
         "disable_profile",
         "moderation_state",
+        "previous_moderation_state",
     )
 
     raw_id_fields = [
@@ -314,6 +319,7 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
 
     readonly_fields = (
         "moderation_state",
+        "previous_moderation_state",
         "moderation_state_change_time",
         "moderation_state_change_by",
         "moderation_changed_fields",
