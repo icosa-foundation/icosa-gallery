@@ -131,6 +131,7 @@ class AssetOwner(ModerationMixin):
                     moderation_state = self.moderation_state
 
                 if should_log:
+                    self.previous_moderation_state = self.moderation_state
                     self.moderation_state = moderation_state
                     self.moderation_state_change_time = timezone.now()
                     self.moderation_state_change_by = None
