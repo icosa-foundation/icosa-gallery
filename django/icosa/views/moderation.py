@@ -64,15 +64,18 @@ def moderation_queue(request):
                 f"Cannot find item to save for moderation. Type: {obj_contenttype}, ID: {obj_id}."
             )
         with transaction.atomic():
+            new_moderation_state = None
             if "_approve" in request.POST:
-                obj.moderation_state = MOD_APPROVED
+                new_moderation_state = MOD_APPROVED
             elif "_reject" in request.POST:
-                obj.moderation_state = MOD_REJECTED
+                new_moderation_state = MOD_REJECTED
             elif "_query" in request.POST:
-                obj.moderation_state = MOD_QUERIED
+                new_moderation_state = MOD_QUERIED
             else:
                 return HttpResponseBadRequest("Invalid moderation action")
 
+            obj.previous_moderation_state = obj.moderation_state
+            obj.moderation_state = new_moderation_state
             obj.moderation_state_change_by = request.user
             obj.moderation_state_change_time = timezone.now()
             obj.moderation_changed_fields = []
