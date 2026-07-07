@@ -6,6 +6,7 @@ from django.db import models, transaction
 from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils import timezone
+
 from icosa.model_mixins import (
     MOD_DEFERRED,
     MOD_MODIFIED,

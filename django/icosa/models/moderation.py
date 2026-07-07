@@ -9,6 +9,7 @@ from django.db import models, transaction
 from django.template.defaultfilters import pluralize
 from django.urls import reverse
 from django.utils import timezone
+
 from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.moderation import get_objects_to_moderate
 from icosa.model_mixins import (
