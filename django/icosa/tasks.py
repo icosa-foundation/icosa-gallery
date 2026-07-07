@@ -105,7 +105,7 @@ def save_all_assets(
             return
         try:
             with transaction.atomic():
-                asset.save()
+                asset.save(bypass_moderation_logging=True)
                 if verbose:
                     print(f"Saved Asset {asset.id}\t", end="\r")
                 save_log.last_id = asset.id
