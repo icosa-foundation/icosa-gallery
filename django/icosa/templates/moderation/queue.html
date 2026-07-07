@@ -32,7 +32,11 @@
                             {% if moderation_template %}
                             {% include moderation_template %}
                             {% endif %}
+                            <br>
                             <hr style="border-top:2px solid white;">
+                            <br>
+                            <h3>Previous moderation decision:</h3>
+                            <p>{{ obj.previous_moderation_state|default_if_none:"Unknown" }}</p>
                             <form action="{% url 'icosa:moderation_queue' %}" method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="data" value='{{ changed_data }}'>

@@ -2,8 +2,8 @@
 <h3>Changed/new field values:</h3>
 {% for item in mod_fields %}
     {% with changed=item.0 field=item.1 %}
-    <div class="well">
-        <h4>{{ field }}:{% if changed %} <strong>(changed)</strong>{% endif %}</h4>
+    <div class="well{% if changed %} warn{% endif %}">
+        <h4>{{ field }}:{% if changed %} <small>(changed)</small>{% endif %}</h4>
         {% if field == "description" %}
             {% if obj.description %}
                 <p>{{ obj.description|linebreaksbr }}</p>
