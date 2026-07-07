@@ -708,7 +708,7 @@ def asset_log_download(request, asset_url):
     if request.method == "POST":
         asset = get_object_or_404(Asset, url=asset_url)
         asset.downloads += 1
-        asset.save()
+        asset.save(bypass_moderation_logging=True)
 
         return HttpResponse("ok")
     else:
@@ -1184,7 +1184,7 @@ def toggle_like(request):
         else:
             UserLike.objects.create(user=user, asset=asset)
         # Triggers denorming of asset liked time, but not update_time.
-        asset.save()
+        asset.save(bypass_moderation_logging=True)
     template = "main/tags/like_button.html"
     context = {
         "is_liked": not is_liked,

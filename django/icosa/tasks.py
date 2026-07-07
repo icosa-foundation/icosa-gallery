@@ -42,7 +42,7 @@ def handle_upload_error(task, exc):
     user = task.kwargs.pop("current_user")
 
     asset.state = ASSET_STATE_FAILED
-    asset.save()
+    asset.save(bypass_moderation_logging=True)
 
     # TODO, instead of writing to a log file, we need to write to some kind of
     # user-facing error log. The design for this needs to be decided. E.g. how
