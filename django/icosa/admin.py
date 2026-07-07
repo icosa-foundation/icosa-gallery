@@ -475,6 +475,7 @@ class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
         "state",
         "notes",
         "display_links",
+        "user",
     )
     readonly_fields = (
         "user",
