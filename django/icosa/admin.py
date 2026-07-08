@@ -303,6 +303,7 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         "id",
     )
     list_filter = (
+        "create_time",
         "imported",
         ("email", admin.EmptyFieldListFilter),
         ("django_user", admin.EmptyFieldListFilter),
