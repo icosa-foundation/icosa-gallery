@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from django.contrib.auth import get_user_model
 from icosa.models import Asset, AssetOwner, Tag
@@ -17,12 +19,15 @@ class TestAssetDenorm:
         # state for this test is raising.
         assert True
 
-    def test_rank(self, asset_fixture: Asset):
+    def test_rank(self, asset_fixture: Asset, monkeypatch: pytest.MonkeyPatch):
+        class FixedDatetime:
+            @staticmethod
+            def now():
+                return datetime.fromtimestamp(asset_fixture.create_time.timestamp() + 1)
+
+        monkeypatch.setattr("icosa.models.asset.datetime", FixedDatetime)
         asset_fixture.save()
-        # This seems to be the default rank. I'm not particularly fussed what
-        # this is, but a departure from this value means something changed
-        # which we didn't expect.
-        assert asset_fixture.rank == 10100.0
+        assert asset_fixture.rank == 101.0
 
     def test_search_text(self, asset_fixture: Asset):
         asset_fixture.save()
