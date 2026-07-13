@@ -11,6 +11,7 @@ from icosa.views import asset_collections as asset_collection_views
 from icosa.views import auth as auth_views
 from icosa.views import autocomplete as autocomplete_views
 from icosa.views import main as main_views
+from icosa.views import moderation as moderation_views
 from ninja import NinjaAPI
 from ninja.throttling import AnonRateThrottle, AuthRateThrottle
 
@@ -96,6 +97,8 @@ urlpatterns = [
     path("other", main_views.home_other, name="home_other"),
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),
+    path("upload_list_partial", main_views.upload_list_partial, name="upload_list_partial"),
+    path("upload_asset", main_views.upload_asset, name="upload_asset"),
     path("user/<str:slug>", main_views.user_show, name="user_show"),
     path(
         "user/<str:user_url>/collections",
@@ -160,6 +163,16 @@ urlpatterns = [
         name="report_success",
     ),
     path(
+        "report_broken/<str:asset_url>",
+        main_views.report_broken_asset,
+        name="report_broken_asset",
+    ),
+    path(
+        "report-broken-success",
+        main_views.report_broken_success,
+        name="report_broken_success",
+    ),
+    path(
         "edit/<str:asset_url>",
         main_views.asset_edit,
         name="asset_edit",
@@ -188,6 +201,8 @@ urlpatterns = [
     path("settings", main_views.user_settings, name="settings"),
     path("about", main_views.about, name="about"),
     path("terms", main_views.terms, name="terms"),
+    path("terms_full", main_views.terms_full, name="terms_full"),
+    path("help", main_views.help, name="help"),
     path(
         "information-for-artists-and-creators",
         main_views.artist_info,
@@ -198,6 +213,7 @@ urlpatterns = [
     path("privacy-policy", main_views.privacy_policy, name="privacy_policy"),
     path("toggle-like", main_views.toggle_like, name="toggle_like"),
     path("waitlist", main_views.waitlist, name="waitlist"),
+    path("moderation", moderation_views.moderation_queue, name="moderation_queue"),
     # autocomplete views
     path(
         "tag-autocomplete",

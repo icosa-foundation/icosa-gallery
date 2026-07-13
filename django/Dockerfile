@@ -25,8 +25,8 @@ RUN set -x            \
     && apt-get install -y --no-install-recommends $BUILD_DEPS
 
 # npm packages setup
-COPY package.json .
-RUN npm install
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci
 
 # Virtualenv setup
 RUN python -m venv /venv
@@ -57,7 +57,6 @@ RUN set -x            \
     && apt-get install -y --no-install-recommends $BUILD_DEPS
 
 WORKDIR /opt
-EXPOSE 8001
 
 COPY --from=builder /venv /venv
 COPY --from=builder /opt/node_modules /node_modules

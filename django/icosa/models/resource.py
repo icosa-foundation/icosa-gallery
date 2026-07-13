@@ -1,21 +1,25 @@
 from typing import Optional
 from urllib.parse import urlparse
 
-from constance import config
-from django.conf import settings
+from django.core.cache import cache
 from django.db import models
 
 from .asset import Asset
 from .common import (
     FILENAME_MAX_LENGTH,
+    STORAGE_PREFIX,
 )
-from .helpers import format_upload_path
+from .helpers import (
+    format_upload_path,
+    get_cached_cors_allow_list,
+)
 
 
 class Resource(models.Model):
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
     format = models.ForeignKey("Format", null=True, blank=True, on_delete=models.CASCADE)
     contenttype = models.CharField(max_length=255, null=True, blank=False)
+    uploaded_file_path = models.CharField(max_length=FILENAME_MAX_LENGTH, null=True, blank=True)
     file = models.FileField(
         null=True,
         blank=True,
@@ -28,9 +32,7 @@ class Resource(models.Model):
     @property
     def url(self) -> Optional[str]:
         if self.file:
-            storage = settings.DJANGO_STORAGE_URL
-            bucket = settings.DJANGO_STORAGE_BUCKET_NAME
-            url_str = f"{storage}/{bucket}/{self.file.name}"
+            url_str = f"{STORAGE_PREFIX}{self.file.name}"
             return url_str
         elif self.external_url:
             return self.external_url
@@ -44,14 +46,47 @@ class Resource(models.Model):
             return self.external_url
         return None
 
+    def get_base_path(self):
+        if self.format is not None:
+            return self.format.root_resource.get_base_path()
+        else:
+            # We are a root resource and so do not have a sub path
+            if self.file:
+                # XXX(james): This logic needs to be baked into a denormed field
+                if "model_(GLTFupdated)" in self.file.name:
+                    path_split = self.external_url.split("/")
+                else:
+                    path_split = self.file.name.split("/")
+            elif self.external_url:
+                path_split = self.external_url.split("/")
+            else:
+                return None
+            return f'{"/".join(path_split[0:-1])}/'
+
     @property
     def relative_path(self):
-        file_name = ""
+        base_path = self.get_base_path()
+        if base_path is None:
+            return None
+        if self.format is None:
+            # We are a root resource and so do not have a sub path
+            if self.file:
+                return self.file.name.split("/")[-1]
+            elif self.external_url:
+                return self.external_url.split("/")[-1]
+            else:
+                return None
+
         if self.file:
-            file_name = self.file.name.split("/")[-1]
+            full_path = self.file.name
         elif self.external_url:
-            file_name = self.external_url.split("/")[-1]
-        return file_name
+            full_path = self.external_url
+        else:
+            return None
+        if full_path.startswith(base_path) and len(full_path) != len(base_path):
+            return full_path[len(base_path):]
+        else:
+            return None
 
     @property
     def content_type(self):
@@ -65,11 +100,38 @@ class Resource(models.Model):
             return None
 
     @property
+    def external_file_name(self):
+        if self.external_url:
+            return self.external_url.split("/")[-1]
+        else:
+            return None
+
+    @property
+    def extension(self):
+        if self.external_url:
+            return self.external_url.split(".")[-1]
+        else:
+            return self.file.name.split(".")[-1]
+
+    @property
     def is_cors_allowed(self):
+        cors_allow_list = get_cached_cors_allow_list()
+        cache_key = f"resource_is_cors_allowed-{self.pk}-{cors_allow_list}"
+
+        is_allowed = cache.get(cache_key, None)
+
+        if is_allowed is not None:
+            return is_allowed
+
+        # We got nothing back from the cache; let's compute the value.
+        is_allowed = False
         remote_host = self.remote_host
         if remote_host is None:
-            return True
-        if config.EXTERNAL_MEDIA_CORS_ALLOW_LIST:
-            allowed_sources = tuple([x.strip() for x in config.EXTERNAL_MEDIA_CORS_ALLOW_LIST.split(",")])
-            return remote_host in allowed_sources
-        return False
+            is_allowed = True
+        elif remote_host is not None and self.file:
+            is_allowed = True
+        elif cors_allow_list:
+            allowed_sources = tuple([x.strip() for x in cors_allow_list.split(",")])
+            is_allowed = remote_host in allowed_sources
+        cache.set(cache_key, is_allowed, None)  # No expiry
+        return is_allowed

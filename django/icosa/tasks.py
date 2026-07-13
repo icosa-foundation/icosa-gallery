@@ -1,25 +1,38 @@
 import time
-from typing import Dict, List, Optional
-
-from huey import signals
-from huey.contrib.djhuey import db_task, signal
-from ninja import File, Form
-from ninja.files import UploadedFile
+from typing import (
+    Dict,
+    List,
+    Optional,
+)
 
 from django.db import transaction
 from django.utils import timezone
+from huey import (
+    crontab,
+    signals,
+)
+from huey.contrib.djhuey import (
+    db_periodic_task,
+    db_task,
+    signal,
+)
 from icosa.api.schema import AssetMetaData
 from icosa.helpers.gltf_transform import transform_asset_formats
 from icosa.helpers.upload import upload_api_asset
-from icosa.helpers.upload_web_ui import upload
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     ASSET_STATE_FAILED,
     ASSET_STATE_UPLOADING,
     Asset,
     BulkSaveLog,
+    ModerationNotification,
     User,
 )
+from ninja import (
+    File,
+    Form,
+)
+from ninja.files import UploadedFile
 
 
 @signal(signals.SIGNAL_ERROR)
@@ -33,7 +46,7 @@ def handle_upload_error(task, exc):
     user = task.kwargs.pop("current_user")
 
     asset.state = ASSET_STATE_FAILED
-    asset.save()
+    asset.save(bypass_moderation_logging=True)
 
     # TODO, instead of writing to a log file, we need to write to some kind of
     # user-facing error log. The design for this needs to be decided. E.g. how
@@ -44,28 +57,18 @@ def handle_upload_error(task, exc):
 
 
 @db_task()
-def queue_upload_asset_web_ui(
-    current_user: User,
-    asset: Asset,
-    files: Optional[List[UploadedFile]] = File(None),
-) -> str:
-    upload(
-        asset,
-        files,
-    )
-
-
-@db_task()
-def queue_upload_api_asset(
+async def queue_upload_api_asset(
     current_user: User,
     asset: Asset,
     data: Form[AssetMetaData],
     files: Optional[List[UploadedFile]] = File(None),
+    skip_thumbnail: bool = False,
 ) -> str:
-    upload_api_asset(
+    await upload_api_asset(
         asset,
         data,
         files,
+        skip_thumbnail,
     )
 
 
@@ -106,7 +109,7 @@ def save_all_assets(
             return
         try:
             with transaction.atomic():
-                asset.save()
+                asset.save(bypass_moderation_logging=True)
                 if verbose:
                     print(f"Saved Asset {asset.id}\t", end="\r")
                 save_log.last_id = asset.id
@@ -184,3 +187,8 @@ def queue_gltf_transform(
             "success": False,
             "error": str(e),
         }
+
+
+@db_periodic_task(crontab(minute="*/1"))
+def try_send_moderation_notifications():
+    ModerationNotification.try_send()

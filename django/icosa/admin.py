@@ -1,9 +1,14 @@
+import secrets
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.db.models import Count
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from import_export.admin import ExportMixin
+
 from icosa.models import (
     Asset,
     AssetCollection,
@@ -15,6 +20,8 @@ from icosa.models import (
     FormatRoleLabel,
     HiddenMediaFileLog,
     MastheadSection,
+    ModerationEvent,
+    ModerationNotification,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -22,8 +29,6 @@ from icosa.models import (
     Tag,
     UserLike,
 )
-
-from import_export.admin import ExportMixin
 
 User = get_user_model()
 
@@ -148,6 +153,8 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "category",
         "state",
         "last_reported_time",
+        "moderation_state",
+        "previous_moderation_state",
     )
     readonly_fields = (
         "rank",
@@ -164,6 +171,11 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "last_reported_by",
         "last_reported_time",
         "triangle_count",
+        "moderation_state",
+        "previous_moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
     )
 
     def display_thumbnail(self, obj):
@@ -235,9 +247,21 @@ class AssetCollectionAdmin(admin.ModelAdmin):
         "user__displayname",
     )
 
+    readonly_fields = (
+        "moderation_state",
+        "previous_moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
+    )
+
     inlines = (AssetCollectionAssetInline,)
 
-    list_filter = ("visibility",)
+    list_filter = (
+        "visibility",
+        "moderation_state",
+        "previous_moderation_state",
+    )
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(asset_count=Count("assets"))
@@ -279,15 +303,31 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         "id",
     )
     list_filter = (
+        "create_time",
         "imported",
         ("email", admin.EmptyFieldListFilter),
         ("django_user", admin.EmptyFieldListFilter),
         "is_claimed",
         "disable_profile",
+        "moderation_state",
+        "previous_moderation_state",
     )
+
     raw_id_fields = [
         "django_user",
         "merged_with",
+    ]
+
+    readonly_fields = (
+        "moderation_state",
+        "previous_moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
+    )
+
+    actions = [
+        "create_related_django_user",
     ]
 
     def get_queryset(self, request):
@@ -312,6 +352,48 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         return mark_safe(html)
 
     display_django_user.short_description = "Django User"
+
+    def create_related_django_user(self, request, queryset):
+        created_objs = []
+        existing_objs = []
+
+        for asset_owner in queryset:
+            email = asset_owner.email
+            try:
+                django_user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                django_user = None
+
+            if django_user is not None:
+                existing_objs.append(django_user)
+                continue
+
+            password = secrets.token_urlsafe(12)
+
+            django_user = User.objects.create_user(
+                username=asset_owner.displayname or email,
+                email=email,
+                password=password,
+            )
+
+            django_user.save()
+
+            created_objs.append({"obj": django_user, "password": password})
+
+            asset_owner.migrated = True
+            asset_owner.is_claimed = True
+            asset_owner.django_user = django_user
+            asset_owner.save()
+
+        context = {
+            "created_objs": created_objs,
+            "existing_objs": existing_objs,
+            "return_url": f"{reverse('admin:icosa_assetowner_changelist')}",
+        }
+
+        return TemplateResponse(request, "admin/create_django_user_results.html", context)
+
+    create_related_django_user.short_description = "Create a Django user from this Asset Owner"
 
 
 @admin.register(MastheadSection)
@@ -384,6 +466,68 @@ class Oauth2CodeAdmin(ExportMixin, admin.ModelAdmin):
 @admin.register(Oauth2Token)
 class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
     pass
+
+
+@admin.register(ModerationEvent)
+class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
+    list_display = (
+        "create_time",
+        "content_type",
+        "state",
+        "notes",
+        "display_links",
+        "user",
+    )
+    readonly_fields = (
+        "user",
+        "notes",
+        "create_time",
+        "content_type",
+        "object_id",
+        "source_object",
+        "state",
+        "data",
+        "display_links",
+    )
+    list_filter = (
+        "state",
+        ("content_type", admin.RelatedOnlyFieldListFilter),
+        "query_resolved",
+    )
+    search_fields = (
+        "notes",
+        "object_id",
+        "data",
+    )
+
+    def display_links(self, obj):
+        src_obj = obj.source_object
+        change_url_str = f"admin:{src_obj._meta.app_label}_{src_obj._meta.model_name}_change"
+        change_url = reverse(change_url_str, args=(src_obj.id,))
+
+        # TODO(james): The nowrap class should really be applied to the containing td element.
+        # I couldn't quickly find a way to declare this. Revisit and fix.
+        return mark_safe(
+            f'<span class="nowrap"><a href="{change_url}">View in admin</a> | <a href="{src_obj.get_absolute_url()}">View on site</a></span>'
+        )
+
+    display_links.short_description = "Links"
+    display_links.allow_tags = True
+
+
+@admin.register(ModerationNotification)
+class ModerationNotificationAdmin(ExportMixin, admin.ModelAdmin):
+    list_display = ("sent",)
+
+    list_filter = (
+        "sent",
+        "recipients",
+    )
+
+    readonly_fields = (
+        "sent",
+        "recipients",
+    )
 
 
 class UserLikeInline(admin.TabularInline):

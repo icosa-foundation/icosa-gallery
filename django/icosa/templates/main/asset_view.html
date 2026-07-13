@@ -6,6 +6,7 @@
 
 {% block extrahead %}
     <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ asset.get_absolute_url }}" />
+    <link rel="alternate" as="spatial-entrypoint" href="{{ asset.preferred_viewer_format.root_resource.internal_or_cors_url }}">
     {% include "partials/oembed_head.html" %}
 {% endblock extrahead %}
 
@@ -94,16 +95,24 @@
                     <textarea rows="6" class="embed-code">{{ embed_code }}</textarea>
                 </div>
                 <p class="text-right actions">
-                    <small>
-                        <a href="{% url 'icosa:artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here? What can I do?</a>
-                        <a href="{% url "icosa:report_asset" asset_url=asset.url %}">
-                            {% fa_icon "solid" "flag" %} Report
-                        </a>
-                    </small>
+                    {% if not asset.owner.is_claimed %}
+                        <a href="{% url 'icosa:artist_info' %}">{% fa_icon "solid" "circle-question" %} Why is my work here?</a>
+                    {% endif %}
+                    <a href="{% url "icosa:report_asset" asset_url=asset.url %}">
+                        {% fa_icon "solid" "flag" %} Report inappropriate
+                    </a>
+                    <a href="{% url "icosa:report_broken_asset" asset_url=asset.url %}">
+                        {% fa_icon "solid" "triangle-exclamation" %} Can't view this work?
+                    </a>
                 </p>
-                {% if request.user.is_superuser and not settings.DEBUG %}
+                {% if request.user.is_superuser %}
                 {% include "include/asset_superuser_actions.html" %}
                 {% endif %}
+                {% with obj=asset %}
+                {% if user_is_moderator %}
+                {% include "include/moderator_actions.html" %}
+                {% endif %}
+                {% endwith %}
             </div>
         </div>
     </div>
