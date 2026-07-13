@@ -1,5 +1,4 @@
 from django.conf import settings
-from icosa.models import UserLike
 
 
 def settings_processor(request):

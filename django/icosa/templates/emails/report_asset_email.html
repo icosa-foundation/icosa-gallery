@@ -1,4 +1,6 @@
-Asset <a href="{{request.scheme}}://{{ domain }}{{ asset.get_absolute_url }}">{{ asset.name|default:'unnamed asset' }}</a> has been reported by {% if reporter is None %}an anonymous user{% else %}{{ reporter }}{% endif %} with the following reason:
-
-{{ reason }}
+<p>Asset <a href="{{request.scheme}}://{{ domain }}{{ asset.get_absolute_url }}">{{ asset.name|default:'unnamed asset' }}</a> has been reported by {% if reporter is None %}an anonymous user{% else %}{{ reporter.displayname }}{% endif %} with the following reason:</p>
+<p>{{ reason|linebreaksbr }}</p>
+{% if reporter_email %}
+<p>Contact email: {{ reporter_email }}</p>
+{% endif %}
 

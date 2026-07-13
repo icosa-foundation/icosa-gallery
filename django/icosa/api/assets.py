@@ -3,6 +3,10 @@ from typing import List
 
 from constance import config
 from django.db.models import Q
+from ninja import Query, Router
+from ninja.decorators import decorate_view
+from ninja.pagination import paginate
+
 from icosa.api import (
     COMMON_ROUTER_SETTINGS,
     DEFAULT_CACHE_SECONDS,
@@ -10,18 +14,15 @@ from icosa.api import (
     AssetPagination,
     get_asset_by_url,
 )
+from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import (
     ALL_RIGHTS_RESERVED,
     ARCHIVED,
     PRIVATE,
     PUBLIC,
-    UNLISTED,
     Asset,
 )
 from icosa.views.decorators import cache_per_user
-from ninja import Query, Router
-from ninja.decorators import decorate_view
-from ninja.pagination import paginate
 
 from .filters import (
     FiltersAsset,
@@ -49,8 +50,10 @@ def get_asset(
     asset_url: str,
 ):
     try:
-        asset = Asset.objects.exclude(visibility=ARCHIVED).get(url=asset_url)
+        asset = Asset.objects.get(url=asset_url)
     except Asset.DoesNotExist:
+        raise NOT_FOUND
+    if asset.moderation_state in MOD_HIDDEN or asset.visibility == ARCHIVED:
         raise NOT_FOUND
     if asset.visibility == PRIVATE:
         # TODO `check_user_owns_asset` is not appropriate here. Perhaps
@@ -97,7 +100,7 @@ def get_assets(
 ):
     exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
     if config.HIDE_REPORTED_ASSETS:
-        exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(last_reported_time__isnull=False)
+        exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(moderation_state__in=MOD_HIDDEN)
 
     assets = filter_and_sort_assets(
         filters,

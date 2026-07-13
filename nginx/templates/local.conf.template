@@ -1,10 +1,12 @@
-upstream web {
-  ip_hash;
-  server web:8000;
-}
+# ===================
+# local.conf.template
+# ===================
+
+client_max_body_size 1024M;
 
 server {
-    client_max_body_size 500M;
+    listen 80;
+    listen [::]:80;
 
     location /static/ {
         autoindex off;
@@ -17,7 +19,7 @@ server {
     }
 
     location / {
-        proxy_pass http://web;
+        proxy_pass http://varnish:80;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Host $host;
         proxy_redirect off;
@@ -25,6 +27,4 @@ server {
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
     }
-
-    listen 80;
 }

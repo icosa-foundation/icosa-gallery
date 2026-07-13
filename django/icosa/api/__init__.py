@@ -1,12 +1,13 @@
 from typing import Any, List, Optional
 
 from django.conf import settings
+from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
 from icosa.models import PRIVATE, Asset
 from ninja import Schema
 from ninja.errors import HttpError
-from ninja.pagination import PaginationBase
+from ninja.pagination import AsyncPaginationBase
 from pydantic.json_schema import SkipJsonSchema
 
 COMMON_ROUTER_SETTINGS: dict[str, Any] = {
@@ -52,11 +53,27 @@ def user_owns_asset(
     return user is not None and user == asset.owner.django_user
 
 
+async def auser_owns_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> bool:
+    user = await request.auser()
+    return user is not None and user == asset.owner.django_user
+
+
 def check_user_owns_asset(
     request: HttpRequest,
     asset: Asset,
 ) -> None:
     if not user_owns_asset(request, asset):
+        raise
+
+
+async def acheck_user_owns_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> None:
+    if not auser_owns_asset(request, asset):
         raise
 
 
@@ -66,6 +83,15 @@ def user_can_view_asset(
 ) -> bool:
     if asset.visibility == PRIVATE:
         return user_owns_asset(request, asset)
+    return True
+
+
+async def auser_can_view_asset(
+    request: HttpRequest,
+    asset: Asset,
+) -> bool:
+    if asset.visibility == PRIVATE:
+        return auser_owns_asset(request, asset)
     return True
 
 
@@ -86,7 +112,24 @@ def get_asset_by_url(
     return asset
 
 
-class IcosaPagination(PaginationBase):
+async def aget_asset_by_url(
+    request: HttpRequest,
+    asset_url: str,
+) -> Asset:
+    # get_object_or_404 raises the wrong error text
+    try:
+        asset = await Asset.objects.aget(url=asset_url)
+    except Asset.DoesNotExist:
+        raise NOT_FOUND
+    if not await auser_can_view_asset(request, asset):
+        if settings.DEBUG:
+            raise NOT_FOUND
+        else:
+            raise NOT_FOUND
+    return asset
+
+
+class IcosaPagination(AsyncPaginationBase):
     class Input(Schema):
         # pageToken and pageSize should really be int, but need to be str so we can accept
         # stuff like ?pageSize=&pageToken=
@@ -109,6 +152,7 @@ class IcosaPagination(PaginationBase):
         pagination: Input,
         **params,
     ):
+        # TODO somewhat duplicate of the async variant below
         try:
             page_size = int(pagination.pageSize) or int(pagination.page_size) or DEFAULT_PAGE_SIZE
         except (ValueError, TypeError):
@@ -133,11 +177,46 @@ class IcosaPagination(PaginationBase):
             "totalSize": queryset_count,
         }
         if offset + page_size < count:
-            pagination_data.update(
-                {
-                    "nextPageToken": str(page_token + 1),
-                }
-            )
+            pagination_data.update({
+                "nextPageToken": str(page_token + 1),
+            })
+        return pagination_data
+
+    async def apaginate_queryset(
+        self,
+        queryset,
+        pagination: Input,
+        **params,
+    ):
+        try:
+            page_size = int(pagination.pageSize) or int(pagination.page_size) or DEFAULT_PAGE_SIZE
+        except (ValueError, TypeError):
+            # pageSize could still be defined, but empty: `?pageSize=`).
+            page_size = DEFAULT_PAGE_SIZE
+        page_size = min(page_size, MAX_PAGE_SIZE)
+
+        try:
+            page_token = int(pagination.pageToken) or int(pagination.page_token) or DEFAULT_PAGE_TOKEN
+        except (ValueError, TypeError):
+            # pageToken could still be defined, but empty: `?pageToken=`).
+            page_token = DEFAULT_PAGE_TOKEN
+
+        offset = (page_token - 1) * page_size
+        count = await self._aitems_count(queryset)
+
+        if isinstance(queryset, QuerySet):
+            items = [obj async for obj in queryset[offset : offset + page_size]]
+        else:
+            items = queryset[offset : offset + page_size]
+
+        pagination_data = {
+            self.items_attribute: items,
+            "totalSize": count,
+        }
+        if offset + page_size < count:
+            pagination_data.update({
+                "nextPageToken": str(page_token + 1),
+            })
         return pagination_data
 
 

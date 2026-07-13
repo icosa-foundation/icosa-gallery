@@ -10,7 +10,7 @@
     <meta name="description" content="icosa">
     {% block meta_opengraph %}{% endblock meta_opengraph %}
     {% compress css %}
-        <link rel="stylesheet" type="text/x-scss" href="{% static "scss/screen.scss" %}" />
+        <link rel="stylesheet" type="text/x-scss" href="{% static "scss/screen.scss" %}?v=2" />
     {% endcompress %}
     <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}?v=2" type="image/x-icon">
     <title>{% if page_title %}{{ page_title }} | {% endif %}Icosa Gallery</title>
