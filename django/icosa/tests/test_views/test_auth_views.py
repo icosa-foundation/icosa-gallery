@@ -126,6 +126,7 @@ class TestLoginView:
         # Create unclaimed owner with same email
         unclaimed_owner = AssetOwnerFactory(
             email='test@example.com',
+            url=user.username,
             django_user=None,
             is_claimed=False
         )
@@ -181,8 +182,9 @@ class TestRegisterView:
         assert response.status_code == 404
 
     @patch('icosa.views.auth.send_registration_email')
+    @patch('icosa.forms.MathCaptchaField.clean', return_value=None)
     @patch('icosa.views.auth.config')
-    def test_successful_registration(self, mock_config, mock_send_email, client):
+    def test_successful_registration(self, mock_config, _mock_captcha, mock_send_email, client):
         """Test successful user registration."""
         mock_config.SIGNUP_OPEN = True
 
@@ -192,7 +194,7 @@ class TestRegisterView:
             'email': 'newuser@example.com',
             'password_new': 'testpass123',
             'password_confirm': 'testpass123',
-            'honeypot': '',  # Honeypot field
+            'asset_ref': '',  # Honeypot field
         })
 
         # Should show success page
@@ -203,8 +205,9 @@ class TestRegisterView:
         assert user.is_active is False
 
     @patch('icosa.views.auth.send_registration_email')
+    @patch('icosa.forms.MathCaptchaField.clean', return_value=None)
     @patch('icosa.views.auth.config')
-    def test_registration_sends_email(self, mock_config, mock_send_email, client):
+    def test_registration_sends_email(self, mock_config, _mock_captcha, mock_send_email, client):
         """Test that registration sends confirmation email."""
         mock_config.SIGNUP_OPEN = True
 
@@ -214,14 +217,15 @@ class TestRegisterView:
             'email': 'newuser@example.com',
             'password_new': 'testpass123',
             'password_confirm': 'testpass123',
-            'honeypot': '',
+            'asset_ref': '',
         })
 
         # Email should be sent
         assert mock_send_email.called
 
+    @patch('icosa.forms.MathCaptchaField.clean', return_value=None)
     @patch('icosa.views.auth.config')
-    def test_registration_duplicate_email(self, mock_config, client):
+    def test_registration_duplicate_email(self, mock_config, _mock_captcha, client):
         """Test registration with duplicate email."""
         mock_config.SIGNUP_OPEN = True
         existing_user = UserFactory(email='existing@example.com', is_active=True)
@@ -232,7 +236,7 @@ class TestRegisterView:
             'email': 'existing@example.com',
             'password_new': 'testpass123',
             'password_confirm': 'testpass123',
-            'honeypot': '',
+            'asset_ref': '',
         })
 
         # Should show success (to prevent email enumeration)
@@ -414,17 +418,21 @@ class TestDeviceCodeView:
 
     def test_devicecode_with_openbrush_client(self, authenticated_client, user):
         """Test device code with Open Brush client."""
-        response = authenticated_client.get(reverse('icosa:devicecode') + '?appid=openbrush&secret=test')
+        response = authenticated_client.get(reverse('icosa:devicecode', kwargs={
+            'appid': 'openbrush',
+            'secret': 'test',
+        }))
         assert response.status_code == 200
-        assert 'client_id' in response.context
-        assert response.context['client_id'] == 'Open Brush'
+        assert response.context['client_name'] == 'Open Brush'
 
     def test_devicecode_with_openblocks_client(self, authenticated_client, user):
         """Test device code with Open Blocks client."""
-        response = authenticated_client.get(reverse('icosa:devicecode') + '?appid=openblocks&secret=test')
+        response = authenticated_client.get(reverse('icosa:devicecode', kwargs={
+            'appid': 'openblocks',
+            'secret': 'test',
+        }))
         assert response.status_code == 200
-        assert 'client_id' in response.context
-        assert response.context['client_id'] == 'Open Blocks'
+        assert response.context['client_name'] == 'Open Blocks'
 
     def test_devicecode_deletes_old_codes(self, authenticated_client, user):
         """Test that device code deletes old codes for user."""
@@ -450,10 +458,10 @@ class TestDeviceCodeView:
         # Expired code should be deleted
         assert not DeviceCode.objects.filter(id=expired_code.id).exists()
 
-    def test_devicecode_deprecated_format(self, authenticated_client, user):
-        """Test device code with deprecated format (secret as key)."""
+    def test_devicecode_rejects_incomplete_query_format(self, authenticated_client, user):
+        """Test device code rejects query data without app ID and secret."""
         response = authenticated_client.get(reverse('icosa:devicecode') + '?testsecret')
-        assert response.status_code == 200
+        assert response.status_code == 404
 
 
 @pytest.mark.django_db

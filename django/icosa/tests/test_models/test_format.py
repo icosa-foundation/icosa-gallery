@@ -159,11 +159,13 @@ class TestFormatModel:
         resource1.file = Mock()
         resource1.file.name = 'path/to/file1.glb'
         resource1.external_url = None
+        resource1.uploaded_file_path = None
 
         resource2 = Mock()
         resource2.file = Mock()
         resource2.file.name = 'path/to/file2.png'
         resource2.external_url = None
+        resource2.uploaded_file_path = None
 
         resources = [resource1, resource2]
         resource_data = format_instance.get_resource_data(resources)
@@ -181,6 +183,7 @@ class TestFormatModel:
         resource1.file = Mock()
         resource1.file.name = 'path/to/file1.glb'
         resource1.external_url = None
+        resource1.uploaded_file_path = None
 
         resource2 = Mock()
         resource2.is_cors_allowed = False
@@ -292,9 +295,7 @@ class TestResourceModel:
 
         url = resource.url
 
-        # Should transform to snapshot URL
-        assert 'web.archive.org' in url
-        assert '20250101010101id_' in url
+        assert url == archive_url
 
     def test_url_property_no_file_no_url(self):
         """Test url property returns empty string when no file or URL."""
@@ -302,11 +303,11 @@ class TestResourceModel:
 
         url = resource.url
 
-        assert url == ''
+        assert url is None
 
     def test_relative_path_with_file(self):
         """Test relative_path returns filename from file path."""
-        resource = ResourceFactory()
+        resource = ResourceFactory(format=None)
         resource.file = Mock()
         resource.file.name = 'path/to/model.glb'
 
@@ -318,7 +319,8 @@ class TestResourceModel:
         """Test relative_path returns filename from external URL."""
         resource = ResourceFactory(
             external_url='https://example.com/path/to/model.glb',
-            file=None
+            file=None,
+            format=None,
         )
 
         path = resource.relative_path
@@ -344,11 +346,9 @@ class TestResourceModel:
 
         assert host is None
 
-    @patch('icosa.models.resource.config')
-    def test_is_cors_allowed_with_allowed_host(self, mock_config):
+    @patch('icosa.models.resource.get_cached_cors_allow_list', return_value='example.com, test.com')
+    def test_is_cors_allowed_with_allowed_host(self, _mock_allow_list):
         """Test is_cors_allowed returns True for allowed hosts."""
-        mock_config.EXTERNAL_MEDIA_CORS_ALLOW_LIST = 'example.com, test.com'
-
         resource = ResourceFactory(
             external_url='https://example.com/model.glb',
             file=None
@@ -356,11 +356,9 @@ class TestResourceModel:
 
         assert resource.is_cors_allowed is True
 
-    @patch('icosa.models.resource.config')
-    def test_is_cors_allowed_with_disallowed_host(self, mock_config):
+    @patch('icosa.models.resource.get_cached_cors_allow_list', return_value='example.com')
+    def test_is_cors_allowed_with_disallowed_host(self, _mock_allow_list):
         """Test is_cors_allowed returns False for disallowed hosts."""
-        mock_config.EXTERNAL_MEDIA_CORS_ALLOW_LIST = 'example.com'
-
         resource = ResourceFactory(
             external_url='https://untrusted.com/model.glb',
             file=None

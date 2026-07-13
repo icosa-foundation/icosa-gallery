@@ -125,7 +125,7 @@ class TestUserModel:
         )
 
         exp_timestamp = decoded['exp']
-        exp_datetime = datetime.fromtimestamp(exp_timestamp)
+        exp_datetime = datetime.utcfromtimestamp(exp_timestamp)
         now = datetime.utcnow()
 
         # Token should expire in approximately ACCESS_TOKEN_EXPIRE_MINUTES

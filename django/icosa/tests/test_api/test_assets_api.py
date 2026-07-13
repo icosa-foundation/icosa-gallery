@@ -33,8 +33,8 @@ class TestAssetAPIGet:
 
         assert response.status_code == 200
         data = response.json()
-        assert data['name'] == 'Test Asset'
-        assert data['url'] == 'test-asset'
+        assert data['displayName'] == 'Test Asset'
+        assert data['assetId'] == 'test-asset'
 
     def test_get_unlisted_asset(self, client):
         """Test retrieving an unlisted asset."""
@@ -47,7 +47,7 @@ class TestAssetAPIGet:
 
         assert response.status_code == 200
         data = response.json()
-        assert data['url'] == 'unlisted-asset'
+        assert data['assetId'] == 'unlisted-asset'
 
     def test_get_private_asset_returns_404(self, client):
         """Test that private assets return 404 for unauthorized users."""
@@ -123,8 +123,8 @@ class TestAssetAPIList:
 
         assert response.status_code == 200
         data = response.json()
-        # Should have assets in response
-        assert 'items' in data or 'results' in data or isinstance(data, list)
+        assert len(data['assets']) == 3
+        assert data['totalSize'] == 3
 
     def test_get_assets_excludes_private(self, client):
         """Test that asset list excludes private assets."""
@@ -136,14 +136,8 @@ class TestAssetAPIList:
         assert response.status_code == 200
         data = response.json()
 
-        # Extract asset items from response
-        if isinstance(data, dict):
-            items = data.get('items', data.get('results', []))
-        else:
-            items = data
-
         # Private asset should not be in list
-        asset_urls = [item['url'] for item in items]
+        asset_urls = [item['assetId'] for item in data['assets']]
         assert public_asset.url in asset_urls
         assert private_asset.url not in asset_urls
 
@@ -165,12 +159,7 @@ class TestAssetAPIList:
         assert response.status_code == 200
         data = response.json()
 
-        if isinstance(data, dict):
-            items = data.get('items', data.get('results', []))
-        else:
-            items = data
-
-        asset_urls = [item['url'] for item in items]
+        asset_urls = [item['assetId'] for item in data['assets']]
         assert open_asset.url in asset_urls
         assert arr_asset.url not in asset_urls
 
@@ -189,8 +178,8 @@ class TestAssetAPIList:
         assert response.status_code == 200
         data = response.json()
 
-        # Should have pagination info
-        assert 'items' in data or 'results' in data or 'nextPageToken' in data
+        assert len(data['assets']) == 10
+        assert data['totalSize'] == 25
 
     def test_get_assets_filter_by_category(self, client):
         """Test filtering assets by category."""
@@ -212,10 +201,7 @@ class TestAssetAPIList:
         assert response.status_code == 200
         data = response.json()
 
-        if isinstance(data, dict):
-            items = data.get('items', data.get('results', []))
-        else:
-            items = data
+        items = data['assets']
 
         # Should only include animal assets
         if items:
@@ -238,7 +224,7 @@ class TestAssetAPIList:
             license='CREATIVE_COMMONS_BY_3_0'
         )
 
-        response = client.get('/api/v1/assets/?orderBy=LIKED')
+        response = client.get('/api/v1/assets/?orderBy=LIKES')
 
         assert response.status_code == 200
         # Endpoint should accept the order parameter
@@ -312,14 +298,14 @@ class TestAssetAPIUploadState:
         # Should be accessible
         assert response.status_code in [200, 401, 403, 404]
 
-    def test_get_asset_upload_state_unauthenticated(self, client):
-        """Test getting upload state without authentication."""
+    def test_get_public_asset_upload_state_unauthenticated(self, client):
+        """Test getting upload state for a public asset without authentication."""
         asset = AssetFactory(url='test-asset')
 
         response = client.get(f'/api/v1/assets/{asset.url}/upload_state')
 
-        # Should require authentication or return not found
-        assert response.status_code in [401, 403, 404]
+        assert response.status_code == 200
+        assert response.json()['state'] == asset.state
 
     def test_get_asset_upload_state_includes_state(self, authenticated_client, user):
         """Test upload state response includes asset state."""

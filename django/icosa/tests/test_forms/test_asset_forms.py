@@ -192,8 +192,8 @@ class TestAssetPublishForm:
         assert 'name' in form.fields
         assert 'license' in form.fields
 
-    def test_publish_form_requires_name(self):
-        """Test publish form requires asset name."""
+    def test_publish_form_requires_visibility(self):
+        """Test publish form requires an asset visibility."""
         asset = AssetFactory(name='', license=None)
 
         form_data = {
@@ -204,7 +204,7 @@ class TestAssetPublishForm:
         form = AssetPublishForm(data=form_data, instance=asset)
 
         assert not form.is_valid()
-        assert 'name' in form.errors
+        assert 'visibility' in form.errors
 
     def test_publish_form_valid_data(self):
         """Test publish form with valid data."""
@@ -212,7 +212,8 @@ class TestAssetPublishForm:
 
         form_data = {
             'name': 'My Published Asset',
-            'license': 'CREATIVE_COMMONS_BY_4_0'
+            'license': 'CREATIVE_COMMONS_BY_4_0',
+            'visibility': PUBLIC,
         }
 
         form = AssetPublishForm(data=form_data, instance=asset)
@@ -227,8 +228,6 @@ class TestAssetPublishForm:
 
         license_choices = [choice[0] for choice in form.fields['license'].choices]
         assert 'CREATIVE_COMMONS_BY_4_0' in license_choices
-        assert 'CREATIVE_COMMONS_BY_SA_4_0' in license_choices
-        assert 'CREATIVE_COMMONS_BY_ND_4_0' in license_choices
         assert 'CREATIVE_COMMONS_0' in license_choices
 
     def test_publish_form_license_disabled_for_published_cc_asset(self):

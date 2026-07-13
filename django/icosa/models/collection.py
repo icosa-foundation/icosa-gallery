@@ -82,6 +82,11 @@ class AssetCollection(ModerationMixin):
                 except IntegrityError:
                     continue
                 else:
+                    # QuerySet.create() passes force_insert=True. The generated
+                    # URL path has already inserted this row, so the final save
+                    # below must update it rather than attempting a second
+                    # insert with the same primary key.
+                    kwargs.pop("force_insert", None)
                     break
         if not bypass_custom_logic:
             now = timezone.now()

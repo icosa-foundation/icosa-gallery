@@ -4,11 +4,22 @@ Tests for Login API endpoints.
 import pytest
 from django.utils import timezone
 from datetime import timedelta
+from urllib.parse import urlencode
 
 from icosa.tests.fixtures.factories import (
     UserFactory,
     DeviceCodeFactory,
 )
+
+
+MISSING = object()
+
+
+def post_device_login(api_client, device_code=MISSING):
+    url = '/api/v1/login/device_login'
+    if device_code is not MISSING:
+        url = f'{url}?{urlencode({"device_code": device_code})}'
+    return api_client.post(url)
 
 
 @pytest.mark.django_db
@@ -25,18 +36,13 @@ class TestDeviceLoginAPI:
             expiry=timezone.now() + timedelta(hours=1)
         )
 
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'ABC123'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'ABC123')
 
         # Should return access token
-        assert response.status_code in [200, 201]
-
-        if response.status_code == 200:
-            data = response.json()
-            assert 'access_token' in data
-            assert 'token_type' in data
-            assert data['token_type'] == 'bearer'
+        assert response.status_code == 200
+        data = response.json()
+        assert 'access_token' in data
+        assert data['token_type'] == 'bearer'
 
     def test_device_login_with_expired_code(self, api_client):
         """Test device login with expired code."""
@@ -47,18 +53,14 @@ class TestDeviceLoginAPI:
             expiry=timezone.now() - timedelta(hours=1)  # Expired 1 hour ago
         )
 
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'EXPIRED'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'EXPIRED')
 
         # Should reject expired code
         assert response.status_code == 401
 
     def test_device_login_with_invalid_code(self, api_client):
         """Test device login with non-existent code."""
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'INVALID'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'INVALID')
 
         # Should return 401 unauthorized
         assert response.status_code == 401
@@ -72,14 +74,11 @@ class TestDeviceLoginAPI:
             expiry=timezone.now() + timedelta(hours=1)
         )
 
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'ONETIME'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'ONETIME')
 
-        if response.status_code == 200:
-            from icosa.models import DeviceCode
-            # Code should be deleted
-            assert not DeviceCode.objects.filter(devicecode='ONETIME').exists()
+        assert response.status_code == 200
+        from icosa.models import DeviceCode
+        assert not DeviceCode.objects.filter(devicecode='ONETIME').exists()
 
     def test_device_login_case_insensitive(self, api_client):
         """Test device login is case insensitive."""
@@ -91,12 +90,10 @@ class TestDeviceLoginAPI:
         )
 
         # Try with lowercase
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'abc123'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'abc123')
 
         # Should accept case-insensitive match
-        assert response.status_code in [200, 201, 401]
+        assert response.status_code == 200
 
     def test_device_login_returns_jwt_token(self, api_client):
         """Test that device login returns a valid JWT token."""
@@ -107,18 +104,12 @@ class TestDeviceLoginAPI:
             expiry=timezone.now() + timedelta(hours=1)
         )
 
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'JWT123'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'JWT123')
 
-        if response.status_code == 200:
-            data = response.json()
-            token = data.get('access_token')
-
-            # Token should be a non-empty string
-            assert token is not None
-            assert len(token) > 0
-            assert isinstance(token, str)
+        assert response.status_code == 200
+        token = response.json()['access_token']
+        assert isinstance(token, str)
+        assert token
 
     def test_device_login_multiple_codes_error(self, api_client):
         """Test that multiple matching codes return error."""
@@ -135,26 +126,21 @@ class TestDeviceLoginAPI:
             expiry=timezone.now() + timedelta(hours=1)
         )
 
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'DUPE'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'DUPE')
 
         # Should return 401 for multiple matches
         assert response.status_code == 401
 
     def test_device_login_empty_code(self, api_client):
         """Test device login with empty code."""
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': ''
-        }, content_type='application/json')
+        response = post_device_login(api_client, '')
 
         # Should reject empty code
         assert response.status_code in [400, 401, 422]
 
     def test_device_login_missing_code_parameter(self, api_client):
         """Test device login without code parameter."""
-        response = api_client.post('/api/v1/login/device_login', data={},
-                                   content_type='application/json')
+        response = post_device_login(api_client)
 
         # Should return error for missing parameter
         assert response.status_code in [400, 422]
@@ -168,9 +154,7 @@ class TestDeviceLoginAPI:
             expiry=timezone.now() + timedelta(hours=1)
         )
 
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'USERTOKEN'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'USERTOKEN')
 
         if response.status_code == 200:
             data = response.json()
@@ -197,18 +181,14 @@ class TestDeviceLoginAPI:
             expiry=timezone.now() + timedelta(hours=1)
         )
 
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': ' SPACE '
-        }, content_type='application/json')
+        response = post_device_login(api_client, ' SPACE ')
 
         # Behavior depends on whether whitespace is trimmed
         assert response.status_code in [200, 401]
 
     def test_device_login_with_special_characters(self, api_client):
         """Test device login doesn't accept special characters."""
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'ABC-123!'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'ABC-123!')
 
         # Should not find code with special chars
         assert response.status_code == 401
@@ -222,9 +202,7 @@ class TestDeviceLoginAPI:
             expiry=timezone.now() + timedelta(hours=1)
         )
 
-        response = api_client.post('/api/v1/login/device_login', data={
-            'device_code': 'EXPIRY'
-        }, content_type='application/json')
+        response = post_device_login(api_client, 'EXPIRY')
 
         if response.status_code == 200:
             data = response.json()

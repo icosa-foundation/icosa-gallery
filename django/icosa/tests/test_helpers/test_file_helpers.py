@@ -12,6 +12,7 @@ from icosa.helpers.file import (
     get_content_type,
     validate_file,
     is_gltf2,
+    ProcessedUpload,
     UploadedFormat,
     VALID_FORMAT_TYPES,
     CONTENT_TYPE_MAP,
@@ -127,7 +128,7 @@ class TestValidateFile:
         mock_file.file = io.BytesIO(b'glTF')
 
         uploaded_file = UploadedFile(name='model.glb', file=mock_file.file)
-        result = validate_file(uploaded_file, 'glb')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.glb'), 'glb')
 
         assert result is not None
         assert isinstance(result, UploadedFormat)
@@ -141,7 +142,7 @@ class TestValidateFile:
         mock_file.name = 'model.obj'
 
         uploaded_file = UploadedFile(name='model.obj', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'obj')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.obj'), 'obj')
 
         assert result is not None
         assert result.extension == 'obj'
@@ -153,7 +154,7 @@ class TestValidateFile:
         mock_file = Mock()
 
         uploaded_file = UploadedFile(name='material.mtl', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'mtl')
+        result = validate_file(ProcessedUpload(uploaded_file, 'material.mtl'), 'mtl')
 
         assert result is not None
         assert result.extension == 'mtl'
@@ -163,7 +164,7 @@ class TestValidateFile:
     def test_validate_file_fbx(self):
         """Test validating an FBX file."""
         uploaded_file = UploadedFile(name='model.fbx', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'fbx')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.fbx'), 'fbx')
 
         assert result is not None
         assert result.extension == 'fbx'
@@ -173,7 +174,7 @@ class TestValidateFile:
     def test_validate_file_tilt(self):
         """Test validating a Tilt Brush file."""
         uploaded_file = UploadedFile(name='art.tilt', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'tilt')
+        result = validate_file(ProcessedUpload(uploaded_file, 'art.tilt'), 'tilt')
 
         assert result is not None
         assert result.extension == 'tilt'
@@ -183,7 +184,7 @@ class TestValidateFile:
     def test_validate_file_blocks(self):
         """Test validating a Blocks file."""
         uploaded_file = UploadedFile(name='model.blocks', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'blocks')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.blocks'), 'blocks')
 
         assert result is not None
         assert result.extension == 'blocks'
@@ -193,7 +194,7 @@ class TestValidateFile:
     def test_validate_file_vox(self):
         """Test validating a VOX file."""
         uploaded_file = UploadedFile(name='model.vox', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'vox')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.vox'), 'vox')
 
         assert result is not None
         assert result.extension == 'vox'
@@ -203,7 +204,7 @@ class TestValidateFile:
     def test_validate_file_ply(self):
         """Test validating a PLY file."""
         uploaded_file = UploadedFile(name='model.ply', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'ply')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.ply'), 'ply')
 
         assert result is not None
         assert result.extension == 'ply'
@@ -213,7 +214,7 @@ class TestValidateFile:
     def test_validate_file_stl(self):
         """Test validating an STL file."""
         uploaded_file = UploadedFile(name='model.stl', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'stl')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.stl'), 'stl')
 
         assert result is not None
         assert result.extension == 'stl'
@@ -223,7 +224,7 @@ class TestValidateFile:
     def test_validate_file_usdz(self):
         """Test validating a USDZ file."""
         uploaded_file = UploadedFile(name='model.usdz', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'usdz')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.usdz'), 'usdz')
 
         assert result is not None
         assert result.extension == 'usdz'
@@ -233,7 +234,7 @@ class TestValidateFile:
     def test_validate_file_ksplat(self):
         """Test validating a KSPLAT file."""
         uploaded_file = UploadedFile(name='model.ksplat', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'ksplat')
+        result = validate_file(ProcessedUpload(uploaded_file, 'model.ksplat'), 'ksplat')
 
         assert result is not None
         assert result.extension == 'ksplat'
@@ -243,7 +244,7 @@ class TestValidateFile:
     def test_validate_file_image_png(self):
         """Test validating a PNG image file."""
         uploaded_file = UploadedFile(name='texture.png', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'png')
+        result = validate_file(ProcessedUpload(uploaded_file, 'texture.png'), 'png')
 
         assert result is not None
         assert result.extension == 'png'
@@ -253,7 +254,7 @@ class TestValidateFile:
     def test_validate_file_image_jpg(self):
         """Test validating a JPG image file."""
         uploaded_file = UploadedFile(name='texture.jpg', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'jpg')
+        result = validate_file(ProcessedUpload(uploaded_file, 'texture.jpg'), 'jpg')
 
         assert result is not None
         assert result.extension == 'jpg'
@@ -262,7 +263,7 @@ class TestValidateFile:
     def test_validate_file_image_jpeg(self):
         """Test validating a JPEG image file."""
         uploaded_file = UploadedFile(name='texture.jpeg', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'jpeg')
+        result = validate_file(ProcessedUpload(uploaded_file, 'texture.jpeg'), 'jpeg')
 
         assert result is not None
         assert result.filetype == 'IMAGE'
@@ -277,7 +278,7 @@ class TestValidateFile:
     def test_validate_file_bin(self):
         """Test validating a BIN file (not a main file)."""
         uploaded_file = UploadedFile(name='data.bin', file=io.BytesIO())
-        result = validate_file(uploaded_file, 'bin')
+        result = validate_file(ProcessedUpload(uploaded_file, 'data.bin'), 'bin')
 
         assert result is not None
         assert result.extension == 'bin'
@@ -325,7 +326,7 @@ class TestIsGltf2:
 
         with patch('icosa.helpers.file.is_gltf2', return_value=True):
             uploaded_file = UploadedFile(name='model.gltf', file=mock_file)
-            result = validate_file(uploaded_file, 'gltf')
+            result = validate_file(ProcessedUpload(uploaded_file, 'model.gltf'), 'gltf')
 
             assert result is not None
             assert result.filetype == 'GLTF2'
@@ -337,7 +338,7 @@ class TestIsGltf2:
 
         with patch('icosa.helpers.file.is_gltf2', return_value=False):
             uploaded_file = UploadedFile(name='model.gltf', file=mock_file)
-            result = validate_file(uploaded_file, 'gltf')
+            result = validate_file(ProcessedUpload(uploaded_file, 'model.gltf'), 'gltf')
 
             assert result is not None
             assert result.filetype == 'GLTF1'

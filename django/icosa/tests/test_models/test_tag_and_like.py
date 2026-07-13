@@ -2,6 +2,7 @@
 Tests for Tag and UserLike models.
 """
 import pytest
+from datetime import timedelta
 from django.utils import timezone
 
 from icosa.models import Tag, UserLike
@@ -220,6 +221,11 @@ class TestUserLikeModel:
         like1 = UserLikeFactory(user=user1, asset=asset)
         like2 = UserLikeFactory(user=user2, asset=asset)
         like3 = UserLikeFactory(user=user3, asset=asset)
+
+        now = timezone.now()
+        UserLike.objects.filter(pk=like1.pk).update(date_liked=now - timedelta(seconds=2))
+        UserLike.objects.filter(pk=like2.pk).update(date_liked=now - timedelta(seconds=1))
+        UserLike.objects.filter(pk=like3.pk).update(date_liked=now)
 
         # Get likes ordered by date
         likes_desc = asset.userlike_set.order_by('-date_liked')

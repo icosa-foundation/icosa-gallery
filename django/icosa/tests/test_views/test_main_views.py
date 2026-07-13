@@ -340,9 +340,8 @@ class TestUploadsView:
         response = authenticated_client.get(reverse('icosa:uploads'))
         assert response.status_code == 200
 
-    @patch('icosa.views.main.upload')
-    @patch('icosa.views.main.queue_upload_asset_web_ui')
-    def test_upload_asset_post(self, mock_queue, mock_upload, authenticated_client, user):
+    @patch('icosa.views.main.upload_api_asset')
+    def test_upload_asset_post(self, mock_upload, authenticated_client, user):
         """Test uploading a new asset."""
         # Create a test GLB file
         glb_data = (
@@ -352,12 +351,13 @@ class TestUploadsView:
         )
         file = SimpleUploadedFile('test.glb', glb_data, content_type='model/gltf-binary')
 
-        response = authenticated_client.post(reverse('icosa:uploads'), {
+        response = authenticated_client.post(reverse('icosa:upload_asset'), {
             'file': file,
         })
 
-        # Should redirect after upload
-        assert response.status_code == 302
+        assert response.status_code == 200
+        assert response.json()['success'] is True
+        mock_upload.assert_awaited_once()
 
 
 @pytest.mark.django_db
@@ -403,6 +403,9 @@ class TestAssetEditView:
         response = authenticated_client.post(reverse('icosa:asset_edit', kwargs={'asset_url': asset.url}), {
             'name': 'New Name',
             'description': 'Updated description',
+            'license': asset.license,
+            'visibility': asset.visibility,
+            'category': asset.category,
             '_save_private': True,
         })
 
@@ -496,7 +499,7 @@ class TestReportAssetView:
         response = client.post(reverse('icosa:report_asset', kwargs={'asset_url': asset.url}), {
             'reason_for_reporting': 'Spam content',
             'asset_url': asset.url,
-            'honeypot': '',  # Honeypot field
+            'asset_ref': '',  # Honeypot field
         })
 
         # Should redirect to success page
@@ -589,6 +592,8 @@ class TestUserSettingsView:
         """Test that POST updates user settings."""
         response = authenticated_client.post(reverse('icosa:settings'), {
             'displayname': 'Updated Name',
+            'email': user.email,
+            'password_current': 'testpass123',
         })
 
         user.refresh_from_db()

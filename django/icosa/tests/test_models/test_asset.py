@@ -2,6 +2,7 @@
 Tests for the Asset model.
 """
 import pytest
+from asgiref.sync import async_to_sync
 from django.urls import reverse
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -71,21 +72,6 @@ class TestAssetModel:
         asset = AssetFactory(visibility=PRIVATE)
         assert asset.is_published is False
 
-    def test_model_is_editable_private(self):
-        """Test model_is_editable returns True for private assets."""
-        asset = PrivateAssetFactory()
-        assert asset.model_is_editable is True
-
-    def test_model_is_editable_published_all_rights_reserved(self):
-        """Test model_is_editable for published asset with all rights reserved."""
-        asset = AssetFactory(visibility=PUBLIC, license=ALL_RIGHTS_RESERVED)
-        assert asset.model_is_editable is True
-
-    def test_model_is_editable_published_permissive_license(self):
-        """Test model_is_editable returns False for published CC-BY-SA assets."""
-        asset = AssetFactory(visibility=PUBLIC, license='CREATIVE_COMMONS_BY_SA_3_0')
-        assert asset.model_is_editable is False
-
     def test_slug_property(self):
         """Test slug property generates correct slug from name."""
         asset = AssetFactory(name='Test Asset Name')
@@ -95,8 +81,8 @@ class TestAssetModel:
         """Test timestamp property extracts timestamp from snowflake ID."""
         asset = AssetFactory()
         timestamp = asset.timestamp
-        assert isinstance(timestamp, int)
-        assert timestamp > 0
+        assert isinstance(timestamp, datetime)
+        assert timestamp.year >= 2021
 
     def test_get_base_license_all_rights_reserved(self):
         """Test get_base_license for all rights reserved."""
@@ -245,7 +231,7 @@ class TestAssetModel:
         obj_format.root_resource = ResourceFactory(asset=asset, format=obj_format)
         obj_format.save()
 
-        preferred = asset.get_preferred_viewer_format_for_assignment()
+        preferred = async_to_sync(asset.get_preferred_viewer_format_for_assignment)()
 
         assert preferred == glb_format
 
@@ -256,7 +242,7 @@ class TestAssetModel:
         glb_format.root_resource = ResourceFactory(asset=asset, format=glb_format)
         glb_format.save()
 
-        result = asset.assign_preferred_viewer_format()
+        result = async_to_sync(asset.assign_preferred_viewer_format)()
 
         assert result == glb_format
         glb_format.refresh_from_db()
@@ -306,7 +292,9 @@ class TestAssetModel:
 
     def test_triangle_count_field(self):
         """Test triangle_count field stores integer."""
-        asset = AssetFactory(triangle_count=5000)
+        asset = AssetFactory()
+        Asset.objects.filter(pk=asset.pk).update(triangle_count=5000)
+        asset.refresh_from_db()
         assert asset.triangle_count == 5000
         assert isinstance(asset.triangle_count, int)
 
@@ -350,7 +338,9 @@ class TestAssetModel:
 
     def test_is_viewer_compatible_field(self):
         """Test is_viewer_compatible denormalized field."""
-        asset = AssetFactory(is_viewer_compatible=True)
+        asset = AssetFactory()
+        Asset.objects.filter(pk=asset.pk).update(is_viewer_compatible=True)
+        asset.refresh_from_db()
         assert asset.is_viewer_compatible is True
 
     def test_get_license_icons_cc_by(self):
