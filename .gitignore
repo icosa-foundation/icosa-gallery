@@ -155,6 +155,8 @@ django/huey.db
 django/huey.db-wal
 django/huey.db-shm
 
+# userland overrides
+django/icosa_custom_overrides/
 
 # node stuff
 
@@ -176,3 +178,5 @@ pyproject.toml
 shell.nix
 uv.lock
 .envrc
+certbot/**
+tags

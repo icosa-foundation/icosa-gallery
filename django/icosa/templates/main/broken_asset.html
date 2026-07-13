@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% load asset_tags %}
+{% load honeypot %}
+{% load fontawesome_tags %}
+{% load static %}
+
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col col-lg-8 offset-lg-2">
+            <div>
+                <h2>
+                    Can't view &ldquo;{{ asset.name }}&rdquo; by {{ asset.owner.displayname }}?
+                </h2>
+                <p>Sorry that you can't view this work. So that we can try to fix it, please let us know in the form below, what device/browser and operating system you are using (such as "Firefox & Windows 10" or "iPhone 15") and any other errors you might have seen.</p>
+                {% if request.user.is_anonymous %}
+                <p>If you are happy to be contacted about this issue, please leave your email address below. This is entirely optional.</p>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    {% render_honeypot_field %}
+                    {{ form.asset_url }}
+                    {% if form.reason_for_reporting.errors %}
+                        {{form.reason_for_reporting.errors}}
+                    {% endif %}
+                    {{ form.reason_for_reporting.label_tag }}
+                    {{ form.reason_for_reporting }}
+                    {% if request.user.is_anonymous %}
+                        {% if form.contact_email.errors %}
+                            {{form.contact_email.errors}}
+                        {% endif %}
+                        {{ form.contact_email.label_tag }}
+                        {{ form.contact_email }}
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
