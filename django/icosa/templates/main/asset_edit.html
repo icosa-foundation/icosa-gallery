@@ -29,38 +29,16 @@
                 {% for field in form %}
                     {% if field.name != "thumbnail_override" %}
                         <div class="field-group">
-                            {% if is_editable %}
-                                {% include "partials/edit_asset_field.html" %}
-                            {% else %}
-                                {% if field.name in form.editable_fields %}
-                                    {% include "partials/edit_asset_field.html" %}
-                                {% else %}
-                                    {% include "partials/non_edit_asset_field.html" %}
-                                {% endif %}
-                            {% endif %}
+                            {% include "partials/edit_asset_field.html" %}
                         </div>
                     {% endif %}
                 {% endfor %}
-                    <div class="field-group">
-                        <p>{% trans "Please note, once you have made your work public or unlisted, if you have chosen a CC license, you cannot make the work private or make changes to the model files." %}</p>
-                        <div class="dropdown">
-                            <a class="btn btn-primary dropdown-toggle" href="#" role="button" id="savebtngroup" data-bs-toggle="dropdown" aria-expanded="false">{% trans "Save" %}</a>
-                                <ul class="dropdown-menu" aria-labelledby="savebtngroup">
-                                    {% if is_editable %}
-                                        <li id="draft-mode"><button type="submit" name="_save_private" class="dropdown-item">{% trans "Save as Draft" %}</button></li>
-                                    {% endif %}
-                                    <li id="publish-mode"><button type="submit" name="_save_public" class="dropdown-item">{% trans "Publish" %}</button></li>
-                                    <li><button type="submit" name="_save_unlisted" class="dropdown-item">{% trans "Publish (as unlisted)" %}</button></li>
-                                </ul>
-                        </div>
-                    </div>
+                <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
                 <a href="{% url 'icosa:uploads' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
             </form>
-            {% if is_editable %}
-                <p>
-                  <button href="javascript:void(0);" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">{% trans "Delete" %}</button>
-                </p>
-            {% endif %}
+            <p>
+                <button href="javascript:void(0);" class="btn btn-xs btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">{% trans "Delete" %}</button>
+            </p>
         </div>
     </div>
 </div>

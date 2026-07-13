@@ -6,7 +6,8 @@
             <div class="col col-md-8 offset-md-2 col-lg-6 offset-lg-3">
                 <h1>{% trans "My Settings" %}</h1>
                 {% if need_login %}
-                    <p>{% blocktrans %}You have changed your password, please <a href="{% url 'icosa:login' %}">log in</a> again.{% endblocktrans %}</p>
+                    {% url 'icosa:login' as login_url %}
+                    <p>{% blocktrans %}You have changed your password, please <a href="{{ login_url }}">log in</a> again.{% endblocktrans %}</p>
                 {% else %}
                     <form action="{% url 'icosa:settings' %}" method="post" novalidate>
                         {% csrf_token %}

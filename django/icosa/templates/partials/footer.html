@@ -29,15 +29,20 @@
                                     </a>
                                 </strong>
                             </li>
+                            <li>
+                                <a href="{% url 'icosa:privacy_policy' %}">
+                                    {% trans "Privacy Policy" %}
+                                </a>
+                            </li>
                         {% endif %}
-                        <li{% if not can_view_in_maintenance %} class="push"{% endif %}>
-                            <a href="{% url 'icosa:privacy_policy' %}">
-                                {% trans "Privacy Policy" %}
+                        <li>
+                            <a href="{% url 'icosa:terms' %}">
+                                {% trans "Terms and Conditions" %}
                             </a>
                         </li>
                         <li class="last">
-                            <a href="{% url 'icosa:terms' %}">
-                                {% trans "Terms and Conditions" %}
+                            <a href="{% url 'icosa:help' %}">
+                                {% trans "Need help?" %}
                             </a>
                         </li>
                     </ul>

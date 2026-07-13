@@ -6,6 +6,7 @@
 {% load i18n %}
 
 {% block extrahead %}
+{% if not settings.DEBUG %}
 <script>
     (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[])
     .push(arguments);},l=d.createElement(e),l.async=1,l.src=u,
@@ -13,6 +14,7 @@
     (window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
     ml('account', '1187658');
 </script>
+{% endif %}
 {% endblock extrahead %}
 {% block content %}
 <div class="container">
@@ -23,8 +25,10 @@
             <h1>{% trans "Coming Soon" %}</h1>
             <p>{% trans "A completely re-written Icosa Gallery with lots of new features!" %}</p>
             <br>
+            {% if not settings.DEBUG %}
             <div class="ml-embedded" data-form="cTULY6"></div>
             <br>
+            {% endif %}
         </div>
     </div>
 </div>

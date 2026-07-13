@@ -22,7 +22,8 @@
                         {% endif %}
                     {% else %}
                         <p>{% trans "You are currently logged in." %}</p>
-                        <p>{% blocktrans %}Manage <a href="{% url 'icosa:uploads' %}">your uploads</a>{% endblocktrans %}</p>
+                        {% url 'icosa:uploads' as uploads_url %}
+                        <p>{% blocktrans %}Manage <a href="{{ uploads_url }}">your uploads</a>{% endblocktrans %}</p>
                     {% endif %}
                 {% else %}
                     {% include "partials/login_notice.html" %}

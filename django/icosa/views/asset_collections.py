@@ -5,6 +5,8 @@ from django.http import HttpResponseBadRequest, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import never_cache
+
+from icosa.helpers.moderation import get_str_content_type
 from icosa.models import (
     PUBLIC,
     UNLISTED,
@@ -181,5 +183,7 @@ def user_asset_collection_view(request, user_url: str, collection_url: str):
         "page_title": collection.name or "Untitled collection",
         "collection": collection,
         "owner": owner,
+        "user_is_moderator": request.user.groups.filter(name="Moderator").exists(),
+        "content_type": get_str_content_type(collection),
     }
     return render(request, template, context)

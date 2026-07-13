@@ -49,6 +49,11 @@
             {% else %}
                 <p>{% blocktrans with name=owner.displayname %}{{ name }} hasn't created anything yet.{% endblocktrans %}</p>
             {% endif %}
+            {% with obj=owner %}
+            {% if user_is_moderator and obj.moderation_state == "QUERIED" %}
+            {% include "include/moderator_actions.html" %}
+            {% endif %}
+            {% endwith %}
         </div>
         {% include "partials/pagination.html" %}
     </div>

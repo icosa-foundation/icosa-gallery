@@ -1,16 +1,17 @@
 {% load i18n %}
+<h2>{% trans "Superuser actions:" %}</h2>
 <form id="super-thumbnail-form" action="{% url 'icosa:make_asset_thumbnail' asset_url=asset.url %}" method="post">
     {% csrf_token %}
     <input type="hidden" name="thumbnail_image">
-    <input type="submit" class="btn btn-danger btn-inline" id="super-thumbnail-form-submit" value="{% trans "Generate thumbnail image" %}">
+    <input type="submit" class="btn btn-secondary btn-inline" id="super-thumbnail-form-submit" value="{% trans "Generate thumbnail image" %}">
 </form>
 <form id="super-preview-form" action="{% url 'icosa:make_asset_masthead_image' asset_url=asset.url %}" method="post">
     {% csrf_token %}
     <input type="hidden" name="masthead_image">
-    <input type="submit" class="btn btn-danger btn-inline" id="super-masthead-form-submit" value="{% trans "Generate masthead image section" %}">
+    <input type="submit" class="btn btn-secondary btn-inline" id="super-masthead-form-submit" value="{% trans "Generate masthead image section" %}">
 </form>
 <p>
-    <button class="btn btn-danger" id="viewer-guide-button">{% trans "Show guides" %}</button>
+    <button class="btn btn-secondary" id="viewer-guide-button">{% trans "Show guides" %}</button>
 </p>
 <script>
     let thumbnailForm = document.querySelector("#super-thumbnail-form");

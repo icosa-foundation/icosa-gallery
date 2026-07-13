@@ -22,6 +22,11 @@
                 {% endwith %}
             {% endfor %}
         </div>
+        {% with obj=collection %}
+        {% if user_is_moderator and obj.moderation_state == "QUERIED" %}
+        {% include "include/moderator_actions.html" %}
+        {% endif %}
+        {% endwith %}
         {% include "partials/pagination.html" %}
     </div>
 </div>

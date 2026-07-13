@@ -56,3 +56,8 @@ class MastheadSection(models.Model):
         if self.asset is None:
             return PUBLIC
         return self.asset.visibility
+
+    async def avisibility(self):
+        if self.asset is None:
+            return PUBLIC
+        return self.asset.visibility

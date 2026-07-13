@@ -33,7 +33,8 @@
                     {% endif %}
                     <p class="warning"><em>{% trans "Only do this if you are running an app that came from a source that you trust with access to your Icosa account" %}</em></p>
                 {% else %}
-                    <p>{% blocktrans %}You must <a href="{% url 'icosa:login' %}?next={{ request.path }}">login</a> to get a device code.{% endblocktrans %}</p>
+                    {% url 'icosa:login' as login_url %}
+                    <p>{% blocktrans %}You must <a href="{{ login_url }}?next={{ request.path }}">login</a> to get a device code.{% endblocktrans %}</p>
                     <p>{% blocktrans with uri=request.build_absolute_uri %}Or if it's easier visit <strong><a href="{{ uri }}">{{ uri }}</a></strong> on another device.{% endblocktrans %}</p>
                 {% endif %}
             </div>

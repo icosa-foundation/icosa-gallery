@@ -13,6 +13,7 @@ from pathlib import Path
 import sentry_sdk
 from boto3.s3.transfer import TransferConfig as BotoTransferConfig
 from botocore.client import Config as BotoConfig
+from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,6 +79,9 @@ DJANGO_STORAGE_SECRET_KEY = os.environ.get("DJANGO_STORAGE_SECRET_KEY")
 DJANGO_STORAGE_CUSTOM_DOMAIN = os.environ.get("DJANGO_STORAGE_CUSTOM_DOMAIN")
 DJANGO_STORAGE_MEDIA_ROOT = os.environ.get("DJANGO_STORAGE_MEDIA_ROOT")
 
+
+LOCAL_MEDIA_STORAGE = True
+
 if (
     DJANGO_STORAGE_URL
     and DJANGO_STORAGE_BUCKET_NAME
@@ -119,9 +123,9 @@ if (
         AWS_S3_TRANSFER_CONFIG = BotoTransferConfig(
             multipart_threshold=5368709120,  # 5GiB in bytes
         )
-        MEDIA_ROOT = None
-        MEDIA_URL = "/"  # unused with django-storages
-        LOCAL_MEDIA_STORAGE = False
+    MEDIA_ROOT = None
+    MEDIA_URL = "/"  # unused with django-storages
+    LOCAL_MEDIA_STORAGE = False
 else:
     STORAGES = {
         "default": {
@@ -141,7 +145,7 @@ STAFF_ONLY_ACCESS = os.environ.get("DJANGO_STAFF_ONLY_ACCESS")
 # Application definition
 
 APPEND_SLASH = False
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1073741824  # 1000MB
 INSTALLED_APPS = [
     "dal",
     "dal_select2",
@@ -160,13 +164,16 @@ INSTALLED_APPS = [
     "constance.backends.database",
     "corsheaders",
     "email_logger",
+    "enforced_permissions",
     "honeypot",
     "huey.contrib.djhuey",
     "import_export",
     "maintenance_mode",
-    "silk",
     "simplemathcaptcha",
 ]
+USE_CUSTOM_OVERRIDES = bool(os.environ.get("DJANGO_USE_CUSTOM_OVERRIDES", False))
+if USE_CUSTOM_OVERRIDES:
+    INSTALLED_APPS = ["icosa_custom_overrides",] + INSTALLED_APPS
 
 
 AUTHENTICATION_BACKENDS = [
@@ -179,7 +186,6 @@ AUTHENTICATION_BACKENDS = [
 
 MIDDLEWARE = [
     "django.middleware.gzip.GZipMiddleware",
-    "silk.middleware.SilkyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -233,8 +239,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "icosa.context_processors.settings_processor",
                 "constance.context_processors.config",
+                "icosa.context_processors.settings_processor",
                 "icosa.context_processors.user_asset_likes_processor",
             ],
             "loaders": [
@@ -267,8 +273,15 @@ DATABASES = {
         "NAME": os.environ.get("POSTGRES_DB"),
         "USER": os.environ.get("POSTGRES_USER"),
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-        "HOST": os.environ.get("POSTGRES_HOST", "db"),
+        "HOST": os.environ.get("POSTGRES_HOST", "postgres"),
         "PORT": 5432,
+        "OPTIONS": {
+            "pool": {
+                "min_size": 2,
+                "max_size": 90,
+                "timeout": 30,
+            }
+        },
     }
 }
 
@@ -300,8 +313,6 @@ PASSWORD_RESET_TIMEOUT = 3600  # 1 hour, in seconds
 LANGUAGE_CODE = "en-us"
 
 # Supported languages for localization
-from django.utils.translation import gettext_lazy as _
-
 LANGUAGES = [
     ("en", _("English")),
     ("es", _("Spanish")),
@@ -450,6 +461,39 @@ if DEBUG_TOOLBAR_ENABLED:
         "SHOW_TOOLBAR_CALLBACK": show_toolbar,
     }
 
+# Enforced permissions settings
+_TYPICAL_PERMS = {
+    "Content Editor": {"add": True, "delete": True, "change": True},
+    "Moderator": {"add": False, "delete": False, "change": False},
+}
+
+_ALL_NO_PERMS = {
+    "Content Editor": False,
+    "Moderator": False,
+}
+
+ENFORCED_PERMISSIONS = {
+    "groups": {
+        "Content Editor": "Content Editor",
+        "Moderator": "Moderator",
+    },
+    "exclude": [],
+    "permissions": {
+        "auth.*": _ALL_NO_PERMS,
+        "constance.*": _TYPICAL_PERMS,
+        "icosa.*": _TYPICAL_PERMS,
+        # The following models aren't in admin
+        "admin.logentry": _ALL_NO_PERMS,
+        "contenttypes.contenttype": _ALL_NO_PERMS,
+        "sessions.session": _ALL_NO_PERMS,
+        # The following models should only be modified by superusers
+        "sites.site": _ALL_NO_PERMS,
+        "axes.*": _ALL_NO_PERMS,
+        "email_logger.*": _ALL_NO_PERMS,
+    },
+}
+
+
 # Honeypot settings
 
 HONEYPOT_FIELD_NAME = os.environ.get("DJANGO_HONEYPOT_FIELD_NAME", "asset_ref")
@@ -495,41 +539,11 @@ MAINTENANCE_MODE_IGNORE_URLS = [
     "/v1/",
 ]
 
+MODERATION_REMINDERS_ENABLED = os.environ.get("DJANGO_MODERATION_REMINDERS_ENABLED", False)
+
 # Ninja settings
 
 NINJA_PAGINATION_PER_PAGE = 20
-
-# Silk settings
-
-
-def silky_perms(user):
-    return user.is_superuser
-
-
-def get_profile_intercept():
-    percent = 0
-    if os.environ.get("DJANGO_ENABLE_PROFILING", False):
-        if DEBUG:
-            percent = 100
-        percent = 1
-        try:
-            percent = int(
-                os.environ.get(
-                    "DJANGO_PROFILING_INTERCEPT_PERCENT",
-                    percent,
-                )
-            )
-        except ValueError:
-            pass
-    return percent
-
-
-SILKY_PYTHON_PROFILER = os.environ.get("DJANGO_ENABLE_PROFILING", False)
-SILKY_INTERCEPT_PERCENT = get_profile_intercept()
-SILKY_AUTHENTICATION = True  # User must login
-SILKY_AUTHORISATION = True  # User must have permissions
-SILKY_PERMISSIONS = silky_perms
-
 
 # Sentry settings
 SENTRY_DSN = os.environ.get("DJANGO_SENTRY_DSN", None)

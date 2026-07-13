@@ -12,5 +12,6 @@
 {% trans "is currently restricted to invited users only while we iron a few things out." %}</p>
 <p>{% trans "If you already hold an account with Icosa Gallery, don't worry, you'll be able to log in once we open back up to everyone." %}</p>
 {% if config.WAITLIST_IF_SIGNUP_CLOSED %}
-    <p>{% blocktrans %}<a href="{% url 'icosa:waitlist' %}">Sign up to the waitlist</a> to be notified when you can create an account.{% endblocktrans %}</p>
+    {% url 'icosa:waitlist' as waitlist_url %}
+    <p>{% blocktrans %}<a href="{{ waitlist_url }}">Sign up to the waitlist</a> to be notified when you can create an account.{% endblocktrans %}</p>
 {% endif %}

@@ -6,7 +6,8 @@
             <div class="col col-lg-6 offset-lg-3">
                 <h1>{% trans "Register" %}</h1>
                 {% if success %}
-                    <p>{% blocktrans %}Registration was successful, you can now <a href="{% url 'icosa:login' %}">login</a>.{% endblocktrans %}</p>
+                    {% url 'icosa:login' as login_url %}
+                    <p>{% blocktrans %}Registration was successful, you can now <a href="{{ login_url }}">login</a>.{% endblocktrans %}</p>
                 {% else %}
                     <p>{% trans "Activation link is invalid." %}</p>
                 {% endif %}

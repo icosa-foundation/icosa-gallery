@@ -1,5 +1,7 @@
+from pathlib import Path
 from typing import List, Optional
 
+from django.core.cache import cache
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -7,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .asset import Asset
 from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
+from .helpers import get_cached_cors_allow_list
 from .resource import Resource
 
 ROLE_MAX_LENGTH = 255
@@ -65,6 +68,16 @@ class Format(models.Model):
         resource.save()
         self.save()
 
+    async def aadd_root_resource(self, resource):
+        if not resource.format:
+            from icosa.api.exceptions import RootResourceException
+
+            raise RootResourceException("Resource must have a format associated with it.")
+        self.root_resource = resource
+        resource.format = None
+        await resource.asave()
+        await self.asave()
+
     def get_resources(self, query: Q = Q(), exclude_q: Optional[Q] = None):
         resources = self.resource_set.filter(query)
         if exclude_q is not None:
@@ -86,16 +99,23 @@ class Format(models.Model):
         return self.get_resources(query, exclude_q)
 
     def get_resource_data(self, resources: List[Resource]):
+        local_files = []
+        for r in resources:
+            if not r.file:
+                continue
+            if r.uploaded_file_path:
+                full_path = str(Path(r.uploaded_file_path).parent)
+            else:
+                full_path = ""
+            local_files.append([f"{STORAGE_PREFIX}{r.file.name}", full_path])
+
         if all([x.is_cors_allowed and x.remote_host for x in resources]):
-            external_files = [x.external_url for x in resources if x.external_url]
-            local_files = [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file]
+            external_files = [[x.external_url, ""] for x in resources if x.external_url]
             resource_data = {
                 "files_to_zip": external_files + local_files,
             }
         elif all([x.file for x in resources]):
-            resource_data = {
-                "files_to_zip": [f"{STORAGE_PREFIX}{x.file.name}" for x in resources if x.file],
-            }
+            resource_data = {"files_to_zip": local_files}
         else:
             resource_data = {}
         return resource_data
@@ -109,6 +129,27 @@ class Format(models.Model):
             return self.format_type.lower()
         return role_label.label
 
+    @property
+    def is_cors_allowed(self):
+        cors_allow_list = get_cached_cors_allow_list()
+        resources = self.get_all_resources()
+        resource_pks = "-".join([str(x.pk) for x in resources])
+        cache_key = f"format_is_cors_allowed-{self.pk}-{resource_pks}-{cors_allow_list}"
+
+        is_allowed = cache.get(cache_key, None)
+
+        if is_allowed is not None:
+            return is_allowed
+
+        # We got nothing back from the cache; let's compute the value.
+        disallowed_list = [not x.is_cors_allowed for x in resources]
+        is_disallowed = any(disallowed_list)
+
+        # NOTE(james): Purely so I leave parsing double-negatives in my head until the very end.
+        is_allowed = not is_disallowed
+        cache.set(cache_key, is_allowed, None)  # No expiry
+        return is_allowed
+
     class Meta:
         verbose_name = _("Format")
         verbose_name_plural = _("Formats")
@@ -116,6 +157,8 @@ class Format(models.Model):
             models.Index(
                 fields=[
                     "role",
+                    "is_preferred_for_gallery_viewer",
+                    "is_preferred_for_download",
                 ]
             )
         ]

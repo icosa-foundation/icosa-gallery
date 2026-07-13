@@ -34,12 +34,14 @@
 
 <h3>{% trans "Someone else has already claimed my work. What can I do?" %}</h3>
 
-<p>{% blocktrans %}If you find your work under somebody else's name then click the button below. We'll investigate. Please don't use this link if you've forgotten your password. Instead, <a href="{% url 'icosa:password_reset' %}">reset your password</a>.{% endblocktrans %}</p>
+{% url 'icosa:password_reset' as password_reset_url %}
+<p>{% blocktrans %}If you find your work under somebody else's name then click the button below. We'll investigate. Please don't use this link if you've forgotten your password. Instead, <a href="{{ password_reset_url }}">reset your password</a>.{% endblocktrans %}</p>
 
 <p><button class="btn btn-primary btn-enquiry" data-bs-toggle="modal" data-bs-target="#enquiry-modal" data-enquiry-subject="CREDITED_TO_SOMEONE_ELSE">{% trans "My work is credited to someone else" %}</button></p>
 
 <h3>{% trans "What types of licenses are available?" %}</h3>
-<p>{% blocktrans %}Find out <a href="{% url 'icosa:licenses' %}">more information on what kind of licenses Icosa Gallery offers</a>.{% endblocktrans %}</p>
+{% url 'icosa:licenses' as licenses_url %}
+<p>{% blocktrans %}Find out <a href="{{ licenses_url }}">more information on what kind of licenses Icosa Gallery offers</a>.{% endblocktrans %}</p>
 
             </div>
         </div>
