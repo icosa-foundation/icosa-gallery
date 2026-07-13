@@ -1,8 +1,9 @@
 import json
 import os
 
-from django.core.management.base import BaseCommand
 from django_project import settings
+
+from django.core.management.base import BaseCommand
 from icosa.models import Asset
 
 media_root = os.path.abspath(os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT))

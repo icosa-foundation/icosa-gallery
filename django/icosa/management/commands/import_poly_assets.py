@@ -5,8 +5,9 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
-from django.core.management.base import BaseCommand
 from django_project import settings
+
+from django.core.management.base import BaseCommand
 from icosa.helpers.file import get_content_type, is_gltf2
 from icosa.helpers.snowflake import generate_snowflake
 from icosa.helpers.storage import get_b2_bucket

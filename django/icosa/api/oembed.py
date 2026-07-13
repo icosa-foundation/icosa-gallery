@@ -1,12 +1,13 @@
 from typing import Optional
 
+from ninja import Router
+from ninja.errors import HttpError
+
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.urls import resolve
 from icosa.api.schema import OembedOut
 from icosa.models import Asset
-from ninja import Router
-from ninja.errors import HttpError
 
 router = Router()
 

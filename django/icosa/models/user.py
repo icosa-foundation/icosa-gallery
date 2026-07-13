@@ -3,14 +3,17 @@ import string
 from datetime import datetime, timedelta
 
 import jwt
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):
-    displayname = models.CharField("Display Name", max_length=255)
+    displayname = models.CharField(_("Display Name"), max_length=255)
+    email = models.EmailField(_("email address"), blank=True, unique=True)
 
     def get_absolute_url(self):
         owners = self.assetowner_set.all()
@@ -22,6 +25,12 @@ class User(AbstractUser):
         else:
             url = None
         return url
+
+    def get_url(self):
+        owners = self.assetowner_set.all()
+        if owners.exists():
+            return owners.first().url
+        return None
 
     @staticmethod
     def generate_device_code(length=5):

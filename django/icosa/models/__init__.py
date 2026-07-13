@@ -1,6 +1,8 @@
 # Required to keep linters happy when re-exporting.
 __all__ = [
     "Asset",
+    "AssetCollection",
+    "AssetCollectionAsset",
     "AssetOwner",
     "DeviceCode",
     "Format",
@@ -8,6 +10,8 @@ __all__ = [
     "BulkSaveLog",
     "HiddenMediaFileLog",
     "MastheadSection",
+    "ModerationEvent",
+    "ModerationNotification",
     "Oauth2Client",
     "Oauth2Code",
     "Oauth2Token",
@@ -24,6 +28,7 @@ __all__ = [
 ]
 from .asset import Asset
 from .asset_owner import AssetOwner as AssetOwner
+from .collection import AssetCollection, AssetCollectionAsset
 from .common import *  # noqa
 from .device_code import DeviceCode
 from .format import Format, FormatRoleLabel
@@ -37,6 +42,10 @@ from .helpers import (
 )
 from .log import BulkSaveLog, HiddenMediaFileLog
 from .masthead import MastheadSection
+from .moderation import (
+    ModerationEvent,
+    ModerationNotification,
+)
 from .oauth import Oauth2Client, Oauth2Code, Oauth2Token
 from .resource import Resource
 from .tag import Tag

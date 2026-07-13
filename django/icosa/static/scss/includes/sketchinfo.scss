@@ -44,9 +44,13 @@
 
 
   .actions {
+    font-size: 0.875em;
     a {
+      margin-inline-start: 1rem;
+      white-space: nowrap;
+
       &:first-child {
-        padding-inline-end: 1rem;
+        margin-inline-start: 0;
       }
     }
   }

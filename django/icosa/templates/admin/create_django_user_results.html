@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+
+
+{% block content %}
+    <h1>Django users from Asset Owners</h1>
+    {% if created_objs %}
+    <h2>Created these Django users with passwords:</h2>
+    <ul>
+    {% for item in created_objs %}
+        <li>
+            <a href="{% url 'admin:icosa_user_change' item.obj.id %}">{{ item.obj.username }}</a>:
+            <input type="text" value="{{ item.password }}" readonly>
+        </li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if existing_objs %}
+    <h2>Skipped creating these existing Django users:</h2>
+    <ul>
+    {% for obj in existing_objs %}
+        <li><a href="{% url 'admin:icosa_user_change' obj.id %}">{{ obj.username }}</a></li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+    <p><a href="{{ return_url }}">Back to Asset Owners</a></p>
+{% endblock content %}

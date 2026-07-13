@@ -27,6 +27,7 @@ RUN set -x            \
 # npm packages setup
 # Disabled until we need to use the gltf converter
 # COPY package.json .
+# COPY .npmrc .
 # RUN npm install
 
 # Virtualenv setup
@@ -58,7 +59,6 @@ RUN set -x            \
     && apt-get install -y --no-install-recommends $BUILD_DEPS
 
 WORKDIR /opt
-EXPOSE 8001
 
 COPY --from=builder /venv /venv
 # Disabled until we need to use the gltf converter
