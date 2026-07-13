@@ -1,3 +1,4 @@
+import logging
 from collections import OrderedDict
 from datetime import datetime
 from typing import Optional
@@ -10,11 +11,17 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
+
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
+from icosa.model_mixins import (
+    MOD_DEFERRED,
+    MOD_MODIFIED,
+    MOD_NEW,
+    ModerationMixin,
+)
 
 from .common import (
-    ALL_RIGHTS_RESERVED,
     ASSET_STATE_CHOICES,
     ASSET_VISIBILITY_CHOICES,
     CATEGORY_CHOICES,
@@ -34,6 +41,8 @@ from .helpers import (
 )
 from .log import HiddenMediaFileLog
 
+logger = logging.getLogger("django")
+
 LIKES_WEIGHT = 100
 VIEWS_WEIGHT = 0.1
 RECENCY_WEIGHT = 1
@@ -41,7 +50,7 @@ RECENCY_WEIGHT = 1
 NON_REMIXABLE_FORMAT_TYPES = ["TILT", "BLOCKS"]
 
 
-class Asset(models.Model):
+class Asset(ModerationMixin):
     COLOR_SPACES = [("LINEAR", "LINEAR"), ("GAMMA", "GAMMA")]
     id = models.BigAutoField(primary_key=True)
     url = models.CharField(max_length=255, blank=True, null=True, unique=True)
@@ -76,6 +85,7 @@ class Asset(models.Model):
     update_time = models.DateTimeField(null=True, blank=True)
     license = models.CharField(max_length=50, null=True, blank=True, choices=LICENSE_CHOICES)
     tags = models.ManyToManyField("Tag", blank=True)
+    raw_tags = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=255, null=True, blank=True, choices=CATEGORY_CHOICES)
     transform = models.JSONField(blank=True, null=True)
     camera = models.JSONField(blank=True, null=True)
@@ -120,27 +130,17 @@ class Asset(models.Model):
         return self.visibility in [PUBLIC, UNLISTED]
 
     @property
-    def model_is_editable(self):
-        # Once a permissable license has been chosen, and the asset is
-        # available for use in other models, we cannot allow changing anything
-        # about it. Doing so would allow abuse.
-        is_editable = True
-        if self.is_published and self.license not in [
-            None,
-            ALL_RIGHTS_RESERVED,
-            "CREATIVE_COMMONS_BY_ND_3_0",
-            "CREATIVE_COMMONS_BY_3_0",
-        ]:
-            is_editable = False
-        return is_editable
-
-    @property
     def slug(self):
         return slugify(self.name)
 
     @property
     def timestamp(self):
         return get_snowflake_timestamp(self.id)
+
+    def get_displayname(self):
+        # Used for compatibiliy with AssetOwner and AssetCollection's methods
+        # of the same name.
+        return self.name
 
     def get_base_license(self) -> str:
         # Transform our internal license representations to be compatible with
@@ -167,25 +167,25 @@ class Asset(models.Model):
         else:
             return None
 
-    def get_preferred_viewer_format_for_assignment(self):
+    async def get_preferred_viewer_format_for_assignment(self):
         formats = self.format_set.filter(root_resource__isnull=False)
         # GLB is our primary preferred format;
-        inst = formats.filter(format_type="GLB").last()
+        inst = await formats.filter(format_type="GLB").alast()
         if inst is not None:
             return inst
 
         # GLTF2 is the next best option;
-        inst = formats.filter(format_type="GLTF2").last()
+        inst = await formats.filter(format_type="GLTF2").alast()
         if inst is not None:
             return inst
 
         # GLTF1, if we must.
-        inst = formats.filter(format_type="GLTF1").last()
+        inst = await formats.filter(format_type="GLTF1").alast()
         if inst is not None:
             return inst
 
         # OBJ, if we really must
-        inst = formats.filter(format_type="OBJ").last()
+        inst = await formats.filter(format_type="OBJ").alast()
         if inst is not None:
             return inst
 
@@ -193,7 +193,7 @@ class Asset(models.Model):
         # TODO: the ordering of these matters, but perhaps it is unlikely that
         # a usdz and ksplat are present (for example).
         for format_type in ["KSPLAT", "PLY", "STL", "SOG", "SPZ", "SPLAT", "USDZ", "VOX"]:
-            inst = formats.filter(format_type=format_type).last()
+            inst = await formats.filter(format_type=format_type).alast()
             if inst is not None:
                 # This will return the first we find from the list above; this
                 # is why ordering matters.
@@ -201,38 +201,17 @@ class Asset(models.Model):
 
         return None
 
-    def assign_preferred_viewer_format(self):
-        preferred_format = self.get_preferred_viewer_format_for_assignment()
+    async def assign_preferred_viewer_format(self):
+        preferred_format = await self.get_preferred_viewer_format_for_assignment()
         if preferred_format is not None:
             # TODO(james) do we mark all other formats as not preferred?
             preferred_format.is_preferred_for_gallery_viewer = True
-            preferred_format.save()
+            await preferred_format.asave()
         return preferred_format
 
     @property
     def preferred_viewer_format(self):
         return self.format_set.filter(is_preferred_for_gallery_viewer=True).first()
-
-    @property
-    def has_cors_allowed_preferred_format(self):
-        preferred_format = self.preferred_viewer_format
-        if not preferred_format:
-            return False
-
-        # If this asset's preferred_format has a file managed by Django
-        # storage, or if any of the externally-hosted files' sources have been
-        # allowed by the site admin in django constance settings, then it will
-        # be viewable.
-        is_allowed = False
-
-        for format in self.format_set.all():
-            root = format.root_resource
-            if root is not None:
-                if root.file or root.is_cors_allowed:
-                    is_allowed = True
-                    break
-
-        return is_allowed
 
     def get_absolute_url(self):
         return reverse("icosa:asset_view", kwargs={"asset_url": self.url})
@@ -301,7 +280,24 @@ class Asset(models.Model):
     def calc_is_viewer_compatible(self):
         if not self.pk:
             return False
-        return self.has_cors_allowed_preferred_format
+        preferred_format = self.preferred_viewer_format
+        if not preferred_format:
+            return False
+
+        # If this asset's preferred_format has a file managed by Django
+        # storage, or if any of the externally-hosted files' sources have been
+        # allowed by the site admin in django constance settings, then it will
+        # be viewable.
+        is_allowed = False
+
+        for format in self.format_set.all():
+            root = format.root_resource
+            if root is not None:
+                if root.file or root.is_cors_allowed:
+                    is_allowed = True
+                    break
+
+        return is_allowed
 
     def denorm_format_types(self):
         if not self.pk:
@@ -323,6 +319,9 @@ class Asset(models.Model):
         last_liked = self.userlike_set.order_by("-date_liked").first()
         if last_liked is not None:
             self.last_liked_time = last_liked.date_liked
+
+    def denorm_tags(self):
+        self.raw_tags = ", ".join([t.name for t in self.tags.all()])
 
     def get_updated_rank(self):
         rank = (self.likes + self.historical_likes + 1) * LIKES_WEIGHT
@@ -351,6 +350,8 @@ class Asset(models.Model):
                 file_list.append(resource.file.name)
         return file_list
 
+    # TODO(james|performance): This causes a bunch of n+1 queries but is
+    # impervious to `select_related`-type optimisations.
     def get_all_downloadable_formats(self, user=None):
         # The user owns this asset so can view all files.
         if self.is_owned_by_django_user(user):
@@ -443,10 +444,23 @@ class Asset(models.Model):
                 # This is not a file we care to mess with.
                 pass
 
+    @property
+    def moderation_watch_fields(self):
+        return [
+            "url",
+            "name",
+            "description",
+            "thumbnail",
+            "preview_image",
+            "raw_tags",
+        ]
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         update_timestamps = kwargs.pop("update_timestamps", False)
         bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
+        bypass_moderation_logging = kwargs.pop("bypass_moderation_logging", False)
+
         if not bypass_custom_logic:
             now = timezone.now()
             if self._state.adding:
@@ -459,8 +473,42 @@ class Asset(models.Model):
                 self.denorm_format_types()
                 self.denorm_triangle_count()
                 self.denorm_liked_time()
+                self.denorm_tags()
                 if update_timestamps:
                     self.update_time = now
+
+        if not bypass_custom_logic and not bypass_moderation_logging:
+            should_log = False
+            try:
+                changed_fields = []
+                if self._state.adding:
+                    changed_fields = self.moderation_watch_fields
+                    moderation_state = MOD_NEW
+                    should_log = True
+                elif self.moderation_state != MOD_DEFERRED:
+                    original_instance = Asset.objects.get(pk=self.pk)
+                    for field in self.moderation_watch_fields:
+                        if getattr(self, field) != getattr(original_instance, field):
+                            changed_fields.append(field)
+                    moderation_state = MOD_MODIFIED
+                    if changed_fields:
+                        should_log = True
+                else:
+                    # Just for QA
+                    moderation_state = self.moderation_state
+
+                if should_log:
+                    self.previous_moderation_state = self.moderation_state
+                    self.moderation_state = moderation_state
+                    self.moderation_state_change_time = timezone.now()
+                    self.moderation_state_change_by = None
+                    if self.moderation_changed_fields:
+                        self.moderation_changed_fields = list(set(self.moderation_changed_fields + changed_fields))
+                    else:
+                        self.moderation_changed_fields = changed_fields
+            except Exception as e:
+                logger.error(e)
+
         super().save(*args, **kwargs)
 
     class Meta:
@@ -483,4 +531,5 @@ class Asset(models.Model):
             models.Index(fields=["owner"]),
             # Index for paginator
             models.Index(fields=["is_viewer_compatible", "last_reported_time", "visibility", "license"]),
+            models.Index(fields=["moderation_state"]),
         ]

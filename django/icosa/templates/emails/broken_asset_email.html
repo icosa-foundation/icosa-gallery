@@ -1,0 +1,5 @@
+<p>Asset <a href="{{request.scheme}}://{{ domain }}{{ asset.get_absolute_url }}">{{ asset.name|default:'unnamed asset' }}</a> is not viewable to {% if reporter is None %}an anonymous user{% else %}{{ reporter.displayname }}{% endif %} with the following report:</p>
+<p>{{ reason|linebreaksbr }}</p>
+{% if reporter_email %}
+<p>Contact email: {{ reporter_email }}</p>
+{% endif %}

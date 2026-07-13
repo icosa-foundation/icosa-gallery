@@ -98,7 +98,10 @@ LICENSE_CHOICES = (
     + [RESERVED_LICENSE]
 )
 
-STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
+if settings.LOCAL_MEDIA_STORAGE:
+    STORAGE_PREFIX = settings.MEDIA_URL
+else:
+    STORAGE_PREFIX = f"{settings.DJANGO_STORAGE_URL}/{settings.DJANGO_STORAGE_BUCKET_NAME}/"
 
 
 class Category(Enum):

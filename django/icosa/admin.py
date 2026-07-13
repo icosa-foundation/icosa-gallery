@@ -3,16 +3,16 @@ import secrets
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
-from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.safestring import mark_safe
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from import_export.admin import ExportMixin
+
 from icosa.models import (
+    ASSET_STATE_COMPLETE,
     Asset,
     AssetCollection,
     AssetCollectionAsset,
@@ -23,6 +23,8 @@ from icosa.models import (
     FormatRoleLabel,
     HiddenMediaFileLog,
     MastheadSection,
+    ModerationEvent,
+    ModerationNotification,
     Oauth2Client,
     Oauth2Code,
     Oauth2Token,
@@ -30,8 +32,6 @@ from icosa.models import (
     Tag,
     UserLike,
 )
-
-from import_export.admin import ExportMixin
 
 User = get_user_model()
 
@@ -158,6 +158,8 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "category",
         "state",
         "last_reported_time",
+        "moderation_state",
+        "previous_moderation_state",
     )
     readonly_fields = (
         "rank",
@@ -174,6 +176,11 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "last_reported_by",
         "last_reported_time",
         "triangle_count",
+        "moderation_state",
+        "previous_moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
     )
 
     def display_thumbnail(self, obj):
@@ -246,7 +253,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
             # Fetch all assets missing thumbnails
             query = Q(thumbnail="") | Q(thumbnail__isnull=True)
             query &= Q(is_viewer_compatible=True)
-            query &= Q(state__in=["ACTIVE", ""])
+            query &= Q(state=ASSET_STATE_COMPLETE)
             assets_queryset = Asset.objects.filter(query)
 
         # Get assets with related data (limit to 20 for memory/rate limit safety)
@@ -321,22 +328,24 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
 
             # Validate MIME type
             thumbnail_file.seek(0)
-            mime_type = validate_mime(thumbnail_file.read())
+            is_valid_mime = validate_mime(
+                thumbnail_file.read(),
+                VALID_THUMBNAIL_MIME_TYPES,
+            )
             thumbnail_file.seek(0)
 
-            if mime_type not in VALID_THUMBNAIL_MIME_TYPES:
-                return JsonResponse(
-                    {"error": f"Invalid image type: {mime_type}"}, status=400
-                )
+            if not is_valid_mime:
+                return JsonResponse({"error": "Invalid image type"}, status=400)
 
             # Save to both thumbnail and preview_image
             asset.thumbnail.save(
                 f"thumbnail_{asset.url}.jpg", thumbnail_file, save=False
             )
+            thumbnail_file.seek(0)
             asset.preview_image.save(
                 f"preview_{asset.url}.jpg", thumbnail_file, save=False
             )
-            asset.thumbnail_contenttype = mime_type
+            asset.thumbnail_contenttype = thumbnail_file.content_type
             asset.save()
 
             return JsonResponse(
@@ -401,9 +410,21 @@ class AssetCollectionAdmin(admin.ModelAdmin):
         "user__displayname",
     )
 
+    readonly_fields = (
+        "moderation_state",
+        "previous_moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
+    )
+
     inlines = (AssetCollectionAssetInline,)
 
-    list_filter = ("visibility",)
+    list_filter = (
+        "visibility",
+        "moderation_state",
+        "previous_moderation_state",
+    )
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(asset_count=Count("assets"))
@@ -445,16 +466,28 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
         "id",
     )
     list_filter = (
+        "create_time",
         "imported",
         ("email", admin.EmptyFieldListFilter),
         ("django_user", admin.EmptyFieldListFilter),
         "is_claimed",
         "disable_profile",
+        "moderation_state",
+        "previous_moderation_state",
     )
+
     raw_id_fields = [
         "django_user",
         "merged_with",
     ]
+
+    readonly_fields = (
+        "moderation_state",
+        "previous_moderation_state",
+        "moderation_state_change_time",
+        "moderation_state_change_by",
+        "moderation_changed_fields",
+    )
 
     actions = [
         "create_related_django_user",
@@ -484,8 +517,6 @@ class AssetOwnerAdmin(ExportMixin, admin.ModelAdmin):
     display_django_user.short_description = "Django User"
 
     def create_related_django_user(self, request, queryset):
-        opts = self.model._meta
-        app_label = opts.app_label
         created_objs = []
         existing_objs = []
 
@@ -598,6 +629,68 @@ class Oauth2CodeAdmin(ExportMixin, admin.ModelAdmin):
 @admin.register(Oauth2Token)
 class Oauth2TokenAdmin(ExportMixin, admin.ModelAdmin):
     pass
+
+
+@admin.register(ModerationEvent)
+class ModerationEventAdmin(ExportMixin, admin.ModelAdmin):
+    list_display = (
+        "create_time",
+        "content_type",
+        "state",
+        "notes",
+        "display_links",
+        "user",
+    )
+    readonly_fields = (
+        "user",
+        "notes",
+        "create_time",
+        "content_type",
+        "object_id",
+        "source_object",
+        "state",
+        "data",
+        "display_links",
+    )
+    list_filter = (
+        "state",
+        ("content_type", admin.RelatedOnlyFieldListFilter),
+        "query_resolved",
+    )
+    search_fields = (
+        "notes",
+        "object_id",
+        "data",
+    )
+
+    def display_links(self, obj):
+        src_obj = obj.source_object
+        change_url_str = f"admin:{src_obj._meta.app_label}_{src_obj._meta.model_name}_change"
+        change_url = reverse(change_url_str, args=(src_obj.id,))
+
+        # TODO(james): The nowrap class should really be applied to the containing td element.
+        # I couldn't quickly find a way to declare this. Revisit and fix.
+        return mark_safe(
+            f'<span class="nowrap"><a href="{change_url}">View in admin</a> | <a href="{src_obj.get_absolute_url()}">View on site</a></span>'
+        )
+
+    display_links.short_description = "Links"
+    display_links.allow_tags = True
+
+
+@admin.register(ModerationNotification)
+class ModerationNotificationAdmin(ExportMixin, admin.ModelAdmin):
+    list_display = ("sent",)
+
+    list_filter = (
+        "sent",
+        "recipients",
+    )
+
+    readonly_fields = (
+        "sent",
+        "recipients",
+    )
 
 
 class UserLikeInline(admin.TabularInline):

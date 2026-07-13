@@ -282,11 +282,15 @@
 }
 </script>
 
+{{ assets_json|json_script:"batch-thumbnail-assets" }}
+
 <script type="module">
     import { Viewer } from "{% static 'js/icosa-viewer.module.js' %}";
 
     // Assets loaded from Django context
-    const assetsFromDjango = {{ assets_json|safe }};
+    const assetsFromDjango = JSON.parse(
+        document.getElementById('batch-thumbnail-assets').textContent
+    );
 
     // CSRF token for POST requests
     const csrfToken = "{{ csrf_token }}";
@@ -393,9 +397,6 @@
     }
 
     async function uploadThumbnail(assetId, base64Image) {
-        // Remove the data URL prefix
-        const base64Data = base64Image.split(',')[1];
-
         const response = await fetch(
             `/admin/icosa/asset/upload-thumbnail/${assetId}/`,
             {
@@ -405,7 +406,7 @@
                     'X-CSRFToken': csrfToken,
                 },
                 body: JSON.stringify({
-                    thumbnail_base64: base64Data
+                    thumbnail_base64: base64Image
                 })
             }
         );

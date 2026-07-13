@@ -48,6 +48,11 @@
             {% else %}
                 <p>{{ owner.displayname }} hasn't created anything yet.</p>
             {% endif %}
+            {% with obj=owner %}
+            {% if user_is_moderator and obj.moderation_state == "QUERIED" %}
+            {% include "include/moderator_actions.html" %}
+            {% endif %}
+            {% endwith %}
         </div>
         {% include "partials/pagination.html" %}
     </div>
