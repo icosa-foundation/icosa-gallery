@@ -1,5 +1,6 @@
 from django import template
-from icosa.models import ARCHIVED, PRIVATE, UNLISTED
+from icosa.model_mixins import MOD_HIDDEN
+from icosa.models import ARCHIVED, PRIVATE
 
 register = template.Library()
 
@@ -18,7 +19,7 @@ def like_button(context, request, asset):
 @register.inclusion_tag("partials/admin_peek_banner.html", takes_context=True)
 def admin_peek_banner(context, request, asset):
     user = request.user
-    asset_is_hidden = asset.visibility in [PRIVATE, ARCHIVED]
+    asset_is_hidden = asset.visibility in [PRIVATE, ARCHIVED] or asset.moderation_state in MOD_HIDDEN
     user_is_not_owner = user != asset.owner.django_user
     user_is_privileged = user.is_staff or user.is_superuser
     is_peeking = asset_is_hidden and user_is_not_owner and user_is_privileged

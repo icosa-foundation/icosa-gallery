@@ -2277,34 +2277,34 @@ class $e1f901905a002d12$export$2e2bcd8739ae039 extends $e1f901905a002d12$export$
 
 
 class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
-    static createButton(renderer, sessionInit = {}) {
-        const button = document.createElement('button');
-        function showStartXR(mode) {
+    static createButton(renderer, sessionInit = {}, allowAR = true) {
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.bottom = '20px';
+        container.style.left = '50%';
+        container.style.transform = 'translateX(-50%)';
+        container.style.display = 'flex';
+        container.style.gap = '10px';
+        container.style.zIndex = '999';
+        function createXRButton(mode, label) {
+            const button = document.createElement('button');
             let currentSession = null;
             async function onSessionStarted(session) {
                 session.addEventListener('end', onSessionEnded);
                 await renderer.xr.setSession(session);
-                button.textContent = 'STOP XR';
+                button.textContent = `STOP ${label}`;
                 currentSession = session;
             }
             function onSessionEnded() {
                 currentSession.removeEventListener('end', onSessionEnded);
-                button.textContent = 'START XR';
+                button.textContent = `START ${label}`;
                 currentSession = null;
             }
-            //
-            button.style.display = '';
             button.style.cursor = 'pointer';
-            button.style.left = 'calc(50% - 50px)';
             button.style.width = '100px';
-            button.textContent = 'START XR';
+            button.textContent = `START ${label}`;
             const sessionOptions = {
-                ...sessionInit,
-                optionalFeatures: [
-                    'local-floor',
-                    'bounded-floor',
-                    ...sessionInit.optionalFeatures || []
-                ]
+                ...sessionInit
             };
             button.onmouseenter = function() {
                 button.style.opacity = '1.0';
@@ -2324,29 +2324,10 @@ class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
             if (navigator.xr.offerSession !== undefined) navigator.xr.offerSession(mode, sessionOptions).then(onSessionStarted).catch((err)=>{
                 console.warn(err);
             });
-        }
-        function disableButton() {
-            button.style.display = '';
-            button.style.cursor = 'auto';
-            button.style.left = 'calc(50% - 75px)';
-            button.style.width = '150px';
-            button.onmouseenter = null;
-            button.onmouseleave = null;
-            button.onclick = null;
-        }
-        function showXRNotSupported() {
-            disableButton();
-            button.textContent = 'No headset found';
-            button.style.display = 'none';
-        }
-        function showXRNotAllowed(exception) {
-            disableButton();
-            console.warn('Exception when trying to call xr.isSessionSupported', exception);
-            button.textContent = 'XR NOT ALLOWED';
+            stylizeElement(button);
+            return button;
         }
         function stylizeElement(element) {
-            element.style.position = 'absolute';
-            element.style.bottom = '20px';
             element.style.padding = '12px 6px';
             element.style.border = '1px solid #fff';
             element.style.borderRadius = '4px';
@@ -2356,33 +2337,59 @@ class $a681b8b24de9c7d6$export$d1c1e163c7960c6 {
             element.style.textAlign = 'center';
             element.style.opacity = '0.5';
             element.style.outline = 'none';
-            element.style.zIndex = '999';
         }
         if ('xr' in navigator) {
-            button.id = 'XRButton';
-            button.style.display = 'none';
-            stylizeElement(button);
-            navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
-                if (supported) showStartXR('immersive-ar');
-                else navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
-                    if (supported) showStartXR('immersive-vr');
-                    else showXRNotSupported();
-                }).catch(showXRNotAllowed);
-            }).catch(showXRNotAllowed);
-            return button;
+            const promises = [];
+            if (allowAR) promises.push(navigator.xr.isSessionSupported('immersive-ar').then((supported)=>({
+                    mode: 'immersive-ar',
+                    supported: supported,
+                    label: 'AR'
+                })).catch(()=>({
+                    mode: 'immersive-ar',
+                    supported: false,
+                    label: 'AR'
+                })));
+            promises.push(navigator.xr.isSessionSupported('immersive-vr').then((supported)=>({
+                    mode: 'immersive-vr',
+                    supported: supported,
+                    label: 'VR'
+                })).catch(()=>({
+                    mode: 'immersive-vr',
+                    supported: false,
+                    label: 'VR'
+                })));
+            Promise.all(promises).then((results)=>{
+                let supportedModes = results.filter((r)=>r.supported);
+                // For debugging
+                // if (supportedModes.length === 0 || true) {
+                //     supportedModes.push({mode: 'immersive-vr', supported: true, label: 'VR'});
+                //     supportedModes.push({mode: 'immersive-ar', supported: true, label: 'AR'});
+                // }
+                if (supportedModes.length === 0) {
+                    const message = document.createElement('div');
+                    message.textContent = 'No headset found';
+                    message.style.cursor = 'auto';
+                    message.style.width = '150px';
+                    message.style.display = 'none';
+                    stylizeElement(message);
+                    container.appendChild(message);
+                } else supportedModes.forEach(({ mode: mode, label: label })=>{
+                    const button = createXRButton(mode, label);
+                    container.appendChild(button);
+                });
+            });
+            return container;
         } else {
             const message = document.createElement('a');
             if (window.isSecureContext === false) {
                 message.href = document.location.href.replace(/^http:/, 'https:');
-                message.innerHTML = 'WEBXR NEEDS HTTPS'; // TODO Improve message
-            } else // message.href = 'https://immersiveweb.dev/';
-            // message.innerHTML = 'WEBXR NOT AVAILABLE';
-            message.style = 'display: none';
-            message.style.left = 'calc(50% - 90px)';
+                message.innerHTML = 'WEBXR NEEDS HTTPS';
+            } else message.style.display = 'none';
             message.style.width = '180px';
             message.style.textDecoration = 'none';
             stylizeElement(message);
-            return message;
+            container.appendChild(message);
+            return container;
         }
     }
 }
@@ -3943,6 +3950,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.outputColorSpace = $hBQxr$three.SRGBColorSpace;
         this.renderer.xr.enabled = true;
+        // Use 'local' reference space for full 6DOF tracking without floor offset
+        this.renderer.xr.setReferenceSpaceType('local');
         function handleController(inputSource) {
             const gamepad = inputSource.gamepad;
             if (gamepad) return {
@@ -3970,7 +3979,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         controllerGrip1 = this.renderer.xr.getControllerGrip(1);
         controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
         this.scene.add(controllerGrip1);
-        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer);
+        let xrButton = (0, $a681b8b24de9c7d6$export$d1c1e163c7960c6).createButton(this.renderer, {}, true);
         this.icosa_frame.appendChild(xrButton);
         function initCustomUi(viewerContainer) {
             const button = document.createElement('button');
@@ -4186,7 +4195,10 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             sceneNode.scale.divideScalar(excess);
             // Reframe the scaled scene
             this.frameNode(sceneNode);
-        } else this.scene.add(this.loadedModel);
+        } else {
+            if (this.isNewTiltExporter(this.sceneGltf)) this.scene.scale.set(0.1, 0.1, 0.1);
+            this.scene.add(this.loadedModel);
+        }
     }
     toggleTreeView(root) {
         if (root.childElementCount == 0) {
@@ -5626,7 +5638,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         } else sceneGltf = await this.gltfLoader.loadAsync(url);
         // The legacy loader has the latter structure
         let userData = (Object.keys(sceneGltf.userData || {}).length > 0 ? sceneGltf.userData : null) ?? sceneGltf.scene.userData;
-        this.scaleScene(sceneGltf, true);
+        if (!this.isNewTiltExporter(sceneGltf)) this.scaleScene(sceneGltf, userData, true);
         this.setupSketchMetaDataFromScene(sceneGltf.scene, userData);
         if (loadEnvironment) await this.assignEnvironment(sceneGltf);
         if (overrides?.tiltUrl) this.tiltData = await this.tiltLoader.loadAsync(tiltUrl);
@@ -5639,8 +5651,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         return generator && !generator.includes('Tilt Brush');
     }
     isNewTiltExporter(sceneGltf) {
-        const generator = sceneGltf?.asset?.generator;
-        return generator && generator.includes('Open Brush UnityGLTF Exporter');
+        return sceneGltf?.scene?.userData?.isNewTiltExporter ?? false;
     }
     isAnyTiltExporter(sceneGltf) {
         const generator = sceneGltf?.asset?.generator;
@@ -5651,6 +5662,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         let poseTranslation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseTranslation'], new $hBQxr$three.Vector3(0, 0, 0));
         let poseRotation = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.parseTBVector3(userData['TB_PoseRotation'], new $hBQxr$three.Vector3(0, 0, 0));
         let poseScale = userData['TB_PoseScale'] ?? 1;
+        // Correct the scale for new exporter (handled automatically for the legacy exporter)
         if (this.isNewTiltExporter(sceneGltf)) poseScale *= negate ? 10 : 0.1;
         if (negate) {
             // Create inverse transformation matrix: (T * R * S)^-1 = S^-1 * R^-1 * T^-1
@@ -5878,6 +5890,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             splatModel.rotation.x = Math.PI;
             this.loadedModel = splatModel;
             this.setupSketchMetaData(splatModel);
+            // TODO make fly mode explicit and overridable
+            this.sketchMetadata.FlyMode = true;
             this.modelBoundingBox = splatModel.getBoundingBox(false);
             this.scene.add(this.loadedModel);
             this.initializeScene();
@@ -5891,7 +5905,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         }
     }
     async assignEnvironment(sceneGltf) {
-        console.log("assigning environment");
         let scene = sceneGltf.scene;
         const guid = this.sketchMetadata?.EnvironmentGuid;
         if (guid) {
@@ -5900,8 +5913,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 // Use the standard GLTFLoader for environments
                 const standardLoader = new (0, $hBQxr$GLTFLoader)();
                 const envGltf = await standardLoader.loadAsync(envUrl.toString());
-                if (this.isNewTiltExporter(sceneGltf) || this.isV1) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
-                envGltf.scene.scale.set(.1, .1, .1);
+                if (this.isV1) envGltf.scene.setRotationFromEuler(new $hBQxr$three.Euler(0, Math.PI, 0));
+                if (!this.isNewTiltExporter(sceneGltf)) envGltf.scene.scale.set(.1, .1, .1);
                 scene.attach(envGltf.scene);
                 this.environmentObject = envGltf.scene;
             } catch (error) {
@@ -5958,10 +5971,11 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     initCameras() {
         let cameraOverrides = this.overrides?.camera;
-        // const userData = this.sceneGltf?.scene?.userData || {};
-        // let poseTranslation = Viewer.parseTBVector3(userData['TB_PoseTranslation'], new THREE.Vector3(0, 0, 0));
-        // let poseRotation = Viewer.parseTBVector3(userData['TB_PoseRotation'], new THREE.Vector3(0, 0, 0));
-        // let poseScale = (userData['TB_PoseScale'] ?? 1);
+        // Check if there's a GLTF camera in the scene
+        let gltfCamera = null;
+        this.loadedModel.traverse((object)=>{
+            if (object instanceof $hBQxr$three.Camera && object.name === "TB_ThumbnailSaveCamera" && !gltfCamera) gltfCamera = object;
+        });
         let sketchCam = this.sketchMetadata?.CameraTranslation?.toArray();
         if (sketchCam) {
             let poseScale = this.isAnyTiltExporter(this.sceneGltf) ? 0.1 : 1;
@@ -5971,48 +5985,64 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 sketchCam[2] * poseScale
             ];
         }
-        let cameraPos = cameraOverrides?.translation || sketchCam || [
-            0,
-            0.25,
-            -3.5
-        ];
-        let cameraRot = cameraOverrides?.rotation || this.sketchMetadata?.CameraRotation?.toArray() || [
-            0,
-            0,
-            0
-        ]; // Could be euler angles or quaternion
-        // Fix handedness between Unity and gltf/three.js
-        // Should we fix this on export?
-        if (cameraRot.length == 3) {
-            // Assume euler angles in degrees
-            cameraRot[0] += 0;
-            cameraRot[1] += 180;
-            cameraRot[2] += 0;
-            cameraRot[0] = $hBQxr$three.MathUtils.degToRad(cameraRot[0]);
-            cameraRot[1] = $hBQxr$three.MathUtils.degToRad(cameraRot[1]);
-            cameraRot[2] = $hBQxr$three.MathUtils.degToRad(cameraRot[2]);
-        }
         const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 75;
         const aspect = 2;
-        const near = cameraOverrides?.perspective?.znear || 0.1;
+        const near = cameraOverrides?.perspective?.znear || 0.01;
         const far = 6000;
         this.flatCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
-        this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
-        if (cameraRot.length == 3) this.flatCamera.rotation.setFromVector3(new $hBQxr$three.Vector3(cameraRot[0], cameraRot[1], cameraRot[2]));
-        else this.flatCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
+        let cameraPos = [];
+        const hasCameraTransformOverride = !!(cameraOverrides?.translation || cameraOverrides?.rotation);
+        // Use GLTF camera transform if available AND we are in fly mode
+        // (which currently indicates a recent Open Brush export)
+        if (!hasCameraTransformOverride && this.sketchMetadata.FlyMode && gltfCamera) {
+            var worldPos = new $hBQxr$three.Vector3();
+            gltfCamera.getWorldPosition(worldPos);
+            worldPos.multiplyScalar(0.1);
+            cameraPos[0] = worldPos.x;
+            cameraPos[1] = worldPos.y;
+            cameraPos[2] = worldPos.z;
+            this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
+            var worldQuat = new $hBQxr$three.Quaternion();
+            gltfCamera.getWorldQuaternion(worldQuat);
+            // var yRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+            // worldQuat.multiply(yRotation);
+            this.flatCamera.quaternion.set(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w);
+        } else {
+            cameraPos = cameraOverrides?.translation || sketchCam || [
+                0,
+                0.25,
+                -3.5
+            ];
+            let cameraRot = cameraOverrides?.rotation || this.sketchMetadata?.CameraRotation?.toArray() || [
+                0,
+                0,
+                0
+            ]; // Could be euler angles or quaternion
+            // Fix handedness between Unity and gltf/three.js
+            // Should we fix this on export?
+            if (cameraRot.length == 3) {
+                // Assume euler angles in degrees
+                cameraRot[0] += 0;
+                cameraRot[1] += 180;
+                cameraRot[2] += 0;
+                cameraRot[0] = $hBQxr$three.MathUtils.degToRad(cameraRot[0]);
+                cameraRot[1] = $hBQxr$three.MathUtils.degToRad(cameraRot[1]);
+                cameraRot[2] = $hBQxr$three.MathUtils.degToRad(cameraRot[2]);
+            }
+            this.flatCamera.position.set(cameraPos[0], cameraPos[1], cameraPos[2]);
+            if (cameraRot.length == 3) this.flatCamera.rotation.setFromVector3(new $hBQxr$three.Vector3(cameraRot[0], cameraRot[1], cameraRot[2]));
+            else this.flatCamera.quaternion.set(cameraRot[0], cameraRot[1], cameraRot[2], cameraRot[3]);
+        }
         this.flatCamera.updateProjectionMatrix();
         this.flatCamera.updateMatrixWorld();
         this.xrCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
         this.cameraRig = new $hBQxr$three.Group();
         this.scene.add(this.cameraRig);
-        this.cameraRig.rotation.y = this.flatCamera.rotation.y;
-        this.cameraRig.rotation.setFromQuaternion(this.flatCamera.quaternion);
         this.cameraRig.add(this.xrCamera);
-        this.xrCamera.updateProjectionMatrix();
         this.activeCamera = this.flatCamera;
+        let cameraTarget;
         if (this.sketchMetadata.FlyMode) {
             // Simulate fly mode by setting target point in front of camera
-            let cameraTarget;
             const forward = new $hBQxr$three.Vector3();
             this.flatCamera.getWorldDirection(forward);
             cameraTarget = this.flatCamera.position.clone().add(forward.multiplyScalar(0.05));
@@ -6027,7 +6057,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
             (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         } else {
-            let cameraTarget;
             let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
             if (pivot) // TODO this pivot should be recalculated to take into account
             //  any camera rotation adjustment applied above
@@ -6067,15 +6096,26 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.cameraControls.setTarget(cameraTarget.x, cameraTarget.y, cameraTarget.z, false);
             (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         }
-    // this.trackballControls = new TrackballControls(this.activeCamera, this.canvas);
-    // this.trackballControls.target = cameraTarget;
-    // this.trackballControls.rotateSpeed = 1.0;
-    // this.trackballControls.zoomSpeed = 1.2;
-    // this.trackballControls.panSpeed = 0.8;
-    // let noOverrides = !cameraOverrides || !cameraOverrides?.perspective;
-    // if (noOverrides) {
-    //     this.frameScene();
-    // }
+        // Position and orient the cameraRig to match flatCamera AFTER camera controls are set up
+        // The flatCamera is independent of scene scale, but cameraRig is a child of the scene.
+        // For new Tilt exporters, the scene will be scaled to 0.1, so we need to compensate.
+        // We scale BOTH the position and the rig scale to counteract the scene scale.
+        const sceneScaleFactor = this.isNewTiltExporter(this.sceneGltf) ? 10 : 1;
+        this.cameraRig.position.copy(this.flatCamera.position).multiplyScalar(sceneScaleFactor);
+        this.cameraRig.scale.set(sceneScaleFactor, sceneScaleFactor, sceneScaleFactor);
+        // Calculate world position after setup
+        this.cameraRig.updateMatrixWorld(true);
+        // VR cameras should never be tilted - only copy Y-axis rotation (yaw)
+        // Calculate Y rotation from camera position to target (ignoring vertical component)
+        const flatCameraWorldDir = new $hBQxr$three.Vector3();
+        this.flatCamera.getWorldDirection(flatCameraWorldDir);
+        const directionToTarget = new $hBQxr$three.Vector3().subVectors(cameraTarget, this.flatCamera.position);
+        directionToTarget.y = 0; // Project onto XZ plane
+        directionToTarget.normalize();
+        const yaw = Math.atan2(directionToTarget.x, directionToTarget.z);
+        // Add 180 degrees because camera's default forward is -Z, not +Z
+        this.cameraRig.rotation.y = yaw + Math.PI;
+        this.xrCamera.updateProjectionMatrix();
     }
     calculatePivot(camera, centroid) {
         // 1. Get the camera's forward vector

@@ -40,8 +40,7 @@ def print_actions(
 
 
 class Command(BaseCommand):
-    help = """Extracts format json into concrete models and converts to poly
-    format."""
+    help = """Merges two AssetOwners. Takes the Assets and other metadata from `sourceid` and places them on `destinationid`"""
 
     def add_arguments(self, parser):
         parser.add_argument("--sourceid", action="store", type=str)
