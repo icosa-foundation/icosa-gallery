@@ -4197,6 +4197,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         };
         this.unlockAudio = ()=>{
             if (this.audioListener.context.state !== 'running') this.audioListener.context.resume().catch(()=>{});
+            this.immAsset?.enableAudio().catch(()=>{});
             this.tryStartAutoplayAudio(this.contentRoot);
         };
         window.addEventListener('pointerdown', this.unlockAudio, {
