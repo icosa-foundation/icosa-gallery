@@ -65,18 +65,22 @@
 <script type="importmap" class="es6_modules_map">
     {
         "imports": {
-    {% if request.session.viewer_js_version == "previous" %}
+    {% if asset.preferred_viewer_format.format_type == "IMM" or request.session.viewer_js_version == "experimental" or is_moderating %}
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/",
+        "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
+		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
+		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.1.0/dist/spark.module.js",
+        "@immersive-foundation/three-imm-loader": "/static/js-experimental/imm/imm-three-loader.js?v={% now "U" %}"
+    {% elif request.session.viewer_js_version == "previous" %}
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/"
     {% else %}
         "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/",
-        {% if request.session.viewer_js_version == "experimental" or is_moderating %}
-            "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
-        {% else %}
-            "three-icosa": "/static/js/three-icosa.module.js?v={% now "U" %}",
-        {% endif %}
+		"three-icosa": "/static/js/three-icosa.module.js?v={% now "U" %}",
 		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/gh/sparkjsdev/spark@b60e9d9acbe621e67eda5d98417fcfdea5af6291/dist/spark.module.js"
     {% endif %}
@@ -85,11 +89,11 @@
 </script>
 <script type="module">
 
-    {% if request.session.viewer_js_version == "previous" %}
-        import { Viewer } from "/static/js-previous/icosa-viewer.module.js?v={% now "U" %}";
-    {% elif request.session.viewer_js_version == "experimental" or is_moderating %}
+    {% if asset.preferred_viewer_format.format_type == "IMM" or request.session.viewer_js_version == "experimental" or is_moderating %}
         import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
         import * as THREE from "three";
+    {% elif request.session.viewer_js_version == "previous" %}
+        import { Viewer } from "/static/js-previous/icosa-viewer.module.js?v={% now "U" %}";
     {% else %}
         import { Viewer } from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
         import * as THREE from "three";
@@ -97,7 +101,7 @@
 
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-    {% if request.session.viewer_js_version == "experimental" or is_moderating %}
+    {% if asset.preferred_viewer_format.format_type == "IMM" or request.session.viewer_js_version == "experimental" or is_moderating %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-experimental/");
     {% elif request.session.viewer_js_version == "previous" %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-previous/");
@@ -128,6 +132,8 @@
 
     let url = "{{ asset.preferred_viewer_format.root_resource.internal_or_cors_url }}";
 
+
+    let immNavigation = null;
 
     if (formatType === 'gltf2' || formatType === 'glb') {
         try {
@@ -186,6 +192,15 @@
     } else if (formatType === 'ply' || formatType === 'sog' || formatType === 'spz' || formatType === 'splat' || formatType === 'ksplat') {
         console.log("Trying to load Gaussian splat");
         await viewer.loadSplat(url, overrides);
+    {% if asset.preferred_viewer_format.format_type == "IMM" or request.session.viewer_js_version == "experimental" or is_moderating %}
+    } else if (formatType === 'imm') {
+        console.log("Trying to load IMM");
+        await viewer.loadImm(url, {
+            decoderWorkerURL: "/static/js-experimental/imm/decoder/imm-web-decoder-worker.mjs",
+            audio: true,
+        });
+        immNavigation = viewer.getImmNavigation();
+    {% endif %}
     } else {
         console.error("Unsupported file format: " + formatType);
     }
@@ -232,6 +247,42 @@
     const levelCameraControl = gui.add(guiParams, 'levelCamera').name("Level Camera");
     const frameSceneControl = gui.add(guiParams, 'frameScene').name("Frame Scene");
     const wireframeControl = gui.add(guiParams, 'wireframe').name("Toggle Wireframe");
+
+    if (immNavigation) {
+        const immFolder = gui.addFolder('IMM Playback');
+        const immParams = {
+            chapter: 0,
+            viewpoint: immNavigation.viewpoints[0]?.id ?? 0,
+            play: () => viewer.playImm(),
+            pause: () => viewer.pauseImm(),
+            continuePlayback: () => viewer.continueImm(),
+        };
+
+        if (immNavigation.chapters.length > 0) {
+            const chapters = {};
+            immNavigation.chapters.forEach((_chapter, index) => {
+                chapters[`Chapter ${index + 1}`] = index;
+            });
+            immFolder.add(immParams, 'chapter', chapters).name('Chapter').onChange((index) => {
+                viewer.selectImmChapter(Number(index));
+            });
+        }
+
+        if (immNavigation.viewpoints.length > 0) {
+            const viewpoints = {};
+            immNavigation.viewpoints.forEach((viewpoint, index) => {
+                const name = viewpoint.name || `Viewpoint ${index + 1}`;
+                viewpoints[`${name} (${viewpoint.id})`] = viewpoint.id;
+            });
+            immFolder.add(immParams, 'viewpoint', viewpoints).name('Viewpoint').onChange((layerId) => {
+                viewer.selectImmViewpoint(Number(layerId));
+            });
+        }
+
+        immFolder.add(immParams, 'play').name('Play');
+        immFolder.add(immParams, 'pause').name('Pause');
+        immFolder.add(immParams, 'continuePlayback').name('Continue');
+    }
 
     const stochasticControl = gui.add(guiParams, 'stochastic').name("Splat Stochastic Rendering").onChange(() => {
         viewer.scene.traverse((child) => {

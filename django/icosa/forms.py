@@ -38,6 +38,7 @@ ARTIST_QUERY_SUBJECT_CHOICES = [
 ALLOWED_UPLOAD_EXTENSIONS = [
     "zip",
     "glb",
+    "imm",
     "ksplat",
     "ply",
     "stl",

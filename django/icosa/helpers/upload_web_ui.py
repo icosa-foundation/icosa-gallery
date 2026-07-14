@@ -36,6 +36,7 @@ SUB_FILE_MAP = {
 VALID_WEB_FORMAT_TYPES = [
     "glb",
     "gltf",
+    "imm",
     "bin",
     "jpeg",
     "jpg",

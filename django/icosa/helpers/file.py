@@ -34,6 +34,7 @@ VALID_FORMAT_TYPES = [
     "fbx",
     "glb",
     "gltf",
+    "imm",
     "ksplat",
     "mtl",
     "obj",
@@ -56,6 +57,7 @@ CONTENT_TYPE_MAP = {
     "tilt": "application/octet-stream",
     "glb": "model/gltf-binary",
     "gltf": "model/gltf+json",
+    "imm": "application/octet-stream",
     "bin": "application/octet-stream",
     "obj": "text/plain",
     "mtl": "text/plain",
@@ -127,6 +129,7 @@ def validate_file(file: ProcessedUpload, extension: str) -> Optional[UploadedFor
 
     if extension in [
         "blocks",
+        "imm",
         "ksplat",
         "ply",
         "stl",
