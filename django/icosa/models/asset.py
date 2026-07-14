@@ -169,6 +169,12 @@ class Asset(ModerationMixin):
 
     async def get_preferred_viewer_format_for_assignment(self):
         formats = self.format_set.filter(root_resource__isnull=False)
+        # IMM is the authored source, including playback, chapters, and camera
+        # viewpoints that are not preserved by derived static formats.
+        inst = await formats.filter(format_type="IMM").alast()
+        if inst is not None:
+            return inst
+
         # GLB is our primary preferred format;
         inst = await formats.filter(format_type="GLB").alast()
         if inst is not None:
