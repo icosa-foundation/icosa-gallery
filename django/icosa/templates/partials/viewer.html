@@ -65,7 +65,7 @@
 <script type="importmap" class="es6_modules_map">
     {
         "imports": {
-    {% if asset.preferred_viewer_format.format_type == "IMM" or request.session.viewer_js_version == "experimental" or is_moderating %}
+    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" or is_moderating %}
         "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/",
@@ -89,7 +89,7 @@
 </script>
 <script type="module">
 
-    {% if asset.preferred_viewer_format.format_type == "IMM" or request.session.viewer_js_version == "experimental" or is_moderating %}
+    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" or is_moderating %}
         import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
         import * as THREE from "three";
     {% elif request.session.viewer_js_version == "previous" %}
@@ -101,7 +101,7 @@
 
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-    {% if asset.preferred_viewer_format.format_type == "IMM" or request.session.viewer_js_version == "experimental" or is_moderating %}
+    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" or is_moderating %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-experimental/");
     {% elif request.session.viewer_js_version == "previous" %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-previous/");
@@ -192,7 +192,7 @@
     } else if (formatType === 'ply' || formatType === 'sog' || formatType === 'spz' || formatType === 'splat' || formatType === 'ksplat') {
         console.log("Trying to load Gaussian splat");
         await viewer.loadSplat(url, overrides);
-    {% if asset.preferred_viewer_format.format_type == "IMM" or request.session.viewer_js_version == "experimental" or is_moderating %}
+    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" or is_moderating %}
     } else if (formatType === 'imm') {
         console.log("Trying to load IMM");
         await viewer.loadImm(url, {

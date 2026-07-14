@@ -80,7 +80,7 @@ MAX_UNZIP_SECONDS = 120
 
 
 def get_content_type(filename):
-    extension = os.path.splitext(filename)[-1].replace(".", "")
+    extension = os.path.splitext(filename)[-1].replace(".", "").lower()
     return CONTENT_TYPE_MAP.get(extension, None)
 
 
