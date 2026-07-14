@@ -1,4 +1,4 @@
-import {DataTexture as $fugmd$DataTexture, RGBAFormat as $fugmd$RGBAFormat, UnsignedByteType as $fugmd$UnsignedByteType, SRGBColorSpace as $fugmd$SRGBColorSpace, NoColorSpace as $fugmd$NoColorSpace, FileLoader as $fugmd$FileLoader, TextureLoader as $fugmd$TextureLoader, RepeatWrapping as $fugmd$RepeatWrapping, UniformsLib as $fugmd$UniformsLib, RawShaderMaterial as $fugmd$RawShaderMaterial, Loader as $fugmd$Loader, Vector4 as $fugmd$Vector4, Vector3 as $fugmd$Vector3, GLSL3 as $fugmd$GLSL3, Clock as $fugmd$Clock, BufferAttribute as $fugmd$BufferAttribute, Matrix4 as $fugmd$Matrix4} from "three";
+import {ClampToEdgeWrapping as $fugmd$ClampToEdgeWrapping, MirroredRepeatWrapping as $fugmd$MirroredRepeatWrapping, RepeatWrapping as $fugmd$RepeatWrapping, NearestFilter as $fugmd$NearestFilter, LinearFilter as $fugmd$LinearFilter, NearestMipmapNearestFilter as $fugmd$NearestMipmapNearestFilter, LinearMipmapLinearFilter as $fugmd$LinearMipmapLinearFilter, LinearMipmapNearestFilter as $fugmd$LinearMipmapNearestFilter, SRGBColorSpace as $fugmd$SRGBColorSpace, NoColorSpace as $fugmd$NoColorSpace, DoubleSide as $fugmd$DoubleSide, FrontSide as $fugmd$FrontSide, DataTexture as $fugmd$DataTexture, RGBAFormat as $fugmd$RGBAFormat, UnsignedByteType as $fugmd$UnsignedByteType, RawShaderMaterial as $fugmd$RawShaderMaterial, FileLoader as $fugmd$FileLoader, TextureLoader as $fugmd$TextureLoader, UniformsLib as $fugmd$UniformsLib, Loader as $fugmd$Loader, GLSL3 as $fugmd$GLSL3, Vector4 as $fugmd$Vector4, Vector3 as $fugmd$Vector3, BackSide as $fugmd$BackSide, Clock as $fugmd$Clock, BufferAttribute as $fugmd$BufferAttribute, Matrix4 as $fugmd$Matrix4} from "three";
 
 // Copyright 2021-2022 Icosa Gallery
 //
@@ -14,6 +14,1311 @@ import {DataTexture as $fugmd$DataTexture, RGBAFormat as $fugmd$RGBAFormat, Unsi
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Generated from pinned Open Brush brush render metadata.
+// Regenerate with scripts/generate-texture-settings.mjs; do not edit by hand.
+const $893dd13f874e2f96$export$9ca3db12bec15353 = {
+    "OilPaint": {
+        "renderBackfaces": true
+    },
+    "Ink": {
+        "renderBackfaces": true
+    },
+    "ThickPaint": {
+        "renderBackfaces": true
+    },
+    "WetPaint": {
+        "renderBackfaces": true
+    },
+    "Marker": {
+        "renderBackfaces": true
+    },
+    "TaperedMarker": {
+        "renderBackfaces": true
+    },
+    "TaperedMarker_Flat": {
+        "renderBackfaces": true
+    },
+    "DoubleTaperedMarker": {
+        "renderBackfaces": true
+    },
+    "Highlighter": {
+        "renderBackfaces": true
+    },
+    "Flat": {
+        "renderBackfaces": true
+    },
+    "TaperedFlat": {
+        "renderBackfaces": true
+    },
+    "DoubleTaperedFlat": {
+        "renderBackfaces": true
+    },
+    "SoftHighlighter": {
+        "renderBackfaces": true
+    },
+    "Light": {
+        "renderBackfaces": true
+    },
+    "Fire": {
+        "renderBackfaces": true
+    },
+    "Embers": {
+        "renderBackfaces": true
+    },
+    "Smoke": {
+        "renderBackfaces": true
+    },
+    "Snow": {
+        "renderBackfaces": true
+    },
+    "Rainbow": {
+        "renderBackfaces": true
+    },
+    "Stars": {
+        "renderBackfaces": true
+    },
+    "VelvetInk": {
+        "renderBackfaces": true
+    },
+    "Waveform": {
+        "renderBackfaces": true
+    },
+    "Splatter": {
+        "renderBackfaces": true
+    },
+    "DuctTape": {
+        "renderBackfaces": true
+    },
+    "Paper": {
+        "renderBackfaces": true
+    },
+    "CoarseBristles": {
+        "renderBackfaces": true
+    },
+    "WigglyGraphite": {
+        "renderBackfaces": true
+    },
+    "Electricity": {
+        "renderBackfaces": true
+    },
+    "Streamers": {
+        "renderBackfaces": true
+    },
+    "Hypercolor": {
+        "renderBackfaces": true
+    },
+    "Bubbles": {
+        "renderBackfaces": true
+    },
+    "NeonPulse": {
+        "renderBackfaces": true
+    },
+    "CelVinyl": {
+        "renderBackfaces": true
+    },
+    "HyperGrid": {
+        "renderBackfaces": true
+    },
+    "LightWire": {
+        "renderBackfaces": false
+    },
+    "ChromaticWave": {
+        "renderBackfaces": true
+    },
+    "Dots": {
+        "renderBackfaces": true
+    },
+    "Petal": {
+        "renderBackfaces": true
+    },
+    "Icing": {
+        "renderBackfaces": false
+    },
+    "Toon": {
+        "renderBackfaces": false
+    },
+    "Wire": {
+        "renderBackfaces": false
+    },
+    "Spikes": {
+        "renderBackfaces": false
+    },
+    "Lofted": {
+        "renderBackfaces": false
+    },
+    "Disco": {
+        "renderBackfaces": false
+    },
+    "Comet": {
+        "renderBackfaces": true
+    },
+    "ShinyHull": {
+        "renderBackfaces": false
+    },
+    "MatteHull": {
+        "renderBackfaces": false
+    },
+    "UnlitHull": {
+        "renderBackfaces": false
+    },
+    "DiamondHull": {
+        "renderBackfaces": true
+    },
+    "DotMarker": {
+        "renderBackfaces": true
+    },
+    "Plasma": {
+        "renderBackfaces": true
+    },
+    "Gouache": {
+        "renderBackfaces": true
+    },
+    "MylarTube": {
+        "renderBackfaces": false
+    },
+    "Rain": {
+        "renderBackfaces": true
+    },
+    "DryBrush": {
+        "renderBackfaces": true
+    },
+    "LeakyPen": {
+        "renderBackfaces": true
+    },
+    "Sparks": {
+        "renderBackfaces": true
+    },
+    "Wind": {
+        "renderBackfaces": true
+    },
+    "Rising Bubbles": {
+        "renderBackfaces": true
+    },
+    "TaperedWire": {
+        "renderBackfaces": false
+    },
+    "SquarePaper": {
+        "renderBackfaces": false
+    },
+    "ThickGeometry": {
+        "renderBackfaces": true
+    },
+    "Wireframe": {
+        "renderBackfaces": true
+    },
+    "Muscle": {
+        "renderBackfaces": false
+    },
+    "Guts": {
+        "renderBackfaces": false
+    },
+    "Fire2": {
+        "renderBackfaces": true
+    },
+    "TubeToonInverted": {
+        "renderBackfaces": false
+    },
+    "FacetedTube": {
+        "renderBackfaces": false
+    },
+    "WaveformParticles": {
+        "renderBackfaces": true
+    },
+    "BubbleWand": {
+        "renderBackfaces": true
+    },
+    "DanceFloor": {
+        "renderBackfaces": true
+    },
+    "WaveformTube": {
+        "renderBackfaces": true
+    },
+    "Drafting": {
+        "renderBackfaces": true
+    },
+    "SingleSided": {
+        "renderBackfaces": false
+    },
+    "DoubleFlat": {
+        "renderBackfaces": true
+    },
+    "TubeAdditive": {
+        "renderBackfaces": false
+    },
+    "Feather": {
+        "renderBackfaces": true
+    },
+    "DuctTapeGeometry": {
+        "renderBackfaces": true
+    },
+    "TaperedHueShift": {
+        "renderBackfaces": true
+    },
+    "Lacewing": {
+        "renderBackfaces": true
+    },
+    "Marbled Rainbow": {
+        "renderBackfaces": true
+    },
+    "Charcoal": {
+        "renderBackfaces": true
+    },
+    "KeijiroTube": {
+        "renderBackfaces": true
+    },
+    "Lofted (Hue Shift)": {
+        "renderBackfaces": false
+    },
+    "Wire (Lit)": {
+        "renderBackfaces": false
+    },
+    "WaveformFFT": {
+        "renderBackfaces": true
+    },
+    "Fairy": {
+        "renderBackfaces": true
+    },
+    "Space": {
+        "renderBackfaces": true
+    },
+    "Digital": {
+        "renderBackfaces": false
+    },
+    "Race": {
+        "renderBackfaces": false
+    },
+    "SmoothHull": {
+        "renderBackfaces": false
+    },
+    "Leaves2": {
+        "renderBackfaces": true
+    },
+    "InkGeometry": {
+        "renderBackfaces": true
+    },
+    "ConcaveHull": {
+        "renderBackfaces": false
+    },
+    "3D Printing Brush": {
+        "renderBackfaces": false
+    }
+};
+
+
+// Generated from pinned Open Brush texture importer metadata.
+// Regenerate with scripts/generate-texture-settings.mjs; do not edit by hand.
+const $7a1e9f07aec2d837$export$3ec06be695b639a9 = {
+    "OilPaint": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "Ink": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "ThickPaint": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "WetPaint": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Marker": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "TaperedMarker": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "TaperedMarker_Flat": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "Highlighter": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "TaperedFlat": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "SoftHighlighter": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "Light": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Fire": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 3,
+            "mipBias": 0
+        }
+    },
+    "Embers": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Smoke": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Snow": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Stars": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "VelvetInk": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Waveform": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": false,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 2,
+            "mipBias": 0
+        }
+    },
+    "Splatter": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "DuctTape": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "Paper": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "CoarseBristles": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "WigglyGraphite": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "Streamers": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 5,
+            "mipBias": 0
+        }
+    },
+    "Hypercolor": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Bubbles": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "CelVinyl": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "HyperGrid": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "LightWire": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": false,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Dots": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Icing": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Comet": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_AlphaMask": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "DiamondHull": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Leaves": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "DotMarker": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Plasma": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": false,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Taffy": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "Gouache": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "MylarTube": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Rain": {
+        "u_AlphaMask": {
+            "sRGB": false,
+            "mipmaps": false,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": false,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "DryBrush": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "LeakyPen": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_SecondaryTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Sparks": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": false,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Wind": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Rising Bubbles": {
+        "u_MainTex": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "TaperedWire": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "SquarePaper": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 2,
+            "mipBias": 0
+        }
+    },
+    "ThickGeometry": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "Muscle": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Guts": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Fire2": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_DisplaceTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "WaveformParticles": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "BubbleWand": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "DanceFloor": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "WaveformTube": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": false,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 2,
+            "mipBias": 0
+        }
+    },
+    "Drafting": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "SingleSided": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "DoubleFlat": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Feather": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "DuctTapeGeometry": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "TaperedHueShift": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "clamp",
+            "wrapV": "clamp",
+            "anisotropy": 4,
+            "mipBias": 0
+        }
+    },
+    "Lacewing": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_SpecTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Marbled Rainbow": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_SpecTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Charcoal": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "Leaves2": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    },
+    "InkGeometry": {
+        "u_MainTex": {
+            "sRGB": true,
+            "mipmaps": true,
+            "filter": "bilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        },
+        "u_BumpMap": {
+            "sRGB": false,
+            "mipmaps": true,
+            "filter": "trilinear",
+            "wrapU": "repeat",
+            "wrapV": "repeat",
+            "anisotropy": 1,
+            "mipBias": 0
+        }
+    }
+};
+
+
+function $4fdc68aa1ebb2033$var$resolveWrapping(mode) {
+    switch(mode){
+        case "clamp":
+            return $fugmd$ClampToEdgeWrapping;
+        case "mirror":
+        case "mirror-once":
+            return $fugmd$MirroredRepeatWrapping;
+        default:
+            return $fugmd$RepeatWrapping;
+    }
+}
+function $4fdc68aa1ebb2033$var$resolveMinFilter(filter, mipmaps) {
+    if (!mipmaps) return filter === "point" ? $fugmd$NearestFilter : $fugmd$LinearFilter;
+    switch(filter){
+        case "point":
+            return $fugmd$NearestMipmapNearestFilter;
+        case "trilinear":
+            return $fugmd$LinearMipmapLinearFilter;
+        default:
+            return $fugmd$LinearMipmapNearestFilter;
+    }
+}
+function $4fdc68aa1ebb2033$var$applyBrushTextureSettings(texture, brushName, uniformName) {
+    const settings = (0, $7a1e9f07aec2d837$export$3ec06be695b639a9)[brushName]?.[uniformName];
+    if (!settings) return;
+    texture.colorSpace = settings.sRGB ? $fugmd$SRGBColorSpace : $fugmd$NoColorSpace;
+    texture.wrapS = $4fdc68aa1ebb2033$var$resolveWrapping(settings.wrapU);
+    texture.wrapT = $4fdc68aa1ebb2033$var$resolveWrapping(settings.wrapV);
+    texture.generateMipmaps = settings.mipmaps;
+    texture.magFilter = settings.filter === "point" ? $fugmd$NearestFilter : $fugmd$LinearFilter;
+    texture.minFilter = $4fdc68aa1ebb2033$var$resolveMinFilter(settings.filter, settings.mipmaps);
+    texture.anisotropy = settings.anisotropy;
+    texture.needsUpdate = true;
+}
+function $4fdc68aa1ebb2033$var$applyBrushMaterialSettings(materialParams, brushName) {
+    const settings = (0, $893dd13f874e2f96$export$9ca3db12bec15353)[brushName];
+    if (!settings) return;
+    materialParams.side = settings.renderBackfaces ? $fugmd$DoubleSide : $fugmd$FrontSide;
+}
 // Cached default textures to prevent creating multiple instances
 let $4fdc68aa1ebb2033$var$defaultWhiteTexture = null;
 let $4fdc68aa1ebb2033$var$defaultNormalTexture = null;
@@ -46,9 +1351,24 @@ function $4fdc68aa1ebb2033$var$getDefaultNormalTexture() {
     return $4fdc68aa1ebb2033$var$defaultNormalTexture;
 }
 class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
-    constructor(manager){
+    constructor(manager, options = {}){
         super(manager);
+        this.materialFactory = options.materialFactory || ((materialParams)=>new $fugmd$RawShaderMaterial(materialParams));
+        this.textureConfigurator = options.textureConfigurator;
         this.loadedMaterials = {};
+    }
+    createMaterial(materialParams, brushName) {
+        $4fdc68aa1ebb2033$var$applyBrushMaterialSettings(materialParams, brushName);
+        return this.materialFactory(materialParams, brushName);
+    }
+    configureTexture(texture, brushName, uniformName, isFallback = false) {
+        if (!isFallback) $4fdc68aa1ebb2033$var$applyBrushTextureSettings(texture, brushName, uniformName);
+        if (this.textureConfigurator) this.textureConfigurator(texture, {
+            brushName: brushName,
+            uniformName: uniformName,
+            isFallback: isFallback
+        });
+        return texture;
     }
     async loadShaderIncludes(relativePath) {
         const loader = new $fugmd$FileLoader(this.manager);
@@ -91,8 +1411,11 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
         materialParams.vertexShader = vertexShaderText;
         materialParams.fragmentShader = fragmentShaderText;
         if (materialParams.uniforms.u_MainTex) {
-            if (materialParams.uniforms.u_MainTex.value === null) materialParams.uniforms.u_MainTex.value = $4fdc68aa1ebb2033$var$getDefaultWhiteTexture();
-            else if (typeof materialParams.uniforms.u_MainTex.value === "string") {
+            let isFallback = false;
+            if (materialParams.uniforms.u_MainTex.value === null) {
+                materialParams.uniforms.u_MainTex.value = $4fdc68aa1ebb2033$var$getDefaultWhiteTexture();
+                isFallback = true;
+            } else if (typeof materialParams.uniforms.u_MainTex.value === "string") {
                 const mainTex = await textureLoader.loadAsync(materialParams.uniforms.u_MainTex.value);
                 mainTex.name = `${brushName}_MainTex`;
                 mainTex.wrapS = $fugmd$RepeatWrapping;
@@ -102,18 +1425,24 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
                 materialParams.uniforms.u_MainTex.value = mainTex;
             } else if (materialParams.uniforms.u_MainTex.value.isTexture) ;
             else console.error(`[TiltShaderLoader] u_MainTex has unexpected type for ${brushName}:`, materialParams.uniforms.u_MainTex.value);
+            this.configureTexture(materialParams.uniforms.u_MainTex.value, brushName, "u_MainTex", isFallback);
         }
         if (materialParams.uniforms.u_BumpMap) {
-            if (materialParams.uniforms.u_BumpMap.value === null) materialParams.uniforms.u_BumpMap.value = $4fdc68aa1ebb2033$var$getDefaultNormalTexture();
-            else if (typeof materialParams.uniforms.u_BumpMap.value === "string") {
+            let isFallback = false;
+            if (materialParams.uniforms.u_BumpMap.value === null) {
+                materialParams.uniforms.u_BumpMap.value = $4fdc68aa1ebb2033$var$getDefaultNormalTexture();
+                isFallback = true;
+            } else if (typeof materialParams.uniforms.u_BumpMap.value === "string") {
                 const bumpMap = await textureLoader.loadAsync(materialParams.uniforms.u_BumpMap.value);
                 bumpMap.name = `${brushName}_BumpMap`;
+                bumpMap.colorSpace = $fugmd$NoColorSpace; // Normal maps are data, not color
                 bumpMap.wrapS = $fugmd$RepeatWrapping;
                 bumpMap.wrapT = $fugmd$RepeatWrapping;
                 bumpMap.flipY = false;
                 materialParams.uniforms.u_BumpMap.value = bumpMap;
             } else if (materialParams.uniforms.u_BumpMap.value.isTexture) ;
             else console.error(`[TiltShaderLoader] u_MainTex has unexpected type for ${brushName}:`, materialParams.uniforms.u_MainTex.value);
+            this.configureTexture(materialParams.uniforms.u_BumpMap.value, brushName, "u_BumpMap", isFallback);
         }
         if (materialParams.uniforms.u_AlphaMask) {
             const alphaMask = await textureLoader.loadAsync(materialParams.uniforms.u_AlphaMask.value);
@@ -122,6 +1451,7 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
             alphaMask.wrapT = $fugmd$RepeatWrapping;
             alphaMask.flipY = false;
             materialParams.uniforms.u_AlphaMask.value = alphaMask;
+            this.configureTexture(alphaMask, brushName, "u_AlphaMask");
         }
         if (materialParams.uniforms.u_DisplaceTex) {
             const displaceTex = await textureLoader.loadAsync(materialParams.uniforms.u_DisplaceTex.value);
@@ -130,6 +1460,7 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
             displaceTex.wrapT = $fugmd$RepeatWrapping;
             displaceTex.flipY = false;
             materialParams.uniforms.u_DisplaceTex.value = displaceTex;
+            this.configureTexture(displaceTex, brushName, "u_DisplaceTex");
         }
         if (materialParams.uniforms.u_SecondaryTex) {
             const secondaryTex = await textureLoader.loadAsync(materialParams.uniforms.u_SecondaryTex.value);
@@ -138,6 +1469,7 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
             secondaryTex.wrapT = $fugmd$RepeatWrapping;
             secondaryTex.flipY = false;
             materialParams.uniforms.u_SecondaryTex.value = secondaryTex;
+            this.configureTexture(secondaryTex, brushName, "u_SecondaryTex");
         }
         if (materialParams.uniforms.u_SpecTex) {
             const specTex = await textureLoader.loadAsync(materialParams.uniforms.u_SpecTex.value);
@@ -146,13 +1478,14 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
             specTex.wrapT = $fugmd$RepeatWrapping;
             specTex.flipY = false;
             materialParams.uniforms.u_SpecTex.value = specTex;
+            this.configureTexture(specTex, brushName, "u_SpecTex");
         }
         // inject three.js lighting and fog uniforms
         for(var lightType in $fugmd$UniformsLib.lights)materialParams.uniforms[lightType] = $fugmd$UniformsLib.lights[lightType];
         for(var fogType in $fugmd$UniformsLib.fog)materialParams.uniforms[fogType] = $fugmd$UniformsLib.fog[fogType];
-        let rawMaterial = new $fugmd$RawShaderMaterial(materialParams);
-        this.loadedMaterials[brushName] = rawMaterial;
-        onLoad(scope.parse(rawMaterial));
+        const material = this.createMaterial(materialParams, brushName);
+        this.loadedMaterials[brushName] = material;
+        onLoad(scope.parse(material));
     }
     parse(rawMaterial) {
         return rawMaterial;
@@ -197,6 +1530,9 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
             case "Disco":
             case "4391aaaa-df73-4396-9e33-31e4e4930b27":
                 return "Disco";
+            case "Digital":
+            case "30cb9af6-be41-4872-8f3e-cbff63fe3db8":
+                return "Digital";
             case "DotMarker":
             case "d1d991f2-e7a0-4cf1-b328-f57e915e6260":
                 return "DotMarker";
@@ -296,6 +1632,9 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
             case "Rainbow":
             case "ad1ad437-76e2-450d-a23a-e17f8310b960":
                 return "Rainbow";
+            case "Race":
+            case "abfbb2aa-70b4-4a5c-8126-8eedda2b3628":
+                return "Race";
             case "ShinyHull":
             case "faaa4d44-fcfb-4177-96be-753ac0421ba3":
                 return "ShinyHull";
@@ -522,7 +1861,28 @@ class $4fdc68aa1ebb2033$export$bcc22bf437a07d8f extends $fugmd$Loader {
         }
     }
 }
+function $4fdc68aa1ebb2033$var$createProceduralAdditiveParams(brushName, brushGuid) {
+    const assetPath = `${brushName}-${brushGuid}/${brushName}-${brushGuid}-v10.0`;
+    return {
+        uniforms: {
+            u_EmissionGain: {
+                value: 0.5
+            }
+        },
+        glslVersion: $fugmd$GLSL3,
+        vertexShader: `${assetPath}-vertex.glsl`,
+        fragmentShader: `${assetPath}-fragment.glsl`,
+        side: 2,
+        transparent: true,
+        depthFunc: 2,
+        depthWrite: false,
+        depthTest: true,
+        blending: 2
+    };
+}
 const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
+    "Digital": $4fdc68aa1ebb2033$var$createProceduralAdditiveParams("Digital", "30cb9af6-be41-4872-8f3e-cbff63fe3db8"),
+    "Race": $4fdc68aa1ebb2033$var$createProceduralAdditiveParams("Race", "abfbb2aa-70b4-4a5c-8126-8eedda2b3628"),
     "BlocksBasic": {
         uniforms: {
             u_SceneLight_0_matrix: {
@@ -3503,6 +4863,9 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
     },
     "Smoke": {
         uniforms: {
+            u_time: {
+                value: new $fugmd$Vector4()
+            },
             u_SceneLight_0_matrix: {
                 value: [
                     1,
@@ -10174,6 +11537,93 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
 };
 
 
+
+const $16cff2322f67c674$export$c1bb71fdd9aa3dc9 = "9871385a-df73-4396-9e33-31e4e4930b27";
+const $16cff2322f67c674$export$18e64de72c17bfe = 0.05;
+const $16cff2322f67c674$export$6c8c313f844ab31d = "4391385a-df73-4396-9e33-31e4e4930b27";
+const $16cff2322f67c674$export$898562a301a76693 = "f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51";
+const $16cff2322f67c674$export$31cff25809951ff3 = [
+    1,
+    1.333,
+    1.77
+];
+function $16cff2322f67c674$export$2bd00b77fe2d55ec(brushNameOrGuid, source, sharedUniforms = {}) {
+    if (!source?.uniforms) return source;
+    if ($16cff2322f67c674$var$isElectricity(brushNameOrGuid)) return $16cff2322f67c674$export$31cff25809951ff3.map((mod)=>{
+        const material = $16cff2322f67c674$var$cloneWithSharedUniforms(source, sharedUniforms);
+        material.uniforms.u_DisplacementMod = {
+            value: mod
+        };
+        return material;
+    });
+    if ($16cff2322f67c674$var$isToon(brushNameOrGuid)) {
+        const surface = $16cff2322f67c674$var$cloneWithSharedUniforms(source, sharedUniforms);
+        surface.side = $fugmd$FrontSide;
+        surface.uniforms.u_ToonOutlinePass = {
+            value: false
+        };
+        const outline = $16cff2322f67c674$var$cloneWithSharedUniforms(source, sharedUniforms);
+        outline.side = $fugmd$BackSide;
+        outline.uniforms.u_ToonOutlinePass = {
+            value: true
+        };
+        return [
+            surface,
+            outline
+        ];
+    }
+    if (!$16cff2322f67c674$var$isTubeToonInverted(brushNameOrGuid)) return source;
+    const base = $16cff2322f67c674$var$cloneWithSharedUniforms(source, sharedUniforms);
+    base.side = $fugmd$FrontSide;
+    base.uniforms.u_TubeToonPass = {
+        value: 1
+    };
+    base.uniforms.u_TubeToonOutlineSize = {
+        value: $16cff2322f67c674$export$18e64de72c17bfe
+    };
+    const color = $16cff2322f67c674$var$cloneWithSharedUniforms(source, sharedUniforms);
+    color.side = $fugmd$BackSide;
+    color.uniforms.u_TubeToonPass = {
+        value: 2
+    };
+    color.uniforms.u_TubeToonOutlineSize = {
+        value: $16cff2322f67c674$export$18e64de72c17bfe
+    };
+    return [
+        base,
+        color
+    ];
+}
+function $16cff2322f67c674$export$341ae8ac0b7c3891(geometry, indexCount, material) {
+    if (!Array.isArray(material)) return;
+    geometry.clearGroups();
+    for(let materialIndex = 0; materialIndex < material.length; materialIndex += 1)geometry.addGroup(0, indexCount, materialIndex);
+}
+function $16cff2322f67c674$var$isElectricity(brushNameOrGuid) {
+    const normalized = $16cff2322f67c674$var$normalizeBrushName(brushNameOrGuid);
+    return normalized === "electricity" || normalized === $16cff2322f67c674$export$898562a301a76693;
+}
+function $16cff2322f67c674$var$isToon(brushNameOrGuid) {
+    const normalized = $16cff2322f67c674$var$normalizeBrushName(brushNameOrGuid);
+    return normalized === "toon" || normalized === $16cff2322f67c674$export$6c8c313f844ab31d;
+}
+function $16cff2322f67c674$var$isTubeToonInverted(brushNameOrGuid) {
+    const normalized = $16cff2322f67c674$var$normalizeBrushName(brushNameOrGuid);
+    return normalized === "tubetooninverted" || normalized === $16cff2322f67c674$export$c1bb71fdd9aa3dc9;
+}
+function $16cff2322f67c674$var$normalizeBrushName(brushNameOrGuid) {
+    return String(brushNameOrGuid ?? "").replace(/^material_/, "").toLowerCase();
+}
+function $16cff2322f67c674$var$cloneWithSharedUniforms(source, sharedUniforms) {
+    const material = source.clone();
+    material.uniforms = {
+        ...material.uniforms,
+        ...sharedUniforms
+    };
+    return material;
+}
+
+
 // Copyright 2021-2022 Icosa Gallery
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -10187,6 +11637,7 @@ const $4fdc68aa1ebb2033$var$tiltBrushMaterialParams = {
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 
 
 class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
@@ -10621,6 +12072,8 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
                 renameAttribute(mesh, "texcoord_0", "a_texcoord0");
                 setAttributeIfExists(mesh, "uv", "a_texcoord0");
+                renameAttribute(mesh, "uv1", "a_texcoord1");
+                renameAttribute(mesh, "uv2", "a_texcoord2");
                 renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
                 renameAttribute(mesh, "texcoord_1", "a_texcoord1");
                 shader = await this.tiltShaderLoader.loadAsync("Electricity");
@@ -11855,6 +13308,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                 renameAttribute(mesh, "_tb_unity_texcoord_0", "a_texcoord0");
                 renameAttribute(mesh, "texcoord_0", "a_texcoord0");
                 setAttributeIfExists(mesh, "uv", "a_texcoord0");
+                setAttributeIfExists(mesh, "uv1", "a_texcoord1");
                 renameAttribute(mesh, "_tb_unity_texcoord_1", "a_texcoord1");
                 renameAttribute(mesh, "texcoord_1", "a_texcoord1");
                 shader = await this.tiltShaderLoader.loadAsync("KeijiroTube");
@@ -12095,8 +13549,18 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
             default:
                 console.warn(`Could not find brush with guid ${guidOrName}!`);
         }
+        if (mesh.material?.uniforms) {
+            const renderMaterial = (0, $16cff2322f67c674$export$2bd00b77fe2d55ec)(guidOrName, mesh.material);
+            if (renderMaterial !== mesh.material) {
+                mesh.material = renderMaterial;
+                (0, $16cff2322f67c674$export$341ae8ac0b7c3891)(mesh.geometry, mesh.geometry.index?.count ?? mesh.geometry.getAttribute("position")?.count ?? 0, renderMaterial);
+            }
+        }
         // Set the exporter type flag on the shader
-        if (mesh.material?.uniforms) mesh.material.uniforms.u_isNewTiltExporter = {
+        const renderMaterials = Array.isArray(mesh.material) ? mesh.material : [
+            mesh.material
+        ];
+        for (const material of renderMaterials)if (material?.uniforms) material.uniforms.u_isNewTiltExporter = {
             value: isNewTiltExporter
         };
         mesh.onBeforeRender = (renderer, scene, camera, geometry, material, group)=>{
@@ -12117,7 +13581,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                     }
                     // Transforms
                     if (material.uniforms.u_SceneLight_0_matrix) {
-                        const direction = material.uniforms.directionalLights.value[0].direction;
+                        const direction = material.uniforms.directionalLights.value[0].direction.clone().negate();
                         material.uniforms.u_SceneLight_0_matrix.value = new $fugmd$Matrix4().lookAt(new $fugmd$Vector3(0, 0, 0), direction, new $fugmd$Vector3(0, 1, 0));
                     }
                 }
@@ -12130,7 +13594,7 @@ class $e02d07ddc3ccd105$export$2b011a5b12963d65 {
                     }
                     // Transforms
                     if (material.uniforms.u_SceneLight_1_matrix) {
-                        const direction = material.uniforms.directionalLights.value[1].direction;
+                        const direction = material.uniforms.directionalLights.value[1].direction.clone().negate();
                         material.uniforms.u_SceneLight_1_matrix.value = new $fugmd$Matrix4().lookAt(new $fugmd$Vector3(0, 0, 0), direction, new $fugmd$Vector3(0, 1, 0));
                     }
                 }
@@ -12992,5 +14456,5 @@ class $14e7a74c93f87da8$export$24723e25468f5bb7 {
 
 
 
-export {$4fdc68aa1ebb2033$export$bcc22bf437a07d8f as TiltShaderLoader, $e02d07ddc3ccd105$export$2b011a5b12963d65 as GLTFGoogleTiltBrushMaterialExtension, $14e7a74c93f87da8$export$24723e25468f5bb7 as GLTFGoogleTiltBrushTechniquesExtension};
+export {$4fdc68aa1ebb2033$export$bcc22bf437a07d8f as TiltShaderLoader, $16cff2322f67c674$export$341ae8ac0b7c3891 as applyTiltBrushRenderGroups, $16cff2322f67c674$export$2bd00b77fe2d55ec as createTiltBrushRenderMaterial, $16cff2322f67c674$export$898562a301a76693 as ELECTRICITY_BRUSH_GUID, $16cff2322f67c674$export$31cff25809951ff3 as ELECTRICITY_DISPLACEMENT_MODS, $16cff2322f67c674$export$6c8c313f844ab31d as TOON_BRUSH_GUID, $16cff2322f67c674$export$c1bb71fdd9aa3dc9 as TUBE_TOON_INVERTED_BRUSH_GUID, $16cff2322f67c674$export$18e64de72c17bfe as TUBE_TOON_INVERTED_OUTLINE_SIZE, $e02d07ddc3ccd105$export$2b011a5b12963d65 as GLTFGoogleTiltBrushMaterialExtension, $14e7a74c93f87da8$export$24723e25468f5bb7 as GLTFGoogleTiltBrushTechniquesExtension};
 //# sourceMappingURL=three-icosa.module.js.map
