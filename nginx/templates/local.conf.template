@@ -4,6 +4,12 @@
 
 client_max_body_size 1024M;
 
+include mime.types;
+
+types {
+    text/javascript mjs;
+}
+
 server {
     listen 80;
     listen [::]:80;
