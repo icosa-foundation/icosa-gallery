@@ -35,7 +35,7 @@
                             <br>
                             <hr style="border-top:2px solid white;">
                             <br>
-                            <h3>Previous moderation decision:</h3>
+                            <h3>Previous moderation status:</h3>
                             <p>{{ obj.previous_moderation_state|default_if_none:"Unknown" }}</p>
                             <form action="{% url 'icosa:moderation_queue' %}" method="post">
                                 {% csrf_token %}
