@@ -155,7 +155,6 @@ def moderation_queue(request):
         "content_type": content_type,
         "obj": obj,
         "moderation_template": moderation_template,
-        "is_moderating": True,  # XXX Currently forces viewer.html to load the experimental js.
         "changed_data": json.dumps(changed_data),
         "mod_fields": mod_fields,
     }
