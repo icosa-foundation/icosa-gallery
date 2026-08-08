@@ -200,9 +200,9 @@ def user_asset_collection_list(request, user_url: str):
         elif action == COLLECTION_REMOVE:
             collection.assets.remove(asset)
         elif action == COLLECTION_NEW:
-            name = post_data.get("new-collection-name")
-            if name is None:
-                return HttpResponseBadRequest("name is none")
+            name = (post_data.get("new-collection-name") or "").strip()
+            if not name:
+                return HttpResponseBadRequest("collection name is required")
             collection_data = {
                 "user": user,
                 "name": name,

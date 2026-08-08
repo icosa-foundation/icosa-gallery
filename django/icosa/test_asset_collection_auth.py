@@ -62,6 +62,28 @@ class AssetCollectionAuthorizationTests(TestCase):
         )
         self.assertFalse(AssetCollection.objects.exists())
 
+    def test_user_cannot_create_a_collection_without_a_name(self):
+        self.client.force_login(self.alice)
+
+        for name in ["", "   "]:
+            with self.subTest(name=name):
+                response = self.client.post(
+                    self.collection_list_url(self.alice_owner),
+                    {
+                        "asset_url": self.public_asset.url,
+                        "new-collection-name": name,
+                        "_add_to_new_collection": "Create and add",
+                    },
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertContains(
+                    response,
+                    "collection name is required",
+                    status_code=400,
+                )
+                self.assertFalse(AssetCollection.objects.exists())
+
     def test_user_cannot_create_a_collection_through_another_users_url(self):
         self.client.force_login(self.bob)
 
