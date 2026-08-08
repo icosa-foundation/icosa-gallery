@@ -1,11 +1,14 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import redirect_to_login
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponseBadRequest, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 
 from icosa.helpers.moderation import get_str_content_type
+from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import (
     PUBLIC,
     UNLISTED,
@@ -41,17 +44,25 @@ def get_user_collections(request, user, asset):
 
 def user_asset_collection_list(request, user_url: str):
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
+
         post_data = request.POST
         template = "modals/user_asset_collection_modal_content.html"
 
-        try:
-            owner = AssetOwner.objects.get(url=user_url)
-        except (AssetOwner.DoesNotExist, AssetOwner.MultipleObjectsReturned):
-            return HttpResponseBadRequest
-        user = owner.django_user
+        get_object_or_404(
+            AssetOwner,
+            url=user_url,
+            django_user=request.user,
+        )
+        user = request.user
 
         try:
-            asset = Asset.objects.get(url=post_data.get("asset_url"))
+            asset = Asset.objects.exclude(moderation_state__in=MOD_HIDDEN).get(
+                Q(visibility__in=[PUBLIC, UNLISTED])
+                | Q(owner__django_user=request.user),
+                url=post_data.get("asset_url"),
+            )
         except (Asset.DoesNotExist, Asset.MultipleObjectsReturned):
             return HttpResponseBadRequest("no valid asset")
 
@@ -107,13 +118,17 @@ def user_asset_collection_list(request, user_url: str):
         owner = get_object_or_404(
             AssetOwner,
             url=user_url,
+            django_user__isnull=False,
         )
         user = owner.django_user
 
         if user == request.user:
             collections = AssetCollection.objects.filter(user=owner.django_user)
         else:
-            collections = AssetCollection.objects.filter(user=owner.django_user, visibility__in=[PUBLIC, UNLISTED])
+            collections = AssetCollection.objects.filter(
+                user=owner.django_user,
+                visibility=PUBLIC,
+            ).exclude(moderation_state__in=MOD_HIDDEN)
         context = {
             "collections": collections,
             "page_title": f"Collections by {user.displayname}",
@@ -131,6 +146,7 @@ def user_asset_collection_list_modal(request, user_url: str, asset_url: str):
     owner = get_object_or_404(
         AssetOwner,
         url=user_url,
+        django_user=request.user,
     )
     asset = get_object_or_404(
         Asset,
@@ -162,15 +178,32 @@ def user_asset_collection_view(request, user_url: str, collection_url: str):
     owner = get_object_or_404(
         AssetOwner,
         url=user_url,
+        django_user__isnull=False,
     )
     user = owner.django_user
+    user_is_moderator = request.user.groups.filter(name="Moderator").exists()
 
     if user == request.user:
-        collection = get_object_or_404(AssetCollection, url=collection_url)
+        collection = get_object_or_404(
+            AssetCollection,
+            url=collection_url,
+            user=request.user,
+        )
     else:
-        collection = get_object_or_404(AssetCollection, url=collection_url, visibility__in=[PUBLIC, UNLISTED])
+        collections = AssetCollection.objects.filter(
+            visibility__in=[PUBLIC, UNLISTED]
+        )
+        if not user_is_moderator:
+            collections = collections.exclude(moderation_state__in=MOD_HIDDEN)
+        collection = get_object_or_404(
+            collections,
+            url=collection_url,
+            user=user,
+        )
 
-    asset_objs = collection.collected_assets.filter(asset__visibility=PUBLIC)
+    asset_objs = collection.collected_assets.filter(asset__visibility=PUBLIC).exclude(
+        asset__moderation_state__in=MOD_HIDDEN
+    )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
@@ -182,7 +215,7 @@ def user_asset_collection_view(request, user_url: str, collection_url: str):
         "page_title": collection.name or "Untitled collection",
         "collection": collection,
         "owner": owner,
-        "user_is_moderator": request.user.groups.filter(name="Moderator").exists(),
+        "user_is_moderator": user_is_moderator,
         "content_type": get_str_content_type(collection),
     }
     return render(request, template, context)
