@@ -263,7 +263,9 @@ class AssetCollectionForm(forms.ModelForm):
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 5}),
-            "image": CustomImageInput(),
+            "image": ClearableFileInput(
+                attrs={"accept": "image/png,image/jpeg"},
+            ),
         }
 
 

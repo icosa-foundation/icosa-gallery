@@ -279,6 +279,15 @@ class AssetCollectionAuthorizationTests(TestCase):
         self.assertRedirects(response, reverse("icosa:my_asset_collection_list"))
         self.assertFalse(AssetCollection.objects.exists())
 
+    def test_collection_form_uses_an_image_upload_control(self):
+        self.client.force_login(self.alice)
+
+        response = self.client.get(reverse("icosa:asset_collection_create"))
+
+        self.assertContains(response, 'type="file"')
+        self.assertContains(response, 'accept="image/png,image/jpeg"')
+        self.assertNotContains(response, "Use current viewport as the thumbnail")
+
     def test_user_cannot_edit_or_delete_another_users_collection(self):
         collection = AssetCollection.objects.create(
             user=self.alice,
