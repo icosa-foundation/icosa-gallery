@@ -1,5 +1,46 @@
 # Getting Started
 
+## Local development without Docker
+
+For the quickest local development setup, install Git, [uv](https://docs.astral.sh/uv/),
+and the `libmagic` system package. On macOS, both non-Git dependencies can be
+installed with:
+
+```bash
+brew install uv libmagic
+```
+
+Then, from the repository root, run:
+
+```bash
+./run-local.sh
+```
+
+The script uses uv to install Python 3.13, creates an isolated environment in
+`.venv`, installs the dependencies, applies the database migrations to a local
+SQLite database, and starts Icosa Gallery at <http://localhost:8000>. Uploaded
+files are stored in `django/media`. Neither Docker, PostgreSQL, nor Redis is
+required.
+
+The first run needs an internet connection while Python and its dependencies
+are installed. On Debian/Ubuntu, install the system library with
+`sudo apt install libmagic1`.
+
+To run a Django management command in the same environment, pass it to the
+script. For example, create a local admin account with:
+
+```bash
+./run-local.sh createsuperuser
+```
+
+Stop the development server with <kbd>Ctrl</kbd>+<kbd>C</kbd>. To reset all
+local application data, stop the server and delete `django/db.local.sqlite3` and
+`django/media`.
+
+The SQLite setup is intended for development. Use the Docker Compose setup
+below, with PostgreSQL and the other production services, when deploying an
+instance.
+
 ## Software Requirements
 
 Install the following software if you haven't already:
@@ -9,9 +50,10 @@ Install the following software if you haven't already:
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
 
-## Install via Docker Compose
+## Deploy via Docker Compose
 
-Below are the steps to deploy Icosa Gallery with Docker Compose. This is currently the recommended (and only official) way to run Icosa Gallery.
+Below are the steps to deploy Icosa Gallery with Docker Compose. This is the
+recommended way to run a hosted Icosa Gallery instance.
 
 This guide assumes some familiarity with the command line on your chosen platform.
 
@@ -144,4 +186,3 @@ exit
 ### Step 6 - Configure SSL
 
 While this installation will listen to requests on https, we do not currently manage SSL certificates for you. The simplest option to secure your site with an SSL certificate and accept traffic over https is to configure a service like [cloudflare](cloudflare.com).
-
