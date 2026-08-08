@@ -4,9 +4,11 @@ from django.contrib.auth.views import redirect_to_login
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponseBadRequest, HttpResponseNotAllowed
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
 
+from icosa.forms import AssetCollectionForm
 from icosa.helpers.moderation import get_str_content_type
 from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import (
@@ -26,6 +28,110 @@ COLLECTION_ACTIONS = {
     "_remove_from_collection": COLLECTION_REMOVE,
     "_add_to_new_collection": COLLECTION_NEW,
 }
+
+
+def _paginate_collections(request, collections):
+    paginator = Paginator(collections, settings.PAGINATION_PER_PAGE)
+    return paginator, paginator.get_page(request.GET.get("page"))
+
+
+@never_cache
+def asset_collection_list(request):
+    collections = (
+        AssetCollection.objects.filter(visibility=PUBLIC)
+        .exclude(moderation_state__in=MOD_HIDDEN)
+        .select_related("user")
+        .order_by("-update_time")
+    )
+    paginator, collection_page = _paginate_collections(request, collections)
+    return render(
+        request,
+        "main/asset_collection_list.html",
+        {
+            "collections": collection_page,
+            "assets": collection_page,
+            "paginator": paginator,
+            "page_title": "Collections",
+        },
+    )
+
+
+@login_required
+@never_cache
+def my_asset_collection_list(request):
+    collections = AssetCollection.objects.filter(user=request.user).order_by(
+        "-update_time"
+    )
+    paginator, collection_page = _paginate_collections(request, collections)
+    return render(
+        request,
+        "main/asset_collection_list.html",
+        {
+            "collections": collection_page,
+            "assets": collection_page,
+            "paginator": paginator,
+            "page_title": "My Collections",
+            "show_owner_actions": True,
+        },
+    )
+
+
+@login_required
+@never_cache
+def asset_collection_create(request):
+    form = AssetCollectionForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        collection = form.save(commit=False)
+        collection.user = request.user
+        collection.save()
+        return redirect("icosa:my_asset_collection_list")
+    return render(
+        request,
+        "main/asset_collection_form.html",
+        {
+            "form": form,
+            "page_title": "Create Collection",
+        },
+    )
+
+
+@login_required
+@never_cache
+def asset_collection_edit(request, collection_url: str):
+    collection = get_object_or_404(
+        AssetCollection,
+        url=collection_url,
+        user=request.user,
+    )
+    form = AssetCollectionForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=collection,
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect(collection.get_absolute_url() or "icosa:my_asset_collection_list")
+    return render(
+        request,
+        "main/asset_collection_form.html",
+        {
+            "collection": collection,
+            "form": form,
+            "page_title": f"Edit {collection.name}",
+        },
+    )
+
+
+@login_required
+@require_POST
+def asset_collection_delete(request, collection_url: str):
+    collection = get_object_or_404(
+        AssetCollection,
+        url=collection_url,
+        user=request.user,
+    )
+    collection.delete()
+    return redirect("icosa:my_asset_collection_list")
 
 
 def get_user_collections(request, user, asset):
@@ -129,9 +235,14 @@ def user_asset_collection_list(request, user_url: str):
                 user=owner.django_user,
                 visibility=PUBLIC,
             ).exclude(moderation_state__in=MOD_HIDDEN)
+        collections = collections.order_by("-update_time")
+        paginator, collection_page = _paginate_collections(request, collections)
         context = {
-            "collections": collections,
+            "collections": collection_page,
+            "assets": collection_page,
+            "paginator": paginator,
             "page_title": f"Collections by {user.displayname}",
+            "show_owner_actions": user == request.user,
             "user": user,
         }
         return render(request, template, context)

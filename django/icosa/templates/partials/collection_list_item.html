@@ -1,0 +1,25 @@
+<article class="sketchbox">
+    <a href="{{ collection.get_absolute_url }}" role="presentation">
+        <div class="sketchimage">
+            <img src="{{ collection.get_thumbnail_url }}" alt="{{ collection.name }}">
+        </div>
+    </a>
+    <div class="sketch-meta">
+        <h4>
+            <a href="{{ collection.get_absolute_url }}">
+                {{ collection.name|default:"Untitled collection" }}
+            </a>
+        </h4>
+        <p class="sketch-byline">
+            {{ collection.assets.count }} asset{{ collection.assets.count|pluralize }}
+            {% if not hide_byline %}
+                by {{ collection.user.displayname }}
+            {% endif %}
+            {% if show_owner_actions %}
+                &middot; {{ collection.get_visibility_display }}
+                &middot;
+                <a href="{% url 'icosa:asset_collection_edit' collection_url=collection.url %}">Edit</a>
+            {% endif %}
+        </p>
+    </div>
+</article>

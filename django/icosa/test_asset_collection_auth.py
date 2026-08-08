@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -213,6 +213,122 @@ class AssetCollectionAuthorizationTests(TestCase):
             [collection["collectionId"] for collection in response.json()["collections"]],
             [visible.url],
         )
+
+    def test_owner_can_create_edit_and_delete_a_collection(self):
+        self.client.force_login(self.alice)
+
+        response = self.client.post(
+            reverse("icosa:asset_collection_create"),
+            {
+                "name": "New collection",
+                "description": "Draft description",
+                "visibility": PRIVATE,
+            },
+        )
+
+        self.assertRedirects(response, reverse("icosa:my_asset_collection_list"))
+        collection = AssetCollection.objects.get(user=self.alice)
+        self.assertTrue(collection.url)
+
+        response = self.client.post(
+            reverse(
+                "icosa:asset_collection_edit",
+                kwargs={"collection_url": collection.url},
+            ),
+            {
+                "name": "Published collection",
+                "description": "Published description",
+                "visibility": PUBLIC,
+            },
+        )
+
+        collection.refresh_from_db()
+        self.assertRedirects(response, collection.get_absolute_url())
+        self.assertEqual(collection.name, "Published collection")
+        self.assertEqual(collection.visibility, PUBLIC)
+
+        response = self.client.post(
+            reverse(
+                "icosa:asset_collection_delete",
+                kwargs={"collection_url": collection.url},
+            )
+        )
+
+        self.assertRedirects(response, reverse("icosa:my_asset_collection_list"))
+        self.assertFalse(AssetCollection.objects.exists())
+
+    def test_user_cannot_edit_or_delete_another_users_collection(self):
+        collection = AssetCollection.objects.create(
+            user=self.alice,
+            url="alice-edit",
+            name="Alice collection",
+            visibility=PRIVATE,
+        )
+        self.client.force_login(self.bob)
+
+        edit_url = reverse(
+            "icosa:asset_collection_edit",
+            kwargs={"collection_url": collection.url},
+        )
+        delete_url = reverse(
+            "icosa:asset_collection_delete",
+            kwargs={"collection_url": collection.url},
+        )
+
+        self.assertEqual(self.client.get(edit_url).status_code, 404)
+        self.assertEqual(self.client.post(edit_url, {}).status_code, 404)
+        self.assertEqual(self.client.post(delete_url).status_code, 404)
+        self.assertTrue(AssetCollection.objects.filter(pk=collection.pk).exists())
+
+    def test_collection_indexes_are_discoverable_for_public_and_owner_views(self):
+        public_collection = AssetCollection.objects.create(
+            user=self.alice,
+            url="public-index",
+            name="Public index collection",
+            visibility=PUBLIC,
+        )
+        private_collection = AssetCollection.objects.create(
+            user=self.alice,
+            url="private-index",
+            name="Private index collection",
+            visibility=PRIVATE,
+        )
+
+        public_response = self.client.get(reverse("icosa:asset_collection_list"))
+        self.assertContains(public_response, public_collection.name)
+        self.assertNotContains(public_response, private_collection.name)
+
+        self.client.force_login(self.alice)
+        owner_response = self.client.get(reverse("icosa:my_asset_collection_list"))
+        self.assertContains(owner_response, public_collection.name)
+        self.assertContains(owner_response, private_collection.name)
+
+    @override_settings(PAGINATION_PER_PAGE=1)
+    def test_public_collection_index_paginates(self):
+        older_collection = AssetCollection.objects.create(
+            user=self.alice,
+            url="older-public-index",
+            name="Older public collection",
+            visibility=PUBLIC,
+        )
+        newer_collection = AssetCollection.objects.create(
+            user=self.alice,
+            url="newer-public-index",
+            name="Newer public collection",
+            visibility=PUBLIC,
+        )
+
+        first_page = self.client.get(reverse("icosa:asset_collection_list"))
+        self.assertContains(first_page, newer_collection.name)
+        self.assertNotContains(first_page, older_collection.name)
+        self.assertContains(first_page, "?page=2")
+
+        second_page = self.client.get(
+            reverse("icosa:asset_collection_list"),
+            {"page": 2},
+        )
+        self.assertContains(second_page, older_collection.name)
+        self.assertNotContains(second_page, newer_collection.name)
 
     @staticmethod
     def collection_list_url(owner):

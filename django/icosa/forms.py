@@ -23,6 +23,7 @@ from icosa.models import (
     V4_CC_LICENSES,
     VALID_THUMBNAIL_MIME_TYPES,
     Asset,
+    AssetCollection,
     AssetOwner,
     User,
 )
@@ -231,6 +232,38 @@ class AssetEditForm(forms.ModelForm):
                 url="icosa:tag-autocomplete",
             ),
             "camera": CameraButton(),
+        }
+
+
+class AssetCollectionForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["visibility"].choices = [
+            (PUBLIC, "Public"),
+            (PRIVATE, "Private"),
+            (UNLISTED, "Unlisted"),
+        ]
+
+    def clean_image(self):
+        image = self.cleaned_data.get("image")
+        if image and hasattr(image, "chunks"):
+            magic_bytes = next(image.chunks(chunk_size=2048))
+            image.seek(0)
+            if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):
+                raise ValidationError("Image must be a PNG or JPEG.")
+        return image
+
+    class Meta:
+        model = AssetCollection
+        fields = [
+            "name",
+            "description",
+            "visibility",
+            "image",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 5}),
+            "image": CustomImageInput(),
         }
 
 

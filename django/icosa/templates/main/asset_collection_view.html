@@ -10,6 +10,11 @@
 <div>
     <div class="container">
         <h1>{{ collection.name }} by {{ collection.user.displayname }}</h1>
+        {% if request.user == collection.user %}
+            <p>
+                <a class="btn btn-primary btn-sm" href="{% url 'icosa:asset_collection_edit' collection_url=collection.url %}">Edit collection</a>
+            </p>
+        {% endif %}
         {% if collection.description %}
             {{ collection.description|linebreaks }}
         {% endif %}

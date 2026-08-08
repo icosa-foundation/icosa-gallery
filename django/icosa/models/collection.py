@@ -3,7 +3,7 @@ import secrets
 
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
-from django.db import IntegrityError, models
+from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
@@ -53,8 +53,9 @@ class AssetCollection(ModerationMixin):
             f"{settings.DEPLOYMENT_SCHEME}{settings.DEPLOYMENT_HOST_WEB}{settings.STATIC_URL}images/nothumbnail.png?v=1"
         )
 
-        collected_asset = self.collected_assets.first()
-        if collected_asset:
+        if self.image:
+            thumbnail_url = self.image.url
+        elif collected_asset := self.collected_assets.first():
             thumbnail_url = collected_asset.asset.get_thumbnail_url()
 
         return thumbnail_url
@@ -73,16 +74,7 @@ class AssetCollection(ModerationMixin):
         bypass_custom_logic = kwargs.pop("bypass_custom_logic", False)
         bypass_moderation_logging = kwargs.pop("bypass_moderation_logging", False)
         if self._state.adding and not self.url:
-            # TODO(james): this, or something like it should be used wherever
-            # we try to generate unique urls for things.
-            while True:
-                try:
-                    self.url = secrets.token_urlsafe(8)
-                    super().save(*args, **kwargs)
-                except IntegrityError:
-                    continue
-                else:
-                    break
+            self.url = secrets.token_urlsafe(8)
         if not bypass_custom_logic:
             now = timezone.now()
             if self._state.adding:

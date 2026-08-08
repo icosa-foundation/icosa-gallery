@@ -99,6 +99,31 @@ urlpatterns = [
     path("uploads", main_views.uploads, name="uploads"),
     path("upload_list_partial", main_views.upload_list_partial, name="upload_list_partial"),
     path("upload_asset", main_views.upload_asset, name="upload_asset"),
+    path(
+        "collections",
+        asset_collection_views.asset_collection_list,
+        name="asset_collection_list",
+    ),
+    path(
+        "collections/mine",
+        asset_collection_views.my_asset_collection_list,
+        name="my_asset_collection_list",
+    ),
+    path(
+        "collections/new",
+        asset_collection_views.asset_collection_create,
+        name="asset_collection_create",
+    ),
+    path(
+        "collections/<str:collection_url>/edit",
+        asset_collection_views.asset_collection_edit,
+        name="asset_collection_edit",
+    ),
+    path(
+        "collections/<str:collection_url>/delete",
+        asset_collection_views.asset_collection_delete,
+        name="asset_collection_delete",
+    ),
     path("user/<str:slug>", main_views.user_show, name="user_show"),
     path(
         "user/<str:user_url>/collections",

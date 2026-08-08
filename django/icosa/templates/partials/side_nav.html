@@ -56,6 +56,18 @@
                                 </li>
                                 <li class="pro-menu-item">
                                     <div class="pro-inner-item" tabindex="0" role="button">
+                                        <a href="{% url 'icosa:my_asset_collection_list' %}">
+                                            <span class="pro-icon-wrapper">
+                                                <span class="pro-icon">
+                                                    {% fa_icon "solid" "layer-group" %}
+                                                </span>
+                                            </span>
+                                            <span class="pro-item-content">My Collections</span>
+                                        </a>
+                                    </div>
+                                </li>
+                                <li class="pro-menu-item">
+                                    <div class="pro-inner-item" tabindex="0" role="button">
                                         <a href="{% url 'icosa:my_likes' %}/">
                                             <span class="pro-icon-wrapper">
                                                 <span class="pro-icon">
@@ -111,6 +123,18 @@
                     <ul>
                         <h3>Explore</h3>
                         <div>
+                            <li class="pro-menu-item">
+                                <div class="pro-inner-item" tabindex="0" role="button">
+                                    <a href="{% url 'icosa:asset_collection_list' %}">
+                                        <span class="pro-icon-wrapper">
+                                            <span class="pro-icon">
+                                                {% fa_icon "solid" "layer-group" %}
+                                            </span>
+                                        </span>
+                                        <span class="pro-item-content">Collections</span>
+                                    </a>
+                                </div>
+                            </li>
                             <li class="pro-menu-item">
                                 <div class="pro-inner-item" tabindex="0" role="button">
                                     <a href="{% url 'icosa:explore_category' category="animals" %}">
@@ -251,4 +275,3 @@
         }
     });
 </script>
-

@@ -48,6 +48,13 @@
             {% else %}
                 <p>{{ owner.displayname }} hasn't created anything yet.</p>
             {% endif %}
+            {% if owner.django_user %}
+                <p>
+                    <a class="btn btn-secondary" href="{% url 'icosa:user_asset_collection_list' user_url=owner.url %}">
+                        View collections by {{ owner.django_user.displayname }}
+                    </a>
+                </p>
+            {% endif %}
             {% with obj=owner %}
             {% if user_is_moderator and obj.moderation_state == "QUERIED" %}
             {% include "include/moderator_actions.html" %}
