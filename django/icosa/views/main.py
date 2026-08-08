@@ -550,7 +550,7 @@ def user_show(request, slug):
         "assets": assets,
         "page_title": page_title,
         "paginator": paginator,
-        "is_multi_owner": bool(owners.count()),
+        "is_multi_owner": owners.count() > 1,
         "user_is_moderator": request.user.groups.filter(name="Moderator").exists(),
         "content_type": get_str_content_type(owner),
     }

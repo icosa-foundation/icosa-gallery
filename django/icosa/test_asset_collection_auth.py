@@ -337,8 +337,10 @@ class AssetCollectionAuthorizationTests(TestCase):
             )
         )
         self.assertContains(edit_response, second_asset.name)
-        self.assertContains(edit_response, "Move up")
+        self.assertContains(edit_response, 'value="move_up"')
+        self.assertContains(edit_response, 'value="move_down"')
         self.assertContains(edit_response, "Remove")
+        self.assertContains(edit_response, "Delete this collection? This cannot be undone.")
 
         response = self.client.post(
             action_url,
@@ -482,6 +484,39 @@ class AssetCollectionAuthorizationTests(TestCase):
         owner_response = self.client.get(reverse("icosa:my_asset_collection_list"))
         self.assertContains(owner_response, public_collection.name)
         self.assertContains(owner_response, private_collection.name)
+
+    def test_profile_assets_and_collections_are_presented_as_tabs(self):
+        AssetCollection.objects.create(
+            user=self.alice,
+            url="profile-tab-collection",
+            name="Profile tab collection",
+            visibility=PUBLIC,
+        )
+        assets_url = reverse(
+            "icosa:user_show",
+            kwargs={"slug": self.alice_owner.url},
+        )
+        collections_url = self.collection_list_url(self.alice_owner)
+
+        assets_response = self.client.get(assets_url)
+        self.assertContains(
+            assets_response,
+            f'class="profile-tab active" href="{assets_url}"',
+        )
+        self.assertContains(
+            assets_response,
+            f'class="profile-tab" href="{collections_url}"',
+        )
+
+        collections_response = self.client.get(collections_url)
+        self.assertContains(
+            collections_response,
+            f'class="profile-tab" href="{assets_url}"',
+        )
+        self.assertContains(
+            collections_response,
+            f'class="profile-tab active" href="{collections_url}"',
+        )
 
     @override_settings(PAGINATION_PER_PAGE=1)
     def test_public_collection_index_paginates(self):

@@ -9,7 +9,8 @@
 {% block content %}
 <div>
     <div class="container">
-        <h1>Collections by {{ user.displayname }}</h1>
+        <h1>{{ user.displayname }}</h1>
+        {% include "partials/profile_tabs.html" with active_profile_tab="collections" %}
         <div class="sketch-list">
             {% if collections %}
                 {% for collection in collections %}

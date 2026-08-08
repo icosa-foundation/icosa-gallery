@@ -1,0 +1,23 @@
+.profile-tabs {
+  border-bottom: 1px solid var(--color-base-dark);
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.profile-tab {
+  border-bottom: 0.2rem solid transparent;
+  color: var(--color-base-mid);
+  font-weight: bold;
+  padding: 0.65rem 1rem 0.5rem;
+
+  &:hover {
+    color: var(--color-base-light);
+    text-decoration: none;
+  }
+
+  &.active {
+    border-bottom-color: var(--color-primary-bright);
+    color: var(--color-base-light);
+  }
+}

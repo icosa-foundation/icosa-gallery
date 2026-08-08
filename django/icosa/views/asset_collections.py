@@ -321,6 +321,7 @@ def user_asset_collection_list(request, user_url: str):
             "paginator": paginator,
             "page_title": f"Collections by {user.displayname}",
             "show_owner_actions": user == request.user,
+            "owner": owner,
             "user": user,
         }
         return render(request, template, context)
