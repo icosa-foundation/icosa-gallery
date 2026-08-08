@@ -120,6 +120,11 @@ urlpatterns = [
         name="asset_collection_edit",
     ),
     path(
+        "collections/<str:collection_url>/items",
+        asset_collection_views.asset_collection_item_update,
+        name="asset_collection_item_update",
+    ),
+    path(
         "collections/<str:collection_url>/delete",
         asset_collection_views.asset_collection_delete,
         name="asset_collection_delete",

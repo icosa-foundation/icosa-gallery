@@ -2,9 +2,11 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db import transaction
+from django.db.models import Max, Q
 from django.http import HttpResponseBadRequest, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
@@ -16,6 +18,7 @@ from icosa.models import (
     UNLISTED,
     Asset,
     AssetCollection,
+    AssetCollectionAsset,
     AssetOwner,
 )
 
@@ -33,6 +36,35 @@ COLLECTION_ACTIONS = {
 def _paginate_collections(request, collections):
     paginator = Paginator(collections, settings.PAGINATION_PER_PAGE)
     return paginator, paginator.get_page(request.GET.get("page"))
+
+
+def _collection_items(collection):
+    return collection.collected_assets.select_related("asset").order_by(
+        "order",
+        "create_time",
+        "pk",
+    )
+
+
+def _add_asset_to_collection(collection, asset):
+    if collection.collected_assets.filter(asset=asset).exists():
+        return
+    last_order = collection.collected_assets.aggregate(Max("order"))["order__max"]
+    AssetCollectionAsset.objects.create(
+        collection=collection,
+        asset=asset,
+        order=0 if last_order is None else last_order + 1,
+    )
+
+
+def _save_collection_item_order(items):
+    changed_items = []
+    for order, item in enumerate(items):
+        if item.order != order:
+            item.order = order
+            changed_items.append(item)
+    if changed_items:
+        AssetCollectionAsset.objects.bulk_update(changed_items, ["order"])
 
 
 @never_cache
@@ -116,10 +148,56 @@ def asset_collection_edit(request, collection_url: str):
         "main/asset_collection_form.html",
         {
             "collection": collection,
+            "collection_items": _collection_items(collection),
             "form": form,
             "page_title": f"Edit {collection.name}",
         },
     )
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def asset_collection_item_update(request, collection_url: str):
+    collection = get_object_or_404(
+        AssetCollection,
+        url=collection_url,
+        user=request.user,
+    )
+    item = get_object_or_404(
+        AssetCollectionAsset,
+        pk=request.POST.get("item_id"),
+        collection=collection,
+    )
+    action = request.POST.get("action")
+    items = list(_collection_items(collection))
+    item_index = next(
+        index for index, candidate in enumerate(items) if candidate.pk == item.pk
+    )
+
+    if action == "remove":
+        items.pop(item_index)
+        item.delete()
+    elif action == "move_up":
+        if item_index > 0:
+            items[item_index - 1], items[item_index] = (
+                items[item_index],
+                items[item_index - 1],
+            )
+    elif action == "move_down":
+        if item_index < len(items) - 1:
+            items[item_index], items[item_index + 1] = (
+                items[item_index + 1],
+                items[item_index],
+            )
+    else:
+        return HttpResponseBadRequest("invalid collection item action")
+
+    _save_collection_item_order(items)
+    AssetCollection.objects.filter(pk=collection.pk).update(
+        update_time=timezone.now()
+    )
+    return redirect("icosa:asset_collection_edit", collection_url=collection.url)
 
 
 @login_required
@@ -196,7 +274,7 @@ def user_asset_collection_list(request, user_url: str):
                 return HttpResponseBadRequest("no collection")
 
         if action == COLLECTION_ADD:
-            collection.assets.add(asset)
+            _add_asset_to_collection(collection, asset)
         elif action == COLLECTION_REMOVE:
             collection.assets.remove(asset)
         elif action == COLLECTION_NEW:
@@ -208,7 +286,7 @@ def user_asset_collection_list(request, user_url: str):
                 "name": name,
             }
             collection = AssetCollection.objects.create(**collection_data)
-            collection.assets.add(asset)
+            _add_asset_to_collection(collection, asset)
 
         collections = get_user_collections(request, user, asset)
 

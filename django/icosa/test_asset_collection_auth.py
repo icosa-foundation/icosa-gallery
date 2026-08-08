@@ -10,6 +10,7 @@ from icosa.models import (
     UNLISTED,
     Asset,
     AssetCollection,
+    AssetCollectionAsset,
     AssetOwner,
     User,
 )
@@ -287,6 +288,154 @@ class AssetCollectionAuthorizationTests(TestCase):
         self.assertContains(response, 'type="file"')
         self.assertContains(response, 'accept="image/png,image/jpeg"')
         self.assertNotContains(response, "Use current viewport as the thumbnail")
+
+    def test_owner_can_reorder_and_remove_collection_items(self):
+        second_asset = Asset.objects.create(
+            url="second-collection-asset",
+            name="Second collection asset",
+            owner=self.alice_owner,
+            visibility=PUBLIC,
+            create_time=timezone.now(),
+        )
+        third_asset = Asset.objects.create(
+            url="third-collection-asset",
+            name="Third collection asset",
+            owner=self.alice_owner,
+            visibility=PUBLIC,
+            create_time=timezone.now(),
+        )
+        collection = AssetCollection.objects.create(
+            user=self.alice,
+            url="managed-items",
+            name="Managed items",
+        )
+        first_item = AssetCollectionAsset.objects.create(
+            collection=collection,
+            asset=self.public_asset,
+            order=0,
+        )
+        second_item = AssetCollectionAsset.objects.create(
+            collection=collection,
+            asset=second_asset,
+            order=1,
+        )
+        third_item = AssetCollectionAsset.objects.create(
+            collection=collection,
+            asset=third_asset,
+            order=2,
+        )
+        self.client.force_login(self.alice)
+        action_url = reverse(
+            "icosa:asset_collection_item_update",
+            kwargs={"collection_url": collection.url},
+        )
+
+        edit_response = self.client.get(
+            reverse(
+                "icosa:asset_collection_edit",
+                kwargs={"collection_url": collection.url},
+            )
+        )
+        self.assertContains(edit_response, second_asset.name)
+        self.assertContains(edit_response, "Move up")
+        self.assertContains(edit_response, "Remove")
+
+        response = self.client.post(
+            action_url,
+            {"item_id": third_item.pk, "action": "move_up"},
+        )
+        self.assertRedirects(
+            response,
+            reverse(
+                "icosa:asset_collection_edit",
+                kwargs={"collection_url": collection.url},
+            ),
+        )
+        self.assertEqual(
+            list(
+                collection.collected_assets.order_by("order").values_list(
+                    "asset_id",
+                    flat=True,
+                )
+            ),
+            [first_item.asset_id, third_item.asset_id, second_item.asset_id],
+        )
+
+        self.client.post(
+            action_url,
+            {"item_id": third_item.pk, "action": "remove"},
+        )
+        self.assertEqual(
+            list(
+                collection.collected_assets.order_by("order").values_list(
+                    "asset_id",
+                    "order",
+                )
+            ),
+            [(first_item.asset_id, 0), (second_item.asset_id, 1)],
+        )
+
+    def test_adding_an_asset_appends_it_to_the_collection(self):
+        existing_asset = Asset.objects.create(
+            url="existing-collection-asset",
+            name="Existing collection asset",
+            owner=self.alice_owner,
+            visibility=PUBLIC,
+            create_time=timezone.now(),
+        )
+        collection = AssetCollection.objects.create(
+            user=self.alice,
+            url="append-items",
+            name="Append items",
+        )
+        AssetCollectionAsset.objects.create(
+            collection=collection,
+            asset=existing_asset,
+            order=0,
+        )
+        self.client.force_login(self.alice)
+
+        response = self.client.post(
+            self.collection_list_url(self.alice_owner),
+            {
+                "asset_url": self.public_asset.url,
+                f"_add_to_collection__{collection.url}": "Add",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            list(
+                collection.collected_assets.order_by("order").values_list(
+                    "asset_id",
+                    "order",
+                )
+            ),
+            [(existing_asset.pk, 0), (self.public_asset.pk, 1)],
+        )
+
+    def test_user_cannot_manage_another_users_collection_items(self):
+        collection = AssetCollection.objects.create(
+            user=self.alice,
+            url="alice-managed-items",
+            name="Alice managed items",
+        )
+        item = AssetCollectionAsset.objects.create(
+            collection=collection,
+            asset=self.public_asset,
+        )
+        self.client.force_login(self.bob)
+
+        response = self.client.post(
+            reverse(
+                "icosa:asset_collection_item_update",
+                kwargs={"collection_url": collection.url},
+            ),
+            {"item_id": item.pk, "action": "remove"},
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(AssetCollectionAsset.objects.filter(pk=item.pk).exists())
 
     def test_user_cannot_edit_or_delete_another_users_collection(self):
         collection = AssetCollection.objects.create(

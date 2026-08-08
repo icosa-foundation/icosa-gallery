@@ -21,6 +21,31 @@
     </form>
     {% if collection %}
         <hr>
+        <h2>Collection items</h2>
+        {% for item in collection_items %}
+            <article class="row align-items-center mb-3">
+                <div class="col col-sm-2">
+                    <a href="{{ item.asset.get_absolute_url }}">
+                        <img class="img-preview" src="{{ item.asset.get_thumbnail_url }}" alt="">
+                    </a>
+                </div>
+                <div class="col col-sm-5">
+                    <a href="{{ item.asset.get_absolute_url }}">{{ item.asset.name|default:"Untitled asset" }}</a>
+                </div>
+                <div class="col col-sm-5">
+                    <form method="post" action="{% url 'icosa:asset_collection_item_update' collection_url=collection.url %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="item_id" value="{{ item.pk }}">
+                        <button type="submit" name="action" value="move_up" class="btn btn-secondary btn-sm" aria-label="Move {{ item.asset.name }} up" {% if forloop.first %}disabled{% endif %}>Move up</button>
+                        <button type="submit" name="action" value="move_down" class="btn btn-secondary btn-sm" aria-label="Move {{ item.asset.name }} down" {% if forloop.last %}disabled{% endif %}>Move down</button>
+                        <button type="submit" name="action" value="remove" class="btn btn-danger btn-sm" aria-label="Remove {{ item.asset.name }} from collection">Remove</button>
+                    </form>
+                </div>
+            </article>
+        {% empty %}
+            <p>This collection has no items yet. Add assets from their asset pages.</p>
+        {% endfor %}
+        <hr>
         <form method="post" action="{% url 'icosa:asset_collection_delete' collection_url=collection.url %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">Delete collection</button>
