@@ -6,8 +6,9 @@ from icosa.api import (
     NOT_FOUND,
     AssetCollectionPagination,
 )
+from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import (
-    PRIVATE,
+    PUBLIC,
     UNLISTED,
     AssetCollection,
 )
@@ -37,7 +38,9 @@ router = Router()
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 @paginate(AssetCollectionPagination)
 def collection_list(request):
-    collections = AssetCollection.objects.exclude(visibility__in=[PRIVATE, UNLISTED])
+    collections = AssetCollection.objects.filter(visibility=PUBLIC).exclude(
+        moderation_state__in=MOD_HIDDEN
+    )
     _ = request
     return collections
 
@@ -50,7 +53,11 @@ def collection_list(request):
 @decorate_view(cache_per_user(DEFAULT_CACHE_SECONDS))
 def collection_show(request, asset_collection_url):
     try:
-        collection = AssetCollection.objects.exclude(visibility=PRIVATE).get(url=asset_collection_url)
+        collection = (
+            AssetCollection.objects.filter(visibility__in=[PUBLIC, UNLISTED])
+            .exclude(moderation_state__in=MOD_HIDDEN)
+            .get(url=asset_collection_url)
+        )
     except AssetCollection.DoesNotExist:
         raise NOT_FOUND
     _ = request
