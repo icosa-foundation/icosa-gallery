@@ -265,23 +265,33 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 20_160  # 2 weeks
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB"),
-        "USER": os.environ.get("POSTGRES_USER"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-        "HOST": os.environ.get("POSTGRES_HOST", "postgres"),
-        "PORT": 5432,
-        "OPTIONS": {
-            "pool": {
-                "min_size": 2,
-                "max_size": 90,
-                "timeout": 30,
-            }
-        },
+DATABASE_ENGINE = os.environ.get("DJANGO_DATABASE_ENGINE", "postgresql")
+
+if DATABASE_ENGINE == "sqlite":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.environ.get("DJANGO_SQLITE_PATH", BASE_DIR / "db.sqlite3"),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB"),
+            "USER": os.environ.get("POSTGRES_USER"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+            "HOST": os.environ.get("POSTGRES_HOST", "postgres"),
+            "PORT": 5432,
+            "OPTIONS": {
+                "pool": {
+                    "min_size": 2,
+                    "max_size": 90,
+                    "timeout": 30,
+                }
+            },
+        }
+    }
 
 
 # Password validation
@@ -445,6 +455,8 @@ if DEBUG_TOOLBAR_ENABLED:
     }
 
 # Enforced permissions settings
+IGNORE_PERMS = bool(os.environ.get("DJANGO_IGNORE_ENFORCED_PERMISSIONS", False))
+
 _TYPICAL_PERMS = {
     "Content Editor": {"add": True, "delete": True, "change": True},
     "Moderator": {"add": False, "delete": False, "change": False},
