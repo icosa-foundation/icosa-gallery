@@ -15,6 +15,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
+if settings.DEBUG and settings.LOCAL_MEDIA_STORAGE:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
 if (getattr(settings, "DEBUG_TOOLBAR_ENABLED", False)) and "debug_toolbar" in settings.INSTALLED_APPS:
     urlpatterns += [
         path("__debug__/", include("debug_toolbar.urls")),
