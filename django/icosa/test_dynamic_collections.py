@@ -71,6 +71,40 @@ class DynamicCollectionTests(TestCase):
             [self.matching_asset],
         )
 
+    def test_dynamic_collection_supports_or_filter_groups(self):
+        self.collection.query_parameters = {
+            "filter": "(category=ANIMALS)|(category=TECH,curated=false)"
+        }
+        self.collection.full_clean()
+
+        self.assertEqual(
+            list(self.collection.get_public_assets()),
+            [self.matching_asset],
+        )
+
+    def test_flat_filters_are_anded_with_or_filter_groups(self):
+        self.collection.query_parameters = {
+            "curated": True,
+            "filter": "(category=ANIMALS)|(category=TECH)",
+        }
+
+        self.assertCountEqual(
+            self.collection.get_public_assets(),
+            [self.matching_asset, self.nonmatching_asset],
+        )
+
+    def test_asset_api_accepts_the_same_or_filter_syntax(self):
+        response = self.client.get(
+            "/api/v1/assets",
+            {"filter": "(category=ANIMALS)|(category=TECH,curated=false)"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [asset["assetId"] for asset in response.json()["assets"]],
+            [self.matching_asset.url],
+        )
+
     def test_dynamic_collection_rejects_explicit_assets(self):
         item = AssetCollectionAsset(
             collection=self.collection,
@@ -85,6 +119,22 @@ class DynamicCollectionTests(TestCase):
 
         with self.assertRaises(ValidationError):
             self.collection.full_clean()
+
+    def test_invalid_or_filter_expression_is_rejected(self):
+        self.collection.query_parameters = {
+            "filter": "(category=ANIMALS)|(unsupported=value)"
+        }
+
+        with self.assertRaises(ValidationError):
+            self.collection.full_clean()
+
+    def test_asset_api_rejects_invalid_or_filter_syntax(self):
+        response = self.client.get(
+            "/api/v1/assets",
+            {"filter": "(category=ANIMALS)|(unsupported=value)"},
+        )
+
+        self.assertEqual(response.status_code, 400)
 
     def test_markdown_description_disables_raw_html(self):
         self.collection.description = "**Safe** <script>alert('unsafe')</script>"
