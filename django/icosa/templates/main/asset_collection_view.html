@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load paginator_tags %}
+{% load markdown_tags %}
 
 {% block extrahead %}
     {{ block.super }}
@@ -16,7 +17,11 @@
             </p>
         {% endif %}
         {% if collection.description %}
-            {{ collection.description|linebreaks }}
+            {% if collection.markdown %}
+                {{ collection.description|markdown }}
+            {% else %}
+                {{ collection.description|linebreaks }}
+            {% endif %}
         {% endif %}
 
         <div class="sketch-list">

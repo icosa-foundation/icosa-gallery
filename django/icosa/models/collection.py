@@ -50,6 +50,10 @@ class AssetCollection(ModerationMixin):
     )
     visibility = models.CharField(max_length=255, default=PRIVATE, choices=ASSET_VISIBILITY_CHOICES, db_default=PRIVATE)
     query_parameters = models.JSONField(blank=True, null=True, default=None)
+    markdown = models.BooleanField(
+        default=False,
+        help_text="Render the collection description as Markdown.",
+    )
 
     @property
     def is_dynamic(self):
@@ -114,6 +118,7 @@ class AssetCollection(ModerationMixin):
             "description",
             "image",
             "query_parameters",
+            "markdown",
         ]
 
     def save(self, *args, **kwargs):
