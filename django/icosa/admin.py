@@ -278,8 +278,8 @@ class AssetCollectionAdmin(admin.ModelAdmin):
 @admin.register(FeaturedCollection)
 class FeaturedCollectionAdmin(admin.ModelAdmin):
     autocomplete_fields = ("collection",)
-    list_display = ("collection", "order")
-    list_editable = ("order",)
+    list_display = ("collection", "label", "order")
+    list_editable = ("label", "order")
     ordering = ("order", "pk")
 
 

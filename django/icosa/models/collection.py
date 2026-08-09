@@ -191,6 +191,7 @@ class FeaturedCollection(models.Model):
         on_delete=models.CASCADE,
         related_name="featured_listing",
     )
+    label = models.CharField(max_length=255, blank=True)
     order = models.PositiveIntegerField(default=0)
 
     def __str__(self):

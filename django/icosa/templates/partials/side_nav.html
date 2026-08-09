@@ -236,7 +236,7 @@
                                                         {% fa_icon "solid" "star" %}
                                                     </span>
                                                 </span>
-                                                <span class="pro-item-content">{{ featured_collection.collection.name }}</span>
+                                                <span class="pro-item-content">{{ featured_collection.label|default:featured_collection.collection.name }}</span>
                                             </a>
                                         </div>
                                     </li>
