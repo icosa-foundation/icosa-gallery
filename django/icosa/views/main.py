@@ -45,6 +45,7 @@ from icosa.forms import (
     AssetPublishForm,
     AssetReportForm,
     AssetUploadForm,
+    CollectionZipUploadForm,
     UserSettingsForm,
 )
 from icosa.helpers.email import spawn_send_html_mail
@@ -73,7 +74,7 @@ from icosa.models import (
     MastheadSection,
     UserLike,
 )
-from icosa.tasks import queue_upload_api_asset
+from icosa.tasks import queue_upload_api_asset, queue_upload_collection_from_zip
 
 User = get_user_model()
 
@@ -309,6 +310,7 @@ def uploads(request):
     template = "main/manage_uploads.html"
     user = request.user
     form = AssetUploadForm()
+    collection_form = CollectionZipUploadForm(user=user)
     asset_objs = list(
         Asset.objects.filter(owner__django_user=user)
         .exclude(state=ASSET_STATE_BARE, moderation_state__in=MOD_HIDDEN)
@@ -323,6 +325,7 @@ def uploads(request):
 
     context = {
         "assets": assets,
+        "collection_form": collection_form,
         "form": form,
         "page_title": "My Uploads",
         "paginator": paginator,
@@ -416,6 +419,70 @@ async def upload_asset(request):
 
     else:
         return JsonResponse({"success": False, "errors": form.errors})
+
+
+@login_required
+@never_cache
+def upload_collection(request):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    user = request.user
+    form = CollectionZipUploadForm(request.POST, request.FILES, user=user)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "errors": form.errors})
+
+    owner = AssetOwner.objects.filter(django_user=user).order_by("pk").first()
+    if owner is None:
+        owner = AssetOwner.objects.create(
+            django_user=user,
+            email=user.email,
+            url=secrets.token_urlsafe(8),
+            displayname=user.displayname,
+        )
+
+    existing_collection = form.cleaned_data.get("existing_collection")
+    arguments = {
+        "user_id": user.pk,
+        "owner_id": owner.pk,
+        "zip_file": request.FILES["collection_zip"],
+        "collection_name": form.cleaned_data.get("collection_name"),
+        "existing_collection_id": (
+            existing_collection.pk if existing_collection is not None else None
+        ),
+        "visibility": form.cleaned_data["visibility"],
+        "license": form.cleaned_data.get("license") or None,
+    }
+    try:
+        if getattr(settings, "ENABLE_TASK_QUEUE", True) is True:
+            queue_upload_collection_from_zip(**arguments)
+        else:
+            from icosa.helpers.upload_web_ui import upload_collection_from_zip
+
+            upload_collection_from_zip(
+                user=user,
+                owner=owner,
+                zip_file=arguments["zip_file"],
+                collection_name=arguments["collection_name"],
+                existing_collection=existing_collection,
+                visibility=arguments["visibility"],
+                license=arguments["license"],
+            )
+        return JsonResponse(
+            {"success": True, "message": "Your collection upload has started"}
+        )
+    except Exception:
+        logging.exception("Collection ZIP upload failed")
+        return JsonResponse(
+            {
+                "success": False,
+                "errors": {
+                    "collection_zip": [
+                        "Your collection upload failed. Please try again later."
+                    ]
+                },
+            }
+        )
 
 
 @never_cache

@@ -116,6 +116,11 @@ urlpatterns = [
     path("upload_list_partial", main_views.upload_list_partial, name="upload_list_partial"),
     path("upload_asset", main_views.upload_asset, name="upload_asset"),
     path(
+        "upload_collection",
+        main_views.upload_collection,
+        name="upload_collection",
+    ),
+    path(
         "collections",
         asset_collection_views.asset_collection_list,
         name="asset_collection_list",
