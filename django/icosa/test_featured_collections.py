@@ -45,3 +45,14 @@ class FeaturedCollectionsTests(TestCase):
         response = self.client.get(reverse("icosa:home"))
 
         self.assertNotContains(response, "Featured Collections")
+
+    def test_sidebar_uses_configured_label_instead_of_collection_name(self):
+        FeaturedCollection.objects.create(
+            collection=self.first_collection,
+            label="Short label",
+        )
+
+        response = self.client.get(reverse("icosa:home"))
+
+        self.assertContains(response, "Short label")
+        self.assertNotContains(response, self.first_collection.name)
