@@ -139,7 +139,11 @@ def dependent_files(model_path: Path) -> Iterable[tuple[Path, str]]:
                     yield path, path.relative_to(model_path.parent).as_posix()
 
     texture_dir = model_path.parent / "Textures"
-    if texture_dir.is_dir() and model_path.suffix.lower() in {".obj", ".fbx"}:
+    if texture_dir.is_dir() and model_path.suffix.lower() in {
+        ".glb",
+        ".obj",
+        ".fbx",
+    }:
         for path in sorted(texture_dir.rglob("*")):
             if path.is_file():
                 yield path, path.relative_to(model_path.parent).as_posix()
