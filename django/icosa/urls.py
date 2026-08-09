@@ -92,8 +92,24 @@ urlpatterns = [
         "tiltbrush",
         RedirectView.as_view(pattern_name="home_openbrush", permanent=True),
     ),
-    path("openbrush", main_views.home_openbrush, name="home_openbrush"),
-    path("openblocks", main_views.home_blocks, name="home_blocks"),
+    path(
+        "openbrush",
+        RedirectView.as_view(
+            pattern_name="icosa:asset_collection_view",
+            permanent=False,
+        ),
+        {"collection_url": settings.OPEN_BRUSH_COLLECTION_URL},
+        name="home_openbrush",
+    ),
+    path(
+        "openblocks",
+        RedirectView.as_view(
+            pattern_name="icosa:asset_collection_view",
+            permanent=False,
+        ),
+        {"collection_url": settings.OPEN_BLOCKS_COLLECTION_URL},
+        name="home_blocks",
+    ),
     path("other", main_views.home_other, name="home_other"),
     path("explore/<str:category>", main_views.category, name="explore_category"),
     path("uploads", main_views.uploads, name="uploads"),

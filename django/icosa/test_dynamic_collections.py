@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from icosa.models import (
@@ -93,3 +95,21 @@ class DynamicCollectionTests(TestCase):
 
         self.assertContains(response, "<strong>Safe</strong>", html=True)
         self.assertNotContains(response, "<script>")
+
+    def test_legacy_routes_redirect_to_collection(self):
+        routes = {
+            "icosa:home_openbrush": settings.OPEN_BRUSH_COLLECTION_URL,
+            "icosa:home_blocks": settings.OPEN_BLOCKS_COLLECTION_URL,
+        }
+        for route_name, collection_url in routes.items():
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+                self.assertRedirects(
+                    response,
+                    reverse(
+                        "icosa:asset_collection_view",
+                        kwargs={"collection_url": collection_url},
+                    ),
+                    status_code=302,
+                    fetch_redirect_response=False,
+                )
