@@ -18,6 +18,7 @@ from icosa.models import (
     DeviceCode,
     Format,
     FormatRoleLabel,
+    FeaturedCollection,
     HiddenMediaFileLog,
     MastheadSection,
     ModerationEvent,
@@ -272,6 +273,14 @@ class AssetCollectionAdmin(admin.ModelAdmin):
         return obj.get_asset_count()
 
     display_asset_count.short_description = "Assets"
+
+
+@admin.register(FeaturedCollection)
+class FeaturedCollectionAdmin(admin.ModelAdmin):
+    autocomplete_fields = ("collection",)
+    list_display = ("collection", "order")
+    list_editable = ("order",)
+    ordering = ("order", "pk")
 
 
 @admin.register(DeviceCode)

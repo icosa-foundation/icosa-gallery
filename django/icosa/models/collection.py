@@ -185,6 +185,21 @@ class AssetCollection(ModerationMixin):
         ]
 
 
+class FeaturedCollection(models.Model):
+    collection = models.OneToOneField(
+        AssetCollection,
+        on_delete=models.CASCADE,
+        related_name="featured_listing",
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return str(self.collection)
+
+    class Meta:
+        ordering = ("order", "pk")
+
+
 class AssetCollectionAsset(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     collection = models.ForeignKey(AssetCollection, on_delete=models.CASCADE, related_name="collected_assets")

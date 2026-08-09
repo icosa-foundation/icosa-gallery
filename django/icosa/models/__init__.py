@@ -3,6 +3,7 @@ __all__ = [
     "Asset",
     "AssetCollection",
     "AssetCollectionAsset",
+    "FeaturedCollection",
     "AssetOwner",
     "DeviceCode",
     "Format",
@@ -28,7 +29,7 @@ __all__ = [
 ]
 from .asset import Asset
 from .asset_owner import AssetOwner as AssetOwner
-from .collection import AssetCollection, AssetCollectionAsset
+from .collection import AssetCollection, AssetCollectionAsset, FeaturedCollection
 from .common import *  # noqa
 from .device_code import DeviceCode
 from .format import Format, FormatRoleLabel
