@@ -84,6 +84,76 @@ class AssetUploadForm(forms.Form):
                 self.add_error("file", "File type is not supported.")
 
 
+class CollectionZipUploadForm(forms.Form):
+    collection_zip = forms.FileField(
+        validators=[FileExtensionValidator(allowed_extensions=["zip"])]
+    )
+    collection_name = forms.CharField(
+        max_length=255,
+        required=False,
+        help_text="Required when creating a collection.",
+    )
+    existing_collection = forms.ModelChoiceField(
+        queryset=AssetCollection.objects.none(),
+        required=False,
+        help_text="Add to an existing static collection instead.",
+    )
+    visibility = forms.ChoiceField(
+        choices=[
+            (PRIVATE, "Private"),
+            (PUBLIC, "Public"),
+            (UNLISTED, "Unlisted"),
+        ],
+        initial=PRIVATE,
+        help_text="Visibility for imported assets and a newly created collection.",
+    )
+    license = forms.ChoiceField(
+        choices=[("", "No license chosen")]
+        + V4_CC_LICENSE_CHOICES
+        + [RESERVED_LICENSE],
+        required=False,
+        help_text="License for all imported assets.",
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            self.fields["existing_collection"].queryset = (
+                AssetCollection.objects.filter(
+                    owner__django_user=user,
+                    query_parameters__isnull=True,
+                )
+                .select_related("owner")
+                .order_by("-create_time")
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        uploaded_file = cleaned_data.get("collection_zip")
+        if uploaded_file:
+            magic_bytes = next(uploaded_file.chunks(chunk_size=2048))
+            uploaded_file.seek(0)
+            if not validate_mime(magic_bytes, ["application/zip"]):
+                self.add_error("collection_zip", "File must be a zip archive.")
+
+        if not cleaned_data.get("existing_collection") and not cleaned_data.get(
+            "collection_name"
+        ):
+            self.add_error(
+                "collection_name",
+                "Provide a name or select an existing collection.",
+            )
+
+        if (
+            cleaned_data.get("visibility") in [PUBLIC, UNLISTED]
+            and not cleaned_data.get("license")
+        ):
+            self.add_error(
+                "license",
+                "Public or unlisted assets require a license.",
+            )
+
+
 class AssetReportForm(forms.Form):
     asset_url = forms.CharField(widget=forms.widgets.HiddenInput())
     reason_for_reporting = forms.CharField(
