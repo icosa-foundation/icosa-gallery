@@ -43,6 +43,12 @@ class ModelPackCollectionImportTests(TestCase):
         (pack / "Preview.png").write_bytes(b"collection preview")
         (pack / "Previews" / "stone-wall.png").write_bytes(b"asset preview")
         (pack / "Models" / "GLB format" / "stone-wall.glb").write_bytes(b"glb")
+        (
+            pack / "Models" / "GLB format" / "Textures" / "colors.png"
+        ).parent.mkdir()
+        (
+            pack / "Models" / "GLB format" / "Textures" / "colors.png"
+        ).write_bytes(b"texture")
         (pack / "Models" / "FBX format" / "stone-wall.fbx").write_bytes(b"fbx")
         (
             pack / "Models" / "FBX format" / "Textures" / "colors.png"
@@ -106,6 +112,16 @@ class ModelPackCollectionImportTests(TestCase):
                 ),
                 {"GLB", "FBX", "OBJ"},
             )
+            glb_format = asset.format_set.get(format_type="GLB")
+            self.assertEqual(
+                list(
+                    glb_format.resource_set.values_list(
+                        "uploaded_file_path",
+                        flat=True,
+                    )
+                ),
+                ["Textures/colors.png"],
+            )
             obj_format = asset.format_set.get(format_type="OBJ")
             self.assertEqual(obj_format.resource_set.count(), 2)
             self.assertEqual(
@@ -146,7 +162,7 @@ class ModelPackCollectionImportTests(TestCase):
 
             asset = Asset.objects.get()
             self.assertEqual(asset.format_set.count(), 3)
-            self.assertEqual(asset.resource_set.count(), 6)
+            self.assertEqual(asset.resource_set.count(), 7)
 
     def test_dry_run_validates_without_writing(self):
         with TemporaryDirectory() as directory:
