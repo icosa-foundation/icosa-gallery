@@ -2,6 +2,7 @@ import logging
 import secrets
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.urls import reverse
@@ -9,6 +10,7 @@ from django.utils import timezone
 
 from icosa.model_mixins import (
     MOD_DEFERRED,
+    MOD_HIDDEN,
     MOD_MODIFIED,
     MOD_NEW,
     ModerationMixin,
@@ -19,6 +21,7 @@ from .common import (
     ASSET_VISIBILITY_CHOICES,
     FILENAME_MAX_LENGTH,
     PRIVATE,
+    PUBLIC,
     VALID_THUMBNAIL_EXTENSIONS,
 )
 from .helpers import collection_image_upload_path
@@ -29,7 +32,11 @@ logger = logging.getLogger("django")
 class AssetCollection(ModerationMixin):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True, null=True, blank=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_collections")
+    owner = models.ForeignKey(
+        "AssetOwner",
+        on_delete=models.CASCADE,
+        related_name="asset_collections",
+    )
     assets = models.ManyToManyField(Asset, blank=True, through="AssetCollectionAsset")
     url = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
@@ -42,6 +49,45 @@ class AssetCollection(ModerationMixin):
         validators=[FileExtensionValidator(allowed_extensions=VALID_THUMBNAIL_EXTENSIONS)],
     )
     visibility = models.CharField(max_length=255, default=PRIVATE, choices=ASSET_VISIBILITY_CHOICES, db_default=PRIVATE)
+    query_parameters = models.JSONField(blank=True, null=True, default=None)
+
+    @property
+    def is_dynamic(self):
+        return self.query_parameters is not None
+
+    def clean(self):
+        super().clean()
+        if not self.is_dynamic:
+            return
+
+        from icosa.api.filters import validate_asset_query_parameters
+
+        validate_asset_query_parameters(self.query_parameters)
+        if self.pk and self.collected_assets.exists():
+            raise ValidationError(
+                {"query_parameters": "Dynamic collections cannot have explicit assets."}
+            )
+
+    def get_public_assets(self):
+        if self.is_dynamic:
+            from icosa.api.filters import assets_from_query_parameters
+
+            return assets_from_query_parameters(self.query_parameters)
+
+        return (
+            self.assets.filter(visibility=PUBLIC)
+            .exclude(moderation_state__in=MOD_HIDDEN)
+            .select_related("owner")
+            .prefetch_related("resource_set", "format_set", "tags")
+            .order_by(
+                "assetcollectionasset__order",
+                "assetcollectionasset__create_time",
+                "assetcollectionasset__pk",
+            )
+        )
+
+    def get_asset_count(self):
+        return self.get_public_assets().count()
 
     def get_displayname(self):
         # Used for compatibiliy with Asset and AssetCollection's methods of the
@@ -55,8 +101,8 @@ class AssetCollection(ModerationMixin):
 
         if self.image:
             thumbnail_url = self.image.url
-        elif collected_asset := self.collected_assets.first():
-            thumbnail_url = collected_asset.asset.get_thumbnail_url()
+        elif asset := self.get_public_assets().first():
+            thumbnail_url = asset.get_thumbnail_url()
 
         return thumbnail_url
 
@@ -67,6 +113,7 @@ class AssetCollection(ModerationMixin):
             "name",
             "description",
             "image",
+            "query_parameters",
         ]
 
     def save(self, *args, **kwargs):
@@ -117,13 +164,9 @@ class AssetCollection(ModerationMixin):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        owner = self.user.assetowner_set.first()
-        if not owner:
-            return None
         return reverse(
-            "icosa:user_asset_collection_view",
+            "icosa:asset_collection_view",
             kwargs={
-                "user_url": owner.url,
                 "collection_url": self.url,
             },
         )
@@ -142,6 +185,13 @@ class AssetCollectionAsset(models.Model):
     collection = models.ForeignKey(AssetCollection, on_delete=models.CASCADE, related_name="collected_assets")
     create_time = models.DateTimeField(auto_now_add=True)
     order = models.PositiveIntegerField(default=0)
+
+    def clean(self):
+        super().clean()
+        if self.collection_id and self.collection.is_dynamic:
+            raise ValidationError(
+                "Assets cannot be added explicitly to a dynamic collection."
+            )
 
     def __str__(self):
         return f"{self.order}: {self.asset.name}"

@@ -20,7 +20,7 @@
         <button type="submit" class="btn btn-primary">Save</button>
         <a href="{% url 'icosa:my_asset_collection_list' %}" class="btn btn-secondary">Cancel</a>
     </form>
-    {% if collection %}
+    {% if collection and not collection.is_dynamic %}
         <hr>
         <h2>Collection items</h2>
         <div class="collection-item-list">

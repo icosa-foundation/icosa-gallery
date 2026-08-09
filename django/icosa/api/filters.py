@@ -1,6 +1,8 @@
 from enum import Enum, auto
 from typing import List, Optional
 
+from constance import config
+from django.core.exceptions import ValidationError
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from ninja import Field, FilterSchema, Schema
@@ -10,7 +12,7 @@ from pydantic.json_schema import SkipJsonSchema
 
 from icosa.api.exceptions import FilterException
 from icosa.model_mixins import MOD_HIDDEN
-from icosa.models import Asset
+from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset
 
 
 class FilterCategory(Enum):
@@ -326,6 +328,45 @@ class FiltersOrder(Schema):
         default=None,
     )
     order_by: SkipJsonSchema[Optional[FilterOrder]] = Field(default=None)  # For backwards compatibility
+
+
+def validate_asset_query_parameters(query_parameters):
+    if not isinstance(query_parameters, dict):
+        raise ValidationError(
+            {"query_parameters": "Query parameters must be a JSON object."}
+        )
+
+    allowed_fields = set(FiltersAsset.model_fields) | set(FiltersOrder.model_fields)
+    unknown_fields = set(query_parameters) - allowed_fields
+    if unknown_fields:
+        field_names = ", ".join(sorted(unknown_fields))
+        raise ValidationError(
+            {"query_parameters": f"Unsupported query parameter(s): {field_names}."}
+        )
+
+    try:
+        filters = FiltersAsset.model_validate(query_parameters)
+        order = FiltersOrder.model_validate(query_parameters)
+    except ValueError as error:
+        raise ValidationError({"query_parameters": str(error)}) from error
+    return filters, order
+
+
+def assets_from_query_parameters(query_parameters):
+    filters, order = validate_asset_query_parameters(query_parameters)
+    return get_public_assets(filters, order)
+
+
+def get_public_assets(filters, order):
+    excluded = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
+    if config.HIDE_REPORTED_ASSETS:
+        excluded |= Q(moderation_state__in=MOD_HIDDEN)
+    return filter_and_sort_assets(
+        filters,
+        order,
+        assets=Asset.objects.filter(visibility=PUBLIC),
+        exc_q=excluded,
+    )
 
 
 def sort_assets(key: FilterOrder, assets: QuerySet[Asset]) -> QuerySet[Asset]:

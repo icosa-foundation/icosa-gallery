@@ -11,9 +11,11 @@
             </a>
         </h4>
         <p class="sketch-byline">
-            {{ collection.assets.count }} asset{{ collection.assets.count|pluralize }}
+            {% with asset_count=collection.get_asset_count %}
+                {{ asset_count }} asset{{ asset_count|pluralize }}
+            {% endwith %}
             {% if not hide_byline %}
-                by {{ collection.user.displayname }}
+                by {{ collection.owner.get_displayname }}
             {% endif %}
             {% if show_owner_actions %}
                 &middot; {{ collection.get_visibility_display }}

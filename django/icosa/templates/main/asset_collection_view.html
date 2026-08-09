@@ -9,8 +9,8 @@
 {% block content %}
 <div>
     <div class="container">
-        <h1>{{ collection.name }} by {{ collection.user.displayname }}</h1>
-        {% if request.user == collection.user %}
+        <h1>{{ collection.name }} by {{ collection.owner.get_displayname }}</h1>
+        {% if request.user == collection.owner.django_user %}
             <p>
                 <a class="btn btn-primary btn-sm" href="{% url 'icosa:asset_collection_edit' collection_url=collection.url %}">Edit collection</a>
             </p>
@@ -20,10 +20,8 @@
         {% endif %}
 
         <div class="sketch-list">
-            {% for collected_asset in assets %}
-                {% with collected_asset.asset as asset %}
-                    {% include "partials/sketch_list_item.html" %}
-                {% endwith %}
+            {% for asset in assets %}
+                {% include "partials/sketch_list_item.html" %}
             {% endfor %}
         </div>
         {% with obj=collection %}

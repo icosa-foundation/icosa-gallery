@@ -115,6 +115,11 @@ urlpatterns = [
         name="asset_collection_create",
     ),
     path(
+        "collections/<str:collection_url>",
+        asset_collection_views.asset_collection_view,
+        name="asset_collection_view",
+    ),
+    path(
         "collections/<str:collection_url>/edit",
         asset_collection_views.asset_collection_edit,
         name="asset_collection_edit",
