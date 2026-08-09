@@ -50,6 +50,8 @@ def _touch_collection(collection):
 
 
 def _add_asset_to_collection(collection, asset):
+    if collection.is_dynamic:
+        raise ValueError("Assets cannot be added to a dynamic collection.")
     if collection.collected_assets.filter(asset=asset).exists():
         return
     last_order = collection.collected_assets.aggregate(Max("order"))["order__max"]
@@ -102,7 +104,9 @@ def asset_collection_list(request):
 @login_required
 @never_cache
 def my_asset_collection_list(request):
-    collections = AssetCollection.objects.filter(owner__django_user=request.user).order_by("-update_time")
+    collections = AssetCollection.objects.filter(
+        owner__django_user=request.user
+    ).order_by("-update_time")
     paginator, collection_page = _paginate_collections(request, collections)
     return render(
         request,
@@ -160,7 +164,11 @@ def asset_collection_edit(request, collection_url: str):
         "main/asset_collection_form.html",
         {
             "collection": collection,
-            "collection_items": _collection_items(collection),
+            "collection_items": (
+                AssetCollectionAsset.objects.none()
+                if collection.is_dynamic
+                else _collection_items(collection)
+            ),
             "form": form,
             "page_title": f"Edit {collection.name}",
         },
@@ -177,6 +185,10 @@ def asset_collection_item_update(request, collection_url: str):
         url=collection_url,
         owner__django_user=request.user,
     )
+    if collection.is_dynamic:
+        return HttpResponseBadRequest(
+            "assets cannot be managed explicitly for a dynamic collection"
+        )
     item = get_object_or_404(
         AssetCollectionAsset,
         pk=request.POST.get("item_id"),
@@ -233,7 +245,10 @@ def asset_collection_delete(request, collection_url: str):
 
 def get_user_collections(request, owner, asset):
     if owner.django_user == request.user:
-        collections = AssetCollection.objects.filter(owner=owner)
+        collections = AssetCollection.objects.filter(
+            owner=owner,
+            query_parameters__isnull=True,
+        )
     else:
         collections = AssetCollection.objects.none()
 
@@ -293,6 +308,7 @@ def user_asset_collection_list(request, user_url: str):
                 collection = AssetCollection.objects.get(
                     url=collection_url,
                     owner=owner,
+                    query_parameters__isnull=True,
                 )
             except (AssetCollection.DoesNotExist, AssetCollection.MultipleObjectsReturned):
                 return HttpResponseBadRequest("no collection")
@@ -372,7 +388,10 @@ def user_asset_collection_list_modal(request, user_url: str, asset_url: str):
     user = owner.django_user
 
     if user == request.user:
-        collections = AssetCollection.objects.filter(owner=owner)
+        collections = AssetCollection.objects.filter(
+            owner=owner,
+            query_parameters__isnull=True,
+        )
     else:
         collections = AssetCollection.objects.none()
 
@@ -396,11 +415,17 @@ def asset_collection_view(request, collection_url: str, user_url: str = None):
     user_is_moderator = request.user.groups.filter(name="Moderator").exists()
     collections = AssetCollection.objects.select_related("owner", "owner__django_user")
     if request.user.is_authenticated:
-        collections = collections.filter(Q(owner__django_user=request.user) | Q(visibility__in=[PUBLIC, UNLISTED]))
+        collections = collections.filter(
+            Q(owner__django_user=request.user)
+            | Q(visibility__in=[PUBLIC, UNLISTED])
+        )
     else:
         collections = collections.filter(visibility__in=[PUBLIC, UNLISTED])
     if request.user.is_authenticated and not user_is_moderator:
-        collections = collections.filter(Q(owner__django_user=request.user) | ~Q(moderation_state__in=MOD_HIDDEN))
+        collections = collections.filter(
+            Q(owner__django_user=request.user)
+            | ~Q(moderation_state__in=MOD_HIDDEN)
+        )
     elif not user_is_moderator:
         collections = collections.exclude(moderation_state__in=MOD_HIDDEN)
     if user_url is not None:
@@ -408,9 +433,7 @@ def asset_collection_view(request, collection_url: str, user_url: str = None):
     collection = get_object_or_404(collections, url=collection_url)
     owner = collection.owner
 
-    asset_objs = collection.collected_assets.filter(asset__visibility=PUBLIC).exclude(
-        asset__moderation_state__in=MOD_HIDDEN
-    )
+    asset_objs = collection.get_public_assets()
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
@@ -424,6 +447,7 @@ def asset_collection_view(request, collection_url: str, user_url: str = None):
         "owner": owner,
         "user_is_moderator": user_is_moderator,
         "content_type": get_str_content_type(collection),
+        "is_dynamic": collection.is_dynamic,
     }
     return render(request, template, context)
 
