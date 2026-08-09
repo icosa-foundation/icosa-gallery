@@ -22,6 +22,7 @@ from icosa.views.decorators import cache_per_user
 
 from .filters import (
     FiltersAsset,
+    FiltersExpression,
     FiltersOrder,
     get_public_assets,
 )
@@ -93,5 +94,6 @@ def get_assets(
     request,
     order: FiltersOrder = Query(...),
     filters: FiltersAsset = Query(...),
+    expression: FiltersExpression = Query(...),
 ):
-    return get_public_assets(filters, order)
+    return get_public_assets(filters, order, filter_expression=expression.filter)
