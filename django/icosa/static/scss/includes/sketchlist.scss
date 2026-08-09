@@ -22,8 +22,13 @@
     }
 
     .sketchimage {
+      align-items: center;
       aspect-ratio: 8/5;
+      border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
       color: #ffffff;
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
       transition: opacity 300ms ease;
 
       &:hover {
@@ -32,11 +37,13 @@
       }
 
       img {
-        border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
-        height: 100%;
-        object-fit: cover;
+        height: auto;
+        max-height: 100%;
+        max-width: 100%;
+        min-width: 8rem;
+        object-fit: contain;
         object-position: 50% 50%;
-        width: 100%;
+        width: auto;
       }
 
     }
