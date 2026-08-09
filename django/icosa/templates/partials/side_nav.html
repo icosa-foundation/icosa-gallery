@@ -221,37 +221,6 @@
                         </div>
                     </ul>
                 </nav>
-                <nav class="pro-menu shaped square hide-when-collapsed">
-                    <ul>
-                        <h3>Featured Collections</h3>
-                        <div>
-                            <li class="pro-menu-item">
-                                <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'icosa:asset_collection_view' collection_url=settings.OPEN_BRUSH_COLLECTION_URL %}">
-                                        <span class="pro-icon-wrapper">
-                                            <span class="pro-icon">
-                                                {% fa_icon "solid" "paintbrush" %}
-                                            </span>
-                                        </span>
-                                        <span class="pro-item-content">Open Brush</span>
-                                    </a>
-                                </div>
-                            </li>
-                            <li class="pro-menu-item">
-                                <div class="pro-inner-item" tabindex="0" role="button">
-                                    <a href="{% url 'icosa:asset_collection_view' collection_url=settings.OPEN_BLOCKS_COLLECTION_URL %}">
-                                        <span class="pro-icon-wrapper">
-                                            <span class="pro-icon">
-                                                {% fa_icon "solid" "cubes" %}
-                                            </span>
-                                        </span>
-                                        <span class="pro-item-content">Open Blocks</span>
-                                    </a>
-                                </div>
-                            </li>
-                        </div>
-                    </ul>
-                </nav>
                 <div class="pro-sidebar-footer">
                     <div class="socials text-center hide-when-collapsed">
                         <h5>Join our Community!</h5>
@@ -267,6 +236,18 @@
                         <a href="https://github.com/icosa-foundation" alt="github" rel="noreferrer" target="_blank">
                             {% fa_icon "brands" "github" %}
                         </a>
+                    </div>
+                    <div class="support text-center hide-when-collapsed row">
+                        <div class="col-lg-6 col-sm-12">
+                            <a href="{% url 'icosa:asset_collection_view' collection_url=settings.OPEN_BRUSH_COLLECTION_URL %}" rel="noreferrer" alt="Open Brush">
+                                <img src="{% static "images/openbrushlogo_1200.png" %}" alt="Open Brush Logo">
+                            </a>
+                        </div>
+                        <div class="col-lg-6 col-sm-12">
+                            <a href="{% url 'icosa:asset_collection_view' collection_url=settings.OPEN_BLOCKS_COLLECTION_URL %}" rel="noreferrer" alt="Open Blocks">
+                                <img src="{% static "images/openblockslogo_1200.png" %}" alt="Open Blocks Logo">
+                            </a>
+                        </div>
                     </div>
                     <div class="text-center title hide-when-collapsed">
                         <div>
