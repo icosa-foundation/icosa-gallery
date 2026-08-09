@@ -363,6 +363,7 @@ class Command(BaseCommand):
                 format_type=format_type,
                 role=role,
                 is_preferred_for_gallery_viewer=extension == ".glb",
+                is_preferred_for_download=True,
             )
             root_resource = Resource(
                 asset=asset,
