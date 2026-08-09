@@ -249,42 +249,6 @@ def home(request):
     return landing_page(request)
 
 
-@never_cache
-def home_openbrush(request):
-    assets = Asset.objects.filter(
-        visibility=PUBLIC,
-        has_tilt=True,
-        curated=True,
-    )
-
-    return landing_page(
-        request,
-        assets,
-        heading="Open Brush",
-        heading_link="https://openbrush.app",
-        is_explore_heading=True,
-        show_masthead=False,
-    )
-
-
-@never_cache
-def home_blocks(request):
-    poly_by_google_q = Q(visibility=PUBLIC, owner__url=POLY_USER_URL)
-    blocks_q = Q(visibility=PUBLIC, has_blocks=True, curated=True)
-    q = poly_by_google_q | blocks_q
-
-    assets = Asset.objects.filter(q)
-
-    return landing_page(
-        request,
-        assets,
-        heading="Open Blocks",
-        heading_link="https://openblocks.app",
-        is_explore_heading=True,
-        show_masthead=True,
-    )
-
-
 @user_passes_test(lambda u: u.is_superuser)
 @never_cache
 def home_other(request):

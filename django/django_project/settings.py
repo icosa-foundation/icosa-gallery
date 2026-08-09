@@ -260,6 +260,9 @@ WSGI_APPLICATION = "django_project.wsgi.application"
 
 PAGINATION_PER_PAGE = 40
 
+OPEN_BRUSH_COLLECTION_URL = "open-brush"
+OPEN_BLOCKS_COLLECTION_URL = "open-blocks"
+
 ACCESS_TOKEN_EXPIRE_MINUTES = 20_160  # 2 weeks
 
 # Database
