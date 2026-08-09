@@ -120,6 +120,51 @@
         'colorSpace': presentationParams?.colorSpace || "LINEAR",
     };
 
+    function shouldFrameGltfScene(viewer, overrides) {
+        const camera = overrides?.camera || {};
+        const hasCameraOverride = Boolean(
+            camera.translation ||
+            camera.rotation ||
+            camera.GOOGLE_camera_settings?.pivot
+        );
+        const hasVisualCenter = Boolean(overrides?.geometryData?.visualCenterPoint);
+        const metadata = viewer.sketchMetadata;
+        const hasTiltCameraMetadata = Boolean(
+            metadata?.CameraTranslation ||
+            metadata?.CameraRotation ||
+            metadata?.CameraTargetDistance != null ||
+            metadata?.FlyMode
+        );
+        const isTiltExport = Boolean(
+            viewer.sceneGltf && (
+                viewer.isAnyTiltExporter(viewer.sceneGltf) ||
+                viewer.isNewTiltExporter(viewer.sceneGltf)
+            )
+        );
+        let hasEmbeddedCamera = false;
+        let hasEmbeddedTiltMetadata = false;
+        viewer.loadedModel?.traverse((node) => {
+            if (node.isCamera) {
+                hasEmbeddedCamera = true;
+            }
+            if (Object.keys(node.userData || {}).some((key) => key.startsWith('TB_'))) {
+                hasEmbeddedTiltMetadata = true;
+            }
+        });
+        const gltfUserData = viewer.sceneGltf?.userData || {};
+        hasEmbeddedTiltMetadata ||= Object.keys(gltfUserData).some(
+            (key) => key.startsWith('TB_')
+        );
+        return !(
+            hasCameraOverride ||
+            hasVisualCenter ||
+            hasTiltCameraMetadata ||
+            isTiltExport ||
+            hasEmbeddedTiltMetadata ||
+            hasEmbeddedCamera
+        );
+    }
+
     // For debugging
     window.viewer = viewer;
     window.THREE = THREE;
@@ -148,6 +193,9 @@
             console.log("GLTF2 failed. Trying to load as GLTF1");
             await viewer.loadGltf1(url, true, overrides);
         }
+        if (shouldFrameGltfScene(viewer, overrides)) {
+            viewer.frameScene();
+        }
     } else if (formatType === 'gltf1') {
         try {
             console.log("Trying to load as GLTF1");
@@ -161,6 +209,9 @@
             console.log(error);
             console.log("GLTF1 failed. Trying to load as GLTF2");
             await viewer.loadGltf(url, true, overrides);
+        }
+        if (shouldFrameGltfScene(viewer, overrides)) {
+            viewer.frameScene();
         }
     } else if (formatType === 'fbx') {
         console.log("Trying to load fbx");
