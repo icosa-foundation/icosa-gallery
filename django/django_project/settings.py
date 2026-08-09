@@ -240,6 +240,7 @@ TEMPLATES = [
                 "constance.context_processors.config",
                 "icosa.context_processors.settings_processor",
                 "icosa.context_processors.user_asset_likes_processor",
+                "icosa.context_processors.featured_collections_processor",
             ],
             "loaders": [
                 "django.template.loaders.app_directories.Loader",

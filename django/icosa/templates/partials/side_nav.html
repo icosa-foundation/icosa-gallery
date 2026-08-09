@@ -222,6 +222,29 @@
                         </div>
                     </ul>
                 </nav>
+                {% if featured_collections %}
+                    <nav class="pro-menu shaped square hide-when-collapsed">
+                        <ul>
+                            <h3>Featured Collections</h3>
+                            <div>
+                                {% for featured_collection in featured_collections %}
+                                    <li class="pro-menu-item">
+                                        <div class="pro-inner-item" tabindex="0" role="button">
+                                            <a href="{{ featured_collection.collection.get_absolute_url }}">
+                                                <span class="pro-icon-wrapper">
+                                                    <span class="pro-icon">
+                                                        {% fa_icon "solid" "star" %}
+                                                    </span>
+                                                </span>
+                                                <span class="pro-item-content">{{ featured_collection.collection.name }}</span>
+                                            </a>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </div>
+                        </ul>
+                    </nav>
+                {% endif %}
                 <div class="pro-sidebar-footer">
                     <div class="socials text-center hide-when-collapsed">
                         <h5>Join our Community!</h5>
