@@ -322,11 +322,13 @@ def user_asset_collection_list(request, user_url: str):
         owner = get_object_or_404(
             AssetOwner,
             url=user_url,
-            django_user__isnull=False,
         )
-        user = owner.django_user
+        user_is_owner = (
+            owner.django_user_id is not None
+            and owner.django_user_id == request.user.id
+        )
 
-        if user == request.user:
+        if user_is_owner:
             collections = AssetCollection.objects.filter(owner=owner)
         else:
             collections = AssetCollection.objects.filter(
@@ -339,10 +341,9 @@ def user_asset_collection_list(request, user_url: str):
             "collections": collection_page,
             "assets": collection_page,
             "paginator": paginator,
-            "page_title": f"Collections by {user.displayname}",
-            "show_owner_actions": user == request.user,
+            "page_title": f"Collections by {owner.get_displayname()}",
+            "show_owner_actions": user_is_owner,
             "owner": owner,
-            "user": user,
         }
         return render(request, template, context)
     else:
