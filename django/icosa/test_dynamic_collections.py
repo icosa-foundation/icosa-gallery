@@ -65,6 +65,33 @@ class DynamicCollectionTests(TestCase):
             query_parameters={"category": "ANIMALS", "curated": True},
         )
 
+    def test_featured_dynamic_collections_are_seeded(self):
+        expected_queries = {
+            settings.OPEN_BRUSH_COLLECTION_URL: {
+                "format": ["TILT"],
+                "curated": True,
+                "orderBy": "BEST",
+            },
+            settings.OPEN_BLOCKS_COLLECTION_URL: {
+                "filter": "(authorId=4aEd8rQgKu2)|(format=BLOCKS,curated=true)",
+                "orderBy": "BEST",
+            },
+        }
+
+        collections = AssetCollection.objects.filter(
+            url__in=expected_queries,
+            owner__url="icosa-gallery",
+            visibility=PUBLIC,
+            markdown=True,
+        )
+
+        self.assertEqual(collections.count(), 2)
+        for collection in collections:
+            self.assertEqual(
+                collection.query_parameters,
+                expected_queries[collection.url],
+            )
+
     def test_dynamic_collection_uses_public_asset_query_filters(self):
         self.assertEqual(
             list(self.collection.get_public_assets()),
