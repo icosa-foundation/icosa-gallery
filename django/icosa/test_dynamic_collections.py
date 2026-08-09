@@ -83,3 +83,13 @@ class DynamicCollectionTests(TestCase):
 
         with self.assertRaises(ValidationError):
             self.collection.full_clean()
+
+    def test_markdown_description_disables_raw_html(self):
+        self.collection.description = "**Safe** <script>alert('unsafe')</script>"
+        self.collection.markdown = True
+        self.collection.save()
+
+        response = self.client.get(self.collection.get_absolute_url())
+
+        self.assertContains(response, "<strong>Safe</strong>", html=True)
+        self.assertNotContains(response, "<script>")
