@@ -25,7 +25,7 @@ class DynamicCollectionTests(TestCase):
         self.owner = AssetOwner.objects.create(
             url="curator",
             displayname="Curator",
-            django_owner=self.owner,
+            django_user=self.user,
         )
         self.matching_asset = Asset.objects.create(
             url="matching-asset",
