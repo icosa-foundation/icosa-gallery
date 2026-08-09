@@ -98,6 +98,14 @@ class ModelPackCollectionImportTests(TestCase):
                 asset.format_set.get(is_preferred_for_gallery_viewer=True).format_type,
                 "GLB",
             )
+            self.assertEqual(
+                set(
+                    asset.format_set.filter(
+                        is_preferred_for_download=True
+                    ).values_list("format_type", flat=True)
+                ),
+                {"GLB", "FBX", "OBJ"},
+            )
             obj_format = asset.format_set.get(format_type="OBJ")
             self.assertEqual(obj_format.resource_set.count(), 2)
             self.assertEqual(
