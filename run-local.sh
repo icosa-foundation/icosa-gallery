@@ -44,12 +44,14 @@ export JWT_SECRET_KEY="local-development-only-jwt-secret-key"
 
 cd "$PROJECT_DIR/django"
 
+if [ "$#" -eq 0 ] || [ "$1" != "migrate" ]; then
+    echo "Preparing the SQLite database..."
+    "$VENV_DIR/bin/python" manage.py migrate
+fi
+
 if [ "$#" -gt 0 ]; then
     exec "$VENV_DIR/bin/python" manage.py "$@"
 fi
-
-echo "Preparing the SQLite database..."
-"$VENV_DIR/bin/python" manage.py migrate
 
 echo "Starting Icosa Gallery at http://localhost:8000"
 exec "$VENV_DIR/bin/python" manage.py runserver localhost:8000
