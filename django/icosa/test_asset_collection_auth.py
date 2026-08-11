@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -18,6 +20,7 @@ from icosa.models import (
 
 class AssetCollectionAuthorizationTests(TestCase):
     def setUp(self):
+        AssetCollection.objects.filter(owner__django_user__isnull=True).delete()
         self.alice = User.objects.create_user(
             username="alice",
             email="alice@example.com",
@@ -26,7 +29,7 @@ class AssetCollectionAuthorizationTests(TestCase):
         self.alice_owner = AssetOwner.objects.create(
             url="alice",
             displayname="Alice",
-            django_owner=self.alice_owner,
+            django_user=self.alice,
         )
         self.bob = User.objects.create_user(
             username="bob",
@@ -36,7 +39,7 @@ class AssetCollectionAuthorizationTests(TestCase):
         self.bob_owner = AssetOwner.objects.create(
             url="bob",
             displayname="Bob",
-            django_owner=self.bob_owner,
+            django_user=self.bob,
         )
         self.public_asset = Asset.objects.create(
             url="public-asset",
@@ -63,6 +66,25 @@ class AssetCollectionAuthorizationTests(TestCase):
         )
         self.assertFalse(AssetCollection.objects.exists())
 
+    def test_user_without_an_asset_owner_cannot_create_a_collection(self):
+        user = User.objects.create_user(
+            username="ownerless",
+            email="ownerless@example.com",
+            displayname="Ownerless",
+        )
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("icosa:asset_collection_create"),
+            {
+                "name": "Ownerless collection",
+                "visibility": PUBLIC,
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(AssetCollection.objects.exists())
+
     def test_user_cannot_create_a_collection_without_a_name(self):
         self.client.force_login(self.alice)
 
@@ -84,6 +106,30 @@ class AssetCollectionAuthorizationTests(TestCase):
                     status_code=400,
                 )
                 self.assertFalse(AssetCollection.objects.exists())
+
+    def test_existing_collection_actions_do_not_require_a_new_name(self):
+        AssetCollection.objects.create(
+            owner=self.alice_owner,
+            url="existing-collection",
+            name="Existing collection",
+        )
+        self.client.force_login(self.alice)
+
+        response = self.client.get(
+            reverse(
+                "icosa:user_asset_collection_list_modal",
+                kwargs={
+                    "user_url": self.alice_owner.url,
+                    "asset_url": self.public_asset.url,
+                },
+            )
+        )
+
+        self.assertContains(response, "formnovalidate")
+        self.assertContains(
+            response,
+            'id="new-collection-name" type="text" name="new-collection-name" required',
+        )
 
     def test_user_cannot_create_a_collection_through_another_users_url(self):
         self.client.force_login(self.bob)
@@ -184,6 +230,49 @@ class AssetCollectionAuthorizationTests(TestCase):
         self.assertContains(response, public_collection.name)
         self.assertNotContains(response, "Unlisted collection")
         self.assertNotContains(response, "Rejected collection")
+
+    def test_public_collection_card_counts_only_public_visible_assets(self):
+        private_asset = Asset.objects.create(
+            url="private-counted-asset",
+            name="Private asset",
+            owner=self.alice_owner,
+            visibility=PRIVATE,
+            create_time=timezone.now(),
+        )
+        unlisted_asset = Asset.objects.create(
+            url="unlisted-counted-asset",
+            name="Unlisted asset",
+            owner=self.alice_owner,
+            visibility=UNLISTED,
+            create_time=timezone.now(),
+        )
+        hidden_asset = Asset.objects.create(
+            url="hidden-counted-asset",
+            name="Hidden asset",
+            owner=self.alice_owner,
+            visibility=PUBLIC,
+            create_time=timezone.now(),
+        )
+        Asset.objects.filter(pk=hidden_asset.pk).update(
+            moderation_state=MOD_REJECTED
+        )
+        collection = AssetCollection.objects.create(
+            owner=self.alice_owner,
+            url="visible-asset-count",
+            name="Visible asset count",
+            visibility=PUBLIC,
+        )
+        collection.assets.add(
+            self.public_asset,
+            private_asset,
+            unlisted_asset,
+            hidden_asset,
+        )
+
+        response = self.client.get(reverse("icosa:asset_collection_list"))
+
+        self.assertContains(response, "1 asset")
+        self.assertNotContains(response, "4 assets")
 
     def test_unlisted_collection_is_available_only_by_its_canonical_direct_link(self):
         collection = AssetCollection.objects.create(
@@ -395,6 +484,10 @@ class AssetCollectionAuthorizationTests(TestCase):
             asset=existing_asset,
             order=0,
         )
+        previous_update_time = timezone.now() - timedelta(days=1)
+        AssetCollection.objects.filter(pk=collection.pk).update(
+            update_time=previous_update_time
+        )
         self.client.force_login(self.alice)
 
         response = self.client.post(
@@ -415,6 +508,34 @@ class AssetCollectionAuthorizationTests(TestCase):
             ),
             [(existing_asset.pk, 0), (self.public_asset.pk, 1)],
         )
+        collection.refresh_from_db()
+        self.assertGreater(collection.update_time, previous_update_time)
+
+    def test_removing_an_asset_refreshes_the_collection_update_time(self):
+        collection = AssetCollection.objects.create(
+            owner=self.alice_owner,
+            url="remove-item",
+            name="Remove item",
+        )
+        collection.assets.add(self.public_asset)
+        previous_update_time = timezone.now() - timedelta(days=1)
+        AssetCollection.objects.filter(pk=collection.pk).update(
+            update_time=previous_update_time
+        )
+        self.client.force_login(self.alice)
+
+        response = self.client.post(
+            self.collection_list_url(self.alice_owner),
+            {
+                "asset_url": self.public_asset.url,
+                f"_remove_from_collection__{collection.url}": "Remove",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(collection.assets.filter(pk=self.public_asset.pk).exists())
+        collection.refresh_from_db()
+        self.assertGreater(collection.update_time, previous_update_time)
 
     def test_user_cannot_manage_another_users_collection_items(self):
         collection = AssetCollection.objects.create(

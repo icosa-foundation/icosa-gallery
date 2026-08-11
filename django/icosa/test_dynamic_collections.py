@@ -171,7 +171,11 @@ class DynamicCollectionTests(TestCase):
         response = self.client.get(self.collection.get_absolute_url())
 
         self.assertContains(response, "<strong>Safe</strong>", html=True)
-        self.assertNotContains(response, "<script>")
+        self.assertNotContains(response, "<script>alert('unsafe')</script>")
+        self.assertContains(
+            response,
+            "&lt;script&gt;alert('unsafe')&lt;/script&gt;",
+        )
 
     def test_legacy_routes_redirect_to_collection(self):
         routes = {
