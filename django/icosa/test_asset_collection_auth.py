@@ -104,6 +104,30 @@ class AssetCollectionAuthorizationTests(TestCase):
                 )
                 self.assertFalse(AssetCollection.objects.exists())
 
+    def test_existing_collection_actions_do_not_require_a_new_name(self):
+        AssetCollection.objects.create(
+            owner=self.alice_owner,
+            url="existing-collection",
+            name="Existing collection",
+        )
+        self.client.force_login(self.alice)
+
+        response = self.client.get(
+            reverse(
+                "icosa:user_asset_collection_list_modal",
+                kwargs={
+                    "user_url": self.alice_owner.url,
+                    "asset_url": self.public_asset.url,
+                },
+            )
+        )
+
+        self.assertContains(response, "formnovalidate")
+        self.assertContains(
+            response,
+            'id="new-collection-name" type="text" name="new-collection-name" required',
+        )
+
     def test_user_cannot_create_a_collection_through_another_users_url(self):
         self.client.force_login(self.bob)
 
