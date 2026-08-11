@@ -6,6 +6,11 @@ from django.test import SimpleTestCase, TestCase, override_settings
 
 from icosa.management.commands.import_polyhaven_local import Command as PolyHavenCommand
 from icosa.management.commands.import_sketchfab import Command as SketchfabCommand
+from icosa.management.commands.import_smithsonian_models import (
+    Command as SmithsonianCommand,
+    SmithsonianAsset,
+    SmithsonianResource,
+)
 from icosa.management.commands.import_sketchfab import (
     get_sketchfab_license_slug,
     sketchfab_license_to_internal,
@@ -162,3 +167,80 @@ class PolyHavenImporterTests(TestCase):
             with new_format.root_resource.file.open("rb") as imported_glb:
                 self.assertEqual(imported_glb.read(), b"new glb")
             self.assertFalse(old_resource.file.storage.exists(old_storage_name))
+
+
+class SmithsonianImporterTests(SimpleTestCase):
+    def test_assets_are_processed_after_all_pages_are_aggregated(self):
+        model_url = "https://3d.si.edu/object/example"
+        first_page_asset = SmithsonianAsset(title="Example", model_url=model_url)
+        first_page_asset.add_entry(
+            SmithsonianResource(
+                uri="https://example.com/model.glb",
+                usage="web3d",
+                quality="high",
+                model_type=None,
+                file_type="glb",
+            )
+        )
+        second_page_asset = SmithsonianAsset(title="Example", model_url=model_url)
+        second_page_asset.add_entry(
+            SmithsonianResource(
+                uri="https://example.com/thumbnail.jpg",
+                usage="image_thumb",
+                quality="low",
+                model_type=None,
+                file_type="jpg",
+            )
+        )
+
+        class FakeClient:
+            def fetch(self):
+                yield "first page"
+                yield "second page"
+
+            def fetch_open_access_metadata(self, model_url):
+                return None
+
+        imported_entry_counts = []
+        command = SmithsonianCommand()
+        with patch(
+            "icosa.management.commands.import_smithsonian_models.SmithsonianAPIClient",
+            return_value=FakeClient(),
+        ), patch.object(
+            command,
+            "ensure_owner",
+            return_value=object(),
+        ), patch.object(
+            command,
+            "normalise_metadata",
+            side_effect=[
+                {model_url: first_page_asset},
+                {model_url: second_page_asset},
+            ],
+        ), patch.object(
+            command,
+            "populate_missing_image_entries",
+        ), patch.object(
+            command,
+            "find_existing_asset",
+            return_value=None,
+        ), patch.object(
+            command,
+            "create_or_update_asset",
+            side_effect=lambda asset_data, *args, **kwargs: imported_entry_counts.append(
+                (len(asset_data.model_entries), len(asset_data.image_entries))
+            )
+            or object(),
+        ):
+            command.handle(
+                rows=100,
+                rate_limit=0,
+                max_assets=None,
+                dry_run=False,
+                fix_thumbs=False,
+                update_existing=False,
+                api_key="test",
+                verbosity=0,
+            )
+
+        self.assertEqual(imported_entry_counts, [(1, 1)])
