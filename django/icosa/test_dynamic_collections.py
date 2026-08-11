@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from icosa.api.filters import FilterLicense, FiltersAsset
 from icosa.models import (
     PRIVATE,
     PUBLIC,
@@ -96,6 +97,30 @@ class DynamicCollectionTests(TestCase):
         self.assertEqual(
             list(self.collection.get_public_assets()),
             [self.matching_asset],
+        )
+
+    def test_remixable_excludes_licenses_with_downstream_restrictions(self):
+        restricted_licenses = [
+            "CREATIVE_COMMONS_BY_SA_4_0",
+            "CREATIVE_COMMONS_NC_4_0",
+            "CREATIVE_COMMONS_NC_SA_4_0",
+        ]
+        for index, license_name in enumerate(restricted_licenses):
+            Asset.objects.create(
+                url=f"restricted-remix-{index}",
+                name="Restricted remix",
+                owner=self.owner,
+                visibility=PUBLIC,
+                license=license_name,
+            )
+
+        remixable_query = FiltersAsset().filter_license(FilterLicense.REMIXABLE)
+
+        self.assertCountEqual(
+            Asset.objects.filter(remixable_query, visibility=PUBLIC).values_list(
+                "url", flat=True
+            ),
+            ["matching-asset", "nonmatching-asset"],
         )
 
     def test_dynamic_collection_supports_or_filter_groups(self):
