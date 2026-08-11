@@ -47,3 +47,34 @@ class PolyHavenImporterTests(TestCase):
             asset.refresh_from_db()
             self.assertEqual(asset.preferred_viewer_format.format_type, "GLB")
             self.assertTrue(asset.is_viewer_compatible)
+
+    def test_update_replaces_imported_glb(self):
+        with TemporaryDirectory() as directory, override_settings(MEDIA_ROOT=directory):
+            asset_directory = Path(directory) / "example"
+            asset_directory.mkdir()
+            glb_path = asset_directory / "example.glb"
+            glb_path.write_bytes(b"old glb")
+            command = PolyHavenCommand()
+            asset = command.create_or_update_from_dir(
+                asset_directory,
+                glb_path,
+                "polyhaven",
+                update_existing=False,
+            )
+            old_format = asset.format_set.get(role="POLYHAVEN_GLB")
+            old_resource = old_format.root_resource
+            old_storage_name = old_resource.file.name
+
+            glb_path.write_bytes(b"new glb")
+            asset = command.create_or_update_from_dir(
+                asset_directory,
+                glb_path,
+                "polyhaven",
+                update_existing=True,
+            )
+
+            new_format = asset.format_set.get(role="POLYHAVEN_GLB")
+            self.assertNotEqual(new_format.pk, old_format.pk)
+            with new_format.root_resource.file.open("rb") as imported_glb:
+                self.assertEqual(imported_glb.read(), b"new glb")
+            self.assertFalse(old_resource.file.storage.exists(old_storage_name))
