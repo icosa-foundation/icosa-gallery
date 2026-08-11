@@ -1,13 +1,16 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from icosa.management.commands.import_polyhaven_local import Command as PolyHavenCommand
+from icosa.management.commands.import_sketchfab import Command as SketchfabCommand
 from icosa.management.commands.import_sketchfab import (
     get_sketchfab_license_slug,
     sketchfab_license_to_internal,
 )
+from icosa.models import Format
 
 
 class SketchfabImporterTests(SimpleTestCase):
@@ -54,6 +57,60 @@ class SketchfabImporterTests(SimpleTestCase):
         }
 
         self.assertEqual(get_sketchfab_license_slug(model), "by-nc-sa")
+
+
+class SketchfabUpdateImporterTests(TestCase):
+    def test_update_replaces_existing_formats_and_files(self):
+        class FakeClient:
+            def download_info(self, uid):
+                return {"glb": {"url": "https://example.com/model.glb"}}
+
+        class FakeResponse:
+            status_code = 200
+            headers = {"Content-Type": "model/gltf-binary"}
+
+            def __init__(self, content):
+                self.content = content
+
+            def iter_content(self, chunk_size):
+                yield self.content
+
+        model = {
+            "uid": "model-id",
+            "name": "Example",
+            "user": {"username": "artist"},
+            "license": {"slug": "by"},
+        }
+        response_content = [b"old glb"]
+
+        with TemporaryDirectory() as directory, override_settings(
+            MEDIA_ROOT=directory
+        ), patch(
+            "icosa.management.commands.import_sketchfab.requests.get",
+            side_effect=lambda *args, **kwargs: FakeResponse(response_content[0]),
+        ), patch(
+            "icosa.management.commands.import_sketchfab.requests.head",
+            return_value=FakeResponse(b""),
+        ):
+            command = SketchfabCommand()
+            asset = command.create_or_update_asset_from_model(
+                FakeClient(), model, update_existing=False
+            )
+            old_format = Format.objects.get(asset=asset)
+            old_resource = old_format.root_resource
+            old_storage_name = old_resource.file.name
+
+            response_content[0] = b"new glb"
+            with self.captureOnCommitCallbacks(execute=True):
+                asset = command.create_or_update_asset_from_model(
+                    FakeClient(), model, update_existing=True
+                )
+
+            new_format = Format.objects.get(asset=asset)
+            self.assertNotEqual(new_format.pk, old_format.pk)
+            with new_format.root_resource.file.open("rb") as imported_glb:
+                self.assertEqual(imported_glb.read(), b"new glb")
+            self.assertFalse(old_resource.file.storage.exists(old_storage_name))
 
 
 class PolyHavenImporterTests(TestCase):
