@@ -898,84 +898,67 @@ class Command(BaseCommand):
         skipped = 0
 
         aggregated_assets: Dict[str, SmithsonianAsset] = {}
-        usable_asset_count = 0
-        stop_fetching = False
 
         for page_rows in client.fetch():
-            page_assets: Dict[str, SmithsonianAsset] = {}
-
             for model_url, asset_data in self.normalise_metadata(page_rows).items():
                 existing = aggregated_assets.get(model_url)
                 if existing:
-                    had_models = bool(existing.model_entries)
                     if asset_data.title and asset_data.title != existing.title:
                         existing.title = asset_data.title
                     for entry in asset_data.model_entries:
                         existing.add_entry(entry)
                     for entry in asset_data.image_entries:
                         existing.add_entry(entry)
-                    if not had_models and existing.model_entries:
-                        usable_asset_count += 1
-                        page_assets[model_url] = existing
                 else:
                     aggregated_assets[model_url] = asset_data
-                    page_assets[model_url] = asset_data
-                    if asset_data.model_entries:
-                        usable_asset_count += 1
 
-            # Process this page's assets immediately
-            if page_assets:
-                self.populate_missing_image_entries(client, page_assets, verbosity)
+        self.populate_missing_image_entries(client, aggregated_assets, verbosity)
 
-                # Filter which assets to enrich and import
-                for model_url, asset_data in page_assets.items():
-                    if not asset_data.model_entries:
-                        if verbosity >= 2:
-                            self.stdout.write(
-                                f"Skipping {asset_data.model_url} because it has no usable model entries"
-                            )
-                        continue
+        for model_url, asset_data in aggregated_assets.items():
+            if not asset_data.model_entries:
+                if verbosity >= 2:
+                    self.stdout.write(
+                        f"Skipping {asset_data.model_url} because it has no usable model entries"
+                    )
+                continue
 
-                    # Check if we should process this asset
-                    should_process = update_existing or self.find_existing_asset(asset_data) is None
+            should_process = (
+                update_existing or self.find_existing_asset(asset_data) is None
+            )
+            if not should_process:
+                skipped += 1
+                if verbosity >= 2:
+                    self.stdout.write(f"Skipping existing asset {model_url}")
+                continue
 
-                    if not should_process:
-                        skipped += 1
-                        if verbosity >= 2:
-                            self.stdout.write(f"Skipping existing asset {model_url}")
-                        continue
+            if verbosity >= 2:
+                self.stdout.write(
+                    f"Enriching {model_url} with Open Access metadata..."
+                )
+            oa_record = client.fetch_open_access_metadata(model_url)
+            if oa_record:
+                self.apply_open_access_metadata(asset_data, oa_record, verbosity)
+            elif verbosity >= 1:
+                self.stdout.write(
+                    f"  → No Open Access metadata found for {model_url}"
+                )
 
-                    # Enrich with Open Access metadata
-                    if verbosity >= 2:
-                        self.stdout.write(f"Enriching {model_url} with Open Access metadata...")
-                    oa_record = client.fetch_open_access_metadata(model_url)
-                    if oa_record:
-                        self.apply_open_access_metadata(asset_data, oa_record, verbosity)
-                    else:
-                        if verbosity >= 1:
-                            self.stdout.write(f"  → No Open Access metadata found for {model_url}")
+            if dry_run:
+                self.stdout.write(f"Would import {asset_data.model_url}")
+            else:
+                result = self.create_or_update_asset(
+                    asset_data,
+                    owner,
+                    verbosity=verbosity,
+                    update_existing=update_existing,
+                )
+                if result is not None:
+                    imported += 1
+                    if verbosity >= 1:
+                        self.stdout.write(f"Imported {asset_data.model_url}")
 
-                    # Write to database immediately
-                    if dry_run:
-                        self.stdout.write(f"Would import {asset_data.model_url}")
-                    else:
-                        result = self.create_or_update_asset(
-                            asset_data,
-                            owner,
-                            verbosity=verbosity,
-                            update_existing=update_existing,
-                        )
-                        if result is not None:
-                            imported += 1
-                            if verbosity >= 1:
-                                self.stdout.write(f"Imported {asset_data.model_url}")
-
-                    if max_assets is not None and imported >= max_assets:
-                        self.stdout.write("Reached asset import limit")
-                        stop_fetching = True
-                        break
-
-            if stop_fetching:
+            if max_assets is not None and imported >= max_assets:
+                self.stdout.write("Reached asset import limit")
                 break
 
         if not dry_run:
