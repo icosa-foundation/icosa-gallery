@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from icosa.model_mixins import (
     MOD_DEFERRED,
+    MOD_HIDDEN,
     MOD_MODIFIED,
     MOD_NEW,
     ModerationMixin,
@@ -19,6 +20,7 @@ from .common import (
     ASSET_VISIBILITY_CHOICES,
     FILENAME_MAX_LENGTH,
     PRIVATE,
+    PUBLIC,
     VALID_THUMBNAIL_EXTENSIONS,
 )
 from .helpers import collection_image_upload_path
@@ -51,6 +53,13 @@ class AssetCollection(ModerationMixin):
         # Used for compatibiliy with Asset and AssetCollection's methods of the
         # same name.
         return self.name
+
+    def get_asset_count(self):
+        return (
+            self.assets.filter(visibility=PUBLIC)
+            .exclude(moderation_state__in=MOD_HIDDEN)
+            .count()
+        )
 
     def get_thumbnail_url(self):
         thumbnail_url = (

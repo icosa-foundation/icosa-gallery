@@ -230,6 +230,49 @@ class AssetCollectionAuthorizationTests(TestCase):
         self.assertNotContains(response, "Unlisted collection")
         self.assertNotContains(response, "Rejected collection")
 
+    def test_public_collection_card_counts_only_public_visible_assets(self):
+        private_asset = Asset.objects.create(
+            url="private-counted-asset",
+            name="Private asset",
+            owner=self.alice_owner,
+            visibility=PRIVATE,
+            create_time=timezone.now(),
+        )
+        unlisted_asset = Asset.objects.create(
+            url="unlisted-counted-asset",
+            name="Unlisted asset",
+            owner=self.alice_owner,
+            visibility=UNLISTED,
+            create_time=timezone.now(),
+        )
+        hidden_asset = Asset.objects.create(
+            url="hidden-counted-asset",
+            name="Hidden asset",
+            owner=self.alice_owner,
+            visibility=PUBLIC,
+            create_time=timezone.now(),
+        )
+        Asset.objects.filter(pk=hidden_asset.pk).update(
+            moderation_state=MOD_REJECTED
+        )
+        collection = AssetCollection.objects.create(
+            owner=self.alice_owner,
+            url="visible-asset-count",
+            name="Visible asset count",
+            visibility=PUBLIC,
+        )
+        collection.assets.add(
+            self.public_asset,
+            private_asset,
+            unlisted_asset,
+            hidden_asset,
+        )
+
+        response = self.client.get(reverse("icosa:asset_collection_list"))
+
+        self.assertContains(response, "1 asset")
+        self.assertNotContains(response, "4 assets")
+
     def test_unlisted_collection_is_available_only_by_its_canonical_direct_link(self):
         collection = AssetCollection.objects.create(
             owner=self.alice_owner,
