@@ -792,6 +792,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"  → No tags from metadata")
 
         # Download thumbnail if asset doesn't have one or if updating existing assets
+        old_thumbnail = None
         if not asset.thumbnail or update_existing:
             thumbnail_entry = asset_data.preferred_image_entry()
             if thumbnail_entry:
@@ -799,6 +800,8 @@ class Command(BaseCommand):
                     self.stdout.write(f"Attempting thumbnail download from {thumbnail_entry.uri}")
                 file_obj, content_type, size, diagnostics = self.download_thumbnail(thumbnail_entry)
                 if file_obj:
+                    if asset.thumbnail:
+                        old_thumbnail = (asset.thumbnail.storage, asset.thumbnail.name)
                     asset.thumbnail.save(file_obj.name, file_obj, save=False)
                     asset.thumbnail_contenttype = content_type
                     if verbosity >= 1:
@@ -869,6 +872,8 @@ class Command(BaseCommand):
 
         asset.update_time = timezone.now()
         asset.save()
+        if old_thumbnail and old_thumbnail[1] != asset.thumbnail.name:
+            old_thumbnail[0].delete(old_thumbnail[1])
 
         return asset
 
