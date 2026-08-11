@@ -9,6 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from icosa.api.exceptions import ZipException
 from icosa.forms import CollectionZipUploadForm
 from icosa.helpers.upload_web_ui import (
     analyze_collection_zip,
@@ -17,6 +18,7 @@ from icosa.helpers.upload_web_ui import (
 from icosa.models import (
     ASSET_STATE_COMPLETE,
     PRIVATE,
+    Asset,
     AssetCollection,
     AssetOwner,
     Format,
@@ -127,6 +129,29 @@ class CollectionZipImportTests(TestCase):
         self.assertEqual(
             list(collection.assets.values_list("name", flat=True)),
             ["example"],
+        )
+
+    def test_oversized_zip_is_rejected_before_creating_assets(self):
+        archive_data = io.BytesIO()
+        with zipfile.ZipFile(archive_data, "w") as archive:
+            archive.writestr("example.glb", b"oversized model")
+
+        with patch(
+            "icosa.helpers.upload_web_ui.MAX_UNZIP_BYTES", 4
+        ), self.assertRaises(ZipException):
+            upload_collection_from_zip(
+                user=self.user,
+                owner=self.owner,
+                zip_file=SimpleUploadedFile(
+                    "assets.zip",
+                    archive_data.getvalue(),
+                ),
+                collection_name="Rejected collection",
+            )
+
+        self.assertFalse(Asset.objects.exists())
+        self.assertFalse(
+            AssetCollection.objects.filter(name="Rejected collection").exists()
         )
 
     def test_queued_upload_stages_zip_in_storage(self):
