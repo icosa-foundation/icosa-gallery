@@ -273,7 +273,10 @@ class Command(BaseCommand):
 
         # Thumbnail
         thumb_path = pick_thumbnail_file(dirpath)
+        old_thumbnail = None
         if thumb_path and ((not asset.thumbnail) or update_existing):
+            if asset.thumbnail:
+                old_thumbnail = (asset.thumbnail.storage, asset.thumbnail.name)
             # Convert webp to jpeg to satisfy thumbnail validators
             if thumb_path.suffix.lower() == ".webp":
                 with Image.open(thumb_path) as im:
@@ -359,5 +362,7 @@ class Command(BaseCommand):
         # Assign preferred viewer format and save
         async_to_sync(asset.assign_preferred_viewer_format)()
         asset.save()
+        if old_thumbnail and old_thumbnail[1] != asset.thumbnail.name:
+            old_thumbnail[0].delete(old_thumbnail[1])
 
         return asset

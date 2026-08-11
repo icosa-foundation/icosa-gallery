@@ -3,6 +3,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.test import SimpleTestCase, TestCase, override_settings
+from PIL import Image
 
 from icosa.management.commands.import_polyhaven_local import Command as PolyHavenCommand
 from icosa.management.commands.import_sketchfab import Command as SketchfabCommand
@@ -143,6 +144,8 @@ class PolyHavenImporterTests(TestCase):
             asset_directory.mkdir()
             glb_path = asset_directory / "example.glb"
             glb_path.write_bytes(b"old glb")
+            thumbnail_path = asset_directory / "thumbnail.webp"
+            Image.new("RGB", (8, 5), "white").save(thumbnail_path, "WEBP")
             command = PolyHavenCommand()
             asset = command.create_or_update_from_dir(
                 asset_directory,
@@ -153,6 +156,7 @@ class PolyHavenImporterTests(TestCase):
             old_format = asset.format_set.get(role="POLYHAVEN_GLB")
             old_resource = old_format.root_resource
             old_storage_name = old_resource.file.name
+            old_thumbnail_name = asset.thumbnail.name
 
             glb_path.write_bytes(b"new glb")
             asset = command.create_or_update_from_dir(
@@ -167,6 +171,8 @@ class PolyHavenImporterTests(TestCase):
             with new_format.root_resource.file.open("rb") as imported_glb:
                 self.assertEqual(imported_glb.read(), b"new glb")
             self.assertFalse(old_resource.file.storage.exists(old_storage_name))
+            self.assertNotEqual(asset.thumbnail.name, old_thumbnail_name)
+            self.assertFalse(asset.thumbnail.storage.exists(old_thumbnail_name))
 
 
 class SmithsonianImporterTests(SimpleTestCase):
