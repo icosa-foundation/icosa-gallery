@@ -9,6 +9,7 @@ from typing import Iterable, List, Optional, Tuple
 from asgiref.sync import async_to_sync
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
+from django.db import models
 from django.utils.text import slugify
 from django.utils import timezone
 from PIL import Image
@@ -334,14 +335,26 @@ class Command(BaseCommand):
             asset.save()
 
         # Formats/resources: attach GLB as primary format (avoid duplicates)
-        existing_glb = asset.format_set.filter(format_type="GLB").last()
-        if not existing_glb:
+        existing_glbs = list(
+            asset.format_set.filter(format_type="GLB", role="POLYHAVEN_GLB")
+        )
+        if not existing_glbs or update_existing:
             fmt = Format.objects.create(asset=asset, format_type="GLB", role="POLYHAVEN_GLB")
             glb_bytes = glb_path.read_bytes()
             content_type = get_content_type(glb_path.name) or mimetypes.guess_type(glb_path.name)[0] or "application/octet-stream"
             res = Resource(asset=asset, format=fmt, contenttype=content_type)
             res.file.save(glb_path.name, ContentFile(glb_bytes), save=True)
             fmt.add_root_resource(res)
+
+            for old_format in existing_glbs:
+                old_resources = Resource.objects.filter(
+                    models.Q(format=old_format) | models.Q(root_formats=old_format)
+                ).distinct()
+                for old_resource in old_resources:
+                    if old_resource.file:
+                        old_resource.file.delete(save=False)
+                    old_resource.delete()
+                old_format.delete()
 
         # Assign preferred viewer format and save
         async_to_sync(asset.assign_preferred_viewer_format)()
