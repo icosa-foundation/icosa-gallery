@@ -285,6 +285,10 @@ class FiltersAsset(FiltersBase):
                     "CREATIVE_COMMONS_BY_ND_4_0",
                 ]
             elif value == FilterLicense.REMIXABLE:
+                # "Remixable" is the gallery's low-friction remix category,
+                # not every license that legally permits derivatives. NC and
+                # SA licenses require additional downstream restrictions and
+                # are intentionally available only through explicit filters.
                 variants = [
                     "CREATIVE_COMMONS_BY_3_0",
                     "CREATIVE_COMMONS_BY_4_0",
