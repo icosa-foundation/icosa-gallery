@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
+from asgiref.sync import async_to_sync
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.text import slugify
@@ -343,7 +344,7 @@ class Command(BaseCommand):
             fmt.add_root_resource(res)
 
         # Assign preferred viewer format and save
-        asset.assign_preferred_viewer_format()
+        async_to_sync(asset.assign_preferred_viewer_format)()
         asset.save()
 
         return asset
