@@ -1,5 +1,6 @@
 import django.db.models.deletion
 from django.db import migrations, models
+from django.db.migrations.exceptions import IrreversibleError
 from django.utils import timezone
 
 
@@ -69,6 +70,16 @@ def restore_collection_users(apps, schema_editor):
     AssetOwner = apps.get_model("icosa", "AssetOwner")
     database = schema_editor.connection.alias
 
+    if (
+        AssetCollection.objects.using(database)
+        .filter(owner__django_user__isnull=True)
+        .exists()
+    ):
+        raise IrreversibleError(
+            "Cannot restore user ownership while collections have asset owners "
+            "without Django users."
+        )
+
     for collection in AssetCollection.objects.using(database).select_related("owner"):
         collection.user_id = collection.owner.django_user_id
         collection.save(update_fields=["user"])
@@ -83,7 +94,6 @@ def restore_collection_users(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("icosa", "0035_assetcollection_dynamic_fields"),
     ]

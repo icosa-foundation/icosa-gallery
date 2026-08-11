@@ -132,6 +132,26 @@ class DynamicCollectionTests(TestCase):
             [self.matching_asset.url],
         )
 
+    def test_asset_api_accepts_url_decoded_commas_in_filter_values(self):
+        comma_asset = Asset.objects.create(
+            url="comma-name",
+            name="Smith, John",
+            owner=self.owner,
+            visibility=PUBLIC,
+            license="CREATIVE_COMMONS_0",
+            create_time=timezone.now(),
+        )
+
+        response = self.client.get(
+            "/api/v1/assets?filter=%28name%3DSmith%2C%20John%29"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [asset["assetId"] for asset in response.json()["assets"]],
+            [comma_asset.url],
+        )
+
     def test_dynamic_collection_rejects_explicit_assets(self):
         item = AssetCollectionAsset(
             collection=self.collection,
@@ -171,7 +191,11 @@ class DynamicCollectionTests(TestCase):
         response = self.client.get(self.collection.get_absolute_url())
 
         self.assertContains(response, "<strong>Safe</strong>", html=True)
-        self.assertNotContains(response, "<script>")
+        self.assertNotContains(response, "<script>alert('unsafe')</script>")
+        self.assertContains(
+            response,
+            "&lt;script&gt;alert('unsafe')&lt;/script&gt;",
+        )
 
     def test_legacy_routes_redirect_to_collection(self):
         routes = {

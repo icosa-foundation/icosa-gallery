@@ -14,6 +14,7 @@
             <div class="col col-sm-3">
                 <input type="submit"
                        class="btn btn-primary btn-xs btn-inline"
+                       formnovalidate
                        {% if collection.has_asset %}
                        value="Remove"
                        name="_remove_from_collection__{{ collection.url }}"

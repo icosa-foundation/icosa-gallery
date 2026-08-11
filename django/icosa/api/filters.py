@@ -1,4 +1,5 @@
 from enum import Enum, auto
+import re
 from typing import List, Optional
 from urllib.parse import unquote
 
@@ -355,6 +356,33 @@ MAX_FILTER_GROUPS = 16
 MAX_FILTER_CONDITIONS = 16
 
 
+def _split_filter_conditions(group_text):
+    conditions = []
+    condition = []
+    position = 0
+    while position < len(group_text):
+        character = group_text[position]
+        if (
+            character == "\\"
+            and position + 1 < len(group_text)
+            and group_text[position + 1] in {",", "\\"}
+        ):
+            condition.append(group_text[position + 1])
+            position += 2
+            continue
+        if character == "," and re.match(
+            r"\s*[A-Za-z][A-Za-z0-9_]*\s*=",
+            group_text[position + 1 :],
+        ):
+            conditions.append("".join(condition))
+            condition = []
+        else:
+            condition.append(character)
+        position += 1
+    conditions.append("".join(condition))
+    return conditions
+
+
 def parse_asset_filter_expression(expression):
     """Parse a shallow `(field=value,field=value)|(field=value)` expression."""
     if expression is None:
@@ -379,7 +407,7 @@ def parse_asset_filter_expression(expression):
         if "(" in group_text:
             raise ValueError("nested filter groups are not supported.")
 
-        conditions = group_text.split(",")
+        conditions = _split_filter_conditions(group_text)
         if len(conditions) > MAX_FILTER_CONDITIONS:
             raise ValueError(
                 "filter groups cannot contain more than "
