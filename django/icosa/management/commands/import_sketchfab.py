@@ -15,6 +15,7 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from icosa.helpers.file import (
@@ -417,6 +418,9 @@ class Command(BaseCommand):
                     asset.id = generate_snowflake()
 
                 asset.save()
+                formats_to_replace = (
+                    list(asset.format_set.all()) if update_existing else []
+                )
 
                 # Tags
                 tags = model.get("tags") or []
@@ -602,6 +606,22 @@ class Command(BaseCommand):
 
                 if not created_any_format:
                     raise CommandError("No formats could be created; skipping asset.")
+
+                for old_format in formats_to_replace:
+                    old_resources = Resource.objects.filter(
+                        Q(format=old_format) | Q(root_formats=old_format)
+                    ).distinct()
+                    for old_resource in old_resources:
+                        if old_resource.file:
+                            storage = old_resource.file.storage
+                            storage_name = old_resource.file.name
+                            transaction.on_commit(
+                                lambda storage=storage, storage_name=storage_name: storage.delete(
+                                    storage_name
+                                )
+                            )
+                        old_resource.delete()
+                    old_format.delete()
 
                 # Assign preferred viewer format if possible
                 async_to_sync(asset.assign_preferred_viewer_format)()
