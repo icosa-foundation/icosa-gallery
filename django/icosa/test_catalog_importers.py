@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from django.core.files.base import ContentFile
 from django.test import SimpleTestCase, TestCase, override_settings
 from PIL import Image
 
@@ -16,7 +17,7 @@ from icosa.management.commands.import_sketchfab import (
     get_sketchfab_license_slug,
     sketchfab_license_to_internal,
 )
-from icosa.models import Format
+from icosa.models import AssetOwner, Format
 
 
 class SketchfabImporterTests(SimpleTestCase):
@@ -250,3 +251,75 @@ class SmithsonianImporterTests(SimpleTestCase):
             )
 
         self.assertEqual(imported_entry_counts, [(1, 1)])
+
+
+class SmithsonianUpdateImporterTests(TestCase):
+    def test_update_deletes_replaced_thumbnail(self):
+        owner = AssetOwner.objects.create(
+            url="smithsonian",
+            displayname="Smithsonian",
+            imported=True,
+        )
+        asset_data = SmithsonianAsset(
+            title="Example",
+            model_url="https://3d.si.edu/object/example",
+        )
+        asset_data.add_entry(
+            SmithsonianResource(
+                uri="https://example.com/model.glb",
+                usage="web3d",
+                quality="high",
+                model_type=None,
+                file_type="glb",
+            )
+        )
+        asset_data.add_entry(
+            SmithsonianResource(
+                uri="https://example.com/thumbnail.jpg",
+                usage="image_thumb",
+                quality="low",
+                model_type=None,
+                file_type="jpg",
+            )
+        )
+        downloaded_thumbnails = [
+            (
+                ContentFile(b"old thumbnail", name="thumbnail.jpg"),
+                "image/jpeg",
+                13,
+                "",
+            ),
+            (
+                ContentFile(b"new thumbnail", name="thumbnail.jpg"),
+                "image/jpeg",
+                13,
+                "",
+            ),
+        ]
+
+        with TemporaryDirectory() as directory, override_settings(
+            MEDIA_ROOT=directory
+        ), patch.object(
+            SmithsonianCommand,
+            "download_thumbnail",
+            side_effect=downloaded_thumbnails,
+        ):
+            command = SmithsonianCommand()
+            asset = command.create_or_update_asset(
+                asset_data,
+                owner,
+                verbosity=0,
+                update_existing=False,
+            )
+            old_thumbnail_name = asset.thumbnail.name
+
+            asset = command.create_or_update_asset(
+                asset_data,
+                owner,
+                verbosity=0,
+                update_existing=True,
+            )
+
+            self.assertNotEqual(asset.thumbnail.name, old_thumbnail_name)
+            self.assertFalse(asset.thumbnail.storage.exists(old_thumbnail_name))
+            self.assertTrue(asset.thumbnail.storage.exists(asset.thumbnail.name))
