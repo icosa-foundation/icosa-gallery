@@ -1,10 +1,13 @@
 import io
 import zipfile
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from django.urls import reverse
 
 from icosa.forms import CollectionZipUploadForm
 from icosa.helpers.upload_web_ui import (
@@ -19,6 +22,7 @@ from icosa.models import (
     Format,
     User,
 )
+from icosa.tasks import queue_upload_collection_from_zip
 
 
 class CollectionZipImportTests(TestCase):
@@ -124,3 +128,53 @@ class CollectionZipImportTests(TestCase):
             list(collection.assets.values_list("name", flat=True)),
             ["example"],
         )
+
+    def test_queued_upload_stages_zip_in_storage(self):
+        archive_data = io.BytesIO()
+        with zipfile.ZipFile(archive_data, "w") as archive:
+            archive.writestr("example.glb", b"model")
+
+        self.client.force_login(self.user)
+        with TemporaryDirectory() as media_root, override_settings(
+            ENABLE_TASK_QUEUE=True,
+            MEDIA_ROOT=media_root,
+        ), patch("icosa.views.main.queue_upload_collection_from_zip") as queue:
+            response = self.client.post(
+                reverse("icosa:upload_collection"),
+                {
+                    "collection_zip": SimpleUploadedFile(
+                        "assets.zip",
+                        archive_data.getvalue(),
+                        content_type="application/zip",
+                    ),
+                    "collection_name": "Queued collection",
+                    "visibility": PRIVATE,
+                },
+            )
+
+            self.assertEqual(response.status_code, 200)
+            zip_storage_name = queue.call_args.kwargs["zip_storage_name"]
+            self.assertIsInstance(zip_storage_name, str)
+            self.assertTrue(default_storage.exists(zip_storage_name))
+            default_storage.delete(zip_storage_name)
+
+    def test_queued_upload_deletes_staged_zip_after_failure(self):
+        with TemporaryDirectory() as media_root, override_settings(
+            MEDIA_ROOT=media_root
+        ):
+            zip_storage_name = default_storage.save(
+                "queued_collection_uploads/test.zip",
+                SimpleUploadedFile("test.zip", b"not a zip"),
+            )
+            with patch(
+                "icosa.helpers.upload_web_ui.upload_collection_from_zip",
+                side_effect=RuntimeError("import failed"),
+            ), self.assertRaises(RuntimeError):
+                queue_upload_collection_from_zip.call_local(
+                    user_id=self.user.pk,
+                    owner_id=self.owner.pk,
+                    zip_storage_name=zip_storage_name,
+                    collection_name="Failed collection",
+                )
+
+            self.assertFalse(default_storage.exists(zip_storage_name))
