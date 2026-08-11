@@ -9,8 +9,8 @@
 {% block content %}
 <div>
     <div class="container">
-        <h1>{{ collection.name }} by {{ collection.user.displayname }}</h1>
-        {% if request.user == collection.user %}
+        <h1>{{ collection.name }} by {{ collection.owner.get_displayname }}</h1>
+        {% if request.user == collection.owner.django_user %}
             <p>
                 <a class="btn btn-primary btn-sm" href="{% url 'icosa:asset_collection_edit' collection_url=collection.url %}">Edit collection</a>
             </p>

@@ -29,7 +29,11 @@ logger = logging.getLogger("django")
 class AssetCollection(ModerationMixin):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True, null=True, blank=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_collections")
+    owner = models.ForeignKey(
+        "AssetOwner",
+        on_delete=models.CASCADE,
+        related_name="asset_collections",
+    )
     assets = models.ManyToManyField(Asset, blank=True, through="AssetCollectionAsset")
     url = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
@@ -117,13 +121,9 @@ class AssetCollection(ModerationMixin):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        owner = self.user.assetowner_set.first()
-        if not owner:
-            return None
         return reverse(
-            "icosa:user_asset_collection_view",
+            "icosa:asset_collection_view",
             kwargs={
-                "user_url": owner.url,
                 "collection_url": self.url,
             },
         )

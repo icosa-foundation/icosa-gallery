@@ -13,7 +13,7 @@
         <p class="sketch-byline">
             {{ collection.assets.count }} asset{{ collection.assets.count|pluralize }}
             {% if not hide_byline %}
-                by {{ collection.user.displayname }}
+                by {{ collection.owner.get_displayname }}
             {% endif %}
             {% if show_owner_actions %}
                 &middot; {{ collection.get_visibility_display }}

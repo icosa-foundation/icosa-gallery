@@ -63,6 +63,25 @@ class AssetCollectionAuthorizationTests(TestCase):
         )
         self.assertFalse(AssetCollection.objects.exists())
 
+    def test_user_without_an_asset_owner_cannot_create_a_collection(self):
+        user = User.objects.create_user(
+            username="ownerless",
+            email="ownerless@example.com",
+            displayname="Ownerless",
+        )
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("icosa:asset_collection_create"),
+            {
+                "name": "Ownerless collection",
+                "visibility": PUBLIC,
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(AssetCollection.objects.exists())
+
     def test_user_cannot_create_a_collection_without_a_name(self):
         self.client.force_login(self.alice)
 
@@ -124,13 +143,13 @@ class AssetCollectionAuthorizationTests(TestCase):
 
     def test_collection_detail_is_scoped_to_the_user_in_the_url(self):
         private_collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="alice-private",
             name="Alice private",
             visibility=PRIVATE,
         )
         public_collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="alice-public",
             name="Alice public",
             visibility=PUBLIC,
@@ -158,19 +177,19 @@ class AssetCollectionAuthorizationTests(TestCase):
 
     def test_public_list_hides_unlisted_and_moderation_hidden_collections(self):
         public_collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="visible-public",
             name="Visible public collection",
             visibility=PUBLIC,
         )
         AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="unlisted",
             name="Unlisted collection",
             visibility=UNLISTED,
         )
         rejected_collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="rejected",
             name="Rejected collection",
             visibility=PUBLIC,
@@ -187,7 +206,7 @@ class AssetCollectionAuthorizationTests(TestCase):
 
     def test_unlisted_collection_is_available_only_by_its_canonical_direct_link(self):
         collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="direct-link",
             name="Direct link collection",
             visibility=UNLISTED,
@@ -202,25 +221,25 @@ class AssetCollectionAuthorizationTests(TestCase):
 
     def test_public_api_exposes_only_visible_public_collections(self):
         visible = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="api-visible",
             name="API visible",
             visibility=PUBLIC,
         )
         AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="api-unlisted",
             name="API unlisted",
             visibility=UNLISTED,
         )
         AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="api-archived",
             name="API archived",
             visibility=ARCHIVED,
         )
         rejected = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="api-rejected",
             name="API rejected",
             visibility=PUBLIC,
@@ -250,7 +269,7 @@ class AssetCollectionAuthorizationTests(TestCase):
         )
 
         self.assertRedirects(response, reverse("icosa:my_asset_collection_list"))
-        collection = AssetCollection.objects.get(user=self.alice)
+        collection = AssetCollection.objects.get(owner=self.alice_owner)
         self.assertTrue(collection.url)
 
         response = self.client.post(
@@ -305,7 +324,7 @@ class AssetCollectionAuthorizationTests(TestCase):
             create_time=timezone.now(),
         )
         collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="managed-items",
             name="Managed items",
         )
@@ -386,7 +405,7 @@ class AssetCollectionAuthorizationTests(TestCase):
             create_time=timezone.now(),
         )
         collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="append-items",
             name="Append items",
         )
@@ -418,7 +437,7 @@ class AssetCollectionAuthorizationTests(TestCase):
 
     def test_user_cannot_manage_another_users_collection_items(self):
         collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="alice-managed-items",
             name="Alice managed items",
         )
@@ -441,7 +460,7 @@ class AssetCollectionAuthorizationTests(TestCase):
 
     def test_user_cannot_edit_or_delete_another_users_collection(self):
         collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="alice-edit",
             name="Alice collection",
             visibility=PRIVATE,
@@ -464,13 +483,13 @@ class AssetCollectionAuthorizationTests(TestCase):
 
     def test_collection_indexes_are_discoverable_for_public_and_owner_views(self):
         public_collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="public-index",
             name="Public index collection",
             visibility=PUBLIC,
         )
         private_collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="private-index",
             name="Private index collection",
             visibility=PRIVATE,
@@ -487,7 +506,7 @@ class AssetCollectionAuthorizationTests(TestCase):
 
     def test_profile_assets_and_collections_are_presented_as_tabs(self):
         AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="profile-tab-collection",
             name="Profile tab collection",
             visibility=PUBLIC,
@@ -521,13 +540,13 @@ class AssetCollectionAuthorizationTests(TestCase):
     @override_settings(PAGINATION_PER_PAGE=1)
     def test_public_collection_index_paginates(self):
         older_collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="older-public-index",
             name="Older public collection",
             visibility=PUBLIC,
         )
         newer_collection = AssetCollection.objects.create(
-            user=self.alice,
+            owner=self.alice_owner,
             url="newer-public-index",
             name="Newer public collection",
             visibility=PUBLIC,

@@ -297,7 +297,7 @@ def get_my_collections(
     request,
 ):
     user = request.user
-    collections = AssetCollection.objects.filter(user=user)
+    collections = AssetCollection.objects.filter(owner__django_user=user)
     return collections
 
 
@@ -313,6 +313,9 @@ def create_a_collection(
     data: AssetCollectionPostSchema,
 ):
     user = request.user
+    owner = AssetOwner.objects.filter(django_user=user).order_by("pk").first()
+    if owner is None:
+        return 400, {"message": "User has no asset owner."}
     visibility = data.visibility if data.visibility is not None else AssetVisibility.PRIVATE.value
 
     assets = Asset.objects.none()
@@ -327,7 +330,10 @@ def create_a_collection(
         assets = Asset.objects.filter(url__in=urls)
 
     collection = AssetCollection.objects.create(
-        name=data.name, description=data.description, visibility=visibility, user=user
+        name=data.name,
+        description=data.description,
+        visibility=visibility,
+        owner=owner,
     )
     for asset in assets:
         collection.assets.add(asset)
@@ -347,7 +353,9 @@ def show_a_collection(
     asset_collection_url: str,
 ):
     user = request.user
-    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    asset_collection = get_object_or_404(
+        AssetCollection, url=asset_collection_url, owner__django_user=user
+    )
     return asset_collection
 
 
@@ -364,7 +372,9 @@ def update_a_collection(
     data: AssetCollectionPatchSchema,
 ):
     user = request.user
-    collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    collection = get_object_or_404(
+        AssetCollection, url=asset_collection_url, owner__django_user=user
+    )
     filtered_data = data.dict(exclude_unset=True)
     for attr, value in filtered_data.items():
         setattr(collection, attr, value)
@@ -399,7 +409,9 @@ def overwrite_assets_for_a_collection(
     data: AssetCollectionPutSchema,
 ):
     user = request.user
-    collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    collection = get_object_or_404(
+        AssetCollection, url=asset_collection_url, owner__django_user=user
+    )
     for asset in collection.assets.all():
         collection.assets.remove(asset)
 
@@ -432,7 +444,9 @@ def delete_a_collection(
     asset_collection_url: str,
 ):
     user = request.user
-    asset_collection = get_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    asset_collection = get_object_or_404(
+        AssetCollection, url=asset_collection_url, owner__django_user=user
+    )
     asset_collection.delete()
     return 204, None
 
@@ -450,7 +464,9 @@ async def set_an_image_for_a_collection(
     image: File[UploadedFile],
 ):
     user = request.user
-    asset_collection = await aget_object_or_404(AssetCollection, url=asset_collection_url, user=user)
+    asset_collection = await aget_object_or_404(
+        AssetCollection, url=asset_collection_url, owner__django_user=user
+    )
     magic_bytes = next(image.chunks(chunk_size=2048))
     image.seek(0)
     if not validate_mime(magic_bytes, VALID_THUMBNAIL_MIME_TYPES):

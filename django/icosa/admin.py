@@ -235,7 +235,7 @@ class AssetCollectionAssetInline(admin.TabularInline):
 class AssetCollectionAdmin(admin.ModelAdmin):
     list_display = (
         "name",
-        "user",
+        "owner",
         "create_time",
         "display_asset_count",
         "visibility",
@@ -244,7 +244,7 @@ class AssetCollectionAdmin(admin.ModelAdmin):
     search_fields = (
         "name",
         "url",
-        "user__displayname",
+        "owner__displayname",
     )
 
     readonly_fields = (
