@@ -1,5 +1,6 @@
 import mimetypes
 import re
+from functools import partial
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable, Optional
@@ -32,6 +33,19 @@ MODEL_FORMATS = {
 }
 PREVIEW_EXTENSIONS = (".png", ".jpg", ".jpeg")
 VERSION_SUFFIX = re.compile(r"(?:[\s_-]+v?\d+(?:\.\d+)*)$")
+
+
+def stored_file(field_file):
+    if not field_file:
+        return None
+    return field_file.storage, field_file.name
+
+
+def delete_replaced_files_on_commit(old_files, retained_names) -> None:
+    for old_file in filter(None, old_files):
+        storage, name = old_file
+        if name not in retained_names:
+            transaction.on_commit(partial(storage.delete, name))
 
 
 class OverviewTitleParser(HTMLParser):
@@ -275,10 +289,15 @@ class Command(BaseCommand):
                 if collection_preview.is_file() and (
                     not collection.image or options["update_existing"]
                 ):
+                    old_collection_image = stored_file(collection.image)
                     collection.image.save(
                         collection_preview.name,
                         ContentFile(collection_preview.read_bytes()),
                         save=True,
+                    )
+                    delete_replaced_files_on_commit(
+                        [old_collection_image],
+                        {collection.image.name},
                     )
 
                 pack_license = options["license"] or detect_license(pack_path)
@@ -347,12 +366,19 @@ class Command(BaseCommand):
         asset.imported_from = f"model-pack:{collection_url}"
         asset.save()
 
+        old_resource_files = []
         if replace:
+            old_resource_files = [
+                stored_file(resource.file)
+                for resource in asset.resource_set.exclude(file="")
+            ]
             asset.resource_set.all().delete()
             asset.format_set.all().delete()
 
         preview = find_preview(pack_path, stem)
+        old_thumbnail = None
         if preview is not None:
+            old_thumbnail = stored_file(asset.thumbnail)
             asset.thumbnail.save(
                 preview.name,
                 ContentFile(preview.read_bytes()),
@@ -395,3 +421,15 @@ class Command(BaseCommand):
                 )
 
         asset.save()
+        retained_resource_names = set(
+            asset.resource_set.exclude(file="").values_list("file", flat=True)
+        )
+        delete_replaced_files_on_commit(
+            old_resource_files,
+            retained_resource_names,
+        )
+        if preview is not None:
+            delete_replaced_files_on_commit(
+                [old_thumbnail],
+                {asset.thumbnail.name},
+            )

@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.core.management import call_command
+from django.core.files.storage import default_storage
 from django.test import TestCase, override_settings
 
 from icosa.management.commands.import_model_pack_collections import (
@@ -153,16 +154,34 @@ class ModelPackCollectionImportTests(TestCase):
             )
             self.assertEqual(Asset.objects.get().format_set.count(), 3)
 
-            call_command(
-                "import_model_pack_collections",
-                str(root),
-                owner=self.owner.url,
-                update_existing=True,
+            asset = Asset.objects.get()
+            collection = AssetCollection.objects.get(url="castle-pack")
+            old_storage_names = set(
+                asset.resource_set.exclude(file="").values_list("file", flat=True)
             )
+            old_storage_names.update([asset.thumbnail.name, collection.image.name])
+
+            with self.captureOnCommitCallbacks(execute=True):
+                call_command(
+                    "import_model_pack_collections",
+                    str(root),
+                    owner=self.owner.url,
+                    update_existing=True,
+                )
 
             asset = Asset.objects.get()
+            collection.refresh_from_db()
             self.assertEqual(asset.format_set.count(), 3)
             self.assertEqual(asset.resource_set.count(), 7)
+            current_storage_names = set(
+                asset.resource_set.exclude(file="").values_list("file", flat=True)
+            )
+            current_storage_names.update([asset.thumbnail.name, collection.image.name])
+            self.assertTrue(old_storage_names - current_storage_names)
+            for storage_name in old_storage_names - current_storage_names:
+                self.assertFalse(default_storage.exists(storage_name))
+            for storage_name in current_storage_names:
+                self.assertTrue(default_storage.exists(storage_name))
 
     def test_dry_run_validates_without_writing(self):
         with TemporaryDirectory() as directory:
