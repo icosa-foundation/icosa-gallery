@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -438,6 +440,10 @@ class AssetCollectionAuthorizationTests(TestCase):
             asset=existing_asset,
             order=0,
         )
+        previous_update_time = timezone.now() - timedelta(days=1)
+        AssetCollection.objects.filter(pk=collection.pk).update(
+            update_time=previous_update_time
+        )
         self.client.force_login(self.alice)
 
         response = self.client.post(
@@ -458,6 +464,34 @@ class AssetCollectionAuthorizationTests(TestCase):
             ),
             [(existing_asset.pk, 0), (self.public_asset.pk, 1)],
         )
+        collection.refresh_from_db()
+        self.assertGreater(collection.update_time, previous_update_time)
+
+    def test_removing_an_asset_refreshes_the_collection_update_time(self):
+        collection = AssetCollection.objects.create(
+            owner=self.alice_owner,
+            url="remove-item",
+            name="Remove item",
+        )
+        collection.assets.add(self.public_asset)
+        previous_update_time = timezone.now() - timedelta(days=1)
+        AssetCollection.objects.filter(pk=collection.pk).update(
+            update_time=previous_update_time
+        )
+        self.client.force_login(self.alice)
+
+        response = self.client.post(
+            self.collection_list_url(self.alice_owner),
+            {
+                "asset_url": self.public_asset.url,
+                f"_remove_from_collection__{collection.url}": "Remove",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(collection.assets.filter(pk=self.public_asset.pk).exists())
+        collection.refresh_from_db()
+        self.assertGreater(collection.update_time, previous_update_time)
 
     def test_user_cannot_manage_another_users_collection_items(self):
         collection = AssetCollection.objects.create(

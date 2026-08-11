@@ -46,6 +46,12 @@ def _collection_items(collection):
     )
 
 
+def _touch_collection(collection):
+    AssetCollection.objects.filter(pk=collection.pk).update(
+        update_time=timezone.now()
+    )
+
+
 def _add_asset_to_collection(collection, asset):
     if collection.collected_assets.filter(asset=asset).exists():
         return
@@ -55,6 +61,14 @@ def _add_asset_to_collection(collection, asset):
         asset=asset,
         order=0 if last_order is None else last_order + 1,
     )
+    _touch_collection(collection)
+
+
+def _remove_asset_from_collection(collection, asset):
+    if not collection.collected_assets.filter(asset=asset).exists():
+        return
+    collection.assets.remove(asset)
+    _touch_collection(collection)
 
 
 def _save_collection_item_order(items):
@@ -282,7 +296,7 @@ def user_asset_collection_list(request, user_url: str):
         if action == COLLECTION_ADD:
             _add_asset_to_collection(collection, asset)
         elif action == COLLECTION_REMOVE:
-            collection.assets.remove(asset)
+            _remove_asset_from_collection(collection, asset)
         elif action == COLLECTION_NEW:
             name = (post_data.get("new-collection-name") or "").strip()
             if not name:
