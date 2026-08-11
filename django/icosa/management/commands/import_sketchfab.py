@@ -53,11 +53,7 @@ def parse_iso8601(ts: Optional[str]) -> Optional[datetime]:
 def sketchfab_license_to_internal(slug: Optional[str]) -> Optional[str]:
     """Map Sketchfab license slugs to internal icosa license codes.
 
-    Supported defaults:
-      - cc0 -> CREATIVE_COMMONS_0
-      - by  -> CREATIVE_COMMONS_BY_4_0
-
-    Other Sketchfab licenses are currently not mapped to icosa choices by default.
+    All Creative Commons licenses currently exposed by Sketchfab are supported.
     """
     if not slug:
         return None
@@ -77,8 +73,42 @@ def sketchfab_license_to_internal(slug: Optional[str]) -> Optional[str]:
         return "CREATIVE_COMMONS_NC_SA_4_0"
     if slug == "by-nc-nd":
         return "CREATIVE_COMMONS_NC_ND_4_0"
-    # Unhandled licenses (by-nc, by-nd, by-sa, etc.) are not mapped
     return None
+
+
+def get_sketchfab_license_slug(model: Dict) -> Optional[str]:
+    """Return the exact Sketchfab license slug, with a label fallback."""
+    license_data = model.get("license") or {}
+    slug = license_data.get("slug")
+    if slug:
+        normalized_slug = slug.lower().strip()
+        if normalized_slug.startswith("cc-"):
+            normalized_slug = normalized_slug[3:]
+        return normalized_slug
+
+    label = (license_data.get("label") or "").lower()
+    if "cc0" in label or "public domain" in label:
+        return "cc0"
+    if "attribution" not in label:
+        return None
+
+    noncommercial = "noncommercial" in label or "non-commercial" in label
+    sharealike = "sharealike" in label or "share alike" in label
+    no_derivatives = any(
+        marker in label
+        for marker in ("noderivs", "no derivatives", "no-derivatives")
+    )
+    if noncommercial and sharealike:
+        return "by-nc-sa"
+    if noncommercial and no_derivatives:
+        return "by-nc-nd"
+    if noncommercial:
+        return "by-nc"
+    if sharealike:
+        return "by-sa"
+    if no_derivatives:
+        return "by-nd"
+    return "by"
 
 
 def pick_thumbnail_url(model: Dict) -> Optional[str]:
@@ -264,21 +294,13 @@ class Command(BaseCommand):
         for model in targets:
             seen += 1
             # Enforce license filter if the endpoint didn't do it for us
-            lic = (model.get("license") or {}).get("label")
-            lic_slug = None
-            if lic:
-                # Derive a slug-like form from label when not present
-                l = lic.lower()
-                if "cc0" in l or "public domain" in l:
-                    lic_slug = "cc0"
-                elif "sharealike" in l or "share alike" in l:
-                    lic_slug = "by-sa"
-                elif "attribution" in l and "no" not in l and "non" not in l:
-                    # Heuristic for CC BY
-                    lic_slug = "by"
+            license_label = (model.get("license") or {}).get("label")
+            lic_slug = get_sketchfab_license_slug(model)
             if users and licenses and lic_slug and lic_slug not in licenses:
                 if options.get("verbosity", 1) >= 3:
-                    self.stdout.write(f"Skipping by license: {model.get('uid')} label={lic}")
+                    self.stdout.write(
+                        f"Skipping by license: {model.get('uid')} label={license_label}"
+                    )
                 continue
 
             uid = model.get("uid")
@@ -356,17 +378,9 @@ class Command(BaseCommand):
                 updated_at = parse_iso8601(model.get("publishedAt")) or created_at
 
                 # Map license
-                license_label = (model.get("license") or {}).get("label")
-                license_slug = None
-                if license_label:
-                    low = license_label.lower()
-                    if "cc0" in low or "public domain" in low:
-                        license_slug = "cc0"
-                    elif "sharealike" in low or "share alike" in low:
-                        license_slug = "by-sa"
-                    elif "attribution" in low and "no" not in low and "non" not in low:
-                        license_slug = "by"
-                internal_license = sketchfab_license_to_internal(license_slug)
+                internal_license = sketchfab_license_to_internal(
+                    get_sketchfab_license_slug(model)
+                )
 
                 # Core fields
                 if created and not asset.create_time:

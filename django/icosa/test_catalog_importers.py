@@ -5,6 +5,7 @@ from django.test import SimpleTestCase, TestCase, override_settings
 
 from icosa.management.commands.import_polyhaven_local import Command as PolyHavenCommand
 from icosa.management.commands.import_sketchfab import (
+    get_sketchfab_license_slug,
     sketchfab_license_to_internal,
 )
 
@@ -27,6 +28,32 @@ class SketchfabImporterTests(SimpleTestCase):
                     sketchfab_license_to_internal(sketchfab_license),
                     asset_license,
                 )
+
+    def test_license_labels_preserve_all_restrictions(self):
+        expected_slugs = {
+            "CC0 Public Domain": "cc0",
+            "Creative Commons Attribution": "by",
+            "Creative Commons Attribution-ShareAlike": "by-sa",
+            "Creative Commons Attribution-NoDerivs": "by-nd",
+            "Creative Commons Attribution-NonCommercial": "by-nc",
+            "Creative Commons Attribution-NonCommercial-ShareAlike": "by-nc-sa",
+            "Creative Commons Attribution-NonCommercial-NoDerivs": "by-nc-nd",
+        }
+
+        for label, expected_slug in expected_slugs.items():
+            with self.subTest(label=label):
+                model = {"license": {"label": label}}
+                self.assertEqual(get_sketchfab_license_slug(model), expected_slug)
+
+    def test_license_slug_takes_priority_over_ambiguous_label(self):
+        model = {
+            "license": {
+                "slug": "by-nc-sa",
+                "label": "Creative Commons Attribution-ShareAlike",
+            }
+        }
+
+        self.assertEqual(get_sketchfab_license_slug(model), "by-nc-sa")
 
 
 class PolyHavenImporterTests(TestCase):
