@@ -429,7 +429,6 @@ def upload_collection_from_zip(
 
     assets_created = []
     unzip_start = timezone.now()
-    total_size_bytes = 0
     zip_file.seek(0)
 
     try:
@@ -437,6 +436,15 @@ def upload_collection_from_zip(
             asset_structure = analyze_collection_zip(archive)
             if not asset_structure:
                 raise ZipException("No valid assets found in zip file")
+            uncompressed_size = sum(
+                member.file_size
+                for member in archive.infolist()
+                if not member.is_dir()
+            )
+            if uncompressed_size > MAX_UNZIP_BYTES:
+                raise ZipException(
+                    f"Uncompressed zip will be larger than {MAX_UNZIP_BYTES}"
+                )
 
             for asset_name, asset_data in asset_structure.items():
                 if (timezone.now() - unzip_start).seconds > MAX_UNZIP_SECONDS:
@@ -461,11 +469,6 @@ def upload_collection_from_zip(
 
                 for file_path in paths:
                     member = archive.getinfo(file_path)
-                    total_size_bytes += member.file_size
-                    if total_size_bytes > MAX_UNZIP_BYTES:
-                        raise ZipException(
-                            f"Uncompressed zip will be larger than {MAX_UNZIP_BYTES}"
-                        )
                     with archive.open(member) as extracted_file:
                         uploaded_file = UploadedFile(
                             name="/".join(PurePosixPath(file_path).parts[1:])
