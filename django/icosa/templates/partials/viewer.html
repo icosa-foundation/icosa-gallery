@@ -114,7 +114,7 @@
     let cameraOverrides = JSON.parse(document.getElementById('camera-data').textContent);
     cameraSettings = { ...cameraSettings, ...cameraOverrides };
     let overrides = {
-        'defaultBackgroundColor': presentationParams?.backgroundColor || "#000000",
+        'defaultBackgroundColor': presentationParams?.backgroundColor,
         'camera': cameraSettings,
         'geometryData': presentationParams?.geometry_data || presentationParams?.GOOGLE_geometry_data || {},
         'colorSpace': presentationParams?.colorSpace || "LINEAR",
