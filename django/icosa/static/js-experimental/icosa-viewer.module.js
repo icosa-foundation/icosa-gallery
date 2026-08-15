@@ -4332,10 +4332,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 if (viewer?.cameraControls) viewer.cameraControls.update(delta);
                 if (viewer?.trackballControls) viewer.trackballControls.update();
             }
-            if (viewer?.activeCamera) {
-                this.attachAudioListener(viewer.activeCamera);
-                this.syncFallbackHeadLight(viewer.activeCamera);
-            }
+            if (viewer?.activeCamera) this.attachAudioListener(viewer.activeCamera);
             this.tryStartAutoplayAudio(viewer.contentRoot);
             if (viewer?.activeCamera && viewer.contentUpdater) viewer.contentUpdater(animationTime, viewer.activeCamera);
             // SparkRenderer stochastic setup is now handled by GUI toggle
@@ -4461,7 +4458,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.immModule = undefined;
         }
         this.contentUpdater = undefined;
-        this.fallbackHeadLightCarrier = undefined;
         this.contentRoot.clear();
         this.contentRoot.position.set(0, 0, 0);
         this.contentRoot.quaternion.identity();
@@ -5976,38 +5972,12 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         });
         document.dispatchEvent(evt);
     }
-    isLegacyTiltExporter(sceneGltf) {
-        const generator = sceneGltf.asset?.generator;
-        return generator && !generator.includes('Tilt Brush');
-    }
     isNewTiltExporter(sceneGltf) {
         return sceneGltf?.scene?.userData?.isNewTiltExporter ?? false;
     }
     isAnyTiltExporter(sceneGltf) {
         const generator = sceneGltf?.asset?.generator;
         return generator && (generator.includes('Tilt Brush') || generator.includes('Open Brush UnityGLTF Exporter'));
-    }
-    activeSceneGltf() {
-        return this.sceneGltf?.scene === this.loadedModel ? this.sceneGltf : undefined;
-    }
-    isOpenBrushContent() {
-        const sceneGltf = this.activeSceneGltf();
-        if (this.isAnyTiltExporter(sceneGltf) || this.isNewTiltExporter(sceneGltf)) return true;
-        const userData = sceneGltf?.scene?.userData ?? this.loadedModel?.userData ?? {};
-        return Object.keys(userData).some((key)=>key.startsWith('TB_'));
-    }
-    isConvertedGoogleBlocksContent() {
-        const sceneGltf = this.activeSceneGltf();
-        const generator = sceneGltf?.asset?.generator;
-        if (generator?.includes('glTF 1-to-2 Upgrader for Google Blocks')) return true;
-        let hasBlocksMaterial = false;
-        this.loadedModel?.traverse((object)=>{
-            const materials = Array.isArray(object.material) ? object.material : object.material ? [
-                object.material
-            ] : [];
-            if (materials.some((material)=>material.name === 'BlocksPaper' || material.name === 'BlocksGlass' || material.name === 'BlocksGem')) hasBlocksMaterial = true;
-        });
-        return hasBlocksMaterial;
     }
     scaleScene(sceneGltf, negate) {
         const userData = sceneGltf.scene?.userData || sceneGltf.userData || {};
@@ -6060,13 +6030,15 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     // Defaults to assuming materials are vertex colored
     async loadObj(url, overrides) {
         try {
-            this.overrides = overrides;
+            const objOverrides = {
+                ...overrides || {}
+            };
+            if (!objOverrides.defaultBackgroundColor) objOverrides.defaultBackgroundColor = "#ffffff";
+            this.overrides = objOverrides;
             this.objLoader.loadAsync(url).then((objData)=>{
                 this.loadedModel = objData;
-                let defaultBackgroundColor = overrides?.["defaultBackgroundColor"];
-                if (!defaultBackgroundColor) defaultBackgroundColor = "#000000";
-                this.defaultBackgroundColor = new $hBQxr$three.Color(defaultBackgroundColor);
-                let withVertexColors = overrides?.["withVertexColors"];
+                this.defaultBackgroundColor = new $hBQxr$three.Color(objOverrides.defaultBackgroundColor);
+                let withVertexColors = objOverrides.withVertexColors;
                 if (withVertexColors) this.setAllVertexColors(this.loadedModel);
                 this.setupSketchMetaData(this.loadedModel);
                 this.initializeScene();
@@ -6079,16 +6051,18 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
     }
     async loadObjWithMtl(objUrl, mtlUrl, overrides) {
         try {
-            this.overrides = overrides;
+            const objOverrides = {
+                ...overrides || {}
+            };
+            if (!objOverrides.defaultBackgroundColor) objOverrides.defaultBackgroundColor = "#ffffff";
+            this.overrides = objOverrides;
             this.mtlLoader.loadAsync(mtlUrl).then((materials)=>{
                 materials.preload();
                 this.objLoader.setMaterials(materials);
                 this.objLoader.loadAsync(objUrl).then((objData)=>{
                     this.loadedModel = objData;
-                    let defaultBackgroundColor = overrides?.["defaultBackgroundColor"];
-                    if (!defaultBackgroundColor) defaultBackgroundColor = "#000000";
-                    this.defaultBackgroundColor = new $hBQxr$three.Color(defaultBackgroundColor);
-                    let withVertexColors = overrides?.["withVertexColors"];
+                    this.defaultBackgroundColor = new $hBQxr$three.Color(objOverrides.defaultBackgroundColor);
+                    let withVertexColors = objOverrides.withVertexColors;
                     if (withVertexColors) this.setAllVertexColors(this.loadedModel);
                     this.setupSketchMetaData(this.loadedModel);
                     this.initializeScene();
@@ -6551,7 +6525,8 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             (0, $7f098f70bc341b4e$export$fc22e28a11679cb8)(this.cameraControls);
         } else {
             let pivot = cameraOverrides?.GOOGLE_camera_settings?.pivot;
-            if (pivot) // TODO this pivot should be recalculated to take into account
+            const hasExplicitPivot = Array.isArray(pivot) && pivot.some((component)=>Math.abs(component) > 1e-9);
+            if (hasExplicitPivot) // TODO this pivot should be recalculated to take into account
             //  any camera rotation adjustment applied above
             cameraTarget = new $hBQxr$three.Vector3(pivot[0], pivot[1], pivot[2]);
             else if (this.sketchMetadata.CameraTargetDistance) {
@@ -6625,12 +6600,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             return null; // Handle the error case gracefully.
         }
     }
-    syncFallbackHeadLight(camera) {
-        const carrier = this.fallbackHeadLightCarrier;
-        if (!carrier?.parent) return;
-        camera.updateWorldMatrix(true, false);
-        camera.matrixWorld.decompose(carrier.position, carrier.quaternion, carrier.scale);
-    }
     initLights() {
         // Logic for scene light creation:
         // 1. Are there explicit GLTF scene lights? If so use them and skip the rest
@@ -6640,57 +6609,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // 5. If there's neither custom metadata, an environment guid or explicit GLTF lights - create some default lighting.
         // All rotations are now stored in Three.js XYZ Euler degrees
         // (Unity values are converted at parse time in the SketchMetadata constructor).
-        if (!this.isOpenBrushContent()) {
-            let hasAuthoredLights = false;
-            const legacyPolyLights = [];
-            this.loadedModel?.traverse((object)=>{
-                const light = object;
-                if (!light.isLight) return;
-                if (light.name === 'keyLightNode' || light.name === 'headLightNode') legacyPolyLights.push(light);
-                else hasAuthoredLights = true;
-            });
-            if (hasAuthoredLights) return;
-            legacyPolyLights.forEach((light)=>light.removeFromParent());
-            const geometryStats = this.overrides?.geometryData?.stats;
-            const metadataCentroid = geometryStats?.centroid;
-            const metadataRadius = Number(geometryStats?.radius);
-            const bounds = this.modelBoundingBox?.clone();
-            const boundingSphere = bounds && !bounds.isEmpty() ? bounds.getBoundingSphere(new $hBQxr$three.Sphere()) : undefined;
-            const centroid = Array.isArray(metadataCentroid) && metadataCentroid.length >= 3 ? new $hBQxr$three.Vector3().fromArray(metadataCentroid) : boundingSphere?.center.clone() ?? new $hBQxr$three.Vector3();
-            const radius = Number.isFinite(metadataRadius) && metadataRadius > 0 ? metadataRadius : Math.max(boundingSphere?.radius ?? 1, 1);
-            const intensityScale = Math.PI;
-            const warmWhite = new $hBQxr$three.Color().setRGB(1, 0xee / 0xff, 0xdd / 0xff);
-            const keyDirection = new $hBQxr$three.Vector3(-1, 2, -1).normalize();
-            const keyTarget = new $hBQxr$three.Object3D();
-            keyTarget.name = 'FallbackKeyTarget';
-            keyTarget.position.copy(centroid);
-            const key = new $hBQxr$three.DirectionalLight(warmWhite, 0.325 * intensityScale);
-            key.name = 'FallbackKeyLight';
-            key.position.copy(centroid).addScaledVector(keyDirection, 1.01 * radius);
-            key.target = keyTarget;
-            const headTarget = new $hBQxr$three.Object3D();
-            headTarget.name = 'FallbackHeadTarget';
-            headTarget.position.copy(centroid);
-            const headMultiplier = this.isConvertedGoogleBlocksContent() ? 1 : 3.5;
-            const head = new $hBQxr$three.DirectionalLight(warmWhite, 0.25 * intensityScale * headMultiplier);
-            head.name = 'FallbackHeadLight';
-            head.position.set(-radius, 0.5 * radius, 0.5 * radius);
-            head.target = headTarget;
-            const headCarrier = new $hBQxr$three.Group();
-            headCarrier.name = 'FallbackHeadLightCarrier';
-            headCarrier.add(head);
-            this.fallbackHeadLightCarrier = headCarrier;
-            const sceneGltf = this.activeSceneGltf();
-            const userData = sceneGltf?.scene?.userData ?? this.loadedModel?.userData ?? {};
-            const metadataGroundColor = userData['GOOGLE_hemi_light']?.groundColor;
-            const groundColor = Array.isArray(metadataGroundColor) && metadataGroundColor.length >= 3 ? new $hBQxr$three.Color().fromArray(metadataGroundColor) : new $hBQxr$three.Color(0xffffff);
-            groundColor.lerp(new $hBQxr$three.Color(0xffffff), 0.7);
-            const hemisphere = new $hBQxr$three.HemisphereLight(new $hBQxr$three.Color().setRGB(0xef / 0xff, 0xef / 0xff, 1), groundColor, 0.78 * intensityScale);
-            hemisphere.name = 'FallbackHemisphereLight';
-            this.contentRoot.add(keyTarget, key, headTarget, headCarrier, hemisphere);
-            if (this.activeCamera) this.syncFallbackHeadLight(this.activeCamera);
-            return;
-        }
         function toEuler(rot, order = 'XYZ') {
             return new $hBQxr$three.Euler($hBQxr$three.MathUtils.degToRad(rot.x), $hBQxr$three.MathUtils.degToRad(rot.y), $hBQxr$three.MathUtils.degToRad(rot.z), order);
         }
@@ -6704,12 +6622,16 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         l0.name = "SceneLight0";
         let l1 = new $hBQxr$three.DirectionalLight(this.sketchMetadata.SceneLight1Color, 1.0);
         l1.name = "SceneLight1";
-        const lightEulerOrder = this.isNewTiltExporter(this.sceneGltf) ? 'YXZ' : 'XYZ';
+        const isNewTiltExporter = this.isNewTiltExporter(this.sceneGltf);
+        const lightEulerOrder = isNewTiltExporter ? 'YXZ' : 'XYZ';
         let light0Euler = toEuler(this.sketchMetadata.SceneLight0Rotation, lightEulerOrder);
         let light1Euler = toEuler(this.sketchMetadata.SceneLight1Rotation, lightEulerOrder);
-        const light0Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light0Euler);
+        // New Tilt/Open Brush exporters use Unity's forward axis. Other formats
+        // retain the original Gallery Viewer fallback-light convention.
+        const lightForwardZ = isNewTiltExporter ? -1 : 1;
+        const light0Direction = new $hBQxr$three.Vector3(0, 0, lightForwardZ).applyEuler(light0Euler);
         l0.position.copy(light0Direction).multiplyScalar(10);
-        const light1Direction = new $hBQxr$three.Vector3(0, 0, -1).applyEuler(light1Euler);
+        const light1Direction = new $hBQxr$three.Vector3(0, 0, lightForwardZ).applyEuler(light1Euler);
         l1.position.copy(light1Direction).multiplyScalar(10);
         // DirectionalLight points from its position toward its target, so attach
         // local targets to the sketch root to keep lighting relative to the sketch.
