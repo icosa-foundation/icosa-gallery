@@ -44,23 +44,21 @@ def get_user_collections(request, user, asset):
 
 def user_asset_collection_list(request, user_url: str):
     if request.method == "POST":
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-
-        post_data = request.POST
-        template = "modals/user_asset_collection_modal_content.html"
+        user = request.user
 
         get_object_or_404(
             AssetOwner,
             url=user_url,
-            django_user=request.user,
+            django_user=user,
         )
-        user = request.user
+
+        post_data = request.POST
+        template = "modals/user_asset_collection_modal_content.html"
 
         try:
             asset = Asset.objects.exclude(moderation_state__in=MOD_HIDDEN).get(
                 Q(visibility__in=[PUBLIC, UNLISTED])
-                | Q(owner__django_user=request.user),
+                | Q(owner__django_user=user),
                 url=post_data.get("asset_url"),
             )
         except (Asset.DoesNotExist, Asset.MultipleObjectsReturned):
