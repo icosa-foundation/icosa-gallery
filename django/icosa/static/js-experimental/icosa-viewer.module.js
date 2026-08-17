@@ -6912,9 +6912,17 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                         ];
                     }
                 }
-                let visualCenterPoint = new $hBQxr$three.Vector3(vp[0], vp[1], vp[2]);
-                cameraTarget = this.calculatePivot(this.flatCamera, visualCenterPoint);
-                cameraTarget = cameraTarget || visualCenterPoint;
+                const forward = new $hBQxr$three.Vector3();
+                this.flatCamera.getWorldDirection(forward);
+                cameraTarget = this.flatCamera.position.clone().add(forward);
+                if (vp) {
+                    const visualCenterPoint = new $hBQxr$three.Vector3(vp[0], vp[1], vp[2]);
+                    const ray = new $hBQxr$three.Ray(this.flatCamera.position, forward);
+                    cameraTarget = ray.closestPointToPoint(visualCenterPoint, cameraTarget);
+                    // Poly uses a one-unit forward target when the visual centre is at
+                    // or behind the camera, preserving the authored camera orientation.
+                    if (cameraTarget.clone().sub(this.flatCamera.position).dot(forward) <= 1e-4) cameraTarget.copy(this.flatCamera.position).add(forward);
+                }
             }
             (0, $e1f901905a002d12$export$2e2bcd8739ae039).install({
                 THREE: $hBQxr$three
@@ -6945,23 +6953,6 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         // Add 180 degrees because camera's default forward is -Z, not +Z
         this.cameraRig.rotation.y = yaw + Math.PI;
         this.xrCamera.updateProjectionMatrix();
-    }
-    calculatePivot(camera, centroid) {
-        // 1. Get the camera's forward vector
-        const forward = new $hBQxr$three.Vector3();
-        camera.getWorldDirection(forward); // This gives the forward vector in world space.
-        // 2. Define a plane based on the centroid and facing the camera
-        const planeNormal = forward.clone().negate(); // Plane facing the camera
-        const plane = new $hBQxr$three.Plane().setFromNormalAndCoplanarPoint(planeNormal, centroid);
-        // 3. Calculate the intersection point of the forward vector with the plane
-        const cameraPosition = camera.position.clone();
-        const ray = new $hBQxr$three.Ray(cameraPosition, forward);
-        const intersectionPoint = new $hBQxr$three.Vector3();
-        if (ray.intersectPlane(plane, intersectionPoint)) return intersectionPoint; // This is your calculated pivot point.
-        else {
-            console.error("No intersection between camera forward vector and plane.");
-            return null; // Handle the error case gracefully.
-        }
     }
     initLights() {
         // Logic for scene light creation:
