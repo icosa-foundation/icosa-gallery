@@ -6814,7 +6814,10 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 sketchCam[2] * poseScale
             ];
         }
-        const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || 45;
+        // Recent Tilt/Open Brush exports embed the thumbnail camera, including its FOV.
+        // Explicit presentation overrides take precedence; use the global default only
+        // when neither source provides a perspective camera.
+        const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || (gltfCamera instanceof $hBQxr$three.PerspectiveCamera ? gltfCamera.fov : undefined) || 45;
         const aspect = 2;
         const near = cameraOverrides?.perspective?.znear || 0.01;
         const far = 6000;
