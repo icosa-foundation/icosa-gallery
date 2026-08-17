@@ -90,13 +90,12 @@
 
     {% if request.session.viewer_js_version == "experimental" %}
         import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
-        import * as THREE from "three";
     {% elif request.session.viewer_js_version == "previous" %}
         import { Viewer } from "/static/js-previous/icosa-viewer.module.js?v={% now "U" %}";
     {% else %}
         import { Viewer } from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
-        import * as THREE from "three";
     {% endif %}
+    import * as THREE from "three";
 
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
