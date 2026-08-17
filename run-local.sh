@@ -47,6 +47,9 @@ cd "$PROJECT_DIR/django"
 if [ "$#" -eq 0 ] || [ "$1" != "migrate" ]; then
     echo "Preparing the SQLite database..."
     "$VENV_DIR/bin/python" manage.py migrate
+    echo "Setting localhost:8000 as the default domain"
+    "$VENV_DIR/bin/python" manage.py shell -c \
+    "from django.contrib.sites.models import Site; Site.objects.filter(domain='example.com').update(domain='localhost:8000', name='localhost:8000')"
 fi
 
 if [ "$#" -gt 0 ]; then
