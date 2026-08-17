@@ -65,14 +65,13 @@
 <script type="importmap" class="es6_modules_map">
     {
         "imports": {
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" %}
         "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/",
         "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
 		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.1.0/dist/spark.module.js",
-        "@immersive-foundation/three-imm-loader": "/static/js-experimental/imm/imm-three-loader.js?v={% now "U" %}"
     {% elif request.session.viewer_js_version == "previous" %}
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/"
@@ -89,7 +88,7 @@
 </script>
 <script type="module">
 
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" %}
         import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
         import * as THREE from "three";
     {% elif request.session.viewer_js_version == "previous" %}
@@ -192,7 +191,6 @@
     } else if (formatType === 'ply' || formatType === 'sog' || formatType === 'spz' || formatType === 'splat' || formatType === 'ksplat') {
         console.log("Trying to load Gaussian splat");
         await viewer.loadSplat(url, overrides);
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" %}
     } else if (formatType === 'imm') {
         console.log("Trying to load IMM");
         await viewer.loadImm(url, {
@@ -200,7 +198,6 @@
             audio: true,
         });
         immNavigation = viewer.getImmNavigation();
-    {% endif %}
     } else {
         console.error("Unsupported file format: " + formatType);
     }
