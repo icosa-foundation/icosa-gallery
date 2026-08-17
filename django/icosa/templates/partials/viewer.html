@@ -100,7 +100,7 @@
 
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-experimental/");
     {% elif request.session.viewer_js_version == "previous" %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-previous/");
@@ -194,7 +194,13 @@
     } else if (formatType === 'imm') {
         console.log("Trying to load IMM");
         await viewer.loadImm(url, {
-            decoderWorkerURL: "/static/js-experimental/imm/decoder/imm-web-decoder-worker.mjs",
+            {% if request.session.viewer_js_version == "experimental" %}
+                decoderWorkerURL: "/static/js-experimental/imm/decoder/imm-web-decoder-worker.mjs",
+            {% elif request.session.viewer_js_version == "previous" %}
+                decoderWorkerURL: "/static/js-previous/imm/decoder/imm-web-decoder-worker.mjs",
+            {% else %}
+                decoderWorkerURL: "/static/js/imm/decoder/imm-web-decoder-worker.mjs",
+            {% endif %}
             audio: true,
         });
         immNavigation = viewer.getImmNavigation();
