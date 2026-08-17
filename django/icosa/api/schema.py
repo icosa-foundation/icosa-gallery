@@ -4,6 +4,7 @@ from typing import List, Literal, Optional
 
 from django.urls import reverse_lazy
 from icosa.helpers.file import VALID_FORMAT_STRINGS
+from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import PUBLIC, Asset, AssetCollection
 from ninja import Field, ModelSchema, Schema
 from pydantic import EmailStr
@@ -311,7 +312,9 @@ class AssetCollectionSchema(ModelSchema):
     def resolve_assets(obj, context):
         # NOTE: obj.assets are the raw assets without any of the collection's
         # metadata (e.g. time added, order in the collection).
-        assets = obj.assets.filter(visibility__in=[PUBLIC])
+        assets = obj.assets.filter(visibility__in=[PUBLIC]).exclude(
+            moderation_state__in=MOD_HIDDEN
+        )
         return assets
 
     @staticmethod
