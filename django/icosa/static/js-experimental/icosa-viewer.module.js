@@ -4360,7 +4360,9 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 if (needResize && viewer?.flatCamera) {
                     this.renderer.setSize(viewer.canvas.clientWidth, viewer.canvas.clientHeight, false);
                     viewer.effectComposer?.setSize(viewer.canvas.clientWidth, viewer.canvas.clientHeight);
-                    viewer.flatCamera.aspect = viewer.canvas.clientWidth / viewer.canvas.clientHeight;
+                    const aspect = viewer.canvas.clientWidth / viewer.canvas.clientHeight;
+                    viewer.flatCamera.aspect = aspect;
+                    if (viewer.thumbnailCameraHorizontalFov !== undefined) viewer.flatCamera.fov = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.verticalFovForAspect(viewer.thumbnailCameraHorizontalFov, aspect);
                     viewer.flatCamera.updateProjectionMatrix();
                 }
                 if (viewer?.cameraControls) viewer.cameraControls.update(delta);
@@ -4408,8 +4410,10 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             const originalPixelRatio = this.renderer.getPixelRatio();
             // Store original camera aspect ratio
             const originalAspect = this.activeCamera.aspect;
+            const originalFov = this.activeCamera.fov;
             // Update camera aspect ratio to match thumbnail dimensions
             this.activeCamera.aspect = width / height;
+            if (this.thumbnailCameraHorizontalFov !== undefined) this.activeCamera.fov = $677737c8a5cbea2f$export$2ec4afd9b3c16a85.verticalFovForAspect(this.thumbnailCameraHorizontalFov, this.activeCamera.aspect);
             this.activeCamera.updateProjectionMatrix();
             let pixels;
             let temporaryRenderTarget;
@@ -4470,6 +4474,7 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
             this.renderer.setPixelRatio(originalPixelRatio);
             // Restore original camera aspect ratio
             this.activeCamera.aspect = originalAspect;
+            this.activeCamera.fov = originalFov;
             this.activeCamera.updateProjectionMatrix();
             // Clean up
             temporaryRenderTarget?.dispose();
@@ -6795,6 +6800,9 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
         this.modelBoundingBox = new $hBQxr$three.Box3().setFromObject(model);
         this.sketchMetadata = sketchMetaData;
     }
+    static verticalFovForAspect(horizontalFov, aspect) {
+        return $hBQxr$three.MathUtils.radToDeg(2 * Math.atan(Math.tan(horizontalFov / 2) / aspect));
+    }
     initCameras() {
         this.cameraControls?.dispose();
         this.trackballControls?.dispose();
@@ -6814,11 +6822,14 @@ class $677737c8a5cbea2f$export$2ec4afd9b3c16a85 {
                 sketchCam[2] * poseScale
             ];
         }
-        // Recent Tilt/Open Brush exports embed the thumbnail camera, including its FOV.
-        // Explicit presentation overrides take precedence; use the global default only
-        // when neither source provides a perspective camera.
-        const fov = cameraOverrides?.perspective?.yfov / (Math.PI / 180) || (gltfCamera instanceof $hBQxr$three.PerspectiveCamera ? gltfCamera.fov : undefined) || 45;
         const aspect = 2;
+        const overrideFov = cameraOverrides?.perspective?.yfov / (Math.PI / 180);
+        const thumbnailCamera = this.sketchMetadata.FlyMode && gltfCamera instanceof $hBQxr$three.PerspectiveCamera ? gltfCamera : undefined;
+        // Recent Tilt/Open Brush exports embed the thumbnail camera with both a
+        // vertical FOV and an aspect ratio. Preserve its horizontal frustum when
+        // displaying it in a differently shaped viewer canvas.
+        this.thumbnailCameraHorizontalFov = thumbnailCamera ? 2 * Math.atan(Math.tan($hBQxr$three.MathUtils.degToRad(thumbnailCamera.fov) / 2) * thumbnailCamera.aspect) : undefined;
+        const fov = overrideFov || (this.thumbnailCameraHorizontalFov !== undefined ? $677737c8a5cbea2f$export$2ec4afd9b3c16a85.verticalFovForAspect(this.thumbnailCameraHorizontalFov, aspect) : undefined) || 45;
         const near = cameraOverrides?.perspective?.znear || 0.01;
         const far = 6000;
         this.flatCamera = new $hBQxr$three.PerspectiveCamera(fov, aspect, near, far);
