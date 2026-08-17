@@ -53,12 +53,12 @@ def user_asset_collection_list(request, user_url: str):
         post_data = request.POST
         template = "modals/user_asset_collection_modal_content.html"
 
-        NO_ASSET = HttpResponseBadRequest("no valid asset")
+        NO_VALID_ASSET = HttpResponseBadRequest("no valid asset")
 
         try:
             asset = Asset.objects.get(url=post_data.get("asset_url"))
         except (Asset.DoesNotExist, Asset.MultipleObjectsReturned):
-            return NO_ASSET
+            return NO_VALID_ASSET
 
         asset_is_hidden = asset.visibility not in [PUBLIC, UNLISTED] or asset.moderation_state in MOD_HIDDEN
 
@@ -76,7 +76,7 @@ def user_asset_collection_list(request, user_url: str):
                 break
 
         if action in [COLLECTION_ADD, COLLECTION_NEW] and asset_is_hidden:
-            return NO_ASSET
+            return NO_VALID_ASSET
         if action is None:
             return HttpResponseBadRequest("no action")
         if action in [COLLECTION_ADD, COLLECTION_REMOVE] and collection_url is None:
