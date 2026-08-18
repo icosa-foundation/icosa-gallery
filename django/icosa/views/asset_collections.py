@@ -46,9 +46,7 @@ def _collection_items(collection):
 
 
 def _touch_collection(collection):
-    AssetCollection.objects.filter(pk=collection.pk).update(
-        update_time=timezone.now()
-    )
+    AssetCollection.objects.filter(pk=collection.pk).update(update_time=timezone.now())
 
 
 def _add_asset_to_collection(collection, asset):
@@ -104,9 +102,7 @@ def asset_collection_list(request):
 @login_required
 @never_cache
 def my_asset_collection_list(request):
-    collections = AssetCollection.objects.filter(
-        owner__django_user=request.user
-    ).order_by("-update_time")
+    collections = AssetCollection.objects.filter(owner__django_user=request.user).order_by("-update_time")
     paginator, collection_page = _paginate_collections(request, collections)
     return render(
         request,
@@ -187,9 +183,7 @@ def asset_collection_item_update(request, collection_url: str):
     )
     action = request.POST.get("action")
     items = list(_collection_items(collection))
-    item_index = next(
-        index for index, candidate in enumerate(items) if candidate.pk == item.pk
-    )
+    item_index = next(index for index, candidate in enumerate(items) if candidate.pk == item.pk)
 
     if action == "remove":
         items.pop(item_index)
@@ -210,9 +204,7 @@ def asset_collection_item_update(request, collection_url: str):
         return HttpResponseBadRequest("invalid collection item action")
 
     _save_collection_item_order(items)
-    AssetCollection.objects.filter(pk=collection.pk).update(
-        update_time=timezone.now()
-    )
+    AssetCollection.objects.filter(pk=collection.pk).update(update_time=timezone.now())
     return redirect("icosa:asset_collection_edit", collection_url=collection.url)
 
 
@@ -392,17 +384,11 @@ def asset_collection_view(request, collection_url: str, user_url: str = None):
     user_is_moderator = request.user.groups.filter(name="Moderator").exists()
     collections = AssetCollection.objects.select_related("owner", "owner__django_user")
     if request.user.is_authenticated:
-        collections = collections.filter(
-            Q(owner__django_user=request.user)
-            | Q(visibility__in=[PUBLIC, UNLISTED])
-        )
+        collections = collections.filter(Q(owner__django_user=request.user) | Q(visibility__in=[PUBLIC, UNLISTED]))
     else:
         collections = collections.filter(visibility__in=[PUBLIC, UNLISTED])
     if request.user.is_authenticated and not user_is_moderator:
-        collections = collections.filter(
-            Q(owner__django_user=request.user)
-            | ~Q(moderation_state__in=MOD_HIDDEN)
-        )
+        collections = collections.filter(Q(owner__django_user=request.user) | ~Q(moderation_state__in=MOD_HIDDEN))
     elif not user_is_moderator:
         collections = collections.exclude(moderation_state__in=MOD_HIDDEN)
     if user_url is not None:
