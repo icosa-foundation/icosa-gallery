@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import redirect_to_login
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Max, Q
@@ -245,27 +244,28 @@ def get_user_collections(request, owner, asset):
 
 def user_asset_collection_list(request, user_url: str):
     if request.method == "POST":
-        if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
-
-        post_data = request.POST
-        template = "modals/user_asset_collection_modal_content.html"
+        user = request.user
 
         owner = get_object_or_404(
             AssetOwner,
             url=user_url,
-            django_user=request.user,
+            django_user=user,
         )
-        user = request.user
+
+        post_data = request.POST
+        template = "modals/user_asset_collection_modal_content.html"
+
+        NO_VALID_ASSET = HttpResponseBadRequest("no valid asset")
 
         try:
-            asset = Asset.objects.exclude(moderation_state__in=MOD_HIDDEN).get(
-                Q(visibility__in=[PUBLIC, UNLISTED])
-                | Q(owner__django_user=request.user),
+            asset = Asset.objects.get(
                 url=post_data.get("asset_url"),
+                owner__django_user=request.user,
             )
         except (Asset.DoesNotExist, Asset.MultipleObjectsReturned):
-            return HttpResponseBadRequest("no valid asset")
+            return NO_VALID_ASSET
+
+        asset_is_hidden = asset.visibility not in [PUBLIC, UNLISTED] or asset.moderation_state in MOD_HIDDEN
 
         action = None
         collection_url = None
@@ -280,6 +280,8 @@ def user_asset_collection_list(request, user_url: str):
                 action = COLLECTION_ACTIONS.get(key)
                 break
 
+        if action in [COLLECTION_ADD, COLLECTION_NEW] and asset_is_hidden:
+            return NO_VALID_ASSET
         if action is None:
             return HttpResponseBadRequest("no action")
         if action in [COLLECTION_ADD, COLLECTION_REMOVE] and collection_url is None:
@@ -327,14 +329,15 @@ def user_asset_collection_list(request, user_url: str):
         user = owner.django_user
 
         if user == request.user:
-            collections = AssetCollection.objects.filter(owner=owner)
+            collections = AssetCollection.objects.filter(user=user)
         else:
             collections = AssetCollection.objects.filter(
-                owner=owner,
+                user=user,
                 visibility=PUBLIC,
             ).exclude(moderation_state__in=MOD_HIDDEN)
         collections = collections.order_by("-update_time")
         paginator, collection_page = _paginate_collections(request, collections)
+
         context = {
             "collections": collection_page,
             "assets": collection_page,

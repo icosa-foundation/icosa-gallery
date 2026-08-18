@@ -65,43 +65,44 @@
 <script type="importmap" class="es6_modules_map">
     {
         "imports": {
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" %}
         "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/",
         "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
 		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.1.0/dist/spark.module.js",
-        "@immersive-foundation/three-imm-loader": "/static/js-experimental/imm/imm-three-loader.js?v={% now "U" %}"
     {% elif request.session.viewer_js_version == "previous" %}
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/",
-		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/"
+		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/",
     {% else %}
         "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/",
 		"three-icosa": "/static/js/three-icosa.module.js?v={% now "U" %}",
 		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
-		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/gh/sparkjsdev/spark@b60e9d9acbe621e67eda5d98417fcfdea5af6291/dist/spark.module.js"
+		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/gh/sparkjsdev/spark@b60e9d9acbe621e67eda5d98417fcfdea5af6291/dist/spark.module.js",
+    {% endif %}
+    {% if asset.preferred_viewer_format.format_type|lower == "imm" %}
+        "@immersive-foundation/three-imm-loader": "/static/js-experimental/imm/imm-three-loader.js?v={% now "U" %}"
     {% endif %}
         }
     }
 </script>
 <script type="module">
 
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" %}
         import { Viewer } from "/static/js-experimental/icosa-viewer.module.js?v={% now "U" %}";
-        import * as THREE from "three";
     {% elif request.session.viewer_js_version == "previous" %}
         import { Viewer } from "/static/js-previous/icosa-viewer.module.js?v={% now "U" %}";
     {% else %}
         import { Viewer } from "/static/js/icosa-viewer.module.js?v={% now "U" %}";
-        import * as THREE from "three";
     {% endif %}
+    import * as THREE from "three";
 
     import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" %}
+    {% if request.session.viewer_js_version == "experimental" %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-experimental/");
     {% elif request.session.viewer_js_version == "previous" %}
         var viewer = new Viewer("{{ settings.BRUSHES_STATIC_URL }}-previous/");
@@ -114,7 +115,7 @@
     let cameraOverrides = JSON.parse(document.getElementById('camera-data').textContent);
     cameraSettings = { ...cameraSettings, ...cameraOverrides };
     let overrides = {
-        'defaultBackgroundColor': presentationParams?.backgroundColor || "#000000",
+        'defaultBackgroundColor': presentationParams?.backgroundColor,
         'camera': cameraSettings,
         'geometryData': presentationParams?.geometry_data || presentationParams?.GOOGLE_geometry_data || {},
         'colorSpace': presentationParams?.colorSpace || "LINEAR",
@@ -192,15 +193,19 @@
     } else if (formatType === 'ply' || formatType === 'sog' || formatType === 'spz' || formatType === 'splat' || formatType === 'ksplat') {
         console.log("Trying to load Gaussian splat");
         await viewer.loadSplat(url, overrides);
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" or request.session.viewer_js_version == "experimental" %}
     } else if (formatType === 'imm') {
         console.log("Trying to load IMM");
         await viewer.loadImm(url, {
-            decoderWorkerURL: "/static/js-experimental/imm/decoder/imm-web-decoder-worker.mjs",
+            {% if request.session.viewer_js_version == "experimental" %}
+                decoderWorkerURL: "/static/js-experimental/imm/decoder/imm-web-decoder-worker.mjs",
+            {% elif request.session.viewer_js_version == "previous" %}
+                decoderWorkerURL: "/static/js-previous/imm/decoder/imm-web-decoder-worker.mjs",
+            {% else %}
+                decoderWorkerURL: "/static/js/imm/decoder/imm-web-decoder-worker.mjs",
+            {% endif %}
             audio: true,
         });
         immNavigation = viewer.getImmNavigation();
-    {% endif %}
     } else {
         console.error("Unsupported file format: " + formatType);
     }

@@ -16,10 +16,9 @@ The backend code is built on Django - a clean, mature and stable web framework w
 
 We aim to avoid heavy javascript frameworks on the front end as we are firm believers in [progressive enhancement](https://en.wikipedia.org/wiki/Progressive_enhancement). We mainly use vanilla JS with a light scattering of HTMX where it is useful.
 
-Docker Compose is used for deployment. Local development can also use uv and
-SQLite with no containers.
+Docker Compose is used for deployment and local development. If a Docker-less local development setup is required, you can use virtualenvs and SQLite. See below for more info on both methods.
 
-We currently support PostgreSQL as the database backend but this is not a hard dependency and it should be simple to swap out your relational database of choice (from local tests SQLite seems perfectly viable)
+We currently support PostgreSQL as the database backend but this is not a hard dependency and it should be simple to swap out your relational database of choice (from local tests, SQLite seems perfectly viable).
 
 * [Docker Compose](https://docs.docker.com/compose/)
 * [Django](https://www.djangoproject.com/)
@@ -33,8 +32,7 @@ We currently support PostgreSQL as the database backend but this is not a hard d
 > [!NOTE]
 > This codebase is not currently at a stable release and we may still perform some significant refactoring. If you plan to fork Icosa Gallery to customize it for your own needs then we recommend you get in touch so we can keep you informed of anything you might need to know ahead of time. 
 
-For local development, run `./run-local.sh` to start the app with SQLite and no
-Docker. See [the installation guide](docs/INSTALL.md) for details and deployment
+For local development, run `./run-local.sh` to start the app with SQLite and no Docker. See [the installation guide](docs/INSTALL.md) for details and deployment
 instructions.
 
 ## API

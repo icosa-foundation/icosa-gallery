@@ -988,11 +988,13 @@ def user_settings(request):
                 user.save()
 
                 if user.has_single_owner:
+                    displayname = form.cleaned_data["displayname"]
                     description = form.cleaned_data.get("description", None)
                     url = form.cleaned_data.get("url", None)
                     if settings.DEBUG:
                         print(description, url)
                     owner = user.assetowner_set.first()
+                    owner.displayname = displayname
                     if description is not None:
                         owner.description = description
                     if url is not None:
