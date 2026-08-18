@@ -33,6 +33,7 @@ class AssetCollection(ModerationMixin):
     update_time = models.DateTimeField(auto_now=True, null=True, blank=True)
     owner = models.ForeignKey(
         "AssetOwner",
+        null=True,
         on_delete=models.CASCADE,
         related_name="asset_collections",
     )
