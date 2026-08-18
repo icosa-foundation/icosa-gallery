@@ -242,6 +242,7 @@ def get_user_collections(request, owner, asset):
     return collections
 
 
+@never_cache
 def user_asset_collection_list(request, user_url: str):
     if request.method == "POST":
         user = request.user
