@@ -258,10 +258,7 @@ def user_asset_collection_list(request, user_url: str):
         NO_VALID_ASSET = HttpResponseBadRequest("no valid asset")
 
         try:
-            asset = Asset.objects.get(
-                url=post_data.get("asset_url"),
-                owner__django_user=request.user,
-            )
+            asset = Asset.objects.get(url=post_data.get("asset_url"))
         except (Asset.DoesNotExist, Asset.MultipleObjectsReturned):
             return NO_VALID_ASSET
 
