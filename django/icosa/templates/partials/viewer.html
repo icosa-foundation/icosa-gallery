@@ -72,9 +72,11 @@
         "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
 		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.1.0/dist/spark.module.js",
+        "@immersive-foundation/three-imm-loader": "/static/js-experimental/imm/imm-three-loader.js?v={% now "U" %}"
     {% elif request.session.viewer_js_version == "previous" %}
         "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/",
+        "@immersive-foundation/three-imm-loader": "/static/js-previous/imm/imm-three-loader.js?v={% now "U" %}"
     {% else %}
         "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
@@ -82,9 +84,7 @@
 		"three-icosa": "/static/js/three-icosa.module.js?v={% now "U" %}",
 		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/gh/sparkjsdev/spark@b60e9d9acbe621e67eda5d98417fcfdea5af6291/dist/spark.module.js",
-    {% endif %}
-    {% if asset.preferred_viewer_format.format_type|lower == "imm" %}
-        "@immersive-foundation/three-imm-loader": "/static/js-experimental/imm/imm-three-loader.js?v={% now "U" %}"
+        "@immersive-foundation/three-imm-loader": "/static/js/imm/imm-three-loader.js?v={% now "U" %}"
     {% endif %}
         }
     }
