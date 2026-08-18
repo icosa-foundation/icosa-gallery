@@ -168,6 +168,7 @@ def asset_collection_edit(request, collection_url: str):
 
 
 @login_required
+@never_cache
 @require_POST
 @transaction.atomic
 def asset_collection_item_update(request, collection_url: str):
@@ -209,6 +210,7 @@ def asset_collection_item_update(request, collection_url: str):
 
 
 @login_required
+@never_cache
 @require_POST
 def asset_collection_delete(request, collection_url: str):
     collection = get_object_or_404(
@@ -379,6 +381,7 @@ def user_asset_collection_list_modal(request, user_url: str, asset_url: str):
     return render(request, template, context)
 
 
+@never_cache
 def asset_collection_view(request, collection_url: str, user_url: str = None):
     template = "main/asset_collection_view.html"
     user_is_moderator = request.user.groups.filter(name="Moderator").exists()
@@ -416,6 +419,7 @@ def asset_collection_view(request, collection_url: str, user_url: str = None):
     return render(request, template, context)
 
 
+@never_cache
 def user_asset_collection_view(request, user_url: str, collection_url: str):
     return asset_collection_view(
         request,
