@@ -329,10 +329,10 @@ def user_asset_collection_list(request, user_url: str):
         user = owner.django_user
 
         if user == request.user:
-            collections = AssetCollection.objects.filter(user=user)
+            collections = AssetCollection.objects.filter(owner=owner)
         else:
             collections = AssetCollection.objects.filter(
-                user=user,
+                owner=owner,
                 visibility=PUBLIC,
             ).exclude(moderation_state__in=MOD_HIDDEN)
         collections = collections.order_by("-update_time")
