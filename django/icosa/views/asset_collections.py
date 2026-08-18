@@ -266,6 +266,7 @@ def user_asset_collection_list(request, user_url: str):
 
         action = None
         collection_url = None
+        collection = None
         for key in post_data.keys():
             try:
                 action, collection_url = key.split("__")
@@ -292,9 +293,7 @@ def user_asset_collection_list(request, user_url: str):
             except (AssetCollection.DoesNotExist, AssetCollection.MultipleObjectsReturned):
                 return HttpResponseBadRequest("no collection")
 
-        if action == COLLECTION_ADD:
-            _add_asset_to_collection(collection, asset)
-        elif action == COLLECTION_REMOVE:
+        if action == COLLECTION_REMOVE:
             _remove_asset_from_collection(collection, asset)
         elif action == COLLECTION_NEW:
             name = (post_data.get("new-collection-name") or "").strip()
@@ -305,6 +304,10 @@ def user_asset_collection_list(request, user_url: str):
                 "name": name,
             }
             collection = AssetCollection.objects.create(**collection_data)
+
+        if collection is None:
+            return HttpResponseBadRequest("no collection")
+        if action in [COLLECTION_ADD, COLLECTION_NEW]:
             _add_asset_to_collection(collection, asset)
 
         collections = get_user_collections(request, owner, asset)
