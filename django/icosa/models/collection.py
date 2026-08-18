@@ -56,11 +56,7 @@ class AssetCollection(ModerationMixin):
         return self.name
 
     def get_asset_count(self):
-        return (
-            self.assets.filter(visibility=PUBLIC)
-            .exclude(moderation_state__in=MOD_HIDDEN)
-            .count()
-        )
+        return self.assets.filter(visibility=PUBLIC).exclude(moderation_state__in=MOD_HIDDEN).count()
 
     def get_thumbnail_url(self):
         thumbnail_url = (
