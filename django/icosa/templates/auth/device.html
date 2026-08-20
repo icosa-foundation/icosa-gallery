@@ -26,6 +26,7 @@
                             <input type="hidden" name="device_code" value="{{ device_code }}">
                             <input type="submit" class="btn btn-primary" value="Login">
                         </form>
+                        <p><a href="{% url 'icosa:devicecode' %}">Enter Code Manually</a></p>
                     {% else %}
                         <p class="device-code">{{ device_code }}</p>
                         <p>Return to your app and enter this code to login to your Icosa account</p>
