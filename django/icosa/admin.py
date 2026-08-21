@@ -181,14 +181,19 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
     )
 
     def display_thumbnail(self, obj):
-        html = format_html("{}", obj.url)
-        if obj.thumbnail:
-            html = format_html("<img src='{}' width='150' loading='lazy'><br>{}", obj.thumbnail.url, html)
+        label = format_html("{}", obj.url)
+        preview = (
+            format_html("<img src='{}' width='150' loading='lazy'><br>{}", obj.thumbnail.url, label)
+            if obj.thumbnail
+            else label
+        )
+
         try:
-            html = format_html("<a href='{}'>{}</a>", obj.get_absolute_url(), html)
+            view_url = obj.get_absolute_url()
         except NoReverseMatch:
-            pass
-        return html
+            return preview
+
+        return format_html("<a href='{}'>{}</a>", view_url, preview)
 
     display_thumbnail.short_description = "View"
     display_thumbnail.allow_tags = True
