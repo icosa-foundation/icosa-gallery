@@ -1,6 +1,11 @@
 {% load fontawesome_tags %}
 
-<div id="collection-item-list" class="collection-item-list">
+<div
+    id="collection-item-list"
+    class="collection-item-list"
+    hx-sync="this:drop"
+    hx-disabled-elt="#collection-item-list button"
+>
     {% for item in collection_items %}
         <article class="collection-item-row">
             <a class="collection-item-thumbnail" href="{{ item.asset.get_absolute_url }}">
