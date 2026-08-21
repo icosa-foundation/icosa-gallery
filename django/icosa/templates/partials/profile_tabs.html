@@ -1,6 +1,4 @@
-{% if owner.django_user %}
 <nav class="profile-tabs" aria-label="Profile content">
     <a class="profile-tab{% if active_profile_tab == 'assets' %} active{% endif %}" href="{{ owner.get_absolute_url }}"{% if active_profile_tab == 'assets' %} aria-current="page"{% endif %}>Assets</a>
     <a class="profile-tab{% if active_profile_tab == 'collections' %} active{% endif %}" href="{% url 'icosa:user_asset_collection_list' user_url=owner.url %}"{% if active_profile_tab == 'collections' %} aria-current="page"{% endif %}>Collections</a>
 </nav>
-{% endif %}

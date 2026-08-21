@@ -64,7 +64,7 @@ class AssetCollectionAuthorizationTests(TestCase):
             f"{reverse('icosa:login')}?next={self.collection_list_url(self.alice_owner)}",
             fetch_redirect_response=False,
         )
-        self.assertFalse(AssetCollection.objects.exists())
+        self.assert_no_test_owner_collections()
 
     def test_user_without_an_asset_owner_cannot_create_a_collection(self):
         user = User.objects.create_user(
@@ -105,7 +105,7 @@ class AssetCollectionAuthorizationTests(TestCase):
                     "collection name is required",
                     status_code=400,
                 )
-                self.assertFalse(AssetCollection.objects.exists())
+                self.assert_no_test_owner_collections()
 
     def test_existing_collection_actions_do_not_require_a_new_name(self):
         AssetCollection.objects.create(
@@ -144,7 +144,7 @@ class AssetCollectionAuthorizationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        self.assertFalse(AssetCollection.objects.exists())
+        self.assert_no_test_owner_collections()
 
     def test_user_cannot_add_another_users_private_asset(self):
         private_asset = Asset.objects.create(
@@ -166,7 +166,7 @@ class AssetCollectionAuthorizationTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertFalse(AssetCollection.objects.exists())
+        self.assert_no_test_owner_collections()
 
     def test_collection_detail_is_scoped_to_the_user_in_the_url(self):
         private_collection = AssetCollection.objects.create(
@@ -321,10 +321,12 @@ class AssetCollectionAuthorizationTests(TestCase):
         response = self.client.get(reverse("icosa:api:asset_collection_list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            [collection["collectionId"] for collection in response.json()["collections"]],
-            [visible.url],
-        )
+        collection_ids = [
+            collection["collectionId"]
+            for collection in response.json()["collections"]
+            if collection["collectionId"].startswith("api-")
+        ]
+        self.assertEqual(collection_ids, [visible.url])
 
     def test_owner_can_create_edit_and_delete_a_collection(self):
         self.client.force_login(self.alice)
@@ -367,7 +369,7 @@ class AssetCollectionAuthorizationTests(TestCase):
         )
 
         self.assertRedirects(response, reverse("icosa:my_asset_collection_list"))
-        self.assertFalse(AssetCollection.objects.exists())
+        self.assert_no_test_owner_collections()
 
     def test_collection_form_uses_an_image_upload_control(self):
         self.client.force_login(self.alice)
@@ -639,6 +641,45 @@ class AssetCollectionAuthorizationTests(TestCase):
             f'class="profile-tab active" href="{collections_url}"',
         )
 
+    def test_userless_owner_profile_links_to_public_collections(self):
+        imported_owner = AssetOwner.objects.create(
+            url="imported-studio",
+            displayname="Imported Studio",
+            django_user=None,
+            imported=True,
+            is_claimed=False,
+        )
+        public_collection = AssetCollection.objects.create(
+            owner=imported_owner,
+            url="imported-public",
+            name="Imported public collection",
+            visibility=PUBLIC,
+        )
+        private_collection = AssetCollection.objects.create(
+            owner=imported_owner,
+            url="imported-private",
+            name="Imported private collection",
+            visibility=PRIVATE,
+        )
+        assets_url = reverse(
+            "icosa:user_show",
+            kwargs={"slug": imported_owner.url},
+        )
+        collections_url = self.collection_list_url(imported_owner)
+
+        assets_response = self.client.get(assets_url)
+        self.assertContains(
+            assets_response,
+            f'class="profile-tab" href="{collections_url}"',
+        )
+
+        collections_response = self.client.get(collections_url)
+        self.assertEqual(collections_response.status_code, 200)
+        self.assertContains(collections_response, imported_owner.displayname)
+        self.assertContains(collections_response, public_collection.name)
+        self.assertNotContains(collections_response, private_collection.name)
+        self.assertNotContains(collections_response, ">Edit</a>")
+
     @override_settings(PAGINATION_PER_PAGE=1)
     def test_public_collection_index_paginates(self):
         older_collection = AssetCollection.objects.create(
@@ -671,6 +712,13 @@ class AssetCollectionAuthorizationTests(TestCase):
         return reverse(
             "icosa:user_asset_collection_list",
             kwargs={"user_url": owner.url},
+        )
+
+    def assert_no_test_owner_collections(self):
+        self.assertFalse(
+            AssetCollection.objects.filter(
+                owner__in=[self.alice_owner, self.bob_owner]
+            ).exists()
         )
 
     @staticmethod

@@ -82,6 +82,25 @@
             {% endif %}
         </div>
     </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <h2>Upload Collection ZIP</h2>
+            <form id="id_collection_upload_form" action="{% url 'icosa:upload_collection' %}" method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <div id="id_collection_upload_errors" class="alert alert-danger" hidden></div>
+                {{ collection_form.as_p }}
+                <button id="id_collection_upload_submit" type="submit" class="btn btn-primary">Upload Collection</button>
+                <span id="id_collection_upload_spinner" hidden style="margin-inline-start:1em;">
+                    {% fa_icon "solid" "arrows-rotate" "fa-spin" %}&nbsp;Uploading collection
+                </span>
+            </form>
+        </div>
+        <div class="col-lg-6">
+            <p>Each root-level file becomes an asset. Files inside the same top-level directory are imported together as one asset.</p>
+            <p>Use a matching image beside a root-level model, or <code>thumbnail.png</code>, <code>thumbnail.jpg</code>, or <code>thumbnail.jpeg</code> inside an asset directory, to provide its thumbnail.</p>
+            <p>Collection ZIPs can create a new static collection or add assets to an existing static collection. Dynamic collections are intentionally excluded.</p>
+        </div>
+    </div>
 </div>
 <div class="container">
     <div class="row">
@@ -136,5 +155,44 @@
         event.preventDefault();
         handleUploadForm();
     })
+
+    const collectionForm = document.querySelector("#id_collection_upload_form");
+    const collectionSubmit = document.querySelector("#id_collection_upload_submit");
+    const collectionSpinner = document.querySelector("#id_collection_upload_spinner");
+    const collectionErrors = document.querySelector("#id_collection_upload_errors");
+    collectionForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        collectionSubmit.setAttribute("disabled", true);
+        collectionSpinner.removeAttribute("hidden");
+        collectionErrors.setAttribute("hidden", true);
+        collectionErrors.replaceChildren();
+        try {
+            const response = await fetch(collectionForm.action, {
+                method: "POST",
+                body: new FormData(collectionForm),
+            });
+            const data = await response.json();
+            if (data.success === true) {
+                id_upload_success_messages.removeAttribute("hidden");
+                id_upload_success_messages.querySelector("li").textContent = data.message;
+                collectionForm.reset();
+                htmx.ajax("GET", "{% url 'icosa:upload_list_partial' %}", "#id_uploads_container");
+            } else {
+                Object.values(data.errors).flat().forEach((error) => {
+                    const item = document.createElement("div");
+                    item.textContent = error;
+                    collectionErrors.appendChild(item);
+                });
+                collectionErrors.removeAttribute("hidden");
+            }
+        } catch (error) {
+            console.error(error);
+            collectionErrors.textContent = "Your collection upload failed. Please try again later.";
+            collectionErrors.removeAttribute("hidden");
+        } finally {
+            collectionSpinner.setAttribute("hidden", true);
+            collectionSubmit.removeAttribute("disabled");
+        }
+    });
 </script>
 {% endblock content %}
