@@ -35,10 +35,15 @@
   white-space: nowrap;
 }
 
-form.collection-item-actions {
+.collection-item-actions {
   display: flex;
   gap: 0.35rem;
-  margin: 0;
+
+  form {
+    display: flex;
+    gap: 0.35rem;
+    margin: 0;
+  }
 }
 
 @media(max-width: 600px) {
@@ -51,7 +56,7 @@ form.collection-item-actions {
     width: 3.5rem;
   }
 
-  form.collection-item-actions {
+  .collection-item-actions {
     grid-column: 1 / -1;
     justify-content: flex-end;
   }
