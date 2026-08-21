@@ -6,6 +6,8 @@ from django.contrib.auth.admin import UserAdmin as OriginalUserAdmin
 from django.db.models import Count
 from django.template.response import TemplateResponse
 from django.urls import reverse
+from django.urls.exceptions import NoReverseMatch
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from import_export.admin import ExportMixin
 
@@ -179,11 +181,19 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
     )
 
     def display_thumbnail(self, obj):
-        html = f"{obj.url}"
-        if obj.thumbnail:
-            html = f"<img src='{obj.thumbnail.url}' width='150' loading='lazy'><br>{html}"
-        html = f"<a href='{obj.get_absolute_url()}'>{html}</a>"
-        return mark_safe(html)
+        label = format_html("{}", obj.url)
+        preview = (
+            format_html("<img src='{}' width='150' loading='lazy'><br>{}", obj.thumbnail.url, label)
+            if obj.thumbnail
+            else label
+        )
+
+        try:
+            view_url = obj.get_absolute_url()
+        except NoReverseMatch:
+            return preview
+
+        return format_html("<a href='{}'>{}</a>", view_url, preview)
 
     display_thumbnail.short_description = "View"
     display_thumbnail.allow_tags = True
