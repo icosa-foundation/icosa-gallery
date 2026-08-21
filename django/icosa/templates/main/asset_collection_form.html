@@ -1,6 +1,4 @@
 {% extends "base.html" %}
-{% load fontawesome_tags %}
-
 {% block content %}
 <div class="container">
     <h1>{{ page_title }}</h1>
@@ -23,25 +21,8 @@
     {% if collection %}
         <hr>
         <h2>Collection items</h2>
-        <div class="collection-item-list">
-            {% for item in collection_items %}
-                <article class="collection-item-row">
-                    <a class="collection-item-thumbnail" href="{{ item.asset.get_absolute_url }}">
-                        <img src="{{ item.asset.get_thumbnail_url }}" alt="">
-                    </a>
-                    <a class="collection-item-title" href="{{ item.asset.get_absolute_url }}">{{ item.asset.name|default:"Untitled asset" }}</a>
-                    <form class="collection-item-actions" method="post" action="{% url 'icosa:asset_collection_item_update' collection_url=collection.url %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="item_id" value="{{ item.pk }}">
-                        <button type="submit" name="action" value="move_up" class="btn btn-secondary btn-sm" aria-label="Move {{ item.asset.name }} up" title="Move up" {% if forloop.first %}disabled{% endif %}>{% fa_icon "solid" "arrow-up" %}</button>
-                        <button type="submit" name="action" value="move_down" class="btn btn-secondary btn-sm" aria-label="Move {{ item.asset.name }} down" title="Move down" {% if forloop.last %}disabled{% endif %}>{% fa_icon "solid" "arrow-down" %}</button>
-                        <button type="submit" name="action" value="remove" class="btn btn-danger btn-sm" aria-label="Remove {{ item.asset.name }} from collection">Remove</button>
-                    </form>
-                </article>
-            {% empty %}
-                <p>This collection has no items yet. Add assets from their asset pages.</p>
-            {% endfor %}
-        </div>
+        <p>Changes to collection items apply immediately.</p>
+        {% include "partials/asset_collection_item_list.html" %}
         <hr>
         <form method="post" action="{% url 'icosa:asset_collection_delete' collection_url=collection.url %}" onsubmit="return window.confirm('Delete this collection? This cannot be undone.');">
             {% csrf_token %}

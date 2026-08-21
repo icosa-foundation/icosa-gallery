@@ -1,0 +1,45 @@
+{% load fontawesome_tags %}
+
+<div
+    id="collection-item-list"
+    class="collection-item-list"
+    hx-sync="this:drop"
+    hx-disabled-elt="#collection-item-list button"
+>
+    {% for item in collection_items %}
+        <article class="collection-item-row">
+            <a class="collection-item-thumbnail" href="{{ item.asset.get_absolute_url }}">
+                <img src="{{ item.asset.get_thumbnail_url }}" alt="">
+            </a>
+            <a class="collection-item-title" href="{{ item.asset.get_absolute_url }}">{{ item.asset.name|default:"Untitled asset" }}</a>
+            <div class="collection-item-actions">
+                <form
+                    method="post"
+                    action="{% url 'icosa:asset_collection_item_update' collection_url=collection.url %}"
+                    hx-post="{% url 'icosa:asset_collection_item_update' collection_url=collection.url %}"
+                    hx-target="#collection-item-list"
+                    hx-swap="outerHTML"
+                >
+                    {% csrf_token %}
+                    <input type="hidden" name="item_id" value="{{ item.pk }}">
+                    <button type="submit" name="action" value="move_up" class="btn btn-secondary btn-sm" aria-label="Move {{ item.asset.name }} up" title="Move up" {% if forloop.first %}disabled{% endif %}>{% fa_icon "solid" "arrow-up" %}</button>
+                    <button type="submit" name="action" value="move_down" class="btn btn-secondary btn-sm" aria-label="Move {{ item.asset.name }} down" title="Move down" {% if forloop.last %}disabled{% endif %}>{% fa_icon "solid" "arrow-down" %}</button>
+                </form>
+                <form
+                    method="post"
+                    action="{% url 'icosa:asset_collection_item_update' collection_url=collection.url %}"
+                    hx-post="{% url 'icosa:asset_collection_item_update' collection_url=collection.url %}"
+                    hx-target="#collection-item-list"
+                    hx-swap="outerHTML"
+                    hx-confirm="Remove this item from the collection?"
+                >
+                    {% csrf_token %}
+                    <input type="hidden" name="item_id" value="{{ item.pk }}">
+                    <button type="submit" name="action" value="remove" class="btn btn-danger btn-sm" aria-label="Remove {{ item.asset.name }} from collection">Remove</button>
+                </form>
+            </div>
+        </article>
+    {% empty %}
+        <p>This collection has no items yet. Add assets from their asset pages.</p>
+    {% endfor %}
+</div>
