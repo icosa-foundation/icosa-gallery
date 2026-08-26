@@ -4,14 +4,16 @@ from datetime import datetime
 from typing import Optional
 
 from django.conf import settings
-from django.core.validators import FileExtensionValidator, validate_slug
+from django.core.validators import (
+    FileExtensionValidator,
+    validate_slug,
+)
 from django.db import models, transaction
 from django.db.models import Max, Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
 from icosa.model_mixins import (
