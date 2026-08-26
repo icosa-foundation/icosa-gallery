@@ -4,14 +4,16 @@ from datetime import datetime
 from typing import Optional
 
 from django.conf import settings
-from django.core.validators import FileExtensionValidator
+from django.core.validators import (
+    FileExtensionValidator,
+    validate_slug,
+)
 from django.db import models, transaction
 from django.db.models import Max, Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
-
 from icosa.helpers.snowflake import get_snowflake_timestamp
 from icosa.helpers.storage import get_b2_bucket
 from icosa.model_mixins import (
@@ -53,7 +55,7 @@ NON_REMIXABLE_FORMAT_TYPES = ["TILT", "BLOCKS"]
 class Asset(ModerationMixin):
     COLOR_SPACES = [("LINEAR", "LINEAR"), ("GAMMA", "GAMMA")]
     id = models.BigAutoField(primary_key=True)
-    url = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    url = models.CharField(max_length=255, blank=True, null=True, unique=True, validators=[validate_slug])
     name = models.CharField(max_length=255, blank=True, null=True)
     owner = models.ForeignKey("AssetOwner", null=True, blank=True, on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
