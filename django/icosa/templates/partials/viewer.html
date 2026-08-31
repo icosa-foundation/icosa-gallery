@@ -70,7 +70,7 @@
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/",
         "three-icosa": "/static/js-experimental/three-icosa.module.js?v={% now "U" %}",
-		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
+		"three-tiltloader": "/static/js-experimental/three-tiltloader.module.js?v={% now "U" %}",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/npm/@sparkjsdev/spark@2.1.0/dist/spark.module.js",
         "@immersive-foundation/three-imm-loader": "/static/js-experimental/imm/imm-three-loader.js?v={% now "U" %}"
     {% elif request.session.viewer_js_version == "previous" %}
@@ -82,7 +82,7 @@
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
 		"three/examples/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/",
 		"three-icosa": "/static/js/three-icosa.module.js?v={% now "U" %}",
-		"three-tiltloader": "https://cdn.jsdelivr.net/npm/three-tiltloader@0.4.2-alpha.4/dist/three-tiltloader.module.js",
+		"three-tiltloader": "/static/js/three-tiltloader.module.js?v={% now "U" %}",
 		"@sparkjsdev/spark": "https://cdn.jsdelivr.net/gh/sparkjsdev/spark@b60e9d9acbe621e67eda5d98417fcfdea5af6291/dist/spark.module.js",
         "@immersive-foundation/three-imm-loader": "/static/js/imm/imm-three-loader.js?v={% now "U" %}"
     {% endif %}
