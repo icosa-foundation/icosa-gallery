@@ -1,5 +1,5 @@
 import createDecoderModule from "./imm-web-decoder.mjs";
-import { packPaintGeometry } from "./imm-web-geometry.mjs";
+import { PAINT_PACKET_HEADER_SIZE, parsePaintPacket } from "./imm-web-paint-packet.mjs";
 
 
 const SUMMARY_SIZE = 72;
@@ -12,9 +12,6 @@ const LAYER_NAME_OFFSET = 24;
 const LAYER_NAME_CAPACITY = 256;
 const TRANSFORM_SIZE = 36;
 const ANIMATION_INFO_SIZE = 16;
-const STROKE_INFO_SIZE = 40;
-const STROKE_POINT_SIZE = 56;
-const STROKE_POINT_FLOATS = STROKE_POINT_SIZE / Float32Array.BYTES_PER_ELEMENT;
 const PICTURE_INFO_SIZE = 28;
 const SOUND_INFO_SIZE = 64;
 const PLAYBACK_INFO_SIZE = 32;
@@ -26,10 +23,18 @@ const KEEP_ALIVE_INFO_SIZE = 32;
 
 let decoder;
 let stagedSourcePointer = 0;
+let peakWasmHeapBytes = 0;
+let peakPaintPacketBytes = 0;
+let geometryTransferBytes = 0;
 const decoderReady = createDecoderModule().then((module) => {
     decoder = module;
+    peakWasmHeapBytes = module.HEAPU8.byteLength;
     return module;
 });
+
+function captureWasmHeap() {
+    peakWasmHeapBytes = Math.max(peakWasmHeapBytes, decoder.HEAPU8.byteLength);
+}
 
 
 function readSummary(memory, pointer) {
@@ -139,86 +144,42 @@ function findContentLayerIndex(layerId) {
     }
 }
 
+function marshalDrawingNative(layerId, drawingId) {
+    const errorPointer = decoder._malloc(ERROR_SIZE);
+    const buildStartedAt = performance.now();
+    let packetPointer = 0;
+    try {
+        packetPointer = decoder._imm_web_build_drawing_packet(layerId, drawingId, errorPointer);
+        const packMs = performance.now() - buildStartedAt;
+        if (packetPointer === 0) {
+            throw new Error(readError(new DataView(decoder.HEAPU8.buffer), errorPointer).message ||
+                `Could not build paint packet ${layerId}/${drawingId}`);
+        }
+        if (packetPointer > decoder.HEAPU8.byteLength - PAINT_PACKET_HEADER_SIZE) {
+            throw new Error(`Paint packet header for ${layerId}/${drawingId} is outside Wasm memory`);
+        }
+        const byteSize = new DataView(decoder.HEAPU8.buffer).getUint32(packetPointer + 4, true);
+        if (byteSize < PAINT_PACKET_HEADER_SIZE || byteSize > decoder.HEAPU8.byteLength - packetPointer) {
+            throw new Error(`Paint packet size ${byteSize} for ${layerId}/${drawingId} is outside Wasm memory`);
+        }
+        const packet = decoder.HEAPU8.slice(packetPointer, packetPointer + byteSize);
+        captureWasmHeap();
+        peakPaintPacketBytes = Math.max(peakPaintPacketBytes, byteSize);
+        geometryTransferBytes += byteSize;
+        const parsed = parsePaintPacket(packet, layerId, drawingId);
+        return {
+            drawing: parsed.drawing,
+            transfers: [packet.buffer],
+            packMs,
+        };
+    } finally {
+        if (packetPointer !== 0) decoder._imm_web_release_drawing_packet();
+        decoder._free(errorPointer);
+    }
+}
+
 function marshalDrawing(layerId, drawingId) {
-    const layerIndex = findContentLayerIndex(layerId);
-    if (layerIndex < 0) throw new Error(`Could not find paint layer ${layerId}`);
-    const strokeCount = decoder._imm_web_get_stroke_count(layerIndex, drawingId);
-    const descriptors = new Uint32Array(strokeCount * 4);
-    const bounds = new Float32Array(strokeCount * 6);
-    const pointCounts = new Uint32Array(strokeCount);
-    const strokeInfoPointer = decoder._malloc(STROKE_INFO_SIZE);
-    let totalPointCount = 0;
-    try {
-        for (let strokeIndex = 0; strokeIndex < strokeCount; strokeIndex++) {
-            if (decoder._imm_web_get_stroke_info(layerIndex, drawingId, strokeIndex, strokeInfoPointer) === 0) {
-                throw new Error(`Could not read stroke ${layerId}/${drawingId}/${strokeIndex}`);
-            }
-            const memory = new DataView(decoder.HEAPU8.buffer);
-            const pointCount = memory.getUint32(strokeInfoPointer + 8, true);
-            pointCounts[strokeIndex] = pointCount;
-            descriptors[strokeIndex * 4] = totalPointCount;
-            descriptors[strokeIndex * 4 + 1] = pointCount;
-            descriptors[strokeIndex * 4 + 2] = memory.getUint32(strokeInfoPointer, true);
-            descriptors[strokeIndex * 4 + 3] = memory.getUint32(strokeInfoPointer + 4, true);
-            for (let component = 0; component < 6; component++) {
-                bounds[strokeIndex * 6 + component] = memory.getFloat32(
-                    strokeInfoPointer + 16 + component * 4, true);
-            }
-            totalPointCount += pointCount;
-        }
-    } finally {
-        decoder._free(strokeInfoPointer);
-    }
-
-    const points = new Float32Array(totalPointCount * STROKE_POINT_FLOATS);
-    const pointTimes = new Float32Array(totalPointCount);
-    const maximumPointCount = pointCounts.reduce((maximum, value) => Math.max(maximum, value), 0);
-    const pointsPointer = maximumPointCount > 0 ? decoder._malloc(maximumPointCount * STROKE_POINT_SIZE) : 0;
-    try {
-        for (let strokeIndex = 0; strokeIndex < strokeCount; strokeIndex++) {
-            const pointCount = pointCounts[strokeIndex];
-            if (pointCount === 0) continue;
-            if (decoder._imm_web_get_stroke_points(
-                layerIndex, drawingId, strokeIndex, pointsPointer, pointCount) !== pointCount) {
-                throw new Error(`Could not read points for stroke ${layerId}/${drawingId}/${strokeIndex}`);
-            }
-            points.set(
-                new Float32Array(decoder.HEAPU8.buffer, pointsPointer, pointCount * STROKE_POINT_FLOATS),
-                descriptors[strokeIndex * 4] * STROKE_POINT_FLOATS,
-            );
-            if (decoder._imm_web_get_stroke_point_times(
-                layerIndex, drawingId, strokeIndex, pointsPointer, pointCount) !== pointCount) {
-                throw new Error(`Could not read point times for stroke ${layerId}/${drawingId}/${strokeIndex}`);
-            }
-            pointTimes.set(
-                new Float32Array(decoder.HEAPU8.buffer, pointsPointer, pointCount),
-                descriptors[strokeIndex * 4],
-            );
-        }
-    } finally {
-        if (pointsPointer !== 0) decoder._free(pointsPointer);
-    }
-
-    const biggestStroke = decoder._imm_web_get_drawing_biggest_stroke(layerIndex, drawingId);
-    const geometries = packPaintGeometry({ biggestStroke, descriptors, bounds, points, pointTimes });
-    const transfers = geometries.flatMap((geometry) => [
-        geometry.positions.buffer,
-        geometry.colors.buffer,
-        geometry.directions.buffer,
-        geometry.visibility.buffer,
-        geometry.masks.buffer,
-        geometry.progress.buffer,
-        geometry.indices.buffer,
-    ]);
-    return {
-        delta: {
-            type: "drawing",
-            layerId,
-            drawingId,
-            drawing: { biggestStroke, strokeCount, pointCount: totalPointCount, geometries },
-        },
-        transfers,
-    };
+    return marshalDrawingNative(layerId, drawingId);
 }
 
 function marshalLayerAsset(layerId) {
@@ -320,9 +281,21 @@ function decodeStagedDelta(message) {
         if (status !== 0) {
             return { ok: false, error: readError(new DataView(decoder.HEAPU8.buffer), errorPointer) };
         }
-        const result = message.type === "decodeDrawing"
-            ? marshalDrawing(message.layerId, message.drawingId)
-            : marshalLayerAsset(message.layerId);
+        let result;
+        if (message.type === "decodeDrawing") {
+            const packed = marshalDrawing(message.layerId, message.drawingId, message);
+            result = {
+                delta: {
+                    type: "drawing",
+                    layerId: message.layerId,
+                    drawingId: message.drawingId,
+                    drawing: packed.drawing,
+                },
+                transfers: packed.transfers,
+            };
+        } else {
+            result = marshalLayerAsset(message.layerId);
+        }
         return { ok: true, ...result };
     } finally {
         decoder._free(errorPointer);
@@ -378,7 +351,6 @@ function decodeScene(source, operation = { type: "decode" }) {
         const worldPointer = decoder._malloc(TRANSFORM_SIZE);
         const pivotPointer = decoder._malloc(TRANSFORM_SIZE);
         const animationPointer = decoder._malloc(ANIMATION_INFO_SIZE);
-        const strokeInfoPointer = decoder._malloc(STROKE_INFO_SIZE);
         const pictureInfoPointer = decoder._malloc(PICTURE_INFO_SIZE);
         const soundInfoPointer = decoder._malloc(SOUND_INFO_SIZE);
         const playbackInfoPointer = decoder._malloc(PLAYBACK_INFO_SIZE);
@@ -444,89 +416,10 @@ function decodeScene(source, operation = { type: "decode" }) {
 
                     const drawingCount = decoder._imm_web_get_drawing_count(layerIndex);
                     for (let drawingIndex = 0; drawingIndex < drawingCount; drawingIndex++) {
-                        const strokeCount = decoder._imm_web_get_stroke_count(layerIndex, drawingIndex);
-                        const descriptors = new Uint32Array(strokeCount * 4);
-                        const bounds = new Float32Array(strokeCount * 6);
-                        const pointCounts = new Uint32Array(strokeCount);
-                        let totalPointCount = 0;
-                        for (let strokeIndex = 0; strokeIndex < strokeCount; strokeIndex++) {
-                            if (decoder._imm_web_get_stroke_info(
-                                layerIndex, drawingIndex, strokeIndex, strokeInfoPointer) === 0) {
-                                throw new Error(`Could not read stroke ${layerIndex}/${drawingIndex}/${strokeIndex}`);
-                            }
-                            memory = new DataView(decoder.HEAPU8.buffer);
-                            const pointCount = memory.getUint32(strokeInfoPointer + 8, true);
-                            pointCounts[strokeIndex] = pointCount;
-                            descriptors[strokeIndex * 4] = totalPointCount;
-                            descriptors[strokeIndex * 4 + 1] = pointCount;
-                            descriptors[strokeIndex * 4 + 2] = memory.getUint32(strokeInfoPointer, true);
-                            descriptors[strokeIndex * 4 + 3] = memory.getUint32(strokeInfoPointer + 4, true);
-                            for (let component = 0; component < 6; component++) {
-                                bounds[strokeIndex * 6 + component] = memory.getFloat32(
-                                    strokeInfoPointer + 16 + component * 4, true);
-                            }
-                            totalPointCount += pointCount;
-                        }
-
-                        const points = new Float32Array(totalPointCount * STROKE_POINT_FLOATS);
-                        const pointTimes = new Float32Array(totalPointCount);
-                        const maximumPointCount = pointCounts.reduce((maximum, value) => Math.max(maximum, value), 0);
-                        const pointsPointer = maximumPointCount > 0
-                            ? decoder._malloc(maximumPointCount * STROKE_POINT_SIZE)
-                            : 0;
-                        try {
-                            for (let strokeIndex = 0; strokeIndex < strokeCount; strokeIndex++) {
-                                const pointCount = pointCounts[strokeIndex];
-                                if (pointCount === 0) continue;
-                                const copied = decoder._imm_web_get_stroke_points(
-                                    layerIndex, drawingIndex, strokeIndex, pointsPointer, pointCount);
-                                if (copied !== pointCount) {
-                                    throw new Error(`Could not read points for stroke ${layerIndex}/${drawingIndex}/${strokeIndex}`);
-                                }
-                                points.set(
-                                    new Float32Array(decoder.HEAPU8.buffer, pointsPointer, copied * STROKE_POINT_FLOATS),
-                                    descriptors[strokeIndex * 4] * STROKE_POINT_FLOATS,
-                                );
-                                const copiedTimes = decoder._imm_web_get_stroke_point_times(
-                                    layerIndex, drawingIndex, strokeIndex, pointsPointer, pointCount);
-                                if (copiedTimes !== pointCount) {
-                                    throw new Error(`Could not read point times for stroke ${layerIndex}/${drawingIndex}/${strokeIndex}`);
-                                }
-                                pointTimes.set(
-                                    new Float32Array(decoder.HEAPU8.buffer, pointsPointer, copiedTimes),
-                                    descriptors[strokeIndex * 4],
-                                );
-                            }
-                        } finally {
-                            if (pointsPointer !== 0) decoder._free(pointsPointer);
-                        }
-                        const drawingSource = {
-                            biggestStroke: decoder._imm_web_get_drawing_biggest_stroke(layerIndex, drawingIndex),
-                            descriptors,
-                            bounds,
-                            points,
-                            pointTimes,
-                        };
-                        const packStartedAt = performance.now();
-                        const geometries = packPaintGeometry(drawingSource);
-                        packMs += performance.now() - packStartedAt;
-                        layer.drawings.push({
-                            biggestStroke: drawingSource.biggestStroke,
-                            strokeCount,
-                            pointCount: totalPointCount,
-                            geometries,
-                        });
-                        for (const geometry of geometries) {
-                            transfers.push(
-                                geometry.positions.buffer,
-                                geometry.colors.buffer,
-                                geometry.directions.buffer,
-                                geometry.visibility.buffer,
-                                geometry.masks.buffer,
-                                geometry.progress.buffer,
-                                geometry.indices.buffer,
-                            );
-                        }
+                        const packed = marshalDrawing(layer.id, drawingIndex, operation);
+                        packMs += packed.packMs;
+                        layer.drawings.push(packed.drawing);
+                        transfers.push(...packed.transfers);
                     }
                 } else if (layer.type === 4 && decoder._imm_web_get_picture_info(layerIndex, pictureInfoPointer) !== 0) {
                     memory = new DataView(decoder.HEAPU8.buffer);
@@ -664,7 +557,9 @@ function decodeScene(source, operation = { type: "decode" }) {
                     isTimeline: (flags & 2) !== 0,
                     spawnTracking: layerType === 8 ? ((flags & 4) !== 0 ? "floor" : "eye") : null,
                     opacity: memory.getFloat32(timelineLayerPointer + 16, true),
-                    maxRepeatCount: memory.getUint32(timelineLayerPointer + 20, true),
+                    maxRepeatCount: layerType === 1 && content !== undefined
+                        ? content.maxRepeatCount
+                        : memory.getUint32(timelineLayerPointer + 20, true),
                     durationTicks: Number(memory.getBigInt64(timelineLayerPointer + 24, true)),
                     localTransform: readTransform(memory, localPointer),
                     worldTransform: readTransform(memory, worldPointer),
@@ -724,7 +619,6 @@ function decodeScene(source, operation = { type: "decode" }) {
             decoder._free(playbackInfoPointer);
             decoder._free(soundInfoPointer);
             decoder._free(pictureInfoPointer);
-            decoder._free(strokeInfoPointer);
             decoder._free(animationPointer);
             decoder._free(pivotPointer);
             decoder._free(worldPointer);
@@ -755,6 +649,7 @@ async function handleMessage(message, send) {
         "decodeDrawing",
         "decodeLayerAsset",
         "fallbackEager",
+        "diagnostics",
         "release",
     ]);
     if (!requestTypes.has(type)) {
@@ -768,7 +663,13 @@ async function handleMessage(message, send) {
 
     try {
         await decoderReady;
-        if (type === "inspect") {
+        if (type === "diagnostics") {
+            send({
+                requestId,
+                ok: true,
+                diagnostics: { peakWasmHeapBytes, peakPaintPacketBytes, geometryTransferBytes },
+            });
+        } else if (type === "inspect") {
             send({ requestId, ...inspect(source) });
         } else if (type === "release") {
             decoder._imm_web_release_scene();
