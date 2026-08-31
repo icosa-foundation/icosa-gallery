@@ -206,6 +206,15 @@ def asset_collection_item_update(request, collection_url: str):
 
     _save_collection_item_order(items)
     AssetCollection.objects.filter(pk=collection.pk).update(update_time=timezone.now())
+    if request.headers.get("HX-Request") == "true":
+        return render(
+            request,
+            "partials/asset_collection_item_list.html",
+            {
+                "collection": collection,
+                "collection_items": _collection_items(collection),
+            },
+        )
     return redirect("icosa:asset_collection_edit", collection_url=collection.url)
 
 
