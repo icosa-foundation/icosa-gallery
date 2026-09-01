@@ -2,6 +2,10 @@ export const PAINT_PACKET_SCHEMA_VERSION = 1;
 export const PAINT_PACKET_HEADER_SIZE = 64;
 export const PAINT_PACKET_RECORD_SIZE = 48;
 
+export function normalizeWasm32Pointer(pointer) {
+    return pointer >>> 0;
+}
+
 export function parsePaintPacket(packet, expectedLayerId, expectedDrawingId) {
     if (!(packet instanceof Uint8Array) || packet.byteOffset !== 0 || packet.byteLength < PAINT_PACKET_HEADER_SIZE) {
         throw new Error("Paint packet must be a standalone Uint8Array containing a complete header");

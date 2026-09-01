@@ -1,5 +1,9 @@
 import createDecoderModule from "./imm-web-decoder.mjs";
-import { PAINT_PACKET_HEADER_SIZE, parsePaintPacket } from "./imm-web-paint-packet.mjs";
+import {
+    normalizeWasm32Pointer,
+    PAINT_PACKET_HEADER_SIZE,
+    parsePaintPacket,
+} from "./imm-web-paint-packet.mjs";
 
 
 const SUMMARY_SIZE = 72;
@@ -149,7 +153,9 @@ function marshalDrawingNative(layerId, drawingId) {
     const buildStartedAt = performance.now();
     let packetPointer = 0;
     try {
-        packetPointer = decoder._imm_web_build_drawing_packet(layerId, drawingId, errorPointer);
+        packetPointer = normalizeWasm32Pointer(
+            decoder._imm_web_build_drawing_packet(layerId, drawingId, errorPointer),
+        );
         const packMs = performance.now() - buildStartedAt;
         if (packetPointer === 0) {
             throw new Error(readError(new DataView(decoder.HEAPU8.buffer), errorPointer).message ||
