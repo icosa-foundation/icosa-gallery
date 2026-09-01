@@ -30,6 +30,11 @@ let stagedSourcePointer = 0;
 let peakWasmHeapBytes = 0;
 let peakPaintPacketBytes = 0;
 let geometryTransferBytes = 0;
+let contentLayerIndices = new Map();
+let requestedLoadMode = "eager";
+let effectiveLoadMode = "eager";
+let fallbackReason = null;
+let stagedRequests = [];
 const decoderReady = createDecoderModule().then((module) => {
     decoder = module;
     peakWasmHeapBytes = module.HEAPU8.byteLength;
@@ -134,18 +139,7 @@ function readCString(pointer, capacity) {
 }
 
 function findContentLayerIndex(layerId) {
-    const layerPointer = decoder._malloc(LAYER_INFO_SIZE);
-    try {
-        const layerCount = decoder._imm_web_get_layer_count();
-        for (let layerIndex = 0; layerIndex < layerCount; layerIndex++) {
-            if (decoder._imm_web_get_layer_info(layerIndex, layerPointer) === 0) continue;
-            const memory = new DataView(decoder.HEAPU8.buffer);
-            if (memory.getUint32(layerPointer, true) === layerId) return layerIndex;
-        }
-        return -1;
-    } finally {
-        decoder._free(layerPointer);
-    }
+    return contentLayerIndices.get(layerId) ?? -1;
 }
 
 function marshalDrawingNative(layerId, drawingId) {
@@ -168,15 +162,22 @@ function marshalDrawingNative(layerId, drawingId) {
         if (byteSize < PAINT_PACKET_HEADER_SIZE || byteSize > decoder.HEAPU8.byteLength - packetPointer) {
             throw new Error(`Paint packet size ${byteSize} for ${layerId}/${drawingId} is outside Wasm memory`);
         }
+        const copyStartedAt = performance.now();
         const packet = decoder.HEAPU8.slice(packetPointer, packetPointer + byteSize);
+        const copyMs = performance.now() - copyStartedAt;
         captureWasmHeap();
         peakPaintPacketBytes = Math.max(peakPaintPacketBytes, byteSize);
         geometryTransferBytes += byteSize;
+        const parseStartedAt = performance.now();
         const parsed = parsePaintPacket(packet, layerId, drawingId);
+        const parseMs = performance.now() - parseStartedAt;
         return {
             drawing: parsed.drawing,
             transfers: [packet.buffer],
             packMs,
+            copyMs,
+            parseMs,
+            packetBytes: byteSize,
         };
     } finally {
         if (packetPointer !== 0) decoder._imm_web_release_drawing_packet();
@@ -191,7 +192,9 @@ function marshalDrawing(layerId, drawingId) {
 function marshalLayerAsset(layerId) {
     const transfers = [];
     let picture;
+    const lookupStartedAt = performance.now();
     const contentLayerIndex = findContentLayerIndex(layerId);
+    const lookupMs = performance.now() - lookupStartedAt;
     if (contentLayerIndex >= 0) {
         const infoPointer = decoder._malloc(PICTURE_INFO_SIZE);
         try {
@@ -275,33 +278,64 @@ function marshalLayerAsset(layerId) {
         decoder._free(timelinePointer);
         decoder._free(playbackPointer);
     }
-    return { delta: { type: "asset", layerId, picture, sound }, transfers };
+    return { delta: { type: "asset", layerId, picture, sound }, transfers, lookupMs };
 }
 
 function decodeStagedDelta(message) {
     const errorPointer = decoder._malloc(ERROR_SIZE);
     try {
+        const decodeStartedAt = performance.now();
         const status = message.type === "decodeDrawing"
             ? decoder._imm_web_decode_drawing(message.layerId, message.drawingId, errorPointer)
             : decoder._imm_web_decode_layer_asset(message.layerId, errorPointer);
         if (status !== 0) {
             return { ok: false, error: readError(new DataView(decoder.HEAPU8.buffer), errorPointer) };
         }
+        const decodeMs = performance.now() - decodeStartedAt;
         let result;
+        let metrics;
         if (message.type === "decodeDrawing") {
             const packed = marshalDrawing(message.layerId, message.drawingId, message);
+            metrics = {
+                type: "drawing",
+                layerId: message.layerId,
+                drawingId: message.drawingId,
+                decodeMs,
+                nativeBuildMs: packed.packMs,
+                wasmCopyMs: packed.copyMs,
+                packetParseMs: packed.parseMs,
+                transferMs: 0,
+                adapterMs: 0,
+                lookupMs: 0,
+                packetBytes: packed.packetBytes,
+            };
             result = {
                 delta: {
                     type: "drawing",
                     layerId: message.layerId,
                     drawingId: message.drawingId,
                     drawing: packed.drawing,
+                    metrics,
                 },
                 transfers: packed.transfers,
             };
         } else {
             result = marshalLayerAsset(message.layerId);
+            metrics = {
+                type: "asset",
+                layerId: message.layerId,
+                decodeMs,
+                nativeBuildMs: 0,
+                wasmCopyMs: 0,
+                packetParseMs: 0,
+                transferMs: 0,
+                adapterMs: 0,
+                lookupMs: result.lookupMs,
+                packetBytes: result.transfers.reduce((total, transfer) => total + transfer.byteLength, 0),
+            };
+            result.delta.metrics = metrics;
         }
+        stagedRequests.push(metrics);
         return { ok: true, ...result };
     } finally {
         decoder._free(errorPointer);
@@ -319,6 +353,18 @@ function decodeScene(source, operation = { type: "decode" }) {
     }
 
     const startedAt = performance.now();
+    if (operation.type === "decode" || operation.type === "openMetadata") {
+        peakWasmHeapBytes = decoder.HEAPU8.byteLength;
+        peakPaintPacketBytes = 0;
+        geometryTransferBytes = 0;
+        stagedRequests = [];
+        requestedLoadMode = operation.type === "openMetadata" ? "staged" : "eager";
+        effectiveLoadMode = requestedLoadMode;
+        fallbackReason = null;
+    } else if (operation.type === "fallbackEager") {
+        effectiveLoadMode = "eager";
+        fallbackReason = operation.fallbackReason ?? "Staged loading failed";
+    }
     const sourceLength = requiresSource ? source.byteLength : 0;
     if (requiresSource && stagedSourcePointer !== 0) {
         decoder._imm_web_release_scene();
@@ -374,6 +420,7 @@ function decodeScene(source, operation = { type: "decode" }) {
             ];
             const contentLayers = [];
             const transfers = [];
+            contentLayerIndices = new Map();
             const layerCount = decoder._imm_web_get_layer_count();
             for (let layerIndex = 0; layerIndex < layerCount; layerIndex++) {
                 if (decoder._imm_web_get_layer_info(layerIndex, layerPointer) === 0) {
@@ -400,6 +447,7 @@ function decodeScene(source, operation = { type: "decode" }) {
                     frameBuffer: new Uint32Array(),
                     drawings: [],
                 };
+                contentLayerIndices.set(layer.id, layerIndex);
 
                 if (layer.type === 1 && decoder._imm_web_get_animation_info(layerIndex, animationPointer) !== 0) {
                     memory = new DataView(decoder.HEAPU8.buffer);
@@ -673,7 +721,15 @@ async function handleMessage(message, send) {
             send({
                 requestId,
                 ok: true,
-                diagnostics: { peakWasmHeapBytes, peakPaintPacketBytes, geometryTransferBytes },
+                diagnostics: {
+                    peakWasmHeapBytes,
+                    peakPaintPacketBytes,
+                    geometryTransferBytes,
+                    requestedLoadMode,
+                    effectiveLoadMode,
+                    fallbackReason,
+                    stagedRequests,
+                },
             });
         } else if (type === "inspect") {
             send({ requestId, ...inspect(source) });
@@ -683,6 +739,7 @@ async function handleMessage(message, send) {
                 decoder._free(stagedSourcePointer);
                 stagedSourcePointer = 0;
             }
+            contentLayerIndices.clear();
             send({ requestId, ok: true });
         } else if (type === "decodeDrawing" || type === "decodeLayerAsset") {
             const result = decodeStagedDelta(message);
@@ -694,6 +751,7 @@ async function handleMessage(message, send) {
                 type,
                 layerId: message.layerId,
                 drawingId: message.drawingId,
+                fallbackReason: message.fallbackReason,
             });
             const transfers = result.transfers ?? [];
             delete result.transfers;
@@ -716,7 +774,10 @@ async function handleMessage(message, send) {
 if (typeof self !== "undefined" && typeof self.postMessage === "function") {
     self.onmessage = (event) => handleMessage(
         event.data,
-        (value, transfers = []) => self.postMessage(value, transfers),
+        (value, transfers = []) => self.postMessage({
+            ...value,
+            sentAtEpochMs: performance.timeOrigin + performance.now(),
+        }, transfers),
     );
 } else {
     const { parentPort } = await import("node:worker_threads");
@@ -725,6 +786,9 @@ if (typeof self !== "undefined" && typeof self.postMessage === "function") {
     }
     parentPort.on("message", (value) => handleMessage(
         value,
-        (response, transfers = []) => parentPort.postMessage(response, transfers),
+        (response, transfers = []) => parentPort.postMessage({
+            ...response,
+            sentAtEpochMs: performance.timeOrigin + performance.now(),
+        }, transfers),
     ));
 }
