@@ -44,17 +44,27 @@ export JWT_SECRET_KEY="local-development-only-jwt-secret-key"
 
 cd "$PROJECT_DIR/django"
 
-if [ "$#" -eq 0 ] || [ "$1" != "migrate" ]; then
+prepare_local_database() {
     echo "Preparing the SQLite database..."
     "$VENV_DIR/bin/python" manage.py migrate
     echo "Setting localhost:8000 as the default domain"
     "$VENV_DIR/bin/python" manage.py shell -c \
     "from django.contrib.sites.models import Site; Site.objects.filter(domain='example.com').update(domain='localhost:8000', name='localhost:8000')"
-fi
+}
 
 if [ "$#" -gt 0 ]; then
+    if [ "$1" = "setup" ]; then
+        if [ "$#" -gt 1 ]; then
+            echo "The setup command does not accept arguments." >&2
+            exit 2
+        fi
+        prepare_local_database
+        exit 0
+    fi
     exec "$VENV_DIR/bin/python" manage.py "$@"
 fi
+
+prepare_local_database
 
 echo "Starting Icosa Gallery at http://localhost:8000"
 exec "$VENV_DIR/bin/python" manage.py runserver localhost:8000

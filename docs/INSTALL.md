@@ -39,6 +39,12 @@ script. For example, create a local admin account with:
 ./run-local.sh createsuperuser
 ```
 
+Management commands run directly; the wrapper does not automatically apply
+migrations or make additional data changes first. Run `./run-local.sh setup`
+when you explicitly want to apply migrations and configure the localhost Sites
+entry without starting the server. Running `./run-local.sh` without arguments
+performs that setup before starting the development server.
+
 Stop the development server with `ctrl+c`. To reset all local application data,
 stop the server and delete `django/db.local.sqlite3` and `django/media`.
 
