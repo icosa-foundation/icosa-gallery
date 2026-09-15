@@ -32,6 +32,7 @@ else:
             },
         }
     }
+CACHE_MIDDLEWARE_SECONDS = 60
 
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
