@@ -209,7 +209,7 @@ class AssetEditForm(forms.ModelForm):
     thumbnail = forms.FileField(
         required=False, widget=CustomImageInput
     )  # No validator needed here; it's on the model field definition.
-    # file = forms.FileField(required=False, validators=[FileExtensionValidator(allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS)])  # TODO(james): Put this field back once the edit_asset view is confirmed working
+    # file = forms.FileField(required=False, validators=[FileExtensionValidator(allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS)])  # TODO(james): Put this field back once the asset_edit view is confirmed working
 
     class Meta:
         model = Asset
@@ -223,7 +223,7 @@ class AssetEditForm(forms.ModelForm):
             "category",
             "tags",
             "camera",
-            # "file",  # TODO(james): Put this field back once the edit_asset view is confirmed working
+            # "file",  # TODO(james): Put this field back once the asset_edit view is confirmed working
         ]
         widgets = {
             "tags": autocomplete.ModelSelect2Multiple(
