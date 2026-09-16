@@ -53,13 +53,10 @@ def get_asset(
         asset = Asset.objects.get(url=asset_url)
     except Asset.DoesNotExist:
         raise NOT_FOUND
-    if asset.moderation_state in MOD_HIDDEN or asset.visibility == ARCHIVED:
+    if config.HIDE_REPORTED_ASSETS and asset.moderation_state in MOD_HIDDEN:
         raise NOT_FOUND
-    if asset.visibility == PRIVATE:
-        # TODO `check_user_owns_asset` is not appropriate here. Perhaps
-        # refactor it to be more useful.
-        if asset.owner.django_user != request.user:
-            raise NOT_FOUND
+    if asset.visibility in [ARCHIVED, PRIVATE]:
+        raise NOT_FOUND
     return asset
 
 
