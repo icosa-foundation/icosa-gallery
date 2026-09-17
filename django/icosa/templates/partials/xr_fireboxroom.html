@@ -1,0 +1,19 @@
+{% comment %}
+XR Fragments / JanusXR microformat for collections. See https://xrfragment.org
+Spatial browsers (e.g. Janusweb) can surf this page as a room containing one
+row of linked models. Assets are laid out along the x axis at 4m intervals.
+{% endcomment %}
+{% if viewable_assets %}
+<fireboxroom>
+    <assets>
+        {% for asset in viewable_assets %}
+        <assetimage src="{{ asset.get_thumbnail_url }}" id="thumb-{{ asset.id }}"/>
+        {% endfor %}
+    </assets>
+    <room>
+        {% for asset in viewable_assets %}
+        <link url="{{ asset.preferred_viewer_format.root_resource.internal_or_cors_url }}" thumb_id="thumb-{{ asset.id }}" pos="{% widthratio forloop.counter0 1 4 %} 0 0"/>
+        {% endfor %}
+    </room>
+</fireboxroom>
+{% endif %}

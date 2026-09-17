@@ -414,8 +414,18 @@ def asset_collection_view(request, collection_url: str, user_url: str = None):
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
+    viewable_assets = []
+    for obj in assets:
+        preferred_format = obj.asset.preferred_viewer_format
+        if (
+            preferred_format
+            and preferred_format.root_resource
+            and preferred_format.root_resource.internal_or_cors_url
+        ):
+            viewable_assets.append(obj.asset)
     context = {
         "assets": assets,
+        "viewable_assets": viewable_assets,
         "page_number": page_number,
         "result_count": asset_objs.count(),
         "paginator": paginator,
