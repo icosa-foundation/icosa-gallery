@@ -1,27 +1,43 @@
 import io
+import logging
 import os
+import secrets
 import subprocess
 import zipfile
+from collections import defaultdict
 from pathlib import Path
-from typing import List, Optional
+from pathlib import PurePosixPath
+from typing import Dict, List, Optional
 
+from asgiref.sync import async_to_sync
 from django.conf import settings
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import Max
 from django.utils import timezone
 from icosa.api.exceptions import ZipException
 from icosa.helpers.file import (
     MAX_UNZIP_BYTES,
     MAX_UNZIP_SECONDS,
+    ProcessedUpload,
     UploadedFormat,
     add_thumbnail_to_asset,
     get_content_type,
     validate_file,
 )
-from icosa.helpers.upload import TYPE_ROLE_MAP
+from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.upload import TYPE_ROLE_MAP, upload_api_asset
 from icosa.models import (
     ASSET_STATE_COMPLETE,
+    ASSET_STATE_FAILED,
+    ASSET_STATE_UPLOADING,
+    PRIVATE,
+    VALID_THUMBNAIL_EXTENSIONS,
     Asset,
+    AssetCollection,
+    AssetOwner,
     Format,
     Resource,
+    User,
 )
 from ninja import File
 from ninja.files import UploadedFile
@@ -342,3 +358,177 @@ async def upload(
     await asset.asave()
 
     return asset
+
+
+def analyze_collection_zip(
+    zip_file: zipfile.ZipFile,
+) -> Dict[str, Dict[str, Optional[List[str] | str]]]:
+    """Group root files by stem and directory files by their top-level folder."""
+    structure = defaultdict(lambda: {"files": [], "thumbnail": None})
+    members = zip_file.infolist()
+    if len(members) > 1000:
+        raise ZipException("Too many files")
+
+    for member in members:
+        path = PurePosixPath(member.filename)
+        if path.is_absolute() or ".." in path.parts:
+            raise ZipException(f"Suspicious file path detected: {member.filename}.")
+        if len(path.parts) > 7:
+            raise ZipException(f"Too many directory levels: {len(path.parts)}.")
+        if member.is_dir() or not path.parts:
+            continue
+        if "__MACOSX" in path.parts or any(part.startswith(".") for part in path.parts):
+            continue
+
+        extension = path.suffix.lower().lstrip(".")
+        if len(path.parts) == 1:
+            asset_name = path.stem
+            if extension in VALID_THUMBNAIL_EXTENSIONS:
+                structure[asset_name]["thumbnail"] = member.filename
+            else:
+                structure[asset_name]["files"].append(member.filename)
+            continue
+
+        asset_name = path.parts[0]
+        if (
+            path.name.lower() in {"thumbnail.png", "thumbnail.jpg", "thumbnail.jpeg"}
+            and extension in VALID_THUMBNAIL_EXTENSIONS
+        ):
+            structure[asset_name]["thumbnail"] = member.filename
+        else:
+            structure[asset_name]["files"].append(member.filename)
+
+    return {
+        asset_name: asset_data
+        for asset_name, asset_data in structure.items()
+        if asset_data["files"]
+    }
+
+
+def upload_collection_from_zip(
+    user: User,
+    owner: AssetOwner,
+    zip_file: UploadedFile,
+    collection_name: Optional[str] = None,
+    existing_collection: Optional[AssetCollection] = None,
+    visibility: str = PRIVATE,
+    license: Optional[str] = None,
+) -> AssetCollection:
+    """Import assets from a ZIP into a new or existing static collection."""
+    if owner.django_user_id != user.pk:
+        raise PermissionDenied("Asset owner does not belong to the current user.")
+    if existing_collection is None and not collection_name:
+        raise ValidationError("A new collection requires a name.")
+    if visibility in {"PUBLIC", "UNLISTED"} and not license:
+        raise ValidationError("Public or unlisted assets require a license.")
+    if existing_collection is not None:
+        if existing_collection.owner.django_user_id != user.pk:
+            raise PermissionDenied("Collection does not belong to the current user.")
+        if existing_collection.is_dynamic:
+            raise ValidationError("Dynamic collections cannot receive explicit assets.")
+
+    assets_created = []
+    unzip_start = timezone.now()
+    zip_file.seek(0)
+
+    try:
+        with zipfile.ZipFile(zip_file) as archive:
+            asset_structure = analyze_collection_zip(archive)
+            if not asset_structure:
+                raise ZipException("No valid assets found in zip file")
+            uncompressed_size = sum(
+                member.file_size
+                for member in archive.infolist()
+                if not member.is_dir()
+            )
+            if uncompressed_size > MAX_UNZIP_BYTES:
+                raise ZipException(
+                    f"Uncompressed zip will be larger than {MAX_UNZIP_BYTES}"
+                )
+
+            for asset_name, asset_data in asset_structure.items():
+                if (timezone.now() - unzip_start).seconds > MAX_UNZIP_SECONDS:
+                    raise ZipException("Zip taking too long to extract, aborting.")
+
+                asset = Asset.objects.create(
+                    id=generate_snowflake(),
+                    url=secrets.token_urlsafe(8),
+                    owner=owner,
+                    name=asset_name,
+                    state=ASSET_STATE_UPLOADING,
+                    visibility=visibility,
+                    license=license or None,
+                )
+                uploaded_files = []
+                thumbnail_file = None
+
+                paths = list(asset_data["files"])
+                thumbnail_path = asset_data["thumbnail"]
+                if thumbnail_path:
+                    paths.append(thumbnail_path)
+
+                for file_path in paths:
+                    member = archive.getinfo(file_path)
+                    with archive.open(member) as extracted_file:
+                        uploaded_file = UploadedFile(
+                            name="/".join(PurePosixPath(file_path).parts[1:])
+                            if "/" in file_path
+                            else PurePosixPath(file_path).name,
+                            file=io.BytesIO(extracted_file.read()),
+                        )
+                    if file_path == thumbnail_path:
+                        thumbnail_file = uploaded_file
+                    else:
+                        uploaded_files.append(uploaded_file)
+
+                try:
+                    async_to_sync(upload_api_asset)(
+                        asset,
+                        None,
+                        uploaded_files,
+                        True,
+                    )
+                    if not asset.format_set.exists():
+                        raise ValidationError("No supported asset formats found.")
+                    if thumbnail_file is not None:
+                        async_to_sync(add_thumbnail_to_asset)(
+                            ProcessedUpload(
+                                file=thumbnail_file,
+                                full_path=thumbnail_file.name,
+                            ),
+                            asset,
+                        )
+                    asset.name = asset_name
+                    asset.save()
+                    assets_created.append(asset)
+                except Exception:
+                    asset.state = ASSET_STATE_FAILED
+                    asset.save()
+                    logging.exception("Failed to import %s from collection ZIP", asset_name)
+
+        if not assets_created:
+            raise ZipException("No assets could be imported from zip file")
+
+        if existing_collection is not None:
+            collection = existing_collection
+            max_order = collection.collected_assets.aggregate(Max("order"))["order__max"]
+            next_order = 0 if max_order is None else max_order + 1
+        else:
+            collection = AssetCollection.objects.create(
+                owner=owner,
+                name=collection_name,
+                visibility=visibility,
+            )
+            next_order = 0
+
+        for offset, asset in enumerate(assets_created):
+            collection.assets.add(
+                asset,
+                through_defaults={"order": next_order + offset},
+            )
+        return collection
+    except ZipException:
+        for asset in assets_created:
+            asset.state = ASSET_STATE_FAILED
+            asset.save()
+        raise

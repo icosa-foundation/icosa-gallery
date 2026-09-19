@@ -4,6 +4,7 @@ from typing import (
     Optional,
 )
 
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils import timezone
 from huey import (
@@ -66,6 +67,41 @@ async def queue_upload_api_asset(
         files,
         skip_thumbnail,
     )
+
+
+@db_task()
+def queue_upload_collection_from_zip(
+    user_id: int,
+    owner_id: int,
+    zip_storage_name: str,
+    collection_name: Optional[str] = None,
+    existing_collection_id: Optional[int] = None,
+    visibility: str = "PRIVATE",
+    license: Optional[str] = None,
+):
+    from icosa.helpers.upload_web_ui import upload_collection_from_zip
+    from icosa.models import AssetCollection, AssetOwner
+
+    user = User.objects.get(pk=user_id)
+    owner = AssetOwner.objects.get(pk=owner_id)
+    existing_collection = None
+    if existing_collection_id is not None:
+        existing_collection = AssetCollection.objects.select_related("owner").get(
+            pk=existing_collection_id
+        )
+    try:
+        with default_storage.open(zip_storage_name, "rb") as zip_file:
+            return upload_collection_from_zip(
+                user=user,
+                owner=owner,
+                zip_file=zip_file,
+                collection_name=collection_name,
+                existing_collection=existing_collection,
+                visibility=visibility,
+                license=license,
+            )
+    finally:
+        default_storage.delete(zip_storage_name)
 
 
 def save_all_assets(
