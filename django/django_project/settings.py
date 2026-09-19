@@ -241,6 +241,7 @@ TEMPLATES = [
                 "constance.context_processors.config",
                 "icosa.context_processors.settings_processor",
                 "icosa.context_processors.user_asset_likes_processor",
+                "icosa.context_processors.featured_collections_processor",
             ],
             "loaders": [
                 "django.template.loaders.app_directories.Loader",
@@ -260,6 +261,9 @@ ADMIN_EMAIL = os.environ.get("DJANGO_ADMIN_EMAIL", None)
 WSGI_APPLICATION = "django_project.wsgi.application"
 
 PAGINATION_PER_PAGE = 40
+
+OPEN_BRUSH_COLLECTION_URL = "open-brush"
+OPEN_BLOCKS_COLLECTION_URL = "open-blocks"
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 20_160  # 2 weeks
 

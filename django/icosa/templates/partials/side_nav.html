@@ -222,6 +222,29 @@
                         </div>
                     </ul>
                 </nav>
+                {% if featured_collections %}
+                    <nav class="pro-menu shaped square hide-when-collapsed">
+                        <ul>
+                            <h3>Featured Collections</h3>
+                            <div>
+                                {% for featured_collection in featured_collections %}
+                                    <li class="pro-menu-item">
+                                        <div class="pro-inner-item" tabindex="0" role="button">
+                                            <a href="{{ featured_collection.collection.get_absolute_url }}">
+                                                <span class="pro-icon-wrapper">
+                                                    <span class="pro-icon">
+                                                        {% fa_icon "solid" "star" %}
+                                                    </span>
+                                                </span>
+                                                <span class="pro-item-content">{{ featured_collection.label|default:featured_collection.collection.name }}</span>
+                                            </a>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </div>
+                        </ul>
+                    </nav>
+                {% endif %}
                 <div class="pro-sidebar-footer">
                     <div class="socials text-center hide-when-collapsed">
                         <h5>Join our Community!</h5>
@@ -240,13 +263,13 @@
                     </div>
                     <div class="support text-center hide-when-collapsed row">
                         <div class="col-lg-6 col-sm-12">
-                            <a href="{% url 'icosa:home_openbrush' %}" rel="noreferrer" alt="OpenBrush">
+                            <a href="{% url 'icosa:asset_collection_view' collection_url=settings.OPEN_BRUSH_COLLECTION_URL %}" rel="noreferrer" alt="Open Brush">
                                 <img src="{% static "images/openbrushlogo_1200.png" %}" alt="Open Brush Logo">
                             </a>
                         </div>
                         <div class="col-lg-6 col-sm-12">
-                            <a href="{% url 'icosa:home_blocks' %}" rel="noreferrer" alt="OpenBrush">
-                                <img src="{% static "images/openblockslogo_1200.png" %}" alt="Open Brush Logo">
+                            <a href="{% url 'icosa:asset_collection_view' collection_url=settings.OPEN_BLOCKS_COLLECTION_URL %}" rel="noreferrer" alt="Open Blocks">
+                                <img src="{% static "images/openblockslogo_1200.png" %}" alt="Open Blocks Logo">
                             </a>
                         </div>
                     </div>

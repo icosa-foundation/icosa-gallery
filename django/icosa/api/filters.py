@@ -1,6 +1,10 @@
 from enum import Enum, auto
+import re
 from typing import List, Optional
+from urllib.parse import unquote
 
+from constance import config
+from django.core.exceptions import ValidationError
 from django.db.models import F, Q
 from django.db.models.query import QuerySet
 from ninja import Field, FilterSchema, Schema
@@ -10,7 +14,7 @@ from pydantic.json_schema import SkipJsonSchema
 
 from icosa.api.exceptions import FilterException
 from icosa.model_mixins import MOD_HIDDEN
-from icosa.models import Asset
+from icosa.models import ALL_RIGHTS_RESERVED, PUBLIC, Asset
 
 
 class FilterCategory(Enum):
@@ -326,6 +330,181 @@ class FiltersOrder(Schema):
         default=None,
     )
     order_by: SkipJsonSchema[Optional[FilterOrder]] = Field(default=None)  # For backwards compatibility
+
+
+class FiltersExpression(Schema):
+    filter: Optional[str] = Field(
+        default=None,
+        description=(
+            "OR groups of existing asset filters. Conditions within parentheses "
+            "are ANDed and parenthesised groups separated by | are ORed, for "
+            "example (authorId=alice)|(format=BLOCKS,curated=true)."
+        ),
+    )
+
+
+FILTER_EXPRESSION_FIELD = "filter"
+MAX_FILTER_GROUPS = 16
+MAX_FILTER_CONDITIONS = 16
+
+
+def _split_filter_conditions(group_text):
+    conditions = []
+    condition = []
+    position = 0
+    while position < len(group_text):
+        character = group_text[position]
+        if (
+            character == "\\"
+            and position + 1 < len(group_text)
+            and group_text[position + 1] in {",", "\\"}
+        ):
+            condition.append(group_text[position + 1])
+            position += 2
+            continue
+        if character == "," and re.match(
+            r"\s*[A-Za-z][A-Za-z0-9_]*\s*=",
+            group_text[position + 1 :],
+        ):
+            conditions.append("".join(condition))
+            condition = []
+        else:
+            condition.append(character)
+        position += 1
+    conditions.append("".join(condition))
+    return conditions
+
+
+def parse_asset_filter_expression(expression):
+    """Parse a shallow `(field=value,field=value)|(field=value)` expression."""
+    if expression is None:
+        return []
+    if not isinstance(expression, str) or not expression.strip():
+        raise ValueError("filter must be a non-empty string.")
+
+    expression = expression.strip()
+    groups = []
+    position = 0
+    while position < len(expression):
+        if expression[position] != "(":
+            raise ValueError("filter groups must start with '('.")
+
+        close_position = expression.find(")", position + 1)
+        if close_position == -1:
+            raise ValueError("filter group is missing a closing ')'.")
+
+        group_text = expression[position + 1 : close_position]
+        if not group_text:
+            raise ValueError("filter groups cannot be empty.")
+        if "(" in group_text:
+            raise ValueError("nested filter groups are not supported.")
+
+        conditions = _split_filter_conditions(group_text)
+        if len(conditions) > MAX_FILTER_CONDITIONS:
+            raise ValueError(
+                "filter groups cannot contain more than "
+                f"{MAX_FILTER_CONDITIONS} conditions."
+            )
+
+        group_values = {}
+        for condition in conditions:
+            field_name, separator, value = condition.partition("=")
+            field_name = field_name.strip()
+            value = value.strip()
+            if not separator or not field_name or not value:
+                raise ValueError("filter conditions must use field=value syntax.")
+            if field_name not in FiltersAsset.model_fields:
+                raise ValueError(f"Unsupported filter field: {field_name}.")
+
+            value = unquote(value)
+            if field_name in group_values:
+                current_value = group_values[field_name]
+                if not isinstance(current_value, list):
+                    current_value = [current_value]
+                current_value.append(value)
+                group_values[field_name] = current_value
+            elif field_name in {"format", "tag"}:
+                group_values[field_name] = [value]
+            else:
+                group_values[field_name] = value
+
+        groups.append(FiltersAsset.model_validate(group_values))
+        if len(groups) > MAX_FILTER_GROUPS:
+            raise ValueError(
+                f"filter cannot contain more than {MAX_FILTER_GROUPS} groups."
+            )
+
+        position = close_position + 1
+        if position == len(expression):
+            break
+        if expression[position] != "|":
+            raise ValueError("filter groups must be separated by '|'.")
+        position += 1
+        if position == len(expression):
+            raise ValueError("filter cannot end with '|'.")
+
+    return groups
+
+
+def asset_filter_expression_to_q(expression):
+    group_filters = parse_asset_filter_expression(expression)
+    expression_q = Q()
+    for group_filters_item in group_filters:
+        expression_q |= group_filters_item.get_filter_expression()
+    return expression_q
+
+
+def validate_asset_query_parameters(query_parameters):
+    if not isinstance(query_parameters, dict):
+        raise ValidationError(
+            {"query_parameters": "Query parameters must be a JSON object."}
+        )
+
+    allowed_fields = (
+        set(FiltersAsset.model_fields)
+        | set(FiltersOrder.model_fields)
+        | {FILTER_EXPRESSION_FIELD}
+    )
+    unknown_fields = set(query_parameters) - allowed_fields
+    if unknown_fields:
+        field_names = ", ".join(sorted(unknown_fields))
+        raise ValidationError(
+            {"query_parameters": f"Unsupported query parameter(s): {field_names}."}
+        )
+
+    try:
+        filters = FiltersAsset.model_validate(query_parameters)
+        order = FiltersOrder.model_validate(query_parameters)
+        expression_q = asset_filter_expression_to_q(
+            query_parameters.get(FILTER_EXPRESSION_FIELD)
+        )
+    except ValueError as error:
+        raise ValidationError({"query_parameters": str(error)}) from error
+    return filters, order, expression_q
+
+
+def assets_from_query_parameters(query_parameters):
+    filters, order, expression_q = validate_asset_query_parameters(query_parameters)
+    return get_public_assets(filters, order, expression_q=expression_q)
+
+
+def get_public_assets(filters, order, filter_expression=None, expression_q=None):
+    expression_q = expression_q or Q()
+    if filter_expression is not None:
+        try:
+            expression_q &= asset_filter_expression_to_q(filter_expression)
+        except ValueError as error:
+            raise HttpError(400, str(error)) from error
+    excluded = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
+    if config.HIDE_REPORTED_ASSETS:
+        excluded |= Q(moderation_state__in=MOD_HIDDEN)
+    return filter_and_sort_assets(
+        filters,
+        order,
+        assets=Asset.objects.filter(visibility=PUBLIC),
+        inc_q=expression_q,
+        exc_q=excluded,
+    )
 
 
 def sort_assets(key: FilterOrder, assets: QuerySet[Asset]) -> QuerySet[Asset]:

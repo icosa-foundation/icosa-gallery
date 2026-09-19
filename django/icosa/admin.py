@@ -20,6 +20,7 @@ from icosa.models import (
     DeviceCode,
     Format,
     FormatRoleLabel,
+    FeaturedCollection,
     HiddenMediaFileLog,
     MastheadSection,
     ModerationEvent,
@@ -273,14 +274,23 @@ class AssetCollectionAdmin(admin.ModelAdmin):
         "previous_moderation_state",
     )
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).annotate(asset_count=Count("assets"))
+    def get_inlines(self, request, obj):
+        if obj and obj.is_dynamic:
+            return ()
+        return super().get_inlines(request, obj)
 
     def display_asset_count(self, obj):
-        return obj.assets.count()
+        return obj.get_asset_count()
 
     display_asset_count.short_description = "Assets"
-    display_asset_count.admin_order_field = "asset_count"
+
+
+@admin.register(FeaturedCollection)
+class FeaturedCollectionAdmin(admin.ModelAdmin):
+    autocomplete_fields = ("collection",)
+    list_display = ("collection", "label", "order")
+    list_editable = ("label", "order")
+    ordering = ("order", "pk")
 
 
 @admin.register(DeviceCode)

@@ -2,6 +2,7 @@ import logging
 import secrets
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.urls import reverse
@@ -41,6 +42,10 @@ class AssetCollection(ModerationMixin):
     url = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
+    markdown = models.BooleanField(
+        default=False,
+        help_text="Render the collection description as Markdown.",
+    )
     image = models.ImageField(
         max_length=FILENAME_MAX_LENGTH,
         blank=True,
@@ -49,6 +54,45 @@ class AssetCollection(ModerationMixin):
         validators=[FileExtensionValidator(allowed_extensions=VALID_THUMBNAIL_EXTENSIONS)],
     )
     visibility = models.CharField(max_length=255, default=PRIVATE, choices=ASSET_VISIBILITY_CHOICES, db_default=PRIVATE)
+    query_parameters = models.JSONField(blank=True, null=True, default=None)
+
+    @property
+    def is_dynamic(self):
+        return self.query_parameters is not None
+
+    def clean(self):
+        super().clean()
+        if not self.is_dynamic:
+            return
+
+        from icosa.api.filters import validate_asset_query_parameters
+
+        validate_asset_query_parameters(self.query_parameters)
+        if self.pk and self.collected_assets.exists():
+            raise ValidationError(
+                {"query_parameters": "Dynamic collections cannot have explicit assets."}
+            )
+
+    def get_public_assets(self):
+        if self.is_dynamic:
+            from icosa.api.filters import assets_from_query_parameters
+
+            return assets_from_query_parameters(self.query_parameters)
+
+        return (
+            self.assets.filter(visibility=PUBLIC)
+            .exclude(moderation_state__in=MOD_HIDDEN)
+            .select_related("owner")
+            .prefetch_related("resource_set", "format_set", "tags")
+            .order_by(
+                "assetcollectionasset__order",
+                "assetcollectionasset__create_time",
+                "assetcollectionasset__pk",
+            )
+        )
+
+    def get_asset_count(self):
+        return self.get_public_assets().count()
 
     def get_displayname(self):
         # Used for compatibiliy with Asset and AssetCollection's methods of the
@@ -65,8 +109,8 @@ class AssetCollection(ModerationMixin):
 
         if self.image:
             thumbnail_url = self.image.url
-        elif collected_asset := self.collected_assets.first():
-            thumbnail_url = collected_asset.asset.get_thumbnail_url()
+        elif asset := self.get_public_assets().first():
+            thumbnail_url = asset.get_thumbnail_url()
 
         return thumbnail_url
 
@@ -77,6 +121,8 @@ class AssetCollection(ModerationMixin):
             "name",
             "description",
             "image",
+            "query_parameters",
+            "markdown",
         ]
 
     def save(self, *args, **kwargs):
@@ -143,11 +189,34 @@ class AssetCollection(ModerationMixin):
         ]
 
 
+class FeaturedCollection(models.Model):
+    collection = models.OneToOneField(
+        AssetCollection,
+        on_delete=models.CASCADE,
+        related_name="featured_listing",
+    )
+    label = models.CharField(max_length=255, blank=True)
+    order = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return str(self.collection)
+
+    class Meta:
+        ordering = ("order", "pk")
+
+
 class AssetCollectionAsset(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     collection = models.ForeignKey(AssetCollection, on_delete=models.CASCADE, related_name="collected_assets")
     create_time = models.DateTimeField(auto_now_add=True)
     order = models.PositiveIntegerField(default=0)
+
+    def clean(self):
+        super().clean()
+        if self.collection_id and self.collection.is_dynamic:
+            raise ValidationError(
+                "Assets cannot be added explicitly to a dynamic collection."
+            )
 
     def __str__(self):
         return f"{self.order}: {self.asset.name}"

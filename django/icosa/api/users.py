@@ -354,7 +354,9 @@ def show_a_collection(
 ):
     user = request.user
     asset_collection = get_object_or_404(
-        AssetCollection, url=asset_collection_url, owner__django_user=user
+        AssetCollection,
+        url=asset_collection_url,
+        owner__django_user=user,
     )
     return asset_collection
 
@@ -373,8 +375,12 @@ def update_a_collection(
 ):
     user = request.user
     collection = get_object_or_404(
-        AssetCollection, url=asset_collection_url, owner__django_user=user
+        AssetCollection,
+        url=asset_collection_url,
+        owner__django_user=user,
     )
+    if collection.is_dynamic and data.asset_url is not None:
+        return 400, {"message": "Assets cannot be added explicitly to a dynamic collection."}
     filtered_data = data.dict(exclude_unset=True)
     for attr, value in filtered_data.items():
         setattr(collection, attr, value)
@@ -410,8 +416,12 @@ def overwrite_assets_for_a_collection(
 ):
     user = request.user
     collection = get_object_or_404(
-        AssetCollection, url=asset_collection_url, owner__django_user=user
+        AssetCollection,
+        url=asset_collection_url,
+        owner__django_user=user,
     )
+    if collection.is_dynamic:
+        return 400, {"message": "Assets cannot be managed explicitly for a dynamic collection."}
     for asset in collection.assets.all():
         collection.assets.remove(asset)
 
@@ -445,7 +455,9 @@ def delete_a_collection(
 ):
     user = request.user
     asset_collection = get_object_or_404(
-        AssetCollection, url=asset_collection_url, owner__django_user=user
+        AssetCollection,
+        url=asset_collection_url,
+        owner__django_user=user,
     )
     asset_collection.delete()
     return 204, None
@@ -465,7 +477,9 @@ async def set_an_image_for_a_collection(
 ):
     user = request.user
     asset_collection = await aget_object_or_404(
-        AssetCollection, url=asset_collection_url, owner__django_user=user
+        AssetCollection,
+        url=asset_collection_url,
+        owner__django_user=user,
     )
     magic_bytes = next(image.chunks(chunk_size=2048))
     image.seek(0)

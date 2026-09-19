@@ -1,8 +1,6 @@
 import re
 from typing import List
 
-from constance import config
-from django.db.models import Q
 from ninja import Query, Router
 from ninja.decorators import decorate_view
 from ninja.pagination import paginate
@@ -16,18 +14,17 @@ from icosa.api import (
 )
 from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import (
-    ALL_RIGHTS_RESERVED,
     ARCHIVED,
     PRIVATE,
-    PUBLIC,
     Asset,
 )
 from icosa.views.decorators import cache_per_user
 
 from .filters import (
     FiltersAsset,
+    FiltersExpression,
     FiltersOrder,
-    filter_and_sort_assets,
+    get_public_assets,
 )
 from .schema import (
     AssetSchema,
@@ -94,16 +91,6 @@ def get_assets(
     request,
     order: FiltersOrder = Query(...),
     filters: FiltersAsset = Query(...),
+    expression: FiltersExpression = Query(...),
 ):
-    exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED)
-    if config.HIDE_REPORTED_ASSETS:
-        exc_q = Q(license__isnull=True) | Q(license=ALL_RIGHTS_RESERVED) | Q(moderation_state__in=MOD_HIDDEN)
-
-    assets = filter_and_sort_assets(
-        filters,
-        order,
-        assets=Asset.objects.filter(visibility=PUBLIC),
-        exc_q=exc_q,
-    )
-
-    return assets
+    return get_public_assets(filters, order, filter_expression=expression.filter)
