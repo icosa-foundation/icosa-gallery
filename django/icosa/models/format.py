@@ -12,8 +12,8 @@ from .asset import Asset
 from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
 from .helpers import (
     download_to_tempfile,
-    format_upload_path,
     get_cached_cors_allow_list,
+    get_cloud_media_root,
 )
 from .resource import Resource
 
@@ -153,9 +153,11 @@ class Format(models.Model):
 
             for r in external:
                 rel = relative_paths[r.pk]
-                # format_upload_path uses this to recreate subdirectories.
                 r.uploaded_file_path = rel
-                name = format_upload_path(r, rel.rsplit("/", 1)[-1])
+                # Unlike format_upload_path, keep every file's original name
+                # (including the root's) so the stored layout mirrors the
+                # source.
+                name = f"{get_cloud_media_root()}{self.asset.owner.id}/{self.asset.id}/{self.format_type}/{rel}"
                 # Save via the storage rather than FieldFile.save, which would
                 # run get_valid_name and mangle names (e.g. spaces) that other
                 # files in the format refer to.
