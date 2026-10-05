@@ -136,12 +136,15 @@ def try_send_moderation_notifications():
 
 
 def localize_format(format_id: int) -> int:
-    """Pull a format's externally-hosted files into our storage, then re-save
-    its asset so denormalised fields such as is_viewer_compatible are
-    refreshed. Returns the number of resources localized."""
+    """Pull a format's externally-hosted files into our storage, then
+    recalculate its asset's is_viewer_compatible, which is the point of doing
+    this. Returns the number of resources localized."""
     format = Format.objects.select_related("asset", "root_resource").get(pk=format_id)
     localized = format.localize_external_resources()
-    format.asset.save(bypass_moderation_logging=True)
+    asset = format.asset
+    # Only update this one field; a full save() recomputes rank, search text
+    # and other denorms that this task has no business touching.
+    Asset.objects.filter(pk=asset.pk).update(is_viewer_compatible=asset.calc_is_viewer_compatible())
     return len(localized)
 
 
