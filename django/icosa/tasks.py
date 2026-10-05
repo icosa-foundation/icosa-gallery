@@ -21,6 +21,7 @@ from icosa.models import (
     ASSET_STATE_FAILED,
     Asset,
     BulkSaveLog,
+    Format,
     ModerationNotification,
     User,
 )
@@ -132,3 +133,22 @@ def queue_save_all_assets(
 @db_periodic_task(crontab(minute="*/1"))
 def try_send_moderation_notifications():
     ModerationNotification.try_send()
+
+
+def localize_format(format_id: int) -> int:
+    """Pull a format's externally-hosted files into our storage, then re-save
+    its asset so denormalised fields such as is_viewer_compatible are
+    refreshed. Returns the number of resources localized."""
+    format = Format.objects.select_related("asset", "root_resource").get(pk=format_id)
+    localized = format.localize_external_resources()
+    format.asset.save(bypass_moderation_logging=True)
+    return len(localized)
+
+
+# One task per format so a failure only affects that format, and so retries
+# don't redo work already done (localize_external_resources is idempotent).
+# Slow hosts such as archive.org fail intermittently, hence the generous retry
+# delay.
+@db_task(retries=3, retry_delay=600)
+def queue_localize_format(format_id: int) -> int:
+    return localize_format(format_id)
