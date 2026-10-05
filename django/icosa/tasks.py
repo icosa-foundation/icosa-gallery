@@ -151,7 +151,8 @@ def localize_format(format_id: int) -> int:
 # One task per format so a failure only affects that format, and so retries
 # don't redo work already done (localize_external_resources is idempotent).
 # Slow hosts such as archive.org fail intermittently, hence the generous retry
-# delay.
-@db_task(retries=3, retry_delay=600)
+# delay. Negative priority so user uploads (default priority 0) waiting in the
+# queue are always picked first.
+@db_task(retries=3, retry_delay=600, priority=-10)
 def queue_localize_format(format_id: int) -> int:
     return localize_format(format_id)
