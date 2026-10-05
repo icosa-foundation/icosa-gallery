@@ -1,9 +1,18 @@
 import os
+import tempfile
+import time
 from pathlib import Path
 
 from constance import config
 from django.conf import settings
 from django.core.cache import cache
+import requests
+
+# (connect, read) timeouts in seconds. Read timeout is per-chunk, not total,
+# so large files from slow hosts such as archive.org are fine.
+EXTERNAL_DOWNLOAD_TIMEOUT = (30, 300)
+EXTERNAL_DOWNLOAD_RETRIES = 5
+EXTERNAL_DOWNLOAD_CHUNK_SIZE = 1024 * 1024
 
 
 def get_cloud_media_root():
@@ -80,3 +89,36 @@ def get_cached_cors_allow_list():
     allow_list = config.EXTERNAL_MEDIA_CORS_ALLOW_LIST
     cache.set(cache_key, allow_list, 60)  # 60 secs, one minute
     return allow_list
+
+
+def download_to_tempfile(
+    url,
+    timeout=EXTERNAL_DOWNLOAD_TIMEOUT,
+    retries=EXTERNAL_DOWNLOAD_RETRIES,
+):
+    """Stream `url` to a named temporary file on disk and return it, rewound
+    to the start. The caller is responsible for closing it (which deletes it).
+
+    Retries with exponential backoff on connection errors, timeouts, 429 and
+    5xx responses; other HTTP errors are raised immediately.
+    """
+    attempt = 0
+    while True:
+        attempt += 1
+        tmp = tempfile.NamedTemporaryFile()
+        try:
+            with requests.get(url, stream=True, timeout=timeout) as response:
+                response.raise_for_status()
+                for chunk in response.iter_content(chunk_size=EXTERNAL_DOWNLOAD_CHUNK_SIZE):
+                    tmp.write(chunk)
+            tmp.flush()
+            tmp.seek(0)
+            return tmp
+        except requests.RequestException as e:
+            tmp.close()
+            response = getattr(e, "response", None)
+            status = response.status_code if response is not None else None
+            retryable = status is None or status == 429 or status >= 500
+            if not retryable or attempt > retries:
+                raise
+            time.sleep(2**attempt)

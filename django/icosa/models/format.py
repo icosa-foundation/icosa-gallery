@@ -1,17 +1,27 @@
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import unquote
 
 from django.core.cache import cache
-from django.db import models
+from django.core.files import File
+from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
 
 from .asset import Asset
 from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
-from .helpers import get_cached_cors_allow_list
+from .helpers import (
+    download_to_tempfile,
+    format_upload_path,
+    get_cached_cors_allow_list,
+)
 from .resource import Resource
 
 ROLE_MAX_LENGTH = 255
+
+
+class ExternalResourceLocalizeException(Exception):
+    pass
 
 
 class Format(models.Model):
@@ -96,6 +106,87 @@ class Format(models.Model):
         else:
             resource_data = {}
         return resource_data
+
+    def localize_external_resources(self, **download_kwargs) -> List[Resource]:
+        """Download every resource of this format that is only stored
+        externally (e.g. on archive.org), upload it to the configured Django
+        storage and update the resource so it is no longer external.
+
+        The directory layout relative to the root resource is preserved so
+        that relative references between files (e.g. a gltf pointing at its
+        bin and textures) keep working.
+
+        All downloads happen before anything is written, and the database is
+        only updated once every upload has succeeded, so a failure part way
+        through leaves the format unchanged (aside from possibly orphaned
+        files in storage). `download_kwargs` are passed to
+        `download_to_tempfile`.
+
+        Returns the list of resources that were localized.
+        """
+        root = self.root_resource
+        resources = list(self.resource_set.all())
+        if root is not None:
+            resources.append(root)
+        external = [r for r in resources if r.external_url and not r.file]
+        if not external and not self.zip_archive_url:
+            return []
+
+        # Work out every path relative to the root before changing anything,
+        # since Resource.relative_path changes once the root has a file.
+        base_url = None
+        if root is not None and root.external_url:
+            base_url = f"{root.external_url.rsplit('/', 1)[0]}/"
+
+        relative_paths = {}
+        for r in external:
+            if r.pk != getattr(root, "pk", None) and base_url and r.external_url.startswith(base_url):
+                rel = r.external_url[len(base_url):]
+            else:
+                rel = r.external_url.rsplit("/", 1)[-1]
+            relative_paths[r.pk] = unquote(rel.split("?", 1)[0])
+
+        tmp_files = {}
+        try:
+            for r in external:
+                tmp_files[r.pk] = download_to_tempfile(r.external_url, **download_kwargs)
+
+            for r in external:
+                rel = relative_paths[r.pk]
+                # format_upload_path uses this to recreate subdirectories.
+                r.uploaded_file_path = rel
+                name = format_upload_path(r, rel.rsplit("/", 1)[-1])
+                # Save via the storage rather than FieldFile.save, which would
+                # run get_valid_name and mangle names (e.g. spaces) that other
+                # files in the format refer to.
+                saved_name = r.file.storage.save(name, File(tmp_files[r.pk]))
+                if saved_name != name:
+                    raise ExternalResourceLocalizeException(
+                        f"Storage saved {name} as {saved_name}; relative references would break."
+                    )
+                r.file.name = saved_name
+        finally:
+            for tmp in tmp_files.values():
+                tmp.close()
+
+        with transaction.atomic():
+            for r in external:
+                r.external_url = None
+                r.save()
+            # The archive is also externally hosted; once every resource is
+            # local, downloads can be served from our own storage instead.
+            if self.zip_archive_url and all(r.file for r in resources):
+                self.zip_archive_url = None
+                self.save()
+
+        # is_cors_allowed values are cached with no expiry.
+        cors_allow_list = get_cached_cors_allow_list()
+        resource_pks = "-".join([str(x.pk) for x in self.get_all_resources()])
+        cache.delete_many(
+            [f"resource_is_cors_allowed-{r.pk}-{cors_allow_list}" for r in external]
+            + [f"format_is_cors_allowed-{self.pk}-{resource_pks}-{cors_allow_list}"]
+        )
+        return external
 
     def user_label(self):
         # If self.role is None, then we avoid a db lookup by returning early.
