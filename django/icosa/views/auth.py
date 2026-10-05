@@ -275,7 +275,7 @@ def password_reset(request):
         if form.is_valid():
             email_addr = form.cleaned_data.get("email")
             try:
-                user = User.objects.get(email=email_addr, is_active=True, last_login__isnull=False)
+                user = User.objects.get(email=email_addr, is_active=True)
                 send_password_reset_email(request, user, to_email=email_addr)
             except User.DoesNotExist:
                 pass
