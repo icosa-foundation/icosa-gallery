@@ -6,6 +6,7 @@ See https://xrfragment.org/#XRF%20microformat
 {% for portal_url in spatial_portal_urls %}
     <link rel="alternate" as="spatial-portal" href="{{ portal_url }}">
 {% endfor %}
+<link rel="pages" min="1" max="{{ assets.paginator.num_pages }}">
 {% if assets.has_previous %}
     <link rel="prev" as="spatial-portal" href="{% pagination_url assets.previous_page_number %}">
 {% endif %}
