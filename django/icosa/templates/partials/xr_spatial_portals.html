@@ -1,13 +1,14 @@
+{% load paginator_tags %}
 {% comment %}
-XR Fragments collection discovery. The spatial client chooses portal layout.
+XR Fragments listing discovery. The spatial client chooses portal layout.
 See https://xrfragment.org/#XRF%20microformat
 {% endcomment %}
 {% for portal_url in spatial_portal_urls %}
     <link rel="alternate" as="spatial-portal" href="{{ portal_url }}">
 {% endfor %}
 {% if assets.has_previous %}
-    <link rel="prev" as="spatial-portal" href="?page={{ assets.previous_page_number }}">
+    <link rel="prev" as="spatial-portal" href="{% pagination_url assets.previous_page_number %}">
 {% endif %}
 {% if assets.has_next %}
-    <link rel="next" as="spatial-portal" href="?page={{ assets.next_page_number }}">
+    <link rel="next" as="spatial-portal" href="{% pagination_url assets.next_page_number %}">
 {% endif %}

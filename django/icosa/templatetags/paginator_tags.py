@@ -12,3 +12,10 @@ def get_custom_elided_page_range(p, number, on_each_side=2, on_ends=2):
 def clean_url(context):
     request = context["request"]
     return request.build_absolute_uri(request.path)
+
+
+@register.simple_tag(takes_context=True)
+def pagination_url(context, page_number):
+    query = context["request"].GET.copy()
+    query["page"] = page_number
+    return f"?{query.urlencode()}"
