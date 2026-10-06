@@ -4,6 +4,7 @@
 {% block extrahead %}
     {{ block.super }}
     <link rel="canonical" href="{% clean_url %}">
+    {% include "partials/xr_spatial_portals.html" %}
 {% endblock extrahead %}
 
 {% block content %}
@@ -32,7 +33,6 @@
         {% endif %}
         {% endwith %}
         {% include "partials/pagination.html" %}
-        {% include "partials/xr_fireboxroom.html" %}
     </div>
 </div>
 {% endblock content %}
