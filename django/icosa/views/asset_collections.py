@@ -2,8 +2,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Max, OuterRef, Q, Subquery
-from django.db.models.functions import JSONObject
+from django.db.models import Max, Q
 from django.http import HttpResponseBadRequest, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -12,6 +11,7 @@ from django.views.decorators.http import require_POST
 
 from icosa.forms import AssetCollectionForm
 from icosa.helpers.moderation import get_str_content_type
+from icosa.helpers.spatial import annotate_spatial_resources, get_spatial_portal_urls
 from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import (
     PUBLIC,
@@ -20,8 +20,6 @@ from icosa.models import (
     AssetCollection,
     AssetCollectionAsset,
     AssetOwner,
-    Format,
-    Resource,
 )
 
 COLLECTION_ADD = "ADD"
@@ -411,40 +409,18 @@ def asset_collection_view(request, collection_url: str, user_url: str = None):
     collection = get_object_or_404(collections, url=collection_url)
     owner = collection.owner
 
-    # Match preferred_viewer_format's first-by-PK selection without a reverse
-    # join, which could duplicate listing rows if multiple formats are preferred.
-    preferred_resource = (
-        Format.objects.filter(asset_id=OuterRef("asset_id"), is_preferred_for_gallery_viewer=True)
-        .order_by("pk")
-        .annotate(
-            spatial_resource=JSONObject(
-                id="root_resource__id",
-                file="root_resource__file",
-                external_url="root_resource__external_url",
-            )
-        )
-        .values("spatial_resource")[:1]
-    )
-    asset_objs = (
+    asset_objs = annotate_spatial_resources(
         collection.collected_assets.filter(asset__visibility=PUBLIC)
         .exclude(asset__moderation_state__in=MOD_HIDDEN)
-        .select_related("asset", "asset__owner")
-        .annotate(spatial_resource=Subquery(preferred_resource))
+        .select_related("asset", "asset__owner"),
+        asset_id_field="asset_id",
     )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
-    spatial_portal_urls = []
-    for obj in assets:
-        if obj.spatial_resource and obj.spatial_resource["id"] is not None:
-            # Use the existing storage and CORS rules with data already fetched
-            # by the listing query; constructing a Resource does not query it.
-            resource = Resource(**obj.spatial_resource)
-            if portal_url := resource.internal_or_cors_url:
-                spatial_portal_urls.append(portal_url)
     context = {
         "assets": assets,
-        "spatial_portal_urls": spatial_portal_urls,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "page_number": page_number,
         "result_count": paginator.count,
         "paginator": paginator,

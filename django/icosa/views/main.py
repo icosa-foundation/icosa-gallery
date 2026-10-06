@@ -51,6 +51,7 @@ from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img
 from icosa.helpers.moderation import get_str_content_type
 from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.spatial import annotate_spatial_resources, get_spatial_portal_urls
 from icosa.helpers.upload import upload_api_asset
 from icosa.model_mixins import (
     MOD_HIDDEN,
@@ -465,12 +466,13 @@ def owner_show(request, slug):
     if owner.disable_profile and not request.user.is_superuser:
         raise Http404
 
-    asset_objs = (
+    asset_objs = annotate_spatial_resources(
         owner.asset_set.filter(
             visibility=PUBLIC,
         )
         .exclude(moderation_state__in=MOD_HIDDEN)
         .order_by("-id")
+        .select_related("owner")
     )
 
     try:
@@ -483,6 +485,7 @@ def owner_show(request, slug):
         "user": request.user,
         "owner": owner,
         "assets": assets,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "page_title": owner.displayname,
         "paginator": paginator,
         "user_is_moderator": request.user.groups.filter(name="Moderator").exists(),
@@ -521,13 +524,14 @@ def user_show(request, slug):
     else:
         owners = owner.django_user.assetowner_set.all()
 
-    asset_objs = (
+    asset_objs = annotate_spatial_resources(
         Asset.objects.filter(
             owner__in=owners,
             visibility=PUBLIC,
         )
         .exclude(moderation_state__in=MOD_HIDDEN)
         .order_by("-id")
+        .select_related("owner")
     )
 
     try:
@@ -548,6 +552,7 @@ def user_show(request, slug):
     context = {
         "owner": owner,
         "assets": assets,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "page_title": page_title,
         "paginator": paginator,
         "is_multi_owner": owners.count() > 1,
