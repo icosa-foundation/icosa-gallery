@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 
 from icosa.forms import AssetCollectionForm
 from icosa.helpers.moderation import get_str_content_type
+from icosa.helpers.spatial import annotate_spatial_resources, get_spatial_portal_urls
 from icosa.model_mixins import MOD_HIDDEN
 from icosa.models import (
     PUBLIC,
@@ -93,6 +94,7 @@ def asset_collection_list(request):
         {
             "collections": collection_page,
             "assets": collection_page,
+            "spatial_portal_urls": [collection.get_absolute_url() for collection in collection_page],
             "paginator": paginator,
             "page_title": "Collections",
         },
@@ -102,7 +104,11 @@ def asset_collection_list(request):
 @login_required
 @never_cache
 def my_asset_collection_list(request):
-    collections = AssetCollection.objects.filter(owner__django_user=request.user).order_by("-update_time")
+    collections = (
+        AssetCollection.objects.filter(owner__django_user=request.user)
+        .select_related("owner", "owner__django_user")
+        .order_by("-update_time")
+    )
     paginator, collection_page = _paginate_collections(request, collections)
     return render(
         request,
@@ -112,6 +118,7 @@ def my_asset_collection_list(request):
             "assets": collection_page,
             "paginator": paginator,
             "page_title": "My Collections",
+            "spatial_portal_urls": [collection.get_absolute_url() for collection in collection_page],
             "show_owner_actions": True,
         },
     )
@@ -339,7 +346,7 @@ def user_asset_collection_list(request, user_url: str):
                 owner=owner,
                 visibility=PUBLIC,
             ).exclude(moderation_state__in=MOD_HIDDEN)
-        collections = collections.order_by("-update_time")
+        collections = collections.select_related("owner", "owner__django_user").order_by("-update_time")
         paginator, collection_page = _paginate_collections(request, collections)
 
         context = {
@@ -348,6 +355,7 @@ def user_asset_collection_list(request, user_url: str):
             "paginator": paginator,
             "page_title": f"Collections by {user.displayname}",
             "show_owner_actions": user == request.user,
+            "spatial_portal_urls": [collection.get_absolute_url() for collection in collection_page],
             "owner": owner,
             "user": user,
         }
@@ -408,16 +416,20 @@ def asset_collection_view(request, collection_url: str, user_url: str = None):
     collection = get_object_or_404(collections, url=collection_url)
     owner = collection.owner
 
-    asset_objs = collection.collected_assets.filter(asset__visibility=PUBLIC).exclude(
-        asset__moderation_state__in=MOD_HIDDEN
+    asset_objs = annotate_spatial_resources(
+        collection.collected_assets.filter(asset__visibility=PUBLIC)
+        .exclude(asset__moderation_state__in=MOD_HIDDEN)
+        .select_related("asset", "asset__owner"),
+        asset_id_field="asset_id",
     )
     paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get("page")
     assets = paginator.get_page(page_number)
     context = {
         "assets": assets,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "page_number": page_number,
-        "result_count": asset_objs.count(),
+        "result_count": paginator.count,
         "paginator": paginator,
         "page_title": collection.name or "Untitled collection",
         "collection": collection,

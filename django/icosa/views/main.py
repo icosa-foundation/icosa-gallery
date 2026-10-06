@@ -51,6 +51,7 @@ from icosa.helpers.email import spawn_send_html_mail
 from icosa.helpers.file import b64_to_img
 from icosa.helpers.moderation import get_str_content_type
 from icosa.helpers.snowflake import generate_snowflake
+from icosa.helpers.spatial import annotate_spatial_resources, get_spatial_portal_urls
 from icosa.helpers.upload import upload_api_asset
 from icosa.model_mixins import (
     MOD_HIDDEN,
@@ -184,11 +185,10 @@ def landing_page(
     template = "main/home.html"
 
     # TODO(james): filter out assets with no formats
-    assets = (
+    assets = annotate_spatial_resources(
         assets.exclude(license__isnull=True)
         .exclude(license=ALL_RIGHTS_RESERVED)
         .select_related("owner")
-        .prefetch_related("resource_set", "format_set")
     )
 
     try:
@@ -230,6 +230,7 @@ def landing_page(
     context = {
         "assets": assets,
         "masthead": masthead,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "heading": heading,
         "heading_link": heading_link,
         "is_explore_heading": is_explore_heading,
@@ -345,10 +346,11 @@ def uploads(request):
     template = "main/manage_uploads.html"
     user = request.user
     form = AssetUploadForm()
-    asset_objs = list(
+    asset_objs = annotate_spatial_resources(
         Asset.objects.filter(owner__django_user=user)
         .exclude(state=ASSET_STATE_BARE, moderation_state__in=MOD_HIDDEN)
         .order_by("-create_time")
+        .select_related("owner")
     )
     try:
         page_number = int(request.GET.get("page", 1))
@@ -360,6 +362,7 @@ def uploads(request):
     context = {
         "assets": assets,
         "form": form,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "page_title": "My Uploads",
         "paginator": paginator,
     }
@@ -375,10 +378,11 @@ def uploads(request):
 def upload_list_partial(request):
     template = "partials/asset_upload_list.html"
     user = request.user
-    asset_objs = list(
+    asset_objs = annotate_spatial_resources(
         Asset.objects.filter(owner__django_user=user)
         .exclude(state=ASSET_STATE_BARE, moderation_state__in=MOD_HIDDEN)
         .order_by("-create_time")
+        .select_related("owner")
     )
     try:
         page_number = int(request.GET.get("page", 1))
@@ -389,6 +393,8 @@ def upload_list_partial(request):
     context = {
         "assets": assets,
         "paginator": paginator,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
+        "include_spatial_metadata": True,
     }
     return render(
         request,
@@ -465,12 +471,13 @@ def owner_show(request, slug):
     if owner.disable_profile and not request.user.is_superuser:
         raise Http404
 
-    asset_objs = (
+    asset_objs = annotate_spatial_resources(
         owner.asset_set.filter(
             visibility=PUBLIC,
         )
         .exclude(moderation_state__in=MOD_HIDDEN)
         .order_by("-id")
+        .select_related("owner")
     )
 
     try:
@@ -483,6 +490,7 @@ def owner_show(request, slug):
         "user": request.user,
         "owner": owner,
         "assets": assets,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "page_title": owner.displayname,
         "paginator": paginator,
         "user_is_moderator": request.user.groups.filter(name="Moderator").exists(),
@@ -521,13 +529,14 @@ def user_show(request, slug):
     else:
         owners = owner.django_user.assetowner_set.all()
 
-    asset_objs = (
+    asset_objs = annotate_spatial_resources(
         Asset.objects.filter(
             owner__in=owners,
             visibility=PUBLIC,
         )
         .exclude(moderation_state__in=MOD_HIDDEN)
         .order_by("-id")
+        .select_related("owner")
     )
 
     try:
@@ -548,6 +557,7 @@ def user_show(request, slug):
     context = {
         "owner": owner,
         "assets": assets,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "page_title": page_title,
         "paginator": paginator,
         "is_multi_owner": owners.count() > 1,
@@ -570,20 +580,25 @@ def my_likes(request):
     q = Q(asset__visibility__in=[PUBLIC, UNLISTED])
     q |= Q(asset__visibility__in=[PRIVATE, UNLISTED], asset__owner__django_user=user)
 
-    liked_assets = UserLike.objects.filter(user=user).filter(q)
-    asset_objs = [ul.asset for ul in liked_assets]
+    liked_assets = annotate_spatial_resources(
+        UserLike.objects.filter(user=user).filter(q).select_related("asset", "asset__owner").order_by("pk"),
+        asset_id_field="asset_id",
+    )
 
     try:
         page_number = int(request.GET.get("page", 1))
     except ValueError:
         page_number = 1
-    paginator = Paginator(asset_objs, settings.PAGINATION_PER_PAGE)
+    paginator = Paginator(liked_assets, settings.PAGINATION_PER_PAGE)
     assets = paginator.get_page(page_number)
+    spatial_portal_urls = get_spatial_portal_urls(assets)
+    assets.object_list = [like.asset for like in assets]
 
     context = {
         "user": user,
         "assets": assets,
         "page_title": "My likes",
+        "spatial_portal_urls": spatial_portal_urls,
         "paginator": paginator,
     }
     return render(
@@ -1137,8 +1152,12 @@ def search(request):
     if query is not None:
         q &= Q(name__icontains=query)
 
-    asset_objs = (
-        Asset.objects.filter(q).exclude(license__isnull=True).exclude(license=ALL_RIGHTS_RESERVED).order_by("-rank")
+    asset_objs = annotate_spatial_resources(
+        Asset.objects.filter(q)
+        .exclude(license__isnull=True)
+        .exclude(license=ALL_RIGHTS_RESERVED)
+        .order_by("-rank")
+        .select_related("owner")
     )
 
     try:
@@ -1150,7 +1169,8 @@ def search(request):
     context = {
         "assets": assets,
         "page_number": page_number,
-        "result_count": asset_objs.count(),
+        "result_count": paginator.count,
+        "spatial_portal_urls": get_spatial_portal_urls(assets),
         "search_query": query,
         "page_title": f"Search for {query}",
         "paginator": paginator,
