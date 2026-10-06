@@ -26,9 +26,9 @@ def get_spatial_portal_urls(items):
     urls = []
     for item in items:
         if item.spatial_resource and item.spatial_resource["id"] is not None:
-            # Use the existing storage and CORS rules with data already fetched
-            # by the listing query; constructing a Resource does not query it.
+            # Advertise the resource URL and let the consumer decide whether it
+            # can load it. Constructing a Resource does not query the database.
             resource = Resource(**item.spatial_resource)
-            if portal_url := resource.internal_or_cors_url:
+            if portal_url := resource.url:
                 urls.append(portal_url)
     return urls
