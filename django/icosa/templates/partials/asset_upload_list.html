@@ -1,3 +1,6 @@
+{% if include_spatial_metadata %}
+    {% include "partials/xr_spatial_portals.html" %}
+{% endif %}
 <div id="uploads" class="sketch-list">
     {% if assets %}
         {% for asset in assets %}

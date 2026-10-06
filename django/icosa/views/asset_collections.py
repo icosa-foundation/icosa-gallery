@@ -94,6 +94,7 @@ def asset_collection_list(request):
         {
             "collections": collection_page,
             "assets": collection_page,
+            "spatial_portal_urls": [collection.get_absolute_url() for collection in collection_page],
             "paginator": paginator,
             "page_title": "Collections",
         },
@@ -103,7 +104,11 @@ def asset_collection_list(request):
 @login_required
 @never_cache
 def my_asset_collection_list(request):
-    collections = AssetCollection.objects.filter(owner__django_user=request.user).order_by("-update_time")
+    collections = (
+        AssetCollection.objects.filter(owner__django_user=request.user)
+        .select_related("owner", "owner__django_user")
+        .order_by("-update_time")
+    )
     paginator, collection_page = _paginate_collections(request, collections)
     return render(
         request,
@@ -113,6 +118,7 @@ def my_asset_collection_list(request):
             "assets": collection_page,
             "paginator": paginator,
             "page_title": "My Collections",
+            "spatial_portal_urls": [collection.get_absolute_url() for collection in collection_page],
             "show_owner_actions": True,
         },
     )
@@ -340,7 +346,7 @@ def user_asset_collection_list(request, user_url: str):
                 owner=owner,
                 visibility=PUBLIC,
             ).exclude(moderation_state__in=MOD_HIDDEN)
-        collections = collections.order_by("-update_time")
+        collections = collections.select_related("owner", "owner__django_user").order_by("-update_time")
         paginator, collection_page = _paginate_collections(request, collections)
 
         context = {
@@ -349,6 +355,7 @@ def user_asset_collection_list(request, user_url: str):
             "paginator": paginator,
             "page_title": f"Collections by {user.displayname}",
             "show_owner_actions": user == request.user,
+            "spatial_portal_urls": [collection.get_absolute_url() for collection in collection_page],
             "owner": owner,
             "user": user,
         }
