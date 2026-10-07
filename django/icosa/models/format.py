@@ -1,6 +1,7 @@
+import posixpath
 from pathlib import Path
 from typing import List, Optional
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 
 from django.core.cache import cache
 from django.core.files import File
@@ -137,10 +138,20 @@ class Format(models.Model):
         base_url = None
         if root is not None and root.external_url:
             base_url = f"{root.external_url.rsplit('/', 1)[0]}/"
+            if not root.file:
+                root_url = urlsplit(root.external_url)
+                source_urls = [urlsplit(r.external_url) for r in external]
+                source_dirs = [
+                    posixpath.dirname(url.path)
+                    for url in source_urls
+                    if (url.scheme, url.netloc) == (root_url.scheme, root_url.netloc)
+                ]
+                base_path = posixpath.commonpath(source_dirs)
+                base_url = root_url._replace(path=f"{base_path.rstrip('/')}/", query="", fragment="").geturl()
 
         relative_paths = {}
         for r in external:
-            if r.pk != getattr(root, "pk", None) and base_url and r.external_url.startswith(base_url):
+            if base_url and r.external_url.startswith(base_url):
                 rel = r.external_url[len(base_url):]
             else:
                 rel = r.external_url.rsplit("/", 1)[-1]
