@@ -1,13 +1,16 @@
 from contextlib import nullcontext
 from io import BytesIO
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 from urllib.parse import urljoin
 
+from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.test import SimpleTestCase
 
 from icosa.models import Format, Resource
+from icosa.models.format import ExternalResourceLocalizeException
 
 
 class ExternalLocalizationTests(SimpleTestCase):
@@ -68,3 +71,62 @@ class ExternalLocalizationTests(SimpleTestCase):
 
         self.assertIsNone(format.zip_archive_url)
         format.save.assert_called_once_with()
+
+    def assert_storage_empty(self):
+        self.assertEqual([path for path in Path(self.storage.location).rglob("*") if path.is_file()], [])
+
+    def test_failed_upload_removes_files_and_allows_retry(self):
+        format, resources = self.make_format(
+            "https://example.com/asset/model.gltf", "https://example.com/asset/texture.png"
+        )
+        save = self.storage.save
+        attempts = 0
+
+        def fail_second_upload(*args, **kwargs):
+            nonlocal attempts
+            attempts += 1
+            if attempts == 2:
+                raise OSError("Upload failed")
+            return save(*args, **kwargs)
+
+        with patch.object(self.storage, "save", side_effect=fail_second_upload):
+            with self.assertRaisesRegex(OSError, "Upload failed"):
+                Format.localize_external_resources(format)
+
+        self.assert_storage_empty()
+        self.assertTrue(all(not resource.file and resource.external_url for resource in resources))
+        self.assertEqual(len(Format.localize_external_resources(format)), 2)
+
+    def test_failed_database_save_removes_files_and_allows_retry(self):
+        for fail_archive_save in (False, True):
+            with self.subTest(fail_archive_save=fail_archive_save):
+                format, resources = self.make_format("https://example.com/asset/model.gltf")
+                archive_url = "https://example.com/asset/archive.zip"
+                format.zip_archive_url = archive_url
+                save = format.save if fail_archive_save else resources[0].save
+                save.side_effect = RuntimeError("Database save failed")
+
+                with self.assertRaisesRegex(RuntimeError, "Database save failed"):
+                    Format.localize_external_resources(format)
+
+                self.assert_storage_empty()
+                self.assertFalse(resources[0].file)
+                self.assertIsNotNone(resources[0].external_url)
+                self.assertEqual(format.zip_archive_url, archive_url)
+                save.side_effect = None
+                self.assertEqual(len(Format.localize_external_resources(format)), 1)
+                self.storage.delete(resources[0].file.name)
+
+    def test_collision_removes_new_files_and_preserves_existing_file(self):
+        format, resources = self.make_format(
+            "https://example.com/asset/model.gltf", "https://example.com/asset/texture.png"
+        )
+        existing_name = self.storage.save("2/3/GLTF2/model.gltf", ContentFile(b"existing"))
+
+        with self.assertRaises(ExternalResourceLocalizeException):
+            Format.localize_external_resources(format)
+
+        stored_files = [path for path in Path(self.storage.location).rglob("*") if path.is_file()]
+        self.assertEqual(stored_files, [Path(self.storage.path(existing_name))])
+        self.assertEqual(stored_files[0].read_bytes(), b"existing")
+        self.assertTrue(all(not resource.file and resource.external_url for resource in resources))

@@ -119,9 +119,8 @@ class Format(models.Model):
 
         All downloads happen before anything is written, and the database is
         only updated once every upload has succeeded, so a failure part way
-        through leaves the format unchanged (aside from possibly orphaned
-        files in storage). `download_kwargs` are passed to
-        `download_to_tempfile`.
+        through leaves the format unchanged and removes files uploaded by
+        that attempt. `download_kwargs` are passed to `download_to_tempfile`.
 
         Returns the list of resources that were localized.
         """
@@ -158,6 +157,11 @@ class Format(models.Model):
             relative_paths[r.pk] = unquote(rel.split("?", 1)[0])
 
         tmp_files = {}
+        uploaded_files = []
+        original_values = {
+            r.pk: (r.file.name, r.uploaded_file_path, r.external_url) for r in external
+        }
+        original_archive_url = self.zip_archive_url
         try:
             for r in external:
                 tmp_files[r.pk] = download_to_tempfile(r.external_url, **download_kwargs)
@@ -173,24 +177,32 @@ class Format(models.Model):
                 # run get_valid_name and mangle names (e.g. spaces) that other
                 # files in the format refer to.
                 saved_name = r.file.storage.save(name, File(tmp_files[r.pk]))
+                uploaded_files.append((r.file.storage, saved_name))
                 if saved_name != name:
                     raise ExternalResourceLocalizeException(
                         f"Storage saved {name} as {saved_name}; relative references would break."
                     )
                 r.file.name = saved_name
+
+            with transaction.atomic():
+                for r in external:
+                    r.external_url = None
+                    r.save()
+                # The archive is also externally hosted; once every resource is
+                # local, downloads can be served from our own storage instead.
+                if self.zip_archive_url and all(r.file for r in resources):
+                    self.zip_archive_url = None
+                    self.save()
+        except Exception:
+            for r in external:
+                r.file.name, r.uploaded_file_path, r.external_url = original_values[r.pk]
+            self.zip_archive_url = original_archive_url
+            for storage, saved_name in reversed(uploaded_files):
+                storage.delete(saved_name)
+            raise
         finally:
             for tmp in tmp_files.values():
                 tmp.close()
-
-        with transaction.atomic():
-            for r in external:
-                r.external_url = None
-                r.save()
-            # The archive is also externally hosted; once every resource is
-            # local, downloads can be served from our own storage instead.
-            if self.zip_archive_url and all(r.file for r in resources):
-                self.zip_archive_url = None
-                self.save()
 
         # is_cors_allowed values are cached with no expiry.
         cors_allow_list = get_cached_cors_allow_list()
