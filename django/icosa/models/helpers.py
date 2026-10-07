@@ -91,6 +91,16 @@ def get_cached_cors_allow_list():
     return allow_list
 
 
+def is_transient_download_error(e: requests.RequestException) -> bool:
+    """Whether retrying might help: connection problems, timeouts, an
+    interrupted transfer, 429 or 5xx. Malformed URLs and other HTTP errors
+    will fail the same way every time."""
+    if isinstance(e, requests.HTTPError):
+        status = e.response.status_code if e.response is not None else None
+        return status == 429 or (status is not None and status >= 500)
+    return isinstance(e, (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError))
+
+
 def download_to_tempfile(
     url,
     timeout=EXTERNAL_DOWNLOAD_TIMEOUT,
@@ -116,9 +126,6 @@ def download_to_tempfile(
             return tmp
         except requests.RequestException as e:
             tmp.close()
-            response = getattr(e, "response", None)
-            status = response.status_code if response is not None else None
-            retryable = status is None or status == 429 or status >= 500
-            if not retryable or attempt > retries:
+            if not is_transient_download_error(e) or attempt > retries:
                 raise
             time.sleep(2**attempt)

@@ -8,9 +8,11 @@ from urllib.parse import urljoin
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.test import SimpleTestCase
+import requests
 
 from icosa.models import Asset, Format, Resource
 from icosa.models.format import ExternalResourceLocalizeException
+from icosa.models.helpers import download_to_tempfile
 
 
 class ExternalLocalizationTests(SimpleTestCase):
@@ -305,3 +307,25 @@ class ViewerCompatibilityTests(SimpleTestCase):
     def test_no_preferred_format_or_root(self):
         self.assertFalse(Asset.calc_is_viewer_compatible(self.make_asset(None)))
         self.assertFalse(Asset.calc_is_viewer_compatible(self.make_asset(Mock(root_resource=None))))
+
+
+class DownloadRetryTests(SimpleTestCase):
+    def download(self, error):
+        with patch("icosa.models.helpers.requests.get", side_effect=error) as get:
+            with patch("icosa.models.helpers.time.sleep"):
+                with self.assertRaises(type(error)):
+                    download_to_tempfile("https://example.com/model.gltf", retries=2)
+        return get.call_count
+
+    def http_error(self, status):
+        return requests.HTTPError(response=Mock(status_code=status))
+
+    def test_transient_errors_are_retried(self):
+        for error in (requests.ConnectionError(), requests.Timeout(), self.http_error(429), self.http_error(503)):
+            with self.subTest(error=error):
+                self.assertEqual(self.download(error), 3)
+
+    def test_permanent_errors_are_not_retried(self):
+        for error in (requests.exceptions.MissingSchema(), requests.exceptions.InvalidURL(), self.http_error(404)):
+            with self.subTest(error=error):
+                self.assertEqual(self.download(error), 1)
