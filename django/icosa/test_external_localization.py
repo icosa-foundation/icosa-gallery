@@ -51,6 +51,28 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.assertTrue(self.storage.exists(texture.file.name))
         self.assertIsNone(texture.external_url)
 
+    def test_archive_org_urls_preserve_layout(self):
+        for prefix in (
+            "https://web.archive.org/web/https://poly.googleusercontent.com/downloads/x",
+            "https://web.archive.org/web/20250101010101id_/https://poly.googleusercontent.com/downloads/x",
+        ):
+            with self.subTest(prefix=prefix):
+                format, (root, texture, sibling) = self.make_format(
+                    f"{prefix}/models/model.gltf",
+                    f"{prefix}/models/textures/albedo.png",
+                    f"{prefix}/shared/model.bin",
+                )
+
+                Format.localize_external_resources(format)
+
+                self.assertEqual(root.uploaded_file_path, "models/model.gltf")
+                self.assertEqual(texture.uploaded_file_path, "models/textures/albedo.png")
+                self.assertEqual(sibling.uploaded_file_path, "shared/model.bin")
+                self.assertEqual(urljoin(root.file.name, "textures/albedo.png"), texture.file.name)
+                self.assertEqual(urljoin(root.file.name, "../shared/model.bin"), sibling.file.name)
+                for resource in (root, texture, sibling):
+                    self.storage.delete(resource.file.name)
+
     def test_descendant_paths_keep_original_names(self):
         format, (root, texture) = self.make_format(
             "https://example.com/asset/model.gltf", "https://example.com/asset/textures/base%20color.png?download=1"

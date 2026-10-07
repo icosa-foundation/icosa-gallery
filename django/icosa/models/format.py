@@ -25,6 +25,18 @@ class ExternalResourceLocalizeException(Exception):
     pass
 
 
+def common_url_dir(paths: List[str]) -> str:
+    """Longest common directory of URL paths. Unlike posixpath.commonpath this
+    keeps empty segments, which archive.org URLs contain
+    (/web/<timestamp>/https://host/...)."""
+    common = []
+    for parts in zip(*[path.split("/") for path in paths]):
+        if len(set(parts)) != 1:
+            break
+        common.append(parts[0])
+    return "/".join(common)
+
+
 class Format(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
@@ -145,7 +157,7 @@ class Format(models.Model):
                     for url in source_urls
                     if (url.scheme, url.netloc) == (root_url.scheme, root_url.netloc)
                 ]
-                base_path = posixpath.commonpath(source_dirs)
+                base_path = common_url_dir(source_dirs)
                 base_url = root_url._replace(path=f"{base_path.rstrip('/')}/", query="", fragment="").geturl()
 
         relative_paths = {}
