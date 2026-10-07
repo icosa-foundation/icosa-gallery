@@ -11,7 +11,7 @@ from django.test import SimpleTestCase
 import requests
 
 from icosa.models import Asset, Format, Resource
-from icosa.models.format import ExternalResourceLocalizeException
+from icosa.models.format import ExternalResourceLocalizeException, is_permanent_localize_error
 from icosa.models.helpers import download_to_tempfile
 
 
@@ -329,3 +329,21 @@ class DownloadRetryTests(SimpleTestCase):
         for error in (requests.exceptions.MissingSchema(), requests.exceptions.InvalidURL(), self.http_error(404)):
             with self.subTest(error=error):
                 self.assertEqual(self.download(error), 1)
+
+
+
+class PermanentLocalizeErrorTests(SimpleTestCase):
+    def test_permanent_errors(self):
+        for error in (
+            Format.DoesNotExist(),
+            ExternalResourceLocalizeException("refused"),
+            requests.HTTPError(response=Mock(status_code=404)),
+            requests.exceptions.InvalidURL(),
+        ):
+            with self.subTest(error=error):
+                self.assertTrue(is_permanent_localize_error(error))
+
+    def test_transient_or_unknown_errors(self):
+        for error in (requests.ConnectionError(), requests.HTTPError(response=Mock(status_code=503)), OSError()):
+            with self.subTest(error=error):
+                self.assertFalse(is_permanent_localize_error(error))

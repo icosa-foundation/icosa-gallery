@@ -9,6 +9,7 @@ from django.core.files import File
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
+import requests
 
 from .asset import Asset
 from .common import FILENAME_MAX_LENGTH, STORAGE_PREFIX
@@ -16,6 +17,7 @@ from .helpers import (
     download_to_tempfile,
     get_cached_cors_allow_list,
     get_cloud_media_root,
+    is_transient_download_error,
 )
 from .resource import Resource
 
@@ -26,6 +28,17 @@ logger = logging.getLogger("django")
 
 class ExternalResourceLocalizeException(Exception):
     pass
+
+
+def is_permanent_localize_error(e: Exception) -> bool:
+    """Whether localizing would fail the same way if retried: the format is
+    gone, it can't be localized safely, or a download failed for good (e.g.
+    404)."""
+    if isinstance(e, (Format.DoesNotExist, ExternalResourceLocalizeException)):
+        return True
+    if isinstance(e, requests.RequestException):
+        return not is_transient_download_error(e)
+    return False
 
 
 def common_url_dir(paths: List[str]) -> str:

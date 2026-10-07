@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import (
     List,
@@ -15,6 +16,7 @@ from huey.contrib.djhuey import (
     db_task,
     signal,
 )
+from huey.exceptions import CancelExecution
 from icosa.api.schema import AssetMetaData
 from icosa.helpers.upload import upload_api_asset
 from icosa.models import (
@@ -25,11 +27,14 @@ from icosa.models import (
     ModerationNotification,
     User,
 )
+from icosa.models.format import is_permanent_localize_error
 from ninja import (
     File,
     Form,
 )
 from ninja.files import UploadedFile
+
+logger = logging.getLogger("django")
 
 
 @signal(signals.SIGNAL_ERROR)
@@ -151,8 +156,15 @@ def localize_format(format_id: int) -> int:
 # One task per format so a failure only affects that format, and so retries
 # don't redo work already done (localize_external_resources is idempotent).
 # Slow hosts such as archive.org fail intermittently, hence the generous retry
-# delay. Negative priority so user uploads (default priority 0) waiting in the
-# queue are always picked first.
+# delay; permanent failures are not retried, since each retry re-downloads the
+# whole format. Negative priority so user uploads (default priority 0) waiting
+# in the queue are always picked first.
 @db_task(retries=3, retry_delay=600, priority=-10)
 def queue_localize_format(format_id: int) -> int:
-    return localize_format(format_id)
+    try:
+        return localize_format(format_id)
+    except Exception as e:
+        if is_permanent_localize_error(e):
+            logger.error(f"[localize] Format {format_id} failed and will not be retried: {e}")
+            raise CancelExecution(retry=False) from e
+        raise
