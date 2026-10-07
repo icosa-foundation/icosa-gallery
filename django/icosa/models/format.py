@@ -37,6 +37,17 @@ def common_url_dir(paths: List[str]) -> str:
     return "/".join(common)
 
 
+def storage_dir_in_use(storage, path: str) -> bool:
+    """Whether anything exists at directory `path`. On a filesystem an empty
+    directory counts; object stores such as S3 have no directories, so there
+    a prefix is in use only if objects exist under it."""
+    try:
+        dirs, files = storage.listdir(path)
+    except FileNotFoundError:
+        return False
+    return bool(dirs or files) or storage.exists(path)
+
+
 class Format(models.Model):
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
     format_type = models.CharField(max_length=255)
@@ -183,12 +194,24 @@ class Format(models.Model):
             for url in relative_paths:
                 tmp_files[url] = download_to_tempfile(url, **download_kwargs)
 
+            # Never write into a directory that already has anything in it, so
+            # existing files (another format of the same type, a normal
+            # upload, leftovers from an interrupted attempt) are never
+            # overwritten. The whole format moves together so relative
+            # references between its files still resolve.
             storage = Resource._meta.get_field("file").storage
+            base_dir = f"{get_cloud_media_root()}{self.asset.owner.id}/{self.asset.id}/{self.format_type}"
+            target_dir = base_dir
+            suffix = 1
+            while storage_dir_in_use(storage, target_dir):
+                suffix += 1
+                target_dir = f"{base_dir}_{suffix}"
+
             for url, rel in relative_paths.items():
                 # Unlike format_upload_path, keep every file's original name
                 # (including the root's) so the stored layout mirrors the
                 # source.
-                name = f"{get_cloud_media_root()}{self.asset.owner.id}/{self.asset.id}/{self.format_type}/{rel}"
+                name = f"{target_dir}/{rel}"
                 # Save via the storage rather than FieldFile.save, which would
                 # run get_valid_name and mangle names (e.g. spaces) that other
                 # files in the format refer to.

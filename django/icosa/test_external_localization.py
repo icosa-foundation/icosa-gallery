@@ -173,20 +173,34 @@ class ExternalLocalizationTests(SimpleTestCase):
                 self.assertEqual(len(Format.localize_external_resources(format)), 1)
                 self.storage.delete(resources[0].file.name)
 
-    def test_collision_removes_new_files_and_preserves_existing_file(self):
-        format, resources = self.make_format(
+    def test_existing_directory_is_never_written_into(self):
+        format, (root, texture) = self.make_format(
             "https://example.com/asset/model.gltf", "https://example.com/asset/texture.png"
         )
         existing_name = self.storage.save("2/3/GLTF2/model.gltf", ContentFile(b"existing"))
+        Path(self.storage.path("2/3/GLTF2_2")).mkdir()
 
-        with self.assertRaises(ExternalResourceLocalizeException):
-            Format.localize_external_resources(format)
+        Format.localize_external_resources(format)
 
-        stored_files = [path for path in Path(self.storage.location).rglob("*") if path.is_file()]
-        self.assertEqual(stored_files, [Path(self.storage.path(existing_name))])
-        self.assertEqual(stored_files[0].read_bytes(), b"existing")
+        self.assertEqual(root.file.name, "2/3/GLTF2_3/model.gltf")
+        self.assertEqual(texture.file.name, "2/3/GLTF2_3/texture.png")
+        self.assertEqual(Path(self.storage.path(existing_name)).read_bytes(), b"existing")
+
+    def test_storage_renaming_a_file_removes_new_files(self):
+        format, resources = self.make_format(
+            "https://example.com/asset/model.gltf", "https://example.com/asset/texture.png"
+        )
+        save = self.storage.save
+
+        def rename(name, content, **kwargs):
+            return save(f"{name}.renamed", content, **kwargs)
+
+        with patch.object(self.storage, "save", side_effect=rename):
+            with self.assertRaises(ExternalResourceLocalizeException):
+                Format.localize_external_resources(format)
+
+        self.assert_storage_empty()
         self.assertTrue(all(not resource.file and resource.external_url for resource in resources))
-
 
 class ViewerCompatibilityTests(SimpleTestCase):
     def make_asset(self, preferred_format):
