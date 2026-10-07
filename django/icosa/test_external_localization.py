@@ -84,6 +84,40 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.assertEqual(texture.uploaded_file_path, "textures/base color.png")
         self.assertEqual(urljoin(root.file.name, "textures/base color.png"), texture.file.name)
 
+    def test_resources_outside_root_directory_are_skipped(self):
+        format, resources = self.make_format(
+            "https://example.com/asset/model.gltf", "https://cdn.example.net/asset/texture.png"
+        )
+
+        with self.assertRaisesRegex(ExternalResourceLocalizeException, "not under the root"):
+            Format.localize_external_resources(format)
+
+        self.assert_storage_empty()
+        self.assertTrue(all(not resource.file and resource.external_url for resource in resources))
+
+    def test_duplicate_urls_share_one_upload(self):
+        format, (root, first, second) = self.make_format(
+            "https://example.com/asset/model.gltf",
+            "https://example.com/asset/texture.png",
+            "https://example.com/asset/texture.png",
+        )
+
+        with patch("icosa.models.format.download_to_tempfile", side_effect=lambda *a, **k: BytesIO(b"x")) as download:
+            Format.localize_external_resources(format)
+
+        self.assertEqual(download.call_count, 2)
+        self.assertEqual(first.file.name, second.file.name)
+        self.assertIsNone(second.external_url)
+
+    def test_fragment_is_stripped_from_stored_name(self):
+        format, (root, texture) = self.make_format(
+            "https://example.com/asset/model.gltf", "https://example.com/asset/texture.png#v2"
+        )
+
+        Format.localize_external_resources(format)
+
+        self.assertEqual(texture.uploaded_file_path, "texture.png")
+
     def test_local_resources_clear_external_archive(self):
         format, (root,) = self.make_format("https://example.com/asset/model.gltf")
         root.file.name = "poly/model.gltf"

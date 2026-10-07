@@ -160,27 +160,31 @@ class Format(models.Model):
                 base_path = common_url_dir(source_dirs)
                 base_url = root_url._replace(path=f"{base_path.rstrip('/')}/", query="", fragment="").geturl()
 
+        # Only files under the root's directory have a known place in the
+        # layout; anything else (e.g. on another host) can't be placed safely.
         relative_paths = {}
         for r in external:
-            if base_url and r.external_url.startswith(base_url):
-                rel = r.external_url[len(base_url):]
-            else:
-                rel = r.external_url.rsplit("/", 1)[-1]
-            relative_paths[r.pk] = unquote(rel.split("?", 1)[0])
+            if not base_url or not r.external_url.startswith(base_url):
+                raise ExternalResourceLocalizeException(
+                    f"{r.external_url} is not under the root resource's directory {base_url}"
+                )
+            rel = r.external_url[len(base_url):]
+            relative_paths[r.external_url] = unquote(rel.split("?", 1)[0].split("#", 1)[0])
 
+        # Several resources may share a URL; each URL is fetched and stored once.
         tmp_files = {}
+        saved_names = {}
         uploaded_files = []
         original_values = {
             r.pk: (r.file.name, r.uploaded_file_path, r.external_url) for r in external
         }
         original_archive_url = self.zip_archive_url
         try:
-            for r in external:
-                tmp_files[r.pk] = download_to_tempfile(r.external_url, **download_kwargs)
+            for url in relative_paths:
+                tmp_files[url] = download_to_tempfile(url, **download_kwargs)
 
-            for r in external:
-                rel = relative_paths[r.pk]
-                r.uploaded_file_path = rel
+            storage = Resource._meta.get_field("file").storage
+            for url, rel in relative_paths.items():
                 # Unlike format_upload_path, keep every file's original name
                 # (including the root's) so the stored layout mirrors the
                 # source.
@@ -188,13 +192,17 @@ class Format(models.Model):
                 # Save via the storage rather than FieldFile.save, which would
                 # run get_valid_name and mangle names (e.g. spaces) that other
                 # files in the format refer to.
-                saved_name = r.file.storage.save(name, File(tmp_files[r.pk]))
-                uploaded_files.append((r.file.storage, saved_name))
+                saved_name = storage.save(name, File(tmp_files[url]))
+                uploaded_files.append((storage, saved_name))
                 if saved_name != name:
                     raise ExternalResourceLocalizeException(
                         f"Storage saved {name} as {saved_name}; relative references would break."
                     )
-                r.file.name = saved_name
+                saved_names[url] = saved_name
+
+            for r in external:
+                r.uploaded_file_path = relative_paths[r.external_url]
+                r.file.name = saved_names[r.external_url]
 
             with transaction.atomic():
                 for r in external:
