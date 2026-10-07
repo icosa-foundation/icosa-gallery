@@ -36,7 +36,7 @@ class ExternalLocalizationTests(SimpleTestCase):
         for resource in resources:
             resource.save = Mock()
         format = Mock(pk=1, format_type="GLTF2", root_resource=resources[0], zip_archive_url=None)
-        format.asset.owner.id = 2
+        format.asset.owner_id = 2
         format.asset.id = 3
         format.resource_set.all.return_value = resources[1:]
         format.get_all_resources.return_value = resources
@@ -77,6 +77,16 @@ class ExternalLocalizationTests(SimpleTestCase):
                 self.assertEqual(urljoin(root.file.name, "../shared/model.bin"), sibling.file.name)
                 for resource in (root, texture, sibling):
                     self.storage.delete(resource.file.name)
+
+    def test_ownerless_asset_is_refused_before_downloading(self):
+        format, resources = self.make_format("https://example.com/asset/model.gltf")
+        format.asset.owner_id = None
+
+        with patch("icosa.models.format.download_to_tempfile") as download:
+            with self.assertRaisesRegex(ExternalResourceLocalizeException, "has no owner"):
+                Format.localize_external_resources(format)
+
+        download.assert_not_called()
 
     def test_descendant_paths_keep_original_names(self):
         format, (root, texture) = self.make_format(

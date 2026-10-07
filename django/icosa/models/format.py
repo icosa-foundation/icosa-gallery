@@ -236,6 +236,11 @@ class Format(models.Model):
                         )
                     saved_names[url] = name
             else:
+                # Storage paths need an owner. Asset.owner is nullable although
+                # no ownerless assets are known; check before downloading.
+                owner_id = self.asset.owner_id
+                if owner_id is None:
+                    raise ExternalResourceLocalizeException(f"Asset {self.asset.id} has no owner")
                 for url in relative_paths:
                     tmp_files[url] = download_to_tempfile(url, **download_kwargs)
 
@@ -244,7 +249,7 @@ class Format(models.Model):
                 # normal upload, leftovers from an interrupted attempt) are
                 # never overwritten. The whole format moves together so
                 # relative references between its files still resolve.
-                base_dir = f"{get_cloud_media_root()}{self.asset.owner.id}/{self.asset.id}/{self.format_type}"
+                base_dir = f"{get_cloud_media_root()}{owner_id}/{self.asset.id}/{self.format_type}"
                 target_dir = base_dir
                 suffix = 1
                 while storage_dir_in_use(storage, target_dir):
