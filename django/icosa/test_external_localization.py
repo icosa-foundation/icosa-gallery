@@ -12,7 +12,11 @@ from huey.exceptions import CancelExecution
 import requests
 
 from icosa.models import Asset, Format, Resource
-from icosa.models.format import ExternalResourceLocalizeException, is_permanent_localize_error
+from icosa.models.format import (
+    ExternalResourceLocalizeException,
+    format_cors_cache_key,
+    is_permanent_localize_error,
+)
 from icosa.models.helpers import download_to_tempfile
 from icosa.tasks import queue_localize_format
 
@@ -25,7 +29,7 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.enterContext(patch.object(Resource._meta.get_field("file"), "storage", self.storage))
         self.enterContext(patch("icosa.models.format.get_cloud_media_root", return_value=""))
         self.enterContext(patch("icosa.models.format.get_cached_cors_allow_list", return_value=[]))
-        self.enterContext(patch("icosa.models.format.cache.delete_many"))
+        self.delete_many = self.enterContext(patch("icosa.models.format.cache.delete_many"))
         self.enterContext(patch("icosa.models.format.transaction.atomic", side_effect=nullcontext))
         self.enterContext(
             patch("icosa.models.format.download_to_tempfile", side_effect=lambda *args, **kwargs: BytesIO(b"content"))
@@ -165,6 +169,30 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.assertIsNotNone(bin_resource.external_url)
         self.assertIsNotNone(root.external_url)
         self.assert_storage_empty()
+
+    def test_cors_cache_is_cleared_for_every_resource(self):
+        format, resources = self.make_format(
+            "https://example.com/asset/model.gltf", "https://example.com/asset/texture.png"
+        )
+
+        Format.localize_external_resources(format)
+
+        keys = self.delete_many.call_args.args[0]
+        self.assertIn("resource_is_cors_allowed-1-[]", keys)
+        self.assertIn("resource_is_cors_allowed-2-[]", keys)
+        self.assertIn("format_is_cors_allowed-1-1-2-[]", keys)
+
+    def test_cors_cache_is_cleared_when_nothing_is_left_to_do(self):
+        format, (root,) = self.make_format("https://example.com/asset/model.gltf")
+        root.file.name = "poly/model.gltf"
+        root.external_url = None
+
+        self.assertEqual(Format.localize_external_resources(format), [])
+
+        self.assertIn("format_is_cors_allowed-1-1-[]", self.delete_many.call_args.args[0])
+
+    def test_format_cors_cache_key_ignores_resource_order(self):
+        self.assertEqual(format_cors_cache_key(1, [3, 2], "x"), format_cors_cache_key(1, [2, 3], "x"))
 
     def test_local_resources_clear_external_archive(self):
         format, (root,) = self.make_format("https://example.com/asset/model.gltf")

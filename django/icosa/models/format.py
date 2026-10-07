@@ -19,7 +19,7 @@ from .helpers import (
     get_cloud_media_root,
     is_transient_download_error,
 )
-from .resource import Resource
+from .resource import Resource, resource_cors_cache_key
 
 ROLE_MAX_LENGTH = 255
 
@@ -52,6 +52,25 @@ def common_url_dir(paths: List[str]) -> str:
         common.append(parts[0])
     return "/".join(common)
 
+
+
+def format_cors_cache_key(format_pk, resource_pks, cors_allow_list) -> str:
+    """Cache key for Format.is_cors_allowed. The pks are sorted because they
+    come from an unordered UNION query, whose order isn't guaranteed to be
+    the same when the value is cached as when it is cleared."""
+    pks = "-".join(str(pk) for pk in sorted(resource_pks))
+    return f"format_is_cors_allowed-{format_pk}-{pks}-{cors_allow_list}"
+
+
+def clear_cors_cache(format, resources: List[Resource]):
+    """Clear the cached is_cors_allowed values for a format and its
+    resources, which are cached with no expiry."""
+    cors_allow_list = get_cached_cors_allow_list()
+    pks = {r.pk for r in resources}
+    cache.delete_many(
+        [resource_cors_cache_key(pk, cors_allow_list) for pk in pks]
+        + [format_cors_cache_key(format.pk, pks, cors_allow_list)]
+    )
 
 def url_relative_path(url: str, base_url: Optional[str]) -> Optional[str]:
     """Path of `url` relative to directory `base_url`, without query string or
@@ -181,6 +200,10 @@ class Format(models.Model):
             resources.append(root)
         external = [r for r in resources if r.external_url and not r.file]
         if not external and not self.zip_archive_url:
+            # Nothing left to do, but a previous attempt may have committed
+            # and then failed before clearing the cache at the end, so clear
+            # it here too.
+            clear_cors_cache(self, resources)
             return []
 
         # Work out every path relative to the root before changing anything,
@@ -312,13 +335,7 @@ class Format(models.Model):
             for tmp in tmp_files.values():
                 tmp.close()
 
-        # is_cors_allowed values are cached with no expiry.
-        cors_allow_list = get_cached_cors_allow_list()
-        resource_pks = "-".join([str(x.pk) for x in self.get_all_resources()])
-        cache.delete_many(
-            [f"resource_is_cors_allowed-{r.pk}-{cors_allow_list}" for r in external]
-            + [f"format_is_cors_allowed-{self.pk}-{resource_pks}-{cors_allow_list}"]
-        )
+        clear_cors_cache(self, resources)
         return external
 
     def user_label(self):
@@ -334,8 +351,7 @@ class Format(models.Model):
     def is_cors_allowed(self):
         cors_allow_list = get_cached_cors_allow_list()
         resources = self.get_all_resources()
-        resource_pks = "-".join([str(x.pk) for x in resources])
-        cache_key = f"format_is_cors_allowed-{self.pk}-{resource_pks}-{cors_allow_list}"
+        cache_key = format_cors_cache_key(self.pk, [x.pk for x in resources], cors_allow_list)
 
         is_allowed = cache.get(cache_key, None)
 

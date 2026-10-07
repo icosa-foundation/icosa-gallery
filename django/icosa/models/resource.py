@@ -24,6 +24,12 @@ def external_only_q(prefix: str = "") -> Q:
         Q(**{f"{prefix}file": ""}) | Q(**{f"{prefix}file__isnull": True})
     )
 
+
+def resource_cors_cache_key(resource_pk, cors_allow_list) -> str:
+    """Cache key for Resource.is_cors_allowed. Shared with the code that
+    clears it, since the value is cached with no expiry."""
+    return f"resource_is_cors_allowed-{resource_pk}-{cors_allow_list}"
+
 class Resource(models.Model):
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
     format = models.ForeignKey("Format", null=True, blank=True, on_delete=models.CASCADE)
@@ -125,7 +131,7 @@ class Resource(models.Model):
     @property
     def is_cors_allowed(self):
         cors_allow_list = get_cached_cors_allow_list()
-        cache_key = f"resource_is_cors_allowed-{self.pk}-{cors_allow_list}"
+        cache_key = resource_cors_cache_key(self.pk, cors_allow_list)
 
         is_allowed = cache.get(cache_key, None)
 
