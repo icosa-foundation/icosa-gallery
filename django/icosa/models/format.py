@@ -53,6 +53,15 @@ def common_url_dir(paths: List[str]) -> str:
     return "/".join(common)
 
 
+def url_relative_path(url: str, base_url: Optional[str]) -> Optional[str]:
+    """Path of `url` relative to directory `base_url`, without query string or
+    fragment, or None if `url` isn't under `base_url`."""
+    if not base_url or not url.startswith(base_url):
+        return None
+    rel = url[len(base_url):]
+    return unquote(rel.split("?", 1)[0].split("#", 1)[0])
+
+
 def storage_dir_in_use(storage, path: str) -> bool:
     """Whether anything exists at directory `path`. On a filesystem an empty
     directory counts; object stores such as S3 have no directories, so there
@@ -194,12 +203,12 @@ class Format(models.Model):
         # layout; anything else (e.g. on another host) can't be placed safely.
         relative_paths = {}
         for r in external:
-            if not base_url or not r.external_url.startswith(base_url):
+            rel = url_relative_path(r.external_url, base_url)
+            if rel is None:
                 raise ExternalResourceLocalizeException(
                     f"{r.external_url} is not under the root resource's directory {base_url}"
                 )
-            rel = r.external_url[len(base_url):]
-            relative_paths[r.external_url] = unquote(rel.split("?", 1)[0].split("#", 1)[0])
+            relative_paths[r.external_url] = rel
 
         # Several resources may share a URL; each URL is fetched and stored once.
         tmp_files = {}

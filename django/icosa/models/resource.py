@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 from django.core.cache import cache
 from django.db import models
+from django.db.models import Q
 
 from .asset import Asset
 from .common import (
@@ -14,6 +15,14 @@ from .helpers import (
     get_cached_cors_allow_list,
 )
 
+
+
+def external_only_q(prefix: str = "") -> Q:
+    """Resources with an external_url and no local file. `prefix` is the
+    lookup path to the resource, e.g. "root_resource__"."""
+    return Q(**{f"{prefix}external_url__gt": ""}) & (
+        Q(**{f"{prefix}file": ""}) | Q(**{f"{prefix}file__isnull": True})
+    )
 
 class Resource(models.Model):
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)

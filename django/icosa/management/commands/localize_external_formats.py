@@ -3,13 +3,8 @@ import json
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
 from icosa.models import Asset, Format
+from icosa.models.resource import external_only_q
 from icosa.tasks import localize_format, queue_localize_format
-
-
-def external_resources_q(prefix: str) -> Q:
-    return Q(**{f"{prefix}external_url__gt": ""}) & (
-        Q(**{f"{prefix}file": ""}) | Q(**{f"{prefix}file__isnull": True})
-    )
 
 
 class Command(BaseCommand):
@@ -110,8 +105,8 @@ class Command(BaseCommand):
             Format.objects.filter(asset__in=assets)
             .filter(self.get_format_q(options))
             .filter(
-                external_resources_q("root_resource__")
-                | external_resources_q("resource__")
+                external_only_q("root_resource__")
+                | external_only_q("resource__")
                 | Q(zip_archive_url__gt="")
             )
             .distinct()
