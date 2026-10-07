@@ -58,3 +58,13 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.assertEqual(root.uploaded_file_path, "model.gltf")
         self.assertEqual(texture.uploaded_file_path, "textures/base color.png")
         self.assertEqual(urljoin(root.file.name, "textures/base color.png"), texture.file.name)
+
+    def test_local_resources_clear_external_archive(self):
+        format, (root,) = self.make_format("https://example.com/asset/model.gltf")
+        root.file.name = "poly/model.gltf"
+        format.zip_archive_url = "https://example.com/asset/archive.zip"
+
+        self.assertEqual(Format.localize_external_resources(format), [])
+
+        self.assertIsNone(format.zip_archive_url)
+        format.save.assert_called_once_with()

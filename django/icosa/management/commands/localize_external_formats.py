@@ -15,7 +15,7 @@ def external_resources_q(prefix: str) -> Q:
 class Command(BaseCommand):
     help = """Queue Huey tasks that copy externally-hosted format files (e.g.
     on archive.org) into our own storage so they no longer depend on external
-    URLs. Only formats that still have external resources are queued.
+    URLs. Formats that still have external resources or archives are queued.
 
     Example:
         manage.py localize_external_formats \\
@@ -109,7 +109,11 @@ class Command(BaseCommand):
         formats = (
             Format.objects.filter(asset__in=assets)
             .filter(self.get_format_q(options))
-            .filter(external_resources_q("root_resource__") | external_resources_q("resource__"))
+            .filter(
+                external_resources_q("root_resource__")
+                | external_resources_q("resource__")
+                | Q(zip_archive_url__gt="")
+            )
             .distinct()
             .order_by("pk")
             .values_list("pk", "asset__url", "format_type")
