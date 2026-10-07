@@ -1,3 +1,4 @@
+import logging
 import posixpath
 from pathlib import Path
 from typing import List, Optional
@@ -19,6 +20,8 @@ from .helpers import (
 from .resource import Resource
 
 ROLE_MAX_LENGTH = 255
+
+logger = logging.getLogger("django")
 
 
 class ExternalResourceLocalizeException(Exception):
@@ -236,12 +239,17 @@ class Format(models.Model):
                 if self.zip_archive_url and all(r.file for r in resources):
                     self.zip_archive_url = None
                     self.save()
-        except Exception:
+        except BaseException:
+            # BaseException so an interrupted run (Ctrl+C) also cleans up.
             for r in external:
                 r.file.name, r.uploaded_file_path, r.external_url = original_values[r.pk]
             self.zip_archive_url = original_archive_url
             for storage, saved_name in reversed(uploaded_files):
-                storage.delete(saved_name)
+                # Keep going and re-raise the original error, not this one.
+                try:
+                    storage.delete(saved_name)
+                except Exception as e:
+                    logger.error(f"[localize] Format {self.pk}: failed to delete {saved_name} during cleanup: {e}")
             raise
         finally:
             for tmp in tmp_files.values():

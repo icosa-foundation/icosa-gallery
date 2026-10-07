@@ -153,6 +153,56 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.assertTrue(all(not resource.file and resource.external_url for resource in resources))
         self.assertEqual(len(Format.localize_external_resources(format)), 2)
 
+    def test_interrupted_upload_removes_files(self):
+        format, resources = self.make_format(
+            "https://example.com/asset/model.gltf", "https://example.com/asset/texture.png"
+        )
+        save = self.storage.save
+        saves = 0
+
+        def interrupt_second_upload(*args, **kwargs):
+            nonlocal saves
+            saves += 1
+            if saves == 2:
+                raise KeyboardInterrupt
+            return save(*args, **kwargs)
+
+        with patch.object(self.storage, "save", side_effect=interrupt_second_upload):
+            with self.assertRaises(KeyboardInterrupt):
+                Format.localize_external_resources(format)
+
+        self.assert_storage_empty()
+
+    def test_failed_cleanup_delete_continues_and_reraises_original_error(self):
+        format, resources = self.make_format(
+            "https://example.com/asset/model.gltf",
+            "https://example.com/asset/a.png",
+            "https://example.com/asset/b.png",
+        )
+        save = self.storage.save
+        delete = self.storage.delete
+        saves = 0
+
+        def fail_third_upload(*args, **kwargs):
+            nonlocal saves
+            saves += 1
+            if saves == 3:
+                raise OSError("Upload failed")
+            return save(*args, **kwargs)
+
+        def fail_first_delete(name):
+            if name.endswith("a.png"):
+                raise OSError("Delete failed")
+            delete(name)
+
+        with patch.object(self.storage, "save", side_effect=fail_third_upload):
+            with patch.object(self.storage, "delete", side_effect=fail_first_delete):
+                with self.assertRaisesRegex(OSError, "Upload failed"):
+                    Format.localize_external_resources(format)
+
+        remaining = [path.name for path in Path(self.storage.location).rglob("*") if path.is_file()]
+        self.assertEqual(remaining, ["a.png"])
+
     def test_failed_database_save_removes_files_and_allows_retry(self):
         for fail_archive_save in (False, True):
             with self.subTest(fail_archive_save=fail_archive_save):
