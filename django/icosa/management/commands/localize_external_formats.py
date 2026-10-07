@@ -113,7 +113,7 @@ class Command(BaseCommand):
             .order_by("pk")
             .values_list("pk", "asset__url", "format_type")
         )
-        if options["limit"]:
+        if options["limit"] is not None:
             formats = formats[: options["limit"]]
 
         count = 0
