@@ -141,7 +141,10 @@ class Format(models.Model):
 
         The directory layout relative to the root resource is preserved so
         that relative references between files (e.g. a gltf pointing at its
-        bin and textures) keep working.
+        bin and textures) keep working. If the root itself is already stored
+        locally, nothing is downloaded: each resource is linked to the file
+        of the same relative path alongside it, and the format is refused if
+        any is missing.
 
         All downloads happen before anything is written, and the database is
         only updated once every upload has succeeded, so a failure part way
@@ -193,38 +196,54 @@ class Format(models.Model):
             r.pk: (r.file.name, r.uploaded_file_path, r.external_url) for r in external
         }
         original_archive_url = self.zip_archive_url
+        original_root_url = root.external_url if root is not None else None
         try:
-            for url in relative_paths:
-                tmp_files[url] = download_to_tempfile(url, **download_kwargs)
-
-            # Never write into a directory that already has anything in it, so
-            # existing files (another format of the same type, a normal
-            # upload, leftovers from an interrupted attempt) are never
-            # overwritten. The whole format moves together so relative
-            # references between its files still resolve.
             storage = Resource._meta.get_field("file").storage
-            base_dir = f"{get_cloud_media_root()}{self.asset.owner.id}/{self.asset.id}/{self.format_type}"
-            target_dir = base_dir
-            suffix = 1
-            while storage_dir_in_use(storage, target_dir):
-                suffix += 1
-                target_dir = f"{base_dir}_{suffix}"
+            if root is not None and root.file:
+                # The root is already stored, with the files it refers to
+                # uploaded alongside it (e.g. the model_(GLTFupdated).gltf roots
+                # from the Poly import). Those are what the viewer loads, and
+                # they can differ from the external originals, so link to them
+                # rather than downloading.
+                root_dir = posixpath.dirname(root.file.name)
+                for url, rel in relative_paths.items():
+                    name = f"{root_dir}/{rel}"
+                    if not storage.exists(name):
+                        raise ExternalResourceLocalizeException(
+                            f"{name} does not exist alongside the local root file {root.file.name}"
+                        )
+                    saved_names[url] = name
+            else:
+                for url in relative_paths:
+                    tmp_files[url] = download_to_tempfile(url, **download_kwargs)
 
-            for url, rel in relative_paths.items():
-                # Unlike format_upload_path, keep every file's original name
-                # (including the root's) so the stored layout mirrors the
-                # source.
-                name = f"{target_dir}/{rel}"
-                # Save via the storage rather than FieldFile.save, which would
-                # run get_valid_name and mangle names (e.g. spaces) that other
-                # files in the format refer to.
-                saved_name = storage.save(name, File(tmp_files[url]))
-                uploaded_files.append((storage, saved_name))
-                if saved_name != name:
-                    raise ExternalResourceLocalizeException(
-                        f"Storage saved {name} as {saved_name}; relative references would break."
-                    )
-                saved_names[url] = saved_name
+                # Never write into a directory that already has anything in
+                # it, so existing files (another format of the same type, a
+                # normal upload, leftovers from an interrupted attempt) are
+                # never overwritten. The whole format moves together so
+                # relative references between its files still resolve.
+                base_dir = f"{get_cloud_media_root()}{self.asset.owner.id}/{self.asset.id}/{self.format_type}"
+                target_dir = base_dir
+                suffix = 1
+                while storage_dir_in_use(storage, target_dir):
+                    suffix += 1
+                    target_dir = f"{base_dir}_{suffix}"
+
+                for url, rel in relative_paths.items():
+                    # Unlike format_upload_path, keep every file's original
+                    # name (including the root's) so the stored layout mirrors
+                    # the source.
+                    name = f"{target_dir}/{rel}"
+                    # Save via the storage rather than FieldFile.save, which
+                    # would run get_valid_name and mangle names (e.g. spaces)
+                    # that other files in the format refer to.
+                    saved_name = storage.save(name, File(tmp_files[url]))
+                    uploaded_files.append((storage, saved_name))
+                    if saved_name != name:
+                        raise ExternalResourceLocalizeException(
+                            f"Storage saved {name} as {saved_name}; relative references would break."
+                        )
+                    saved_names[url] = saved_name
 
             for r in external:
                 r.uploaded_file_path = relative_paths[r.external_url]
@@ -237,6 +256,12 @@ class Format(models.Model):
                 for r in external:
                     r.external_url = None
                     r.save(update_fields=["file", "uploaded_file_path", "external_url"])
+                # A local file takes precedence over external_url, which for a
+                # local root was only kept so Resource.get_base_path could
+                # place resources that were still external.
+                if root is not None and root.file and root.external_url:
+                    root.external_url = None
+                    root.save(update_fields=["external_url"])
                 # The archive is also externally hosted; once every resource is
                 # local, downloads can be served from our own storage instead.
                 if self.zip_archive_url and all(r.file for r in resources):
@@ -247,6 +272,8 @@ class Format(models.Model):
             for r in external:
                 r.file.name, r.uploaded_file_path, r.external_url = original_values[r.pk]
             self.zip_archive_url = original_archive_url
+            if root is not None:
+                root.external_url = original_root_url
             for storage, saved_name in reversed(uploaded_files):
                 # Keep going and re-raise the original error, not this one.
                 try:

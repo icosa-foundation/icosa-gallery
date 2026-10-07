@@ -119,6 +119,39 @@ class ExternalLocalizationTests(SimpleTestCase):
 
         self.assertEqual(texture.uploaded_file_path, "texture.png")
 
+    def make_local_root_format(self):
+        format, (root, bin_resource) = self.make_format(
+            "https://example.com/asset/x/model.gltf", "https://example.com/asset/x/model.bin"
+        )
+        root.file.name = "poly/A/model_(GLTFupdated).gltf"
+        return format, root, bin_resource
+
+    def test_local_root_links_resources_alongside_it(self):
+        format, root, bin_resource = self.make_local_root_format()
+        self.storage.save("poly/A/model.bin", ContentFile(b"updated"))
+
+        with patch("icosa.models.format.download_to_tempfile") as download:
+            self.assertEqual(Format.localize_external_resources(format), [bin_resource])
+
+        download.assert_not_called()
+        self.assertEqual(bin_resource.file.name, "poly/A/model.bin")
+        self.assertEqual(bin_resource.uploaded_file_path, "model.bin")
+        self.assertIsNone(bin_resource.external_url)
+        self.assertIsNone(root.external_url)
+        root.save.assert_called_once_with(update_fields=["external_url"])
+        self.assertEqual(root.get_base_path(), "poly/A/")
+
+    def test_local_root_with_missing_file_alongside_is_refused(self):
+        format, root, bin_resource = self.make_local_root_format()
+
+        with self.assertRaisesRegex(ExternalResourceLocalizeException, "does not exist alongside"):
+            Format.localize_external_resources(format)
+
+        self.assertFalse(bin_resource.file)
+        self.assertIsNotNone(bin_resource.external_url)
+        self.assertIsNotNone(root.external_url)
+        self.assert_storage_empty()
+
     def test_local_resources_clear_external_archive(self):
         format, (root,) = self.make_format("https://example.com/asset/model.gltf")
         root.file.name = "poly/model.gltf"

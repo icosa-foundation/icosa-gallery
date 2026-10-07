@@ -53,7 +53,7 @@ class Resource(models.Model):
             # We are a root resource and so do not have a sub path
             if self.file:
                 # XXX(james): This logic needs to be baked into a denormed field
-                if "model_(GLTFupdated)" in self.file.name:
+                if "model_(GLTFupdated)" in self.file.name and self.external_url:
                     path_split = self.external_url.split("/")
                 else:
                     path_split = self.file.name.split("/")
