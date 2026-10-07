@@ -50,6 +50,7 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.assertEqual(urljoin(root.file.name, "../textures/albedo.png"), texture.file.name)
         self.assertTrue(self.storage.exists(texture.file.name))
         self.assertIsNone(texture.external_url)
+        texture.save.assert_called_once_with(update_fields=["file", "uploaded_file_path", "external_url"])
 
     def test_archive_org_urls_preserve_layout(self):
         for prefix in (
@@ -126,7 +127,7 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.assertEqual(Format.localize_external_resources(format), [])
 
         self.assertIsNone(format.zip_archive_url)
-        format.save.assert_called_once_with()
+        format.save.assert_called_once_with(update_fields=["zip_archive_url"], update_timestamps=False)
 
     def assert_storage_empty(self):
         self.assertEqual([path for path in Path(self.storage.location).rglob("*") if path.is_file()], [])

@@ -230,15 +230,18 @@ class Format(models.Model):
                 r.uploaded_file_path = relative_paths[r.external_url]
                 r.file.name = saved_names[r.external_url]
 
+            # Only write the fields this changes: the instances were loaded
+            # before the downloads, and other fields may have been edited
+            # since. Localizing is bookkeeping, so update_time is left alone.
             with transaction.atomic():
                 for r in external:
                     r.external_url = None
-                    r.save()
+                    r.save(update_fields=["file", "uploaded_file_path", "external_url"])
                 # The archive is also externally hosted; once every resource is
                 # local, downloads can be served from our own storage instead.
                 if self.zip_archive_url and all(r.file for r in resources):
                     self.zip_archive_url = None
-                    self.save()
+                    self.save(update_fields=["zip_archive_url"], update_timestamps=False)
         except BaseException:
             # BaseException so an interrupted run (Ctrl+C) also cleans up.
             for r in external:
