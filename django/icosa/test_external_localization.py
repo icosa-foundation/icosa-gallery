@@ -8,11 +8,13 @@ from urllib.parse import urljoin
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.test import SimpleTestCase
+from huey.exceptions import CancelExecution
 import requests
 
 from icosa.models import Asset, Format, Resource
 from icosa.models.format import ExternalResourceLocalizeException, is_permanent_localize_error
 from icosa.models.helpers import download_to_tempfile
+from icosa.tasks import queue_localize_format
 
 
 class ExternalLocalizationTests(SimpleTestCase):
@@ -347,3 +349,18 @@ class PermanentLocalizeErrorTests(SimpleTestCase):
         for error in (requests.ConnectionError(), requests.HTTPError(response=Mock(status_code=503)), OSError()):
             with self.subTest(error=error):
                 self.assertFalse(is_permanent_localize_error(error))
+
+
+class LocalizeTaskRetryTests(SimpleTestCase):
+    def run_task(self, error):
+        with patch("icosa.tasks.localize_format", side_effect=error):
+            queue_localize_format.call_local(1)
+
+    def test_permanent_failures_cancel_retries(self):
+        with self.assertRaises(CancelExecution) as cm:
+            self.run_task(requests.HTTPError(response=Mock(status_code=404)))
+        self.assertIs(cm.exception.retry, False)
+
+    def test_transient_failures_propagate_for_retry(self):
+        with self.assertRaises(requests.ConnectionError):
+            self.run_task(requests.ConnectionError())
