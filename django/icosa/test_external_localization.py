@@ -9,7 +9,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
 from django.test import SimpleTestCase
 
-from icosa.models import Format, Resource
+from icosa.models import Asset, Format, Resource
 from icosa.models.format import ExternalResourceLocalizeException
 
 
@@ -130,3 +130,24 @@ class ExternalLocalizationTests(SimpleTestCase):
         self.assertEqual(stored_files, [Path(self.storage.path(existing_name))])
         self.assertEqual(stored_files[0].read_bytes(), b"existing")
         self.assertTrue(all(not resource.file and resource.external_url for resource in resources))
+
+
+class ViewerCompatibilityTests(SimpleTestCase):
+    def make_asset(self, preferred_format):
+        asset = Mock(pk=1, preferred_viewer_format=preferred_format)
+        return asset
+
+    def test_requires_every_resource_of_the_preferred_format(self):
+        for is_cors_allowed in (True, False):
+            with self.subTest(is_cors_allowed=is_cors_allowed):
+                preferred = Mock(is_cors_allowed=is_cors_allowed)
+                self.assertIs(Asset.calc_is_viewer_compatible(self.make_asset(preferred)), is_cors_allowed)
+
+    def test_ignores_other_formats(self):
+        asset = self.make_asset(Mock(is_cors_allowed=False))
+        asset.format_set.all.return_value = [Mock(root_resource=Mock(file="poly/model.obj", is_cors_allowed=True))]
+        self.assertFalse(Asset.calc_is_viewer_compatible(asset))
+
+    def test_no_preferred_format_or_root(self):
+        self.assertFalse(Asset.calc_is_viewer_compatible(self.make_asset(None)))
+        self.assertFalse(Asset.calc_is_viewer_compatible(self.make_asset(Mock(root_resource=None))))
