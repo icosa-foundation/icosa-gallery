@@ -372,7 +372,13 @@ class DownloadRetryTests(SimpleTestCase):
         return requests.HTTPError(response=Mock(status_code=status))
 
     def test_transient_errors_are_retried(self):
-        for error in (requests.ConnectionError(), requests.Timeout(), self.http_error(429), self.http_error(503)):
+        for error in (
+            requests.ConnectionError(),
+            requests.Timeout(),
+            self.http_error(408),
+            self.http_error(429),
+            self.http_error(503),
+        ):
             with self.subTest(error=error):
                 self.assertEqual(self.download(error), 3)
 

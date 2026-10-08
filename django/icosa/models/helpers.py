@@ -93,11 +93,11 @@ def get_cached_cors_allow_list():
 
 def is_transient_download_error(e: requests.RequestException) -> bool:
     """Whether retrying might help: connection problems, timeouts, an
-    interrupted transfer, 429 or 5xx. Malformed URLs and other HTTP errors
-    will fail the same way every time."""
+    interrupted transfer, 408, 429 or 5xx. Malformed URLs and other HTTP
+    errors will fail the same way every time."""
     if isinstance(e, requests.HTTPError):
         status = e.response.status_code if e.response is not None else None
-        return status == 429 or (status is not None and status >= 500)
+        return status in (408, 429) or (status is not None and status >= 500)
     return isinstance(e, (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError))
 
 
