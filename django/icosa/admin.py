@@ -12,6 +12,10 @@ from django.utils.safestring import mark_safe
 from import_export.admin import ExportMixin
 
 from icosa.models import (
+    ARCHIVED,
+    PRIVATE,
+    PUBLIC,
+    UNLISTED,
     Asset,
     AssetCollection,
     AssetCollectionAsset,
@@ -118,6 +122,12 @@ class FormatRoleLabelAdmin(admin.ModelAdmin):
 
 @admin.register(Asset)
 class AssetAdmin(ExportMixin, admin.ModelAdmin):
+    actions = (
+        "set_visibility_public",
+        "set_visibility_unlisted",
+        "set_visibility_private",
+        "set_visibility_archived",
+    )
     list_display = (
         "name",
         "display_thumbnail",
@@ -225,6 +235,22 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "owner",
         "preferred_viewer_format_override",
     ]
+
+    @admin.action(description="Set selected assets as public")
+    def set_visibility_public(self, request, queryset):
+        queryset.update(visibility=PUBLIC)
+
+    @admin.action(description="Set selected assets as unlisted")
+    def set_visibility_unlisted(self, request, queryset):
+        queryset.update(visibility=UNLISTED)
+
+    @admin.action(description="Set selected assets as private")
+    def set_visibility_private(self, request, queryset):
+        queryset.update(visibility=PRIVATE)
+
+    @admin.action(description="Set selected assets as archived")
+    def set_visibility_archived(self, request, queryset):
+        queryset.update(visibility=ARCHIVED)
 
 
 class AssetCollectionAssetInline(admin.TabularInline):
