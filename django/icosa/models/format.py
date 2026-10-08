@@ -314,7 +314,8 @@ class Format(models.Model):
                     root.save(update_fields=["external_url"])
                 # The archive is also externally hosted; once every resource is
                 # local, downloads can be served from our own storage instead.
-                if self.zip_archive_url and all(r.file for r in resources):
+                # A format with no resources keeps it: it's the only download.
+                if self.zip_archive_url and resources and all(r.file for r in resources):
                     self.zip_archive_url = None
                     self.save(update_fields=["zip_archive_url"], update_timestamps=False)
         except BaseException:

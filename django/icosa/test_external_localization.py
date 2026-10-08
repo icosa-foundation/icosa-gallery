@@ -207,6 +207,17 @@ class ExternalLocalizationTests(SimpleTestCase):
     def assert_storage_empty(self):
         self.assertEqual([path for path in Path(self.storage.location).rglob("*") if path.is_file()], [])
 
+    def test_archive_is_kept_when_there_are_no_resources(self):
+        format = Mock(pk=1, format_type="GLTF2", root_resource=None, zip_archive_url="https://example.com/archive.zip")
+        format.asset.owner_id = 2
+        format.asset.id = 3
+        format.resource_set.all.return_value = []
+
+        self.assertEqual(Format.localize_external_resources(format), [])
+
+        self.assertEqual(format.zip_archive_url, "https://example.com/archive.zip")
+        format.save.assert_not_called()
+
     def test_failed_upload_removes_files_and_allows_retry(self):
         format, resources = self.make_format(
             "https://example.com/asset/model.gltf", "https://example.com/asset/texture.png"
