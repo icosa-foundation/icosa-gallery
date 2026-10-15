@@ -10,7 +10,7 @@ from pydantic.json_schema import SkipJsonSchema
 
 from icosa.api.exceptions import FilterException
 from icosa.model_mixins import MOD_HIDDEN
-from icosa.models import Asset, Format
+from icosa.models import Asset
 
 
 class FilterCategory(Enum):
@@ -56,7 +56,6 @@ class FilterFormat(Enum):
     OBJ = "OBJ"
     FBX = "FBX"
     VOX = "VOX"
-    IMM = "IMM"
     NO_TILT = "-TILT"
     NO_BLOCKS = "-BLOCKS"
     NO_GLTF = "-GLTF"
@@ -65,7 +64,6 @@ class FilterFormat(Enum):
     NO_OBJ = "-OBJ"
     NO_FBX = "-FBX"
     NO_VOX = "-VOX"
-    NO_IMM = "-IMM"
 
 
 class FilterLicense(Enum):
@@ -198,16 +196,6 @@ class FiltersBase(FilterSchema):
         if value:
             valid_q = False
             for format_type in value:
-                if format_type in (FilterFormat.IMM, FilterFormat.NO_IMM):
-                    # IMM has no denormalized has_imm field. A subquery avoids
-                    # duplicate assets when multiple IMM formats belong to one asset.
-                    imm_q = Q(pk__in=Format.objects.filter(format_type="IMM").values("asset_id"))
-                    if format_type == FilterFormat.IMM:
-                        positive_q |= imm_q
-                    else:
-                        negative_q |= ~imm_q
-                    valid_q = True
-                    continue
                 # Reliant on the fact that each of FILTERABLE_FORMATS has an
                 # associated has_<format_type> field in the db.
                 format_value = format_type.value
