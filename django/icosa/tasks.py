@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import (
     List,
@@ -15,20 +16,25 @@ from huey.contrib.djhuey import (
     db_task,
     signal,
 )
+from huey.exceptions import CancelExecution
 from icosa.api.schema import AssetMetaData
 from icosa.helpers.upload import upload_api_asset
 from icosa.models import (
     ASSET_STATE_FAILED,
     Asset,
     BulkSaveLog,
+    Format,
     ModerationNotification,
     User,
 )
+from icosa.models.format import is_permanent_localize_error
 from ninja import (
     File,
     Form,
 )
 from ninja.files import UploadedFile
+
+logger = logging.getLogger("django")
 
 
 @signal(signals.SIGNAL_ERROR)
@@ -132,3 +138,33 @@ def queue_save_all_assets(
 @db_periodic_task(crontab(minute="*/1"))
 def try_send_moderation_notifications():
     ModerationNotification.try_send()
+
+
+def localize_format(format_id: int) -> int:
+    """Pull a format's externally-hosted files into our storage, then
+    recalculate its asset's is_viewer_compatible, which is the point of doing
+    this. Returns the number of resources localized."""
+    format = Format.objects.select_related("asset", "root_resource").get(pk=format_id)
+    localized = format.localize_external_resources()
+    asset = format.asset
+    # Only update this one field; a full save() recomputes rank, search text
+    # and other denorms that this task has no business touching.
+    Asset.objects.filter(pk=asset.pk).update(is_viewer_compatible=asset.calc_is_viewer_compatible())
+    return len(localized)
+
+
+# One task per format so a failure only affects that format, and so retries
+# don't redo work already done (localize_external_resources is idempotent).
+# Slow hosts such as archive.org fail intermittently, hence the generous retry
+# delay; permanent failures are not retried, since each retry re-downloads the
+# whole format. Negative priority so user uploads (default priority 0) waiting
+# in the queue are always picked first.
+@db_task(retries=3, retry_delay=600, priority=-10)
+def queue_localize_format(format_id: int) -> int:
+    try:
+        return localize_format(format_id)
+    except Exception as e:
+        if is_permanent_localize_error(e):
+            logger.error(f"[localize] Format {format_id} failed and will not be retried: {e}")
+            raise CancelExecution(retry=False) from e
+        raise

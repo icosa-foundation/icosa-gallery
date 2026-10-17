@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 from django.core.cache import cache
 from django.db import models
+from django.db.models import Q
 
 from .asset import Asset
 from .common import (
@@ -14,6 +15,20 @@ from .helpers import (
     get_cached_cors_allow_list,
 )
 
+
+
+def external_only_q(prefix: str = "") -> Q:
+    """Resources with an external_url and no local file. `prefix` is the
+    lookup path to the resource, e.g. "root_resource__"."""
+    return Q(**{f"{prefix}external_url__gt": ""}) & (
+        Q(**{f"{prefix}file": ""}) | Q(**{f"{prefix}file__isnull": True})
+    )
+
+
+def resource_cors_cache_key(resource_pk, cors_allow_list) -> str:
+    """Cache key for Resource.is_cors_allowed. Shared with the code that
+    clears it, since the value is cached with no expiry."""
+    return f"resource_is_cors_allowed-{resource_pk}-{cors_allow_list}"
 
 class Resource(models.Model):
     asset = models.ForeignKey(Asset, null=True, blank=False, on_delete=models.CASCADE)
@@ -53,7 +68,7 @@ class Resource(models.Model):
             # We are a root resource and so do not have a sub path
             if self.file:
                 # XXX(james): This logic needs to be baked into a denormed field
-                if "model_(GLTFupdated)" in self.file.name:
+                if "model_(GLTFupdated)" in self.file.name and self.external_url:
                     path_split = self.external_url.split("/")
                 else:
                     path_split = self.file.name.split("/")
@@ -116,7 +131,7 @@ class Resource(models.Model):
     @property
     def is_cors_allowed(self):
         cors_allow_list = get_cached_cors_allow_list()
-        cache_key = f"resource_is_cors_allowed-{self.pk}-{cors_allow_list}"
+        cache_key = resource_cors_cache_key(self.pk, cors_allow_list)
 
         is_allowed = cache.get(cache_key, None)
 
