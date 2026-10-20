@@ -14,9 +14,14 @@ class EmailThread(threading.Thread):
 
     def run(self):
         msg = EmailMessage(self.subject, self.message, to=self.recipient_list)
-        log_emails("to real", [msg])
         msg.content_subtype = "html"
-        msg.send()
+        email_log = log_emails("to real", [msg])[0]
+        try:
+            msg.send()
+        except Exception as e:
+            email_log.success = False
+            email_log.save()
+            raise e
 
 
 def spawn_send_html_mail(subject, message, recipient_list):
