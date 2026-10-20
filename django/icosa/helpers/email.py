@@ -16,12 +16,11 @@ class EmailThread(threading.Thread):
         msg = EmailMessage(self.subject, self.message, to=self.recipient_list)
         msg.content_subtype = "html"
         email_log = log_emails("to real", [msg])[0]
-        try:
-            msg.send()
-        except Exception as e:
-            email_log.success = False
-            email_log.save()
-            raise e
+        email_log.success = False
+        email_log.save()  # NOTE(james): It's a shame the default is True
+        msg.send()
+        email_log.success = True
+        email_log.save()
 
 
 def spawn_send_html_mail(subject, message, recipient_list):
