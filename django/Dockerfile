@@ -39,7 +39,7 @@ RUN pip install --no-cache-dir -r requirements.in
 ####
 # Slim app container
 ####
-FROM python:3.13.3-slim AS app
+FROM python:3.13.18-slim AS app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
