@@ -3,7 +3,7 @@
 ####
 # Dependencies builder
 ####
-FROM python:3.13.3-slim AS builder
+FROM python:3.13.18-slim AS builder
 
 WORKDIR /opt
 ENV LANG=C.UTF-8
@@ -33,6 +33,7 @@ RUN set -x            \
 # Virtualenv setup
 RUN python -m venv /venv
 COPY requirements.in .
+RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.in
 
 ####
