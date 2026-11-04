@@ -132,6 +132,7 @@ class AssetAdmin(ExportMixin, admin.ModelAdmin):
         "name",
         "display_thumbnail",
         "display_owner",
+        "create_time",
         "description",
         "visibility",
         "curated",
