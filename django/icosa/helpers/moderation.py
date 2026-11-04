@@ -3,11 +3,13 @@ from typing import Optional
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
+
 from icosa.model_mixins import (
     MOD_MODIFIED,
     MOD_NEW,
     MOD_REPORTED,
 )
+from icosa.models import ASSET_STATE_COMPLETE
 from icosa.models.asset import Asset
 from icosa.models.asset_owner import AssetOwner
 from icosa.models.collection import AssetCollection
@@ -51,6 +53,7 @@ class ModerationObjects:
 def get_objects_to_moderate() -> ModerationObjects:
 
     assets = Asset.objects.filter(
+        state=ASSET_STATE_COMPLETE,
         moderation_state__in=MOD_STATES_OF_INTEREST,
         owner__moderation_exempt=False,
     ).order_by("moderation_state_change_time")
