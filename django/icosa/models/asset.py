@@ -292,20 +292,12 @@ class Asset(ModerationMixin):
         if not preferred_format:
             return False
 
-        # If this asset's preferred_format has a file managed by Django
-        # storage, or if any of the externally-hosted files' sources have been
-        # allowed by the site admin in django constance settings, then it will
-        # be viewable.
-        is_allowed = False
-
-        for format in self.format_set.all():
-            root = format.root_resource
-            if root is not None:
-                if root.file or root.is_cors_allowed:
-                    is_allowed = True
-                    break
-
-        return is_allowed
+        # The viewer only loads the preferred format, and needs every one of
+        # its files: each must either be managed by Django storage or come from
+        # a source the site admin has allowed in django constance settings.
+        if preferred_format.root_resource is None:
+            return False
+        return preferred_format.is_cors_allowed
 
     def denorm_format_types(self):
         if not self.pk:
