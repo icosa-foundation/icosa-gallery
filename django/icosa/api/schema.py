@@ -149,9 +149,9 @@ class AssetSchema(ModelSchema):
     presentationParams: Optional[dict] = Field(None, alias=("presentation_params"))
     formats: List[AssetFormat]
 
-    class Config(Schema.Config):
+    class Meta:
         model = Asset
-        model_fields = ["url", "license"]
+        fields = ["url", "license"]
 
     @staticmethod
     def resolve_name(obj, context):
@@ -238,9 +238,9 @@ class AssetSchemaPrivate(AssetSchema):
 
 
 class AssetStateSchema(ModelSchema):
-    class Config(Schema.Config):
+    class Meta:
         model = Asset
-        model_fields = ["state"]
+        fields = ["state"]
 
 
 class AssetPatchData(Schema):
@@ -329,9 +329,9 @@ class AssetCollectionSchema(ModelSchema):
         root_url = request.build_absolute_uri("/").rstrip("/")
         return f"{root_url}{reverse_lazy('icosa:api:asset_collection_list')}/{obj.url}"
 
-    class Config(Schema.Config):
+    class Meta:
         model = AssetCollection
-        model_fields = [
+        fields = [
             "url",
             "name",
             "description",
