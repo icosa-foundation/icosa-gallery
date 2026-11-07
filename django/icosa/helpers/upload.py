@@ -86,10 +86,9 @@ def process_files(files: List[UploadedFile], skip_thumbnail=False) -> UploadSet:
             unzipped_files.append(processed_file)
             continue
 
-        magic_bytes = next(file.chunks(chunk_size=2048))
+        # Validate the archive with ZipFile below. libmagic can misidentify
+        # valid ZIPs when inspecting a byte buffer (notably in version 5.46).
         file.seek(0)
-        if not validate_mime(magic_bytes, ["application/zip"]):
-            raise HttpError(400, "Uploaded file is not a zip archive.")
         unzip_start = timezone.now()
         total_size_bytes = 0
         # Read the file as a ZIP file
@@ -184,8 +183,10 @@ async def upload_api_asset(
         icosa_log(
             f"Finish processing files for asset {asset.url} in {process_files_end - process_files_start} seconds."
         )  # Logging
-    except (ZipException, HttpError):
-        raise HttpError(400, "Invalid zip archive.")
+    except ZipException as err:
+        raise HttpError(400, str(err)) from err
+    except zipfile.BadZipFile as err:
+        raise HttpError(400, "Invalid zip archive.") from err
 
     main_files = []
     sub_files: dict[str, List[UploadedFormat]] = {
