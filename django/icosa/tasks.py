@@ -132,3 +132,8 @@ def queue_save_all_assets(
 @db_periodic_task(crontab(minute="*/1"))
 def try_send_moderation_notifications():
     ModerationNotification.try_send()
+
+
+@db_periodic_task(crontab(minute="*/5"))
+def clean_stuck_uploading():
+    Asset.clean_stuck_uploading()

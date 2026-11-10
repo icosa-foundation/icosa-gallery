@@ -1,6 +1,9 @@
 import logging
 from collections import OrderedDict
-from datetime import datetime
+from datetime import (
+    datetime,
+    timedelta,
+)
 from typing import Optional
 
 from django.conf import settings
@@ -25,6 +28,7 @@ from icosa.model_mixins import (
 
 from .common import (
     ASSET_STATE_CHOICES,
+    ASSET_STATE_UPLOADING,
     ASSET_VISIBILITY_CHOICES,
     CATEGORY_CHOICES,
     CC_LICENSES,
@@ -462,6 +466,22 @@ class Asset(ModerationMixin):
             "preview_image",
             "raw_tags",
         ]
+
+    @classmethod
+    def clean_stuck_uploading(cls):
+        # Runs on a shedule in tasks.py
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        MAX_RESULTS = 100  # Don't DOS ourselves
+        assets = cls.objects.filter(state=ASSET_STATE_UPLOADING, create_time__lte=one_hour_ago)[:MAX_RESULTS]
+
+        # TODO(james): hide_media is dangerous to run automatically. It's
+        # currently not obvious that simply spinning up a dev server with
+        # access to prod media can hide said media while unattended.
+
+        # # for asset in assets: asset.hide_media()
+
+        for asset in assets:
+            asset.delete()
 
     @transaction.atomic
     def save(self, *args, **kwargs):
